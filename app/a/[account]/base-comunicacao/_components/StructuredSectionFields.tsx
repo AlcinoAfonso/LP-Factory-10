@@ -21,7 +21,7 @@ export function StructuredSectionFields({ format, draft, onChange, disabled, id 
           aria-describedby={id + "-hint"} className="text-sm" />
       </> : <>
         <label className="block text-sm" htmlFor={id + index + "-question"}>Pergunta</label>
-        <Input id={id + index + "-question"} value={row.question} maxLength={400}
+        <Input id={id + index + "-question"} value={row.question} maxLength={400} className="min-h-11"
           onChange={(e) => update(index, { ...row, question: e.target.value })} />
         <label className="block text-sm" htmlFor={id + index + "-answer"}>Resposta</label>
         <Textarea id={id + index + "-answer"} rows={3} value={row.answer} maxLength={4000}
