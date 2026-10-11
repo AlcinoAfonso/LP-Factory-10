@@ -3204,7 +3204,7 @@
 
 25. E25 — Base de Comunicação
 - Objetivo: disponibilizar um ativo persistente da conta que reúna a verdade da empresa e a inteligência de comunicação antes de existir Landing Page ou integração real de canal.
-- Status: PB-A/E25.1 encerrado e E25.2 implementada e validada em Preview. PB1/D14D está em execução isolada na E25.3, com implementação mergeada, apply concluído e Preview habilitado, ainda sem aceite operacional; PB2 e PB3 permanecem em definição, sem implementação autorizada.
+- Status: PB-A/E25.1 encerrado e E25.2 implementada e validada em Preview. PB1/D14D está em execução isolada na E25.3, com implementação mergeada, apply concluído e QA de Preview aprovado. Recursos comprovadamente desligados em Preview e Production; permanecem pendentes os gates finais e o merge do PR #1057, seguidos de ativação e QA obrigatório de Production. PB1 segue aberto; PB2 e PB3 permanecem em definição, sem implementação autorizada.
 
 25.1 Base de Comunicação inicial
 
