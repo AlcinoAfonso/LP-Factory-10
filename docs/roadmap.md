@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 09/10/2026
-• Versão: v1.5.254
+• Data: 11/10/2026
+• Versão: v1.5.255
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1102,10 +1102,14 @@
 
 10.12.1 Objetivo e status
 - Objetivo: compreender o negócio, as necessidades e o interesse do lead, oferecer orientação comercial pertinente aos serviços efetivamente disponíveis e concluir com próximo passo claro, preservando contexto e confirmando classificação existente quando houver correspondência segura.
-- Status: baseline vigente dos PRs #1050, #1053, #1054 e #1056 preservado, com atendimento habilitado em Preview e Production após migrations seletivas, provas E21 e QA aprovados. Delta aprovado em 11/10/2026 em implementação: interpretação da mensagem inteira e memória comercial evolutiva com teto global de 6.000 caracteres; apply, provas E21 e QA desse delta ainda não concluídos. O atendimento substitui pesquisa classificatória e taxonomia sob demanda; conversas legadas E10.9 permanecem preservadas.
+- Status: concluído; baseline dos PRs #1050, #1053, #1054 e #1056 preservado. Delta aprovado em 11/10/2026 implementado e mergeado pelo PR #1058: interpretação da mensagem inteira e memória comercial evolutiva com teto global de 6.000 caracteres. PostgreSQL 17, checks, Code Review independente, apply seletivo, provas E21 e QA autenticado em Preview e Production aprovados; atendimento habilitado nos ambientes validados. O atendimento substitui pesquisa classificatória e taxonomia sob demanda; conversas legadas E10.9 permanecem preservadas.
 - Dependência: E10.13/PB-A concluída; catálogo e inteligência de mercado disponíveis e utilizados na ativação e no QA.
 
 10.12.2 Registros do recorte
+- Banco:
+  - Ajustados:
+    - `public.account_context_summaries`
+    - `public.commit_account_pending_setup_turn_v3`
 - Repositório:
   - Criados:
     - `supabase/migrations/20261011121811_e10_12_summary_capacity.sql`
@@ -1123,9 +1127,9 @@
   - Apply, reversão e configuração operacional: `docs/platform-config.md` — seções 2.3 e 3.5.
 
 10.12.3 Atendimento, Diálogo da conta e Resumo da conta
-- Status: baseline implementado e validado em Preview e Production; evolução aprovada em 11/10/2026 em implementação.
+- Status: implementado e validado em Preview e Production, incluindo a evolução aprovada em 11/10/2026.
 - Conteúdo: o agente adapta perguntas, orientação e conclusão enquanto houver avanço útil, sem herdar o teto de três chamadas. Diálogo preserva histórico integral com conta e usuário participante identificados; Resumo permanece único por conta, compacto, evolutivo e contextual, sem autoridade ou versionamento funcional próprio. Distinguir síntese contextual proposta pela IA, entendimento explicitamente aceito pelo lead, classificação confirmada, sugestões ou oportunidades do vendedor e ausência de identificação. Fontes oficiais prevalecem sobre ambos.
-- Delta aprovado: interpretar a mensagem inteira, preservando contexto comercial antecipado sem exigir repetição. Na resposta composta de nome, negócio e ofertas, persistir somente o nome preferido validado no campo competente; nome do negócio permanece contextual até confirmação competente de nome público. A memória pode compactar semanticamente conteúdo anteriormente confirmado e incorporar correções posteriores, preservando significado comercial ainda vigente sem transformar sugestões em fatos. Teto global do Resumo: 6.000 caracteres, sem meta de preenchimento; entendimento individual permanece limitado a 4.000. Histórico integral permanece no Diálogo, e a confirmação do turno conserva o entendimento exibido e persistido.
+- Conteúdo implementado: interpretar a mensagem inteira, preservando contexto comercial antecipado sem exigir repetição. Na resposta composta de nome, negócio e ofertas, persistir somente o nome preferido validado no campo competente; nome do negócio permanece contextual até confirmação competente de nome público. A memória pode compactar semanticamente conteúdo anteriormente confirmado e incorporar correções posteriores, preservando significado comercial ainda vigente sem transformar sugestões em fatos. Teto global do Resumo: 6.000 caracteres, sem meta de preenchimento; entendimento individual permanece limitado a 4.000. Histórico integral permanece no Diálogo, e a confirmação do turno conserva o entendimento exibido e persistido.
 - Limites: nenhuma nova tabela, estado, memória paralela, parser frase a frase, formulário oculto ou infraestrutura; demais campos mantêm seus limites. Falha de leitura operacional ou excesso ao contrato físico falha fechado, sem anúncio de sucesso.
 
 10.12.4 Identificação pelo catálogo
