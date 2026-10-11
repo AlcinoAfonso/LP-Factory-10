@@ -68,7 +68,7 @@ export function CommunicationCatalogEditor({sections}:Readonly<{sections:readonl
       }}>
       <div className="flex items-center justify-between gap-2"><h2 id="catalog-editor-title" className="text-lg font-semibold">{selection?"Editar seção":"Adicionar seção"}</h2><Button variant="secondary" className="min-h-11" disabled={locked} onClick={requestClose}>Fechar</Button></div>
       <p className="mt-2 text-sm text-muted-foreground">{communicationCategoryLabels[category]}</p>
-      <form action={action} onSubmit={e=>{if(locked||!dirty){e.preventDefault();return;}setSubmittedSections(sections);setSubmitted(true);}} className="mt-3 space-y-3">
+      <form action={action} onReset={e=>e.preventDefault()} onSubmit={e=>{if(locked||!dirty){e.preventDefault();return;}setSubmittedSections(sections);setSubmitted(true);}} className="mt-3 space-y-3">
         <input type="hidden" name="id" value={selection?.id??""}/><input type="hidden" name="category" value={category}/><input type="hidden" name="updated_at" value={selection?.updatedAt??""}/>
         <label className="block text-sm">Título<Input name="label" required maxLength={120} value={label} disabled={locked} onChange={e=>setLabel(e.target.value)}/></label>
         <label className="block text-sm">Posição<select name="position" value={position} disabled={locked} onChange={e=>setPosition(Number(e.target.value))} className="mt-1 min-h-11 w-full rounded-md border border-border bg-background px-3">

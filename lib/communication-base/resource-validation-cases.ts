@@ -37,6 +37,20 @@ assert.ok(dynamic);
 assert.equal(withSection(raw,extra.key,"Manual","user_reviewed",[...communicationSections,extra]),null);
 const projection=projectCommunicationBase({account_id:"a",version:1,sections_json:dynamic,created_at:"t",updated_at:"t"},[...communicationSections,extra]);
 assert.equal(projection?.sections[extra.key]?.value,"Manual");
+// A newly catalogued section stays optional in both existing and newly created Bases.
+for (const stored of [raw, {}]) {
+  const snapshot = JSON.stringify(stored);
+  const base = projectCommunicationBase({account_id:"isolated",version:1,sections_json:stored,created_at:"t",updated_at:"t"},[...communicationSections,extra]);
+  assert.ok(base);
+  assert.equal(base.sections[extra.key],undefined);
+  assert.equal(sectionEditState(extra,undefined,"",true).valid,true);
+  assert.equal(sectionEditState(extra,undefined,"",true).dirty,false);
+  const saved = withSection(stored,extra.key,"Conteúdo manual isolado","user_confirmed",[...communicationSections,extra]);
+  assert.ok(saved);
+  assert.equal(projectCommunicationBase({account_id:"isolated",version:2,sections_json:saved,created_at:"t",updated_at:"t"},[...communicationSections,extra])?.sections[extra.key]?.value,"Conteúdo manual isolado");
+  for (const key of Object.keys(stored)) assert.deepEqual(saved[key],stored[key as keyof typeof stored]);
+  assert.equal(JSON.stringify(stored),snapshot,"catalog addition must not backwrite existing content");
+}
 
 const id="00000000-0000-4000-8000-000000000001",account="00000000-0000-4000-8000-000000000002",asset="00000000-0000-4000-8000-000000000003";
 const row={id,kind:"image",name:"Logo",context:"Uso institucional",author:"",authorization:"",source:{type:"link",url:"https://example.com/logo.png"}};

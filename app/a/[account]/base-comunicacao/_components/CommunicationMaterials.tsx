@@ -50,7 +50,7 @@ function MaterialSection({account,base,definition,canEdit,resetRevision,onEditor
   },[resetRevision,state,locked]);
   useEffect(()=>{if(state.status==="saved")router.refresh();},[state,router]);
   const update=(key:keyof Draft,value:string)=>setDraft(current=>current?{...current,[key]:value}:null);
-  if(draft && canEdit) return <form ref={formRef} action={action} className="space-y-3" onSubmit={event=>{
+  if(draft && canEdit) return <form ref={formRef} action={action} onReset={event=>event.preventDefault()} className="space-y-3" onSubmit={event=>{
     if(locked || !dirty){event.preventDefault();return;}setSubmittedVersion(base.version);
   }}>
     <input type="hidden" name="account" value={account}/><input type="hidden" name="section_key" value={definition.key}/>
