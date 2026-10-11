@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.56
-• Data: 01/10/2026
+• Versão: v0.1.57
+• Data: 11/10/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -45,7 +45,7 @@
 • `MAILBOX_PASSWORD`: senha/app password da mailbox preservada para o futuro Operador Institucional Autônomo de QA da E17.9.3; sem consumidor operacional vigente após a E22.6.
 • `SUPABASE_ACCESS_TOKEN`: token usado pelo workflow de apply de migrations Supabase.
 • `SUPABASE_DB_PASSWORD`: senha do banco usada pelo workflow de apply de migrations Supabase.
-• `SUPABASE_APPLY_MIGRATIONS_ENABLED`: variável de repositório usada como gate operacional; valor reconfirmado no GitHub em 09/10/2026 após os applies E10.12: `false`.
+• `SUPABASE_APPLY_MIGRATIONS_ENABLED`: variável de repositório usada como gate operacional; valor reconfirmado no GitHub em 11/10/2026 após o apply seletivo E10.12: `false`.
 • Regra: valores reais de secrets não devem ser versionados.
 • Regra: secrets de mailbox devem existir apenas nos escopos necessários dos workflows que os consomem.
 • Regra: `SUPABASE_DB_URL_READONLY` deve autenticar com role/usuário read-only e usar preferencialmente session pooler.
@@ -68,10 +68,10 @@
 • Novas migrations seguem PR e merge autorizados conforme `AGENTS.md`; `workflow_dispatch` permanece excepcional e cada apply exige decisão operacional própria. O fluxo automático integral segue suspenso até resolução separada de E10.10 ou revisão explícita do filtro canônico.
 • Exceção de sequência E25.3 aprovada expressamente pelo humano: merge somente após checks e Code Review independente do HEAD final sem achado material pendente, com `E25_3_COMMUNICATION_RESOURCES_ENABLED` comprovadamente desligado em Preview e Production. Após o merge, está autorizado exclusivamente o apply seletivo `e25_3_only`, com SHA exato da `main`, dry-run contendo somente `20261010202505_e25_3_communication_resources.sql` e as duas migrations E10.10 excluídas. O apply seletivo foi concluído, conforme ledger hospedado reconfirmado em 11/10/2026: `20261010202505 / e25_3_communication_resources`; o fluxo integral permanece suspenso e o gate de apply está em `false`. Ativação e validação seguem a sequência de ambientes registrada em 3.5; falha material interrompe a progressão.
 • Escopo seletivo E23.5 `e23_5_only` concluído no SHA de merge `a220a39e94759c471fdb679dc11909203748bc13`, pelo run [37406266349](https://github.com/AlcinoAfonso/LP-Factory-10/actions/runs/37406266349). Inventário fechado de 63 migrations e staging de 61, com as duas E10.10 excluídas; o dry-run e o apply incluíram somente `20261005170954_e23_5_retire_unused_graphql.sql`. Ledger final: 61; gate restaurado a `false`.
-• Escopo seletivo E10.12 `e10_12_only`: migration `20261007153217_e10_12_account_context_attendance.sql` aplicada, seguida de `20261009171607_e10_12_sales_attendance.sql` pelo run [37988035081](https://github.com/AlcinoAfonso/LP-Factory-10/actions/runs/37988035081) no merge `6c4906ab8676f9e7543b45bc52d19cf1f28be777` e de `20261009204000_e10_12_restrict_attendance_commit_acl.sql` pelo run [37989176683](https://github.com/AlcinoAfonso/LP-Factory-10/actions/runs/37989176683) no merge `d6f80293583ee12717e1e2d87d55ae0dc5a2e5a6`. Inventário final de 66 migrations, staging/ledger de 64, duas E10.10 excluídas e gate restaurado a `false`; sem backfill histórico.
+• Escopo seletivo E10.12 `e10_12_only`: aplicadas `20261007153217_e10_12_account_context_attendance.sql`, `20261009171607_e10_12_sales_attendance.sql`, `20261009204000_e10_12_restrict_attendance_commit_acl.sql` e `20261011121811_e10_12_summary_capacity.sql`. O último dry-run/apply incluiu somente a migration de capacidade, pelo run [38146176193](https://github.com/AlcinoAfonso/LP-Factory-10/actions/runs/38146176193), no SHA de merge `fc36895ea153206cecb670544f4d4c4f12eef3ed`, com E25.3 previamente registrada no ledger. Inventário de 68 migrations, staging/ledger de 66, duas E10.10 excluídas e gate restaurado a `false`; sem backfill ou alteração de dados históricos.
 • Regra: não usar SQL Editor para alterações de schema no fluxo normal.
 • Regra: migration aplicada não pode ser editada, apagada, renomeada ou substituída; correções e reversões exigem nova migration.
-• Decisão operacional E10.12 aprovada em 11/10/2026, ainda não executada: suspender `E10_12_ATTENDANCE_ENABLED` nos ambientes afetados antes de promover runtime com Resumo de até 6.000 caracteres; após merge autorizado, executar somente o apply seletivo canônico `e10_12_only`, com SHA exato, dry-run restrito a `20261011121811_e10_12_summary_capacity.sql`, E25.3 já registrada no ledger como pré-requisito e as duas migrations E10.10 excluídas. Restaurar `SUPABASE_APPLY_MIGRATIONS_ENABLED` a `false`; reativação do atendimento exige provas E21 e QA do contrato compatível com o banco. Reversão exige gate de atendimento suspenso, runtime compatível e nova migration canônica baseada em `supabase/rollbacks/20261011121811_e10_12_summary_capacity.rollback.sql`; é bloqueada enquanto existir Resumo acima de 4.000 caracteres, sem truncamento ou exclusão para forçá-la.
+• Reversão operacional da capacidade do Resumo exige `E10_12_ATTENDANCE_ENABLED` suspenso, runtime compatível e nova migration canônica baseada em `supabase/rollbacks/20261011121811_e10_12_summary_capacity.rollback.sql`; é bloqueada enquanto existir Resumo acima de 4.000 caracteres, sem truncamento ou exclusão para forçá-la.
 • Com o gate fechado, um passo separado sem secrets registra `skipped`; a CLI não é instalada e `supabase link` e `supabase db push` não são executados.
 • `Setup Supabase CLI` e `Apply migrations` possuem condição explícita de gate aberto.
 • Secrets exigidos somente para apply autorizado com gate aberto: `SUPABASE_ACCESS_TOKEN` e `SUPABASE_DB_PASSWORD`, disponíveis apenas no passo `Apply migrations`.
@@ -263,9 +263,9 @@
 • Finalidade: gate server-only do atendimento inicial por IA.
 • Desligamento suspende conversas já iniciadas por IA; não as encaminha ao legado nem limpa proposta ou intenção. O novo atendimento exige conversa nova, sem conversão do histórico legado; seu QA usa conta/conversa nova de teste.
 • Plataforma e escopo aprovados: Vercel Core, Preview e Production, com configuração independente por ambiente; habilitação somente pelo literal `true`.
-• Estado: `true` em Production e em Preview para as branches `codex-app/e10-12-rpc-acl` e `codex-app/e10-12-encerramento-economia`; redeploys e QA autenticado aprovados nos dois ambientes após apply seletivo validado. O gate de apply `SUPABASE_APPLY_MIGRATIONS_ENABLED` foi restaurado em `false`.
+• Estado: `true` em Production e em Preview para as branches `codex-app/e10-12-rpc-acl`, `codex-app/e10-12-encerramento-economia` e `codex-app/e10-12-mensagem-integral`; configuração das duas branches anteriores preservada. O delta de mensagem integral passou por redeploy e QA autenticado em Preview e Production após apply seletivo validado; Production validada no deployment `dpl_JC3HDBDGjrhGnM9M5RNMj4PtjQke`, SHA `fc36895ea153206cecb670544f4d4c4f12eef3ed`. O gate de apply `SUPABASE_APPLY_MIGRATIONS_ENABLED` permanece em `false`.
 • Classificação: Config, não Secret. Alteração exige redeploy do ambiente afetado.
-• Workload `pending_setup_conversation`: `gpt-6-luna`/`xhigh`, prompt `e10_12_sales_context_v9` e contrato 4; revisões E21 ativas 9 em Preview e 3 em Production, com provas operacionais independentes e sem Web Search. Evidências de apply, ativação e QA: PRs #1050 e #1053; prova do delta semântico: PR #1056.
+• Workload `pending_setup_conversation`: `gpt-6-luna`/`xhigh`, prompt `e10_12_sales_context_v13` e contrato 5; revisões E21 ativas 13 em Preview e 4 em Production, com provas operacionais independentes e sem Web Search. Evidências do baseline: PRs #1050, #1053, #1054 e #1056; mensagem integral, memória evolutiva e capacidade do Resumo: PR #1058.
 
 • `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED`
 • Finalidade histórica: gate do provider consultivo E20.8.7, removido com o workload factual pela E22.7.

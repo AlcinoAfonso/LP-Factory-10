@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 01/10/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.76
+• Data da última atualização: 11/10/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.77
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -666,7 +666,7 @@
 
 1.19D.1 Chaves, campos e relacionamentos
 • account_id: uuid PK e FK → accounts(id), ON UPDATE NO ACTION e ON DELETE RESTRICT; resumo único por conta.
-• summary: text nullable; CHECK aplicado permite NULL ou 1–4.000 caracteres após trim. A migration incremental versionada `20261011121811_e10_12_summary_capacity.sql`, ainda pendente de apply hospedado, altera somente esse teto para 6.000 caracteres.
+• summary: text nullable; CHECK permite NULL ou 1–6.000 caracteres após trim, conforme a migration aplicada `20261011121811_e10_12_summary_capacity.sql`.
 • source_dialogue_id e source_user_id: uuid nullable; CHECK exige ambos nulos ou ambos preenchidos.
 • FK composta (source_dialogue_id, account_id, source_user_id) → account_dialogues(id, account_id, user_id) ON UPDATE CASCADE ON DELETE RESTRICT.
 • updated_at: timestamptz NOT NULL DEFAULT now(), atualizado explicitamente pela RPC; sem trigger próprio.
@@ -1266,7 +1266,7 @@
 3.1.3 Atendimento conversacional e confirmação pelo catálogo
 • `commit_account_pending_setup_turn_v3(uuid, uuid, uuid, bigint, uuid, text, text, text, text, text, jsonb, boolean, boolean, uuid) → bigint`: recebe conversa, conta, usuário, versão esperada, token, mensagem do assistente, resumo, entendimento do negócio, nome preferido, próximo estágio, proposta, confirmação, recusa do nome e primário observado, nessa ordem.
 • SECURITY DEFINER, proprietário `postgres`, search_path vazio. Revalida owner/membership/conta, bloqueia a conversa e exige versão, token e reserva válida de até seis minutos. Token já concluído permite retorno idempotente. Divergência do primário observado, inclusive mudança de ausência para presença, impede a gravação.
-• Grava atomicamente mensagem, resumo contextual com proveniência, entendimento e estado da conversa, efeito oficial quando confirmado, liberação da reserva e incremento de versão. Resumo e entendimento são argumentos distintos: no banco aplicado, ambos têm teto de 4.000 caracteres. A migration incremental versionada `20261011121811_e10_12_summary_capacity.sql`, ainda pendente de apply hospedado, eleva somente o teto do argumento resumo para 6.000 caracteres; entendimento e mensagem do assistente permanecem limitados a 4.000, sem alteração de assinatura, autorização, atomicidade ou ACLs. A confirmação utiliza a proposta e o entendimento já persistidos, preservando o texto exibido. Proposta não confirmada permanece em `niche_confirmation`, sem alterar o vínculo oficial; confirmação pode retornar a `business_understanding` ou avançar a `ready_to_complete`.
+• Grava atomicamente mensagem, resumo contextual com proveniência, entendimento e estado da conversa, efeito oficial quando confirmado, liberação da reserva e incremento de versão. Resumo e entendimento são argumentos distintos: resumo limitado a 6.000 caracteres; entendimento e mensagem do assistente permanecem limitados a 4.000. A migration aplicada `20261011121811_e10_12_summary_capacity.sql` altera somente o teto do resumo, preservando assinatura, autorização, atomicidade e ACLs. A confirmação utiliza a proposta e o entendimento já persistidos, preservando o texto exibido. Proposta não confirmada permanece em `niche_confirmation`, sem alterar o vínculo oficial; confirmação pode retornar a `business_understanding` ou avançar a `ready_to_complete`.
 • `effect_pending_setup_taxonomy_v1(uuid, jsonb, boolean, text) → uuid`: helper privado SECURITY DEFINER, com search_path vazio, restrito a proposta confirmada `existing` ou `operational_fallback`. Rejeita propriedades fora de `kind`, `taxonId` e `taxonName`; não cria, ativa, reativa ou mantém taxons ou aliases. Categoria existente exige hierarquia ativa e não substitui primário diferente; vínculo idêntico conserva sua proveniência. Fallback exige entendimento não vazio e ausência de primário ativo, registrando confirmação operacional em `account_niche_resolutions`, sem inventar classificação.
 • EXECUTE da v3 é exclusivo de `service_role`, além do proprietário `postgres`; PUBLIC, anon, authenticated, ai_readonly e readonly, quando existentes, não executam. `commit_account_pending_setup_turn_v2(uuid, uuid, uuid, bigint, uuid, text, text, text, text, jsonb, boolean, boolean, uuid)` permanece no banco com execução revogada dos consumidores, inclusive service_role. O helper de efeito também não possui EXECUTE para service_role ou papéis externos.
 • Definições aplicadas pelas migrations `20261007153217_e10_12_account_context_attendance.sql` e `20261009171607_e10_12_sales_attendance.sql`; a migration corretiva `20261009204000_e10_12_restrict_attendance_commit_acl.sql` revoga da v3 o EXECUTE herdado por ai_readonly, sem alterar default privileges globais. Não há backfill, conversão ou atualização de conversas históricas.
