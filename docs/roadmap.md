@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 11/10/2026
-• Versão: v1.5.256
+• Data: 14/10/2026
+• Versão: v1.5.257
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1102,7 +1102,7 @@
 
 10.12.1 Objetivo e status
 - Objetivo: compreender o negócio, as necessidades e o interesse do lead, oferecer orientação comercial pertinente aos serviços efetivamente disponíveis e concluir com próximo passo claro, preservando contexto e confirmando classificação existente quando houver correspondência segura.
-- Status: baseline concluído e preservado pelos PRs #1050, #1053, #1054, #1056, #1058 e #1059, incluindo interpretação da mensagem inteira e memória comercial evolutiva com teto global de 6.000 caracteres, com atendimento validado em Preview e Production. Delta aprovado em 14/10/2026 em implementação: condução comercial breve orientada a valor e avanço, com paralelização somente de leituras independentes; Code Review, provas E21 e QA hospedado desse delta ainda pendentes. O atendimento substitui pesquisa classificatória e taxonomia sob demanda; conversas legadas E10.9 permanecem preservadas.
+- Status: baseline concluído e preservado pelos PRs #1050, #1053, #1054, #1056, #1058 e #1059, incluindo interpretação da mensagem inteira e memória comercial evolutiva com teto global de 6.000 caracteres. Delta aprovado em 14/10/2026 implementado no PR #1069: condução comercial breve orientada a valor e avanço, com paralelização somente de leituras independentes. Checks, Code Review independente, provas E21 por ambiente e QA comercial em Preview aprovados; essas provas não substituem promoção e QA da aplicação em Production. O recibo operacional do próprio PR registra merge, promoção, QA pós-merge e eventual pendência material. O atendimento substitui pesquisa classificatória e taxonomia sob demanda; conversas legadas E10.9 permanecem preservadas.
 - Dependência: E10.13/PB-A concluída; catálogo e inteligência de mercado disponíveis e utilizados na ativação e no QA.
 
 10.12.2 Registros do recorte
@@ -1138,9 +1138,9 @@
 - Conteúdo: consultar categorias ativas e repertório pertinente do D21, comparar semanticamente o entendimento e fazer pergunta focal quando necessário. Apresentar categoria existente ao lead; somente confirmação e validação determinística permitem alterar o vínculo oficial. Não executar pesquisa Web classificatória nem criar, ativar, reativar ou manter taxons ou aliases. Sem correspondência segura, explicitar ausência de identificação, preservar entendimento operacional e permitir continuidade comercial sem inventar classificação.
 
 10.12.5 Repertório do nicho e apoio à venda
-- Status: baseline implementado e validado em Preview e Production; evolução comercial aprovada em 14/10/2026 em implementação.
+- Status: baseline implementado e validado em Preview e Production; evolução comercial implementada e validada em Preview pelo PR #1069, com promoção e QA pós-merge sujeitos aos gates vigentes.
 - Conteúdo: usar conteúdo de mercado efetivamente disponível do D21 para orientação pertinente, sem transformá-lo em fala obrigatória, característica declarada pelo cliente ou promessa de resultado. Apresentar serviço, condição, prazo ou disponibilidade como efetivos somente com fonte comercial vigente competente; conteúdo ilustrativo e visão estratégica não comprovam oferta. Na ausência dessa fonte, não inventar disponibilidade. D21 mantém cadastro, manutenção, pesquisa do catálogo e política global de aliases.
-- Evolução aprovada: conduzir por Entender → Impressionar → Conectar → Avançar, sem quatro turnos obrigatórios ou roteiro fixo. Após compreender minimamente atividade, oferta e necessidade central, entregar insight ou oportunidade pertinente e conexão com a proposta real da LP Factory antes de outra pergunta comercial. Perguntar informação acessória somente quando material para compreender o negócio, demonstrar valor, orientar decisão ou definir o próximo passo; preservar identidade e confirmações obrigatórias. Avançar quando os critérios de conclusão vigentes estiverem satisfeitos, sem exigir diagnóstico completo ou venda esgotada e sem encerrar prematuramente conversa útil. Persuasão permanece específica ao contexto e fiel às fontes; aprofundamento comercial do D17 e independência da Base permanecem preservados.
+- Evolução implementada: conduzir por Entender → Impressionar → Conectar → Avançar, sem quatro turnos obrigatórios ou roteiro fixo. Após compreender minimamente atividade, oferta e necessidade central, entregar insight ou oportunidade pertinente e conexão com a proposta real da LP Factory antes de outra pergunta comercial. Perguntar informação acessória somente quando material para compreender o negócio, demonstrar valor, orientar decisão ou definir o próximo passo; preservar identidade e confirmações obrigatórias. Avançar quando os critérios de conclusão vigentes estiverem satisfeitos, sem exigir diagnóstico completo ou venda esgotada e sem encerrar prematuramente conversa útil. Persuasão permanece específica ao contexto e fiel às fontes; aprofundamento comercial do D17 e independência da Base permanecem preservados.
 
 10.12.6 Conclusão e experiência
 - Status: implementado e validado em Preview e Production.
