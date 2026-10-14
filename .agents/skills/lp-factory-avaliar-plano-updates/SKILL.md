@@ -1,6 +1,6 @@
 ---
 name: lp-factory-avaliar-plano-updates
-description: Avaliar updates aplicáveis a um plano-base, fase ou recorte do LP Factory 10 por meio do custom agent gestor-updates, incluindo modernizações não previstas na v1 quando melhorarem tecnicamente o mesmo resultado funcional. Usar quando o humano ou o orquestrador pedir avaliação pelo Gestor de Updates.
+description: Avaliar updates aplicáveis a um plano-base, fase ou recorte do LP Factory 10 por meio do custom agent gestor-updates, incluindo modernizações não previstas no contrato funcional quando melhorarem tecnicamente o mesmo resultado funcional. Usar quando o humano ou o orquestrador pedir avaliação pelo Gestor de Updates.
 ---
 
 # Avaliar updates do plano-base
