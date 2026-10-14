@@ -2078,6 +2078,69 @@ Os resultados podem ser vistos no Studio ou obtidos pela Management API. A prime
 
 ---
 
+## 72 — Personal Access Tokens com escopo por projeto e permissão *(🟦 GA; adoção condicional)*
+
+2026-10-06
+Catalogado em 2026-10-14
+
+### Status no Projeto
+
+- Status: disponível; classe e permissões do token atual não comprovadas.
+- Evidência: `docs/platform-config.md` e `.github/workflows/pipeline-supabase-apply-migrations.yml` registram `SUPABASE_ACCESS_TOKEN`; nenhuma credencial foi lida.
+- Natureza de uso: segurança transversal da Management API, CLI e MCP.
+- Relação com a stack: reduz o alcance de uma credencial administrativa; não substitui a senha do banco.
+- Horizonte: Starter; capacidade disponível a todos, sem adoção autorizada.
+- Estado atual: radar condicional; complementa `github#16`.
+- Ação pendente: avaliar escopo mínimo na próxima revisão ou rotação autorizada.
+- Prioridade: condicional; tokens existentes continuam válidos.
+- Motivo da permanência: consumidor CLI real no apply de migrations.
+- Gatilho: revisão/rotação aprovada com metadados suficientes e custo validado.
+- Critério de encerramento: permissões do consumidor validadas e configuração reconciliada, ou inaplicabilidade comprovada.
+
+### Valor e limites
+
+- Permite limitar projetos, organizações, permissões e expiração.
+- `supabase link` exige permissões próprias; `db push` autenticado pela senha do banco não é limitado pelo PAT.
+- Não criar, ler, trocar nem testar credencial nesta rodada.
+
+### Fontes oficiais
+
+- [Supabase Changelog — Scoped PATs GA](https://supabase.com/changelog/scoped-personal-access-tokens-ga)
+- [Supabase Docs — Personal Access Tokens](https://supabase.com/docs/guides/platform/personal-access-tokens)
+
+---
+
+## 73 — Retirada de cifras CBC legadas no HTTPS Supabase *(🟦 Depreciação anunciada)*
+
+2026-10-12
+Catalogado em 2026-10-14
+
+### Status no Projeto
+
+- Status: aviso aplicável às APIs HTTP; impacto nos clientes do projeto não comprovado.
+- Evidência: `docs/platform-config.md` registra o endpoint Supabase; o repositório não inventaria clientes legados nem notificações do provedor.
+- Natureza de uso: compatibilidade transversal de Auth, Data API, Storage, Realtime e Edge Functions.
+- Relação com a stack: afeta HTTPS; não afeta Postgres direto, pooler ou Management API.
+- Horizonte: operação atual; nenhuma infraestrutura adicional.
+- Estado atual: retirada anunciada para 10/11/2026, no mínimo; TLS 1.3 preservado.
+- Ação pendente: revisão read-only de notificações e clientes suportados antes da janela.
+- Prioridade: temporal, antes de 10/11/2026; sem prova de falha atual.
+- Motivo da permanência: dependência das APIs HTTPS nas jornadas existentes.
+- Gatilho: prazo anunciado ou notificação de cliente afetado.
+- Critério de encerramento: avaliação documentada de impacto; eventual correção exige recorte próprio.
+
+### Valor e limites
+
+- Evita incompatibilidade com sistemas ou dispositivos desatualizados que dependam das quatro cifras TLS 1.2 CBC retiradas.
+- Não inferir exposição pelo uso de Supabase; não reduzir segurança nem alterar configurações.
+- A leitura usa fontes existentes sem contratação; qualquer correção depende de custo e autorização próprios.
+
+### Fonte oficial
+
+- [Supabase Changelog — CBC TLS ciphers deprecated](https://supabase.com/changelog/cbc-tls-ciphers-deprecated)
+
+---
+
 ## Registro da rodada — Supabase Update August 2026 — 10/08/2026
 
 ### Updates ajustados ou incorporados
