@@ -47,7 +47,6 @@
 • A stack base do MVP permanece Next.js, Supabase e TypeScript.
 • Regras verificáveis, segurança, fatos, estado e contratos permanecem determinísticos quando possível; IA preserva flexibilidade controlada onde a natureza do resultado for semântica, criativa ou persuasiva.
 • Avaliação, radar tecnológico, catalogação ou possibilidade de comercialização independente de agentes não autorizam implementação, mudança de stack, nova infraestrutura nem ampliação de escopo.
-• Em `Supervisão: Autônomo`, o handoff delega ao Executor autoridade contínua e integral para decidir e conduzir o plano até a conclusão sem nova intervenção humana rotineira, preservando a V1 aprovada e o escopo negativo; decisões de produto ou escopo fora da autoridade concedida permanecem sob decisão humana competente. A materialidade, isoladamente, não constitui bloqueio.
 
 1.5. Modelo de oferta
 • A direção do modelo de oferta é uma base simples acompanhada de serviços com IA organizados em agentes, contratáveis individualmente ou em conjunto conforme a necessidade do cliente e a validação comercial.

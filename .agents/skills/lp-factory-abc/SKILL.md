@@ -1,6 +1,6 @@
 ---
 name: lp-factory-abc
-description: Gerar ABCs delta-only para documentos canônicos do LP Factory 10 a partir de relatório, implementação, PR, handoff ou plano-base v1/v2 aprovado. Usar em pedidos de atualização, correção, sincronização, triagem documental ou reconciliação planejada de docs/roadmap.md.
+description: Gerar ABCs delta-only para documentos canônicos do LP Factory 10 a partir de relatório, implementação, PR, handoff ou contrato funcional/V2 aprovado. Usar em pedidos de atualização, correção, sincronização, triagem documental ou reconciliação planejada de docs/roadmap.md.
 ---
 
 # LP Factory ABC v2
@@ -29,7 +29,7 @@ Quando não houver relatório formal, reconstruir somente o estado final confirm
 
 ### Planejamento
 
-Usar quando o `RELATÓRIO` for um plano-base v1 ou v2 aprovado. Esse modo registra estado planejado ou definido; nunca converte previsão em implementação.
+Usar quando o `RELATÓRIO` for um contrato funcional ou V2 aprovado. Esse modo registra estado planejado ou definido; nunca converte previsão em implementação.
 
 Para reconciliar `docs/roadmap.md` após a v2, exigir:
 

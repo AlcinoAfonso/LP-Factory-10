@@ -1538,7 +1538,7 @@
 - O alcance operacional cobre Admin e Account Dashboard e o Partner Dashboard quando tiver superfície funcional. Páginas públicas e landing pages comerciais ficam fora do contrato; nenhuma superfície existente ou contrato de domínio foi alterado nesta fase.
 
 12.7.5 Enforcement do contrato de apresentação
-- Planos que criem ou alterem página/UI de dashboard consultam o Design System vigente, incorporam na V1 os padrões aplicáveis e explicitam eventual exceção funcional.
+- Planos que criem ou alterem página/UI de dashboard registram no contrato funcional apenas eventual exceção funcional que dependa de decisão humana; os padrões aplicáveis do Design System são determinados na execução.
 - Implementação, revisão e QA comprovam aderência aos padrões aplicáveis ou exceção funcional já autorizada pelo contrato do plano antes da conclusão.
 - O framework detalhado permanece somente em `docs/design-system.md`; este complemento não altera Executor, workflow Complexo, Estrategista Autônomo, Base Técnica ou páginas existentes.
 

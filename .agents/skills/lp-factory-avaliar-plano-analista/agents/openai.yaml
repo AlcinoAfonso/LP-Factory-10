@@ -1,6 +1,6 @@
 interface:
   display_name: "Avaliar plano com Analista"
-  short_description: "Avalia V1/V2 e audita consolidação pertinente"
+  short_description: "Avalia contrato funcional/V2 e audita consolidação pertinente"
   default_prompt: "Use $lp-factory-avaliar-plano-analista para avaliar independentemente a V2 do recorte informado e auditar pareceres somente quando necessário."
 
 policy:

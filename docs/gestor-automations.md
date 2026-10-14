@@ -3,7 +3,7 @@
 ## 1. Objetivo
 
 Este documento orienta decisões sobre automações, uso de IA e comportamento agentic no LP Factory 10.
-Na execução da v1 aprovada, o Gestor é acionado pelo Executor quando necessário e detalha a solução mínima suficiente para o recorte; acionamento e retorno pertencem ao Executor (§3.2 de `lp-factory-executar-plano`).
+Na execução do contrato funcional aprovado, o Gestor é acionado pelo Executor quando necessário e detalha a solução mínima suficiente para o recorte; acionamento e retorno pertencem ao Executor (§3.2 de `lp-factory-executar-plano`).
 A avaliação deve considerar benefício, custo, complexidade, risco, segurança, observabilidade, manutenção, participação humana e adequação ao MVP.
 Deve começar pela alternativa mais simples, preservar a stack e os contratos aprovados, evitar overengineering e não transformar recurso novo em autorização automática de implementação.
 
