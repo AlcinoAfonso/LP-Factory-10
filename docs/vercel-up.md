@@ -580,7 +580,7 @@ Atualizado em 2026-10-06
 
 - Status: parcialmente implementado; o baseline operacional foi atualizado para `next` e `eslint-config-next` `16.3.8` na E23.4 / PR #1029, mas não há `instant()`, `next-cache-components-optimizer` nem Cache Components habilitado.
 - Evidência: `package.json` e `package-lock.json` no SHA inicial, mais `docs/roadmap.md` 23.1 e 23.4 e PR #1029; instalação limpa, checks, Security Checks, build hospedado e Preview foram aprovados nos recortes correspondentes.
-- Mudança material: E23.4 atualizou a dependência existente para `16.3.8` e registrou sete correções de segurança; duas vulnerabilidades adicionais continuam em acompanhamento ativo em `vercel#34`. Permanecem condicionados os recursos opt-in que exigem rota-alvo e medição.
+- Mudança material: E23.4 atualizou a dependência existente para `16.3.8` e registrou sete correções de segurança; advisories upstream continuam em acompanhamento ativo em `vercel#34`. Permanecem condicionados os recursos opt-in que exigem rota-alvo e medição.
 - Natureza de uso: evolução direta da stack Next.js atual.
 - Relação com a stack: o upgrade mínimo seguro deixou de ser decisão apenas de performance; recursos opt-in de navegação continuam dependentes de caso e medição.
 - Horizonte: Lite, Pro ou indefinido para Instant Navigations e otimizações adicionais.
@@ -776,15 +776,21 @@ No plano Hobby, a Vercel passou a preservar, além do deployment de produção a
 
 2026-09-22
 Catalogado em 2026-09-29
-Atualizado em 2026-10-05
+Atualizado em 2026-10-14
 
 ### Status no Projeto
 
-- Status: patch `16.3.8` aplicado pelo PB 18B.1 / E23.4, PR [#1029](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1029), merge `bd3b8186501384945954be9fd255d9d6c5d42c8f`. `npm ci`, versões, `npm run check`, Security Checks, build/Preview, smoke autenticado e Code Reviews passaram no HEAD `bf03cc827160d04abac9843493f16843a47844b1`; Production `Ready` no merge e smoke pós-merge aprovados. A release corrige sete vulnerabilidades divulgadas em setembro. Duas vulnerabilidades adicionais — uma crítica e uma alta — seguem pendentes de coordenação upstream.
+- Status: patch `16.3.8` aplicado pelo PB 18B.1 / E23.4, PR [#1029](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1029), merge `bd3b8186501384945954be9fd255d9d6c5d42c8f`. `npm ci`, versões, `npm run check`, Security Checks, build/Preview, smoke autenticado e Code Reviews passaram no HEAD `bf03cc827160d04abac9843493f16843a47844b1`; Production `Ready` no merge e smoke pós-merge aprovados. A release corrige sete vulnerabilidades divulgadas em setembro. O anúncio de 08/10 prevê para 14/10 três correções upstream, duas críticas e uma alta, incluindo as duas adiadas de setembro; versão corrigida e advisories completos ainda não foram confirmados nesta leitura.
 - Evidência de uso: busca no código versionado não encontrou `ImageResponse`, `next/og`, `@vercel/og` ou Satori. Isso reduz a exposição observável ao caminho descrito, mas não equivale a confirmar segurança de toda a dependência ou de futuros usos.
 - Natureza de uso: segurança transversal da stack Next.js atual.
 - Relação com a stack: patch da dependência existente; não requer nova infraestrutura, plano, serviço ou recurso opt-in.
 - Horizonte: Starter, acompanhamento de segurança da dependência existente após conclusão dos gates do PB 18B.1.
+- Estado atual: baseline `16.3.8`; atualização extraordinária anunciada para 14/10/2026, sem versão-alvo validada nesta rodada.
+- Ação pendente: conferir a publicação final e a aplicabilidade dos três advisories, depois encaminhar patch mínimo pelo fluxo competente.
+- Prioridade: alta; revisão temporal imediata da stack existente.
+- Motivo da permanência: os advisories upstream não foram encerrados pela E23.4.
+- Gatilho: publicação da release e dos advisories completos.
+- Critério de encerramento: correção aplicável validada e documentos competentes reconciliados; anúncio não comprova remediação.
 
 ### Descrição
 
@@ -794,29 +800,64 @@ Em 30/09/2026, o Next.js publicou `16.3.8` para a linha 16.3, junto da `15.5.27`
 
 - Aplica à dependência existente as sete correções incluídas na release `16.3.8`.
 - Separa o patch de segurança de Instant Navigations e Cache Components, que permanecem condicionados em `vercel#29`.
-- Mantém explícitas as duas vulnerabilidades ainda pendentes de correção upstream.
+- Mantém explícito o acompanhamento upstream, agora com três correções anunciadas para outubro.
 
 ### Ações Recomendadas
 
-1. Manter ativos os advisories adicionais até publicação upstream de correções e avaliação no catálogo; não afirmar remediação total por causa do patch `16.3.8`.
+1. Conferir agora o anúncio de 14/10 e a publicação final; quando disponível, avaliar advisories e patch aplicável. O anúncio não autoriza upgrade nem comprova remediação por `16.3.8`.
 2. Não ativar Cache Components, Instant Navigations ou outras capacidades opcionais como parte do patch.
 
 ### Dependências, riscos e limite
 
 - O patch da dependência existente não exige custo incremental de plano ou serviço; o custo de execução técnica e teste precisa ser proporcional.
-- Permanecem duas vulnerabilidades aguardando coordenação upstream; o escopo do PB 18B.1 não as fecha.
+- O anúncio de outubro cobre três vulnerabilidades upstream; versões afetadas e corrigidas dependem dos advisories finais. O PB 18B.1 não autoriza nova implementação por inferência.
 - `Security Checks` valida padrões de fluxo no código e não prova, isoladamente, a remediação de advisories de dependências.
 - O item orienta o acompanhamento; a autorização de implementação está registrada no Debate 18B, seção 3.2.
 
 ### Critério de encerramento
 
-- Patch `16.3.8` mergeado e validado pelos gates do PB 18B.1, com Preview e deploy Production prontos; registro do merge e das evidências no Debate e no roadmap. Manter os dois advisories upstream identificados como pendentes até avaliação própria.
+- Patch `16.3.8` mergeado e validado pelos gates do PB 18B.1, com Preview e deploy Production prontos; registro do merge e das evidências no Debate e no roadmap. Manter os advisories upstream pendentes até avaliação própria da publicação de outubro.
 
 ### Fontes Oficiais
+
+- [Next.js — Upcoming Security Update for Upstream Vulnerabilities (08/10/2026)](https://nextjs.org/blog/upcoming-nextjs-security-update-october-2026)
 
 - [Next.js — Next.js Security Update for a Critical Upstream Issue (22/09/2026)](https://nextjs.org/blog/nextjs-security-update-september-22-2026)
 - [Next.js — Upcoming Next.js September Security Release (atualizado em 30/09/2026)](https://nextjs.org/blog/upcoming-nextjs-security-release-september-2026)
 - [Next.js — release 16.3.8](https://github.com/vercel/next.js/releases/tag/v16.3.8)
+
+
+---
+
+## 35 — Next.js 16.4 e React 19.3: desenvolvimento e cache *(🟩 Disponível; adoção condicional)*
+
+2026-10-06
+Catalogado em 2026-10-14
+
+### Status no Projeto
+
+- Status: não adotado; `package.json` mantém Next.js 16.3.8 e React/React DOM 19.2.1.
+- Evidência: manifesto no SHA inicial; sem configuração `cacheComponents` encontrada.
+- Natureza de uso: evolução transversal da stack; recursos opcionais dependem de recorte.
+- Relação com a stack: complementa `vercel#29`, sem substituir a prioridade de segurança de `vercel#34`.
+- Horizonte: Starter, se houver benefício medido e compatibilidade.
+- Estado atual: candidato; sem benchmark local.
+- Ação pendente: comparar desenvolvimento/build ou rota-alvo somente quando necessário.
+- Prioridade: condicional, posterior à revisão de segurança.
+- Motivo da permanência: menor compilação, cache em disco e bundles podem reduzir esforço.
+- Gatilho: gargalo reproduzível ou upgrade aprovado que exija avaliação.
+- Critério de encerramento: adoção validada e reconciliada, ou rejeição fundamentada.
+
+### Capacidades e limites
+
+- Next.js 16.4 traz compilação mais seletiva, runtime Turbopack compartilhado e suporte a React 19.3.
+- Cache Components é padrão em apps novos; no projeto existente exige migração própria. `ensureStatic` e `navigation()` permitem controlar renderização e prefetch.
+- Não atualizar dependências, ativar flags ou introduzir animações por novidade. Custo operacional e segurança multi-tenant exigem avaliação.
+
+### Fontes oficiais
+
+- [Next.js 16.4](https://nextjs.org/blog/next-16-4)
+- [React 19.3](https://react.dev/blog/2026/09/09/react-19-3)
 
 ---
 
