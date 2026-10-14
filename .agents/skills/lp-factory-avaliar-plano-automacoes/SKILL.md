@@ -16,7 +16,7 @@ Delegar uma avaliação read-only ao custom agent `gestor-automacoes` e devolver
    - PR: confirmar número, URL, base, head, head SHA e estado; resolver a fonte aprovada recuperável do mesmo caso no PR/Git, conforme 3.1 do Executor;
    - path local: confirmar existência e coerência entre path, conteúdo e caso.
 3. Confirme acesso à versão indicada; leia integralmente as fontes pertinentes por referência, transportando conteúdo somente se o destinatário não conseguir resolvê-la ou se o julgamento exigir recebê-lo. Fonte mutável sem recuperação durável exige preservar antes o conteúdo aprovado indispensável, conforme 3.1 do Executor. Identificar pelo contrato funcional quais entregas ou partes do plano serão automatizadas, sem depender de marcador literal ou posição fixa.
-4. Conferir se a entrada de execução conflita com exclusão explícita de automação na v1; sem pedido humano compatível, devolver `Gestor de Automações: N/A — plano sem automação aplicável`, sem iniciar o agente.
+4. Conferir se a entrada de execução conflita com exclusão explícita de automação no contrato funcional; sem pedido humano compatível, devolver `Gestor de Automações: N/A — plano sem automação aplicável`, sem iniciar o agente.
 5. Para cada recorte aplicável, registrar identificador quando existir, objetivo, escopo, limites, critérios de aceite e automações, integrações ou services mencionados.
 6. Confirmar `docs/gestor-automations.md`; deixar ao agente a seleção das demais fontes competentes.
 7. Parar e pedir somente o dado ausente se a seleção do plano ou das fases continuar ambígua.
