@@ -128,5 +128,5 @@ A atuação normal do Estrategista original termina após o handoff.
 Se o fluxo autônomo parar por questão que não consiga resolver dentro da autoridade concedida, o Estrategista original reassume o ponto de decisão.
 
 - Se for detalhe técnico resolvível dentro do contrato funcional, devolva o ponto ao fluxo técnico sem reabrir o Debate.
-- Se envolver produto, resultado funcional, escopo, mudança da V1, conflito de fontes sem precedência ou decisão humana indispensável, resolva com o humano.
+- Se envolver produto, resultado funcional, escopo, mudança dos Definidos ou do escopo negativo, conflito de fontes sem precedência ou decisão humana indispensável, resolva com o humano.
 - Depois da decisão, devolva uma instrução objetiva ao fluxo autônomo e encerre novamente a supervisão rotineira.
