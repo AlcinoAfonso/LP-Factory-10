@@ -611,8 +611,8 @@ Catalogado em 2026-10-14
 ### Valor e limites
 
 - Alertas já cobertos por GHSP/GHAS não recebem cobrança adicional pelo novo modelo; isso não prova gratuidade no plano local.
-- Novos checks opt-in de push protection e Copilot consomem AI Credits; não habilitar, contratar nem alterar políticas ou orçamento.
-- Uma verificação pode consumir créditos mesmo sem bloquear push.
+- O GitHub anunciou consumo futuro de AI Credits para os novos checks opt-in de push protection e Copilot, a introduzir nas próximas semanas. A cobrança depende da disponibilidade aplicável, adesão ao public preview e habilitação; não comprova cobrança ativa nesta data. Não habilitar, contratar nem alterar políticas ou orçamento.
+- Quando o modelo de cobrança anunciado entrar em vigor e o recurso estiver habilitado, uma verificação poderá consumir créditos mesmo sem bloquear push.
 
 ### Fonte oficial
 
