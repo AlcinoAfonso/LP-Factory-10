@@ -3147,15 +3147,16 @@
   - o pré-aviso oficial de 08/10/2026 anuncia três vulnerabilidades upstream, duas críticas e uma alta, incluindo duas adiadas de setembro; a consulta ao blog e às seis releases mais recentes não recuperou advisories completos nem faixas afetadas e corrigidas, sem comprovar ausência global de publicação final;
   - o baseline versionado mantém `next` e `eslint-config-next` em `16.3.8` e React/React DOM em `19.2.1`; existem consumidores de App Router, SSR/RSC e Server Actions, mas a aplicabilidade das vulnerabilidades anunciadas ainda não pode ser determinada;
   - a busca local não encontrou consumidores de geração de imagens OG; essa ausência não exclui vulnerabilidades ainda não descritas. Ocorrência de exploração não foi avaliada;
-  - falta confrontar os advisories oficiais completos com o baseline e os consumidores reais. Prioridade alta; versão de patch e necessidade de correção permanecem não determinadas, sem autorização de upgrade.
+  - retomada exata: E23.6.3, quando forem recuperados os advisories oficiais completos, com identificadores, impacto e faixas afetadas/corrigidas; confrontar cada aviso com o baseline `16.3.8` e os consumidores preservados em `vercel#34`. Prioridade alta; versão de patch e necessidade de correção permanecem não determinadas, sem autorização de upgrade.
 
 23.6.4 Determinar o impacto da mudança TLS Supabase nos clientes e integrações existentes
-- Status: pendente; incompatibilidade individual ou global inconclusiva na consulta de 14/10/2026.
+- Status: pendente; capacidade TLS compatível comprovada no processo Node local inspecionado em 14/10/2026, com cobertura global ainda inconclusiva.
 - Conteúdo:
   - o aviso oficial reconfirma retirada de quatro cifras CBC nas APIs HTTP padrão e custom domains a partir de 10/11/2026, no mínimo; TLS 1.3 e cifras TLS 1.2 GCM/ChaCha20 permanecem. Postgres direto, pooler e Management API estão excluídos;
   - os consumidores existentes de Auth no browser e no servidor, Data API e Storage alcançam as superfícies HTTP afetadas; versões das bibliotecas JavaScript não comprovam as capacidades TLS de browsers, sistemas operacionais ou runtimes efetivos;
-  - as consultas delimitadas de notificações em Gmail e Outlook não retornaram resultados, sem confirmar cobertura da caixa do titular nem ausência de notificação. Não foram comprovados inventário efetivo de clientes suportados, runtime Vercel ao vivo ou cifras negociadas;
-  - falta obter evidências dos clientes, sistemas operacionais, runtimes e negociações TLS, ou notificação aplicável ao projeto, antes da janela anunciada. Atualização somente de cliente comprovadamente incompatível pode ser recomendada em recorte separado, sem reduzir segurança.
+  - leitura offline do host local confirmou Windows, Node `24.15.0` e OpenSSL `3.5.5`, TLS 1.2–1.3 habilitado e quatro cifras ECDHE AES-GCM comuns com as alternativas mantidas; prova restrita a esse processo, sem conexão ao produto. Na Vercel, a configuração Core confirma Node `22.x`, e o domínio Production aponta para o baseline inspecionado; SO, biblioteca TLS e opções efetivas por Function/middleware não foram expostos pelas fontes acessíveis;
+  - o código HTTP não apresenta customização TLS, e os alvos padrão do Next.js 16 são Chrome/Edge/Firefox `111+` e Safari `16.4+`; suporte do framework não comprova browsers/SOs, biblioteca TLS ou políticas efetivamente usados pelos clientes. Notificações, logs Supabase, variáveis Vercel, arquivos do deployment, Web Analytics, painel e CLI tiveram a cobertura e as limitações registradas em `supa#73`;
+  - falta comprovar capacidade/configuração TLS efetiva das Functions/middleware em Production/Preview e das combinações de browser/SO/integração realmente usadas ou suportadas. Configuração ou documentação do ambiente efetivo pode satisfazer a prova, sem exigir exclusivamente cifra negociada; SDK e conexão bem-sucedida hoje não bastam. Atualização somente de cliente comprovadamente incompatível pode ser recomendada em recorte separado, sem reduzir segurança.
 
 
 24. E24 — Governança e compatibilidade transversal de updates
