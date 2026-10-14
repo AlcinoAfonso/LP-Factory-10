@@ -2,7 +2,7 @@
 
 ## 1. Autoridade, validade e fontes
 
-- Data da fotografia técnica: 06/10/2026; baseline anterior de 14/09/2026, reorganizado em 22/09/2026.
+- Data da fotografia técnica: 14/10/2026; baseline anterior de 14/09/2026, reorganizado em 22/09/2026.
 - Objetivo: manter uma fotografia técnica itemizada e rastreável das capacidades OpenAI relevantes ao LP Factory 10.
 - Este documento não define sozinho modelo, `reasoning.effort`, tool, arquitetura ou configuração de produção e não autoriza adoção.
 - A configuração efetiva permanece em `docs/platform-config.md`; a governança das decisões por workload permanece em `docs/gestor-automations.md` e no caso competente do roadmap.
@@ -31,6 +31,8 @@
   - `https://openai.github.io/openai-agents-js/`
   - `https://openai.com/pt-BR/index/gpt-5-6/`
 
+- Fontes complementares desta rodada: `https://developers.openai.com/api/docs/guides/decisions` e `https://developers.openai.com/api/docs/models/gpt-6.1-sol`.
+
 ### 1.1. Maturidade usada nos registros
 
 - `operacional`: capacidade usada por workload vigente e confirmada nas fontes operacionais do projeto.
@@ -51,8 +53,9 @@
 | `OAI-W05` | `landing_page_dynamic_market_research` | configuração encerrada pela E20.8 | histórica | commits e migrations da E20.7 |
 | `OAI-W06` | `communication_base_stage1_assistance` | `gpt-5.4-mini + none` operacional em Preview e Production sob E21/E25.1 | operacional | `lib/openai-workloads/registry.ts`, `docs/platform-config.md`, `docs/roadmap.md` 25.1.4 e `docs/schema.md` 1.28.4 |
 | `OAI-W07` | `communication_base_stage2_intelligence` | `gpt-6-luna + max`, Web Search até duas chamadas, operacional em Preview e Production após E21/E25.1 | operacional | `lib/openai-workloads/registry.ts`, `docs/platform-config.md`, `docs/roadmap.md` 25.1.5 e `docs/schema.md` 1.28.4 |
+| `OAI-W08` | `pending_setup_conversation` | `gpt-6-luna + xhigh`, sem Web Search; prompt `e10_12_sales_context_v13`, contrato 5; revisões operacionais 13 em Preview e 4 em Production | operacional | `lib/openai-workloads/registry.ts`, `docs/platform-config.md`, E10.12 e PR #1058 |
 
-- O registry usa fonte `repo_catalog` no baseline e revisão própria por workload, conforme a governança da E21.1.
+- O registry usa fonte `repo_catalog` revisão `v2` no baseline local; Preview e Production usam exclusivamente `supabase_operational` com revisão decimal ativa e revisão própria por workload, conforme a governança da E21.1.
 - `supabase_inspect` é uma referência de inventário para workflow operacional separado do Core, com fonte `github_actions_default_reference`; não é baseline de workload de produto nem autorização para alterar o workflow.
 - `landing_page_dynamic_market_research` não integra o registry nem a configuração efetiva corrente; seus registros anteriores permanecem somente como histórico.
 - Variáveis legadas de modelo não são fonte runtime atual; seu estado operacional permanece exclusivamente em `docs/platform-config.md`.
@@ -74,7 +77,7 @@
 | `OAI-M03` | `gpt-5.6-terra` | equilíbrio de capacidade para casos que justifiquem comparação própria | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo |
 | `OAI-M04` | `gpt-5.6-sol` | trabalho profissional complexo que justifique comparação própria | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo |
 | `OAI-M05` | `gpt-4.1-mini` | referência externa do workflow `OAI-W04`; não é baseline de produto | 1.047.576 | 32.768 | não aplicável; modelo sem etapa de reasoning | referência operacional externa | documentação específica do modelo e `lib/openai-workloads/registry.ts` |
-| `OAI-M06` | `gpt-6-luna` | configuração operacional de `OAI-W07` em Preview e Production | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | operacional em `OAI-W07` | documentação específica do modelo, registry e fontes operacionais do projeto |
+| `OAI-M06` | `gpt-6-luna` | configuração operacional de `OAI-W07` e `OAI-W08` em Preview e Production | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | operacional em `OAI-W07` e `OAI-W08` | documentação específica do modelo, registry e fontes operacionais do projeto |
 | `OAI-M07` | `gpt-6-sol` | alternativa técnica avaliada focalmente para `OAI-W07` | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo e PR #978 |
 | `OAI-M08` | `gpt-6-astra` | tarefas complexas somente mediante comparação própria | 1,05M | 128k | `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo |
 | `OAI-M09` | `gpt-6.1-sol` | trabalho profissional complexo; candidato ainda não comparado para `OAI-W07` | 1,05M | 128k | `low`, `medium`, `high`, `xhigh`, `max` | documentada; `medium` é o padrão | documentação específica do modelo e Model guidance |
@@ -93,7 +96,7 @@
 
 - Natureza: API de execução textual e multimodal usada como base programática preferencial do projeto.
 - Aplicabilidade: workloads server-side com contrato e guardrails definidos pelo recorte.
-- Maturidade: operacional em `OAI-W01`, `OAI-W02`, `OAI-W06` e `OAI-W07`.
+- Maturidade: operacional em `OAI-W01`, `OAI-W02`, `OAI-W06`, `OAI-W07` e `OAI-W08`.
 - Limite: não substitui regras de negócio determinísticas, autorização ou persistência verificável.
 - Fontes: Model guidance, catálogo Models e contratos vigentes do projeto.
 
@@ -209,6 +212,22 @@
 - Limite: observabilidade de cache não substitui avaliação de qualidade nem autoriza mudança de configuração.
 - Fonte: changelog e guia oficial Prompt cache diagnostics.
 
+### `OAI-C16` — Decisions API
+
+- Natureza: endpoint `POST /v1/decisions` para respostas tipadas `predicate`, `choice` ou `score` a partir de texto e imagens.
+- Aplicabilidade: hipótese futura de classificação ou avaliação delimitada; não substitui geração de conteúdo ou conversa dos workloads atuais.
+- Maturidade: beta público desde 06/10/2026, somente com `gpt-6-luna`; sem uso registrado no projeto.
+- Limites: exige comparação própria de qualidade, latência e probabilidades. A aceleração anunciada é referência do fornecedor, sem medição local; objetos JSON livres e tool calling continuam em Responses API. SDK mínimo documentado para JavaScript: 7.30.0.
+- Fonte: changelog e guia oficial Decisions.
+
+### `OAI-C17` — Ultrafast para GPT-6.1 Sol
+
+- Natureza: tier de processamento `service_tier: "ultrafast"` na Responses API, separado de modelo e effort.
+- Aplicabilidade: comparação focal quando latência entre tokens for problema material e GPT-6.1 Sol já for candidato adequado.
+- Maturidade: documentada desde 08/10/2026; disponível aos usuários API, sujeito a rate limits, com processamento global e residência US/EU.
+- Limite: nenhum workload vigente usa GPT-6.1 Sol ou esse tier; disponibilidade não altera configuração nem autoriza adoção. Reconfirmar elegibilidade e medir benefício no recorte competente.
+- Fontes: changelog e página oficial GPT-6.1 Sol.
+
 ## 5. Aplicabilidade e registro de decisões
 
 | Workload | Baseline | Candidatos técnicos rastreados | Estado da comparação |
@@ -218,6 +237,7 @@
 | suficiência factual do catálogo por taxon (`OAI-W03`) | histórico: `gpt-5.6-terra + low` | — | workload retirado pela E22.7; sem aplicabilidade operacional corrente |
 | Base de Comunicação, Etapa 1 | `gpt-5.4-mini + none` ativo em Preview e Production | sem candidato comparado nesta fotografia | operacional após E21/E25.1 |
 | Base de Comunicação, Etapa 2 | `gpt-6-luna + max` ativo em Preview e Production | `gpt-6-sol + medium` comparado focalmente; `OAI-M09` ainda não comparado | comparação anterior concluída para `gpt-6-sol`; novo candidato `gpt-6.1-sol` não comparado nesta fotografia; `gpt-6-luna + max` permanece operacional |
+| atendimento inicial por IA (`OAI-W08`) | `gpt-6-luna + xhigh` ativo em Preview e Production | sem novo candidato comparado nesta fotografia | configuração E10.12 validada; sem Web Search |
 
 - Preservar o baseline atual até existir evidência suficiente e autorização no recorte competente.
 - Usar o mesmo conjunto de tarefas representativas e os mesmos gates ao comparar candidatos.
