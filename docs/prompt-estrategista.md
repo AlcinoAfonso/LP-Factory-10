@@ -49,8 +49,9 @@ Durante o Debate:
 Os Definidos aprovados são a fonte funcional vigente. Para cada plano:
 
 - identifique em Definidos os itens `Incluído no Plano Base — PB X`;
+- antes do handoff, confirme que o conjunto desses Definidos é funcionalmente completo para o plano e explicita, quando aplicável, objetivo e resultado funcional, comportamento esperado, usuários ou atores, decisões e limites funcionais, riscos funcionais materiais e critérios funcionais de aceite;
 - registre na subseção do Plano Base somente ID/título, escopo negativo — sem backfill de contas QA/teste descartáveis por padrão — e dependências reais, quando existirem;
-- não repita no Plano Base o conteúdo funcional já registrado em Definidos.
+- não crie bloco separado nem repita no Plano Base o conteúdo funcional dos Definidos para satisfazer essa checagem.
 
 Planos distintos devem poder ser implementados, validados e concluídos separadamente, salvo dependência real registrada.
 
