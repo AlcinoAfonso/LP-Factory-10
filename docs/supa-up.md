@@ -2117,14 +2117,14 @@ Catalogado em 2026-10-14
 
 ### Status no Projeto
 
-- Estado atual: retirada anunciada a partir de 10/11/2026, no mínimo, nas APIs HTTP usadas pelo projeto; diagnóstico de impacto ainda aberto.
-- Conclusão delimitada: a capacidade compatível comprovada restringe-se ao processo local inspecionado; Vercel e browsers permanecem inconclusivos. A cobertura de integrações externas não está confirmada; ausência de informação não comprova ausência de integração. Nenhuma incompatibilidade ou correção necessária foi comprovada.
-- Ação pendente: coletar somente os campos observáveis Vercel indicados no PR e registrar browsers/SOs e integrações conhecidos que o titular informar, distinguindo o não confirmado; concluir o confronto sem exigir inventário completo, criar política de suporte ou aplicar correções.
+- Estado atual: retirada anunciada a partir de 10/11/2026, no mínimo, nas APIs HTTP usadas pelo projeto; levantamento delimitado PB 18D.1 concluído, com incertezas de impacto preservadas.
+- Conclusão delimitada: capacidade compatível comprovada somente no processo local inspecionado; Vercel e browsers inconclusivos. Cobertura de integrações externas não confirmada; informação ausente não comprova ausência. Nenhuma incompatibilidade ou correção necessária comprovada.
+- Ação pendente: avaliar somente nova evidência concreta dos consumidores existentes quando ocorrer o gatilho; eventual correção exige recorte próprio. Sem coleta adicional ou consulta ao suporte nesta rodada.
 - Prioridade: temporal, antes de 10/11/2026.
-- Motivo da permanência: dependência das APIs HTTPS nas jornadas existentes.
-- Gatilho: disponibilidade das confirmações focais ou notificação específica de cliente afetado.
-- Critério de encerramento: conclusão sustentada sobre os consumidores existentes; eventual correção exige recorte próprio.
-- Provas e bloqueios: [PR #1067 — campos Vercel, cobertura conhecida e encaminhamento](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6171481671).
+- Motivo da permanência: dependência das APIs HTTPS e capacidade efetiva não demonstrada para todos os consumidores conhecidos.
+- Gatilho: notificação específica de cliente afetado, identificação concreta de consumidor existente ou disponibilidade de nova prova efetiva de capacidade/configuração no fluxo autorizado.
+- Critério de encerramento do saldo: impacto delimitado sustentado por evidência suficiente e eventual correção aplicável validada em recorte próprio; concluir o levantamento não resolve este saldo.
+- Provas e limites: [PR #1067 — diagnóstico final e cobertura por ambiente](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6173085395).
 
 ### Fontes oficiais
 
