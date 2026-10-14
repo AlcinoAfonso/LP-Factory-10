@@ -3140,7 +3140,7 @@
   - V1 aprovada: Debate 18D — seção 4.1, preservada na mensagem do commit `a75c3c5a1971e7ca2c4a2ad84e94de9509039164`.
   - Avisos Next.js e acompanhamento upstream: `docs/vercel-up.md` — `vercel#34`.
   - Retirada de cifras CBC no HTTPS Supabase: `docs/supa-up.md` — `supa#73`.
-  - Evidências e limites do diagnóstico TLS: [PR #1067](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6170466774), [recibo complementar](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6170538549).
+  - Evidências e limites do diagnóstico TLS: [PR #1067](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6170466774); coleta delimitada e encaminhamento: [registro no PR](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6171481671).
 
 23.6.3 Determinar a aplicabilidade dos avisos Next.js ao projeto
 - Status: pendente; classificação inconclusiva na consulta de 14/10/2026.
@@ -3156,9 +3156,9 @@
   - o aviso oficial reconfirma retirada de quatro cifras CBC nas APIs HTTP padrão e custom domains a partir de 10/11/2026, no mínimo; TLS 1.3 e cifras TLS 1.2 GCM/ChaCha20 permanecem. Postgres direto, pooler e Management API estão excluídos;
   - os consumidores existentes de Auth no browser e no servidor, Data API e Storage alcançam as superfícies HTTP afetadas; versões das bibliotecas JavaScript não comprovam as capacidades TLS de browsers, sistemas operacionais ou runtimes efetivos;
   - Vercel: Node `22.x` está configurado no projeto Core, e o código HTTP consultado não apresenta customização TLS. Falta confirmar o runtime gerenciado efetivo das Functions/middleware em Production/Preview e a presença ou efeito de overrides TLS. A capacidade compatível comprovada no processo Node local não representa esses ambientes;
-  - browsers: as combinações de browser/SO efetivamente usadas ou suportadas permanecem desconhecidas; os alvos do framework não constituem inventário dos clientes. Falta identificar as combinações conhecidas e confrontar sua capacidade e política TLS com as alternativas mantidas;
-  - integrações HTTP externas: nenhuma foi identificada no repositório e nas fontes consultadas; não há cliente externo comprovado a validar. Eventual integração conhecida pelo titular deve ser identificada antes de avaliar seu impacto, sem presumir sua existência;
-  - as confirmações de runtime/overrides Vercel, combinações de browser/SO e eventual integração conhecida foram solicitadas ao titular e permanecem sem resposta. Evidência não sensível da configuração ou capacidade efetiva pode satisfazer a prova, sem exigir versões exatas de kernel/OpenSSL nem exclusivamente cifra negociada; SDK ou conexão bem-sucedida antes da retirada não bastam. Prioridade: antes da janela anunciada. Nenhuma incompatibilidade ou correção necessária foi comprovada; eventual atualização exige cliente comprovadamente incompatível e recorte próprio, sem reduzir segurança.
+  - browsers: o titular não dispõe de inventário técnico completo; registrar somente os browsers/SOs conhecidos que ele informar e delimitar a conclusão a essas combinações, sem generalização ou política de suporte. Até esta atualização nenhuma combinação concreta foi informada;
+  - integrações HTTP externas: nenhuma foi identificada nas fontes técnicas consultadas, mas sua existência fora delas permanece não confirmada. Distinguir integração conhecida de informação não confirmada; ausência de informação não comprova ausência nem permite marcar N/A por esse motivo. Avaliar somente consumidor existente identificado, sem clientes hipotéticos;
+  - ao titular cabe somente coletar os campos observáveis Vercel indicados no PR, sem diagnóstico técnico ou exposição de secrets. Campo indisponível ou configuração efetiva não demonstrável pelo painel conserva a limitação e segue a consulta técnica delimitada preparada no PR. Capacidade efetiva documentada pode satisfazer a prova sem versões exatas de kernel/OpenSSL ou exclusivamente cifra negociada; SDK ou conexão bem-sucedida hoje não bastam. Prioridade: antes da janela anunciada. Nenhuma compatibilidade global, incompatibilidade ou correção necessária foi comprovada; eventual atualização exige recorte próprio.
 
 
 24. E24 — Governança e compatibilidade transversal de updates

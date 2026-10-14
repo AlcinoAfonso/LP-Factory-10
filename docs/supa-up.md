@@ -2118,13 +2118,13 @@ Catalogado em 2026-10-14
 ### Status no Projeto
 
 - Estado atual: retirada anunciada a partir de 10/11/2026, no mínimo, nas APIs HTTP usadas pelo projeto; diagnóstico de impacto ainda aberto.
-- Conclusão delimitada: a capacidade compatível comprovada restringe-se ao processo local inspecionado; Vercel e browsers permanecem inconclusivos. Nenhuma integração HTTP externa adicional foi identificada, nem incompatibilidade ou correção necessária comprovada.
-- Ação pendente: obter as confirmações mínimas de runtime/configuração TLS Vercel, combinações reais de browser/SO e eventual integração conhecida, conforme o registro de bloqueios no PR; concluir o confronto sem aplicar correções.
+- Conclusão delimitada: a capacidade compatível comprovada restringe-se ao processo local inspecionado; Vercel e browsers permanecem inconclusivos. A cobertura de integrações externas não está confirmada; ausência de informação não comprova ausência de integração. Nenhuma incompatibilidade ou correção necessária foi comprovada.
+- Ação pendente: coletar somente os campos observáveis Vercel indicados no PR e registrar browsers/SOs e integrações conhecidos que o titular informar, distinguindo o não confirmado; concluir o confronto sem exigir inventário completo, criar política de suporte ou aplicar correções.
 - Prioridade: temporal, antes de 10/11/2026.
 - Motivo da permanência: dependência das APIs HTTPS nas jornadas existentes.
 - Gatilho: disponibilidade das confirmações focais ou notificação específica de cliente afetado.
 - Critério de encerramento: conclusão sustentada sobre os consumidores existentes; eventual correção exige recorte próprio.
-- Provas e bloqueios: [PR #1067 — consolidação e referências às evidências](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6171291505).
+- Provas e bloqueios: [PR #1067 — campos Vercel, cobertura conhecida e encaminhamento](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6171481671).
 
 ### Fontes oficiais
 
