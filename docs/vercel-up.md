@@ -827,6 +827,8 @@ Em 30/09/2026, o Next.js publicou `16.3.8` para a linha 16.3, junto da `15.5.27`
 - [Next.js — release 16.3.8](https://github.com/vercel/next.js/releases/tag/v16.3.8)
 
 
+---
+
 ## 35 — Next.js 16.4 e React 19.3: desenvolvimento e cache *(🟩 Disponível; adoção condicional)*
 
 2026-10-06
@@ -858,7 +860,6 @@ Catalogado em 2026-10-14
 - [React 19.3](https://react.dev/blog/2026/09/09/react-19-3)
 
 ---
-
 
 ## Registro da rodada — Vercel + Next.js Update — 10/08/2026
 
