@@ -2990,7 +2990,7 @@
 
 23. E23 — Segurança e governança transversal da plataforma
 - Objetivo: remover riscos prioritários de segurança e governança da plataforma por recortes independentes e controlados.
-- Status: E23.1 concluída no repositório e no Preview; E23.2 concluída operacionalmente sob decisão funcional conservadora, com seu merge e a correção pós-merge concluídos; E23.3 concluída documentalmente; E23.4 concluída, com gates locais/remotos, Preview e Production aprovados.
+- Status: E23.1 concluída no repositório e no Preview; E23.2 concluída operacionalmente sob decisão funcional conservadora, com seu merge e a correção pós-merge concluídos; E23.3 concluída documentalmente; E23.4 concluída, com gates locais/remotos, Preview e Production aprovados; levantamento delimitado de E23.6 concluído, com incertezas Next.js e TLS preservadas nos catálogos competentes, sem remediação.
 
 23.1 Atualização de segurança do Next.js
 
@@ -3129,6 +3129,36 @@
 23.5.3 Retirar e validar a capacidade GraphQL não utilizada
 - Status: concluída; instalação limpa, check, Security Checks, prova SQL, guardas de apply, Preview/smoke autenticado e Code Review independente aprovados no HEAD corrente; Production `Ready` e smoke Auth/REST aprovados após o apply.
 - Conteúdo: ausência de consumidor e dependência externa comprovada; retirada transacional com bloqueio atômico de dependente inesperado e retomada idempotente. Os papéis públicos recebem somente o stub desabilitado, sem dados GraphQL; owners/grants dos schemas gerenciados, metadados, policies e ACLs fora do GraphQL ficaram equivalentes. Sem nova automação, job, infraestrutura ou custo incremental.
+
+23.6 Diagnóstico de segurança Next.js e compatibilidade TLS Supabase
+
+23.6.1 Objetivo e status
+- Objetivo: entregar diagnóstico delimitado dos avisos Next.js e da mudança TLS Supabase, distinguindo evidência comprovada, incerteza e eventual correção demonstrada.
+- Status: levantamento delimitado do PB 18D.1 concluído conforme revisão humana aprovada em 14/10/2026, sob Supervisão Autônomo; aplicabilidade Next.js e cobertura TLS global permanecem inconclusivas. A conclusão do levantamento não comprova ausência de impacto nem remediação.
+- Limites: investigação somente leitura, sem alteração de dependências, código funcional, configuração, banco, credenciais, workflows, plataformas ou comportamento; sem teste exploratório, redução de segurança ou recurso pago adicional. Não permanece solicitação de coleta, inventário ou consulta ao suporte como ação desta rodada. Eventual correção exige recorte e autorização próprios.
+
+23.6.2 Registros do recorte
+- Referências:
+  - Contrato vigente: Debate 18D — seções 3.3 e 4.1, revisão aprovada preservada na mensagem do commit `514c658c0a261dc8b34ab14ad03e7438bd1abf09`; V1 anterior preservada no commit `a75c3c5a1971e7ca2c4a2ad84e94de9509039164`.
+  - Saldo Next.js, prioridade e gatilho de retomada: `docs/vercel-up.md` — `vercel#34`.
+  - Saldo TLS, prioridade e gatilhos de retomada: `docs/supa-up.md` — `supa#73`.
+  - Diagnóstico delimitado final e evidências: [PR #1067 — resultado final](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6173085395); [provas técnicas TLS](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6170466774).
+
+23.6.3 Diagnóstico delimitado dos avisos Next.js
+- Status: levantamento concluído em 14/10/2026; aplicabilidade inconclusiva.
+- Conteúdo:
+  - a conferência focal final das fontes oficiais acessíveis não recuperou advisories completos com impacto e faixas afetadas/corrigidas; isso não comprova inexistência global de publicação;
+  - o baseline `next`/`eslint-config-next` `16.3.8` e React/React DOM `19.2.1` foi confrontado com App Router, SSR/RSC e Server Actions existentes; nenhum consumidor OG foi identificado, sem excluir vulnerabilidades ainda não descritas. Exploração não foi investigada;
+  - necessidade e versão de correção não determinadas; o saldo permanece no catálogo para retomada de E23.6.3 diante dos advisories oficiais completos, sem espera indefinida nem autorização de upgrade.
+
+23.6.4 Diagnóstico delimitado da mudança TLS Supabase
+- Status: levantamento concluído em 14/10/2026; capacidade compatível comprovada somente no processo Node local inspecionado, sem conclusão global.
+- Conteúdo:
+  - alcance e prazo oficiais foram confrontados com os consumidores existentes de Auth, Data API e Storage; a retirada anunciada de quatro cifras CBC nas APIs HTTP não abrange Postgres direto, pooler ou Management API;
+  - Vercel: configuração Node `22.x` e ausência de customização TLS no código consultado comprovadas; capacidade/configuração efetiva das Functions/middleware em Production/Preview não demonstrada. A prova local não representa esses ambientes;
+  - browsers: nenhuma combinação concreta browser/SO disponível para conclusão. Integrações HTTP externas: nenhuma identificada nas fontes técnicas consultadas, com existência fora delas não confirmada;
+  - nenhuma incompatibilidade ou correção necessária foi comprovada. As incertezas e os gatilhos de retomada permanecem no catálogo, sem exigir novas provas para encerrar esta rodada e sem inferir compatibilidade global.
+
 
 24. E24 — Governança e compatibilidade transversal de updates
 - Objetivo: tornar o ciclo semanal de updates rastreável, economicamente delimitado e coerente entre fornecedores, preservando ações operacionais em recortes independentes.

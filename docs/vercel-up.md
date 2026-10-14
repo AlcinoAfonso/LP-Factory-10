@@ -785,12 +785,14 @@ Atualizado em 2026-10-14
 - Natureza de uso: segurança transversal da stack Next.js atual.
 - Relação com a stack: patch da dependência existente; não requer nova infraestrutura, plano, serviço ou recurso opt-in.
 - Horizonte: Starter, acompanhamento de segurança da dependência existente após conclusão dos gates do PB 18B.1.
-- Estado atual: baseline `16.3.8`; atualização extraordinária anunciada para 14/10/2026, sem versão-alvo validada nesta rodada.
-- Ação pendente: conferir a publicação final e a aplicabilidade dos três advisories, depois encaminhar patch mínimo pelo fluxo competente.
-- Prioridade: alta; revisão temporal imediata da stack existente.
+- Estado atual: levantamento delimitado PB 18D.1 / E23.6.3 concluído em 14/10/2026; aplicabilidade inconclusiva no baseline `16.3.8`, sem advisories completos ou versão-alvo recuperados nas fontes acessíveis. A pendência upstream permanece ativa.
+- Diagnóstico: manifesto e lockfile no baseline `54e0395462c6e736bec35c3075fd74c78b07541c` resolvem `next`/`eslint-config-next` em `16.3.8` e React/React DOM em `19.2.1`. `app/page.tsx` e `app/auth/update-password/page.tsx` comprovam App Router/SSR e Server Actions; presença da dependência e consumidores não comprovam exploração nem aplicabilidade de vulnerabilidade ainda não descrita.
+- Cobertura upstream: a única conferência focal final em 14/10/2026 recuperou o pré-aviso no blog; a API oficial de releases retornou `v16.4.0` (07/10) como última estável e a consulta de até 100 advisories publicados desde 08/10 não retornou registros. Isso delimita as fontes acessíveis, sem provar inexistência global de publicação. Faltam impacto, faixas afetadas/corrigidas e instruções finais; exploração não foi investigada. [Provas e limites no PR #1067](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6173085395).
+- Ação pendente: obter os advisories completos e as faixas afetadas/corrigidas; confrontá-los com `16.3.8` e os consumidores antes de recomendar versão de patch. Prioridade alta; nenhuma correção autorizada pelo PB 18D.1.
+- Prioridade: alta; avaliar prontamente a publicação completa quando recuperável.
 - Motivo da permanência: os advisories upstream não foram encerrados pela E23.4.
-- Gatilho: publicação da release e dos advisories completos.
-- Critério de encerramento: correção aplicável validada e documentos competentes reconciliados; anúncio não comprova remediação.
+- Gatilho: advisories oficiais completos recuperáveis, com identificadores, impacto e faixas afetadas/corrigidas; retomar o confronto individual em E23.6.3.
+- Critério de encerramento do saldo: avaliação sustentada dos advisories e, se necessária, correção aplicável validada em recorte próprio; anúncio ou conclusão do levantamento não comprovam remediação.
 
 ### Descrição
 
@@ -804,7 +806,7 @@ Em 30/09/2026, o Next.js publicou `16.3.8` para a linha 16.3, junto da `15.5.27`
 
 ### Ações Recomendadas
 
-1. Conferir agora o anúncio de 14/10 e a publicação final; quando disponível, avaliar advisories e patch aplicável. O anúncio não autoriza upgrade nem comprova remediação por `16.3.8`.
+1. Retomar quando os advisories completos forem recuperáveis e avaliar aplicabilidade e eventual patch em recorte próprio. A conferência focal final do PB 18D.1 está concluída; o anúncio não autoriza upgrade nem comprova remediação por `16.3.8`.
 2. Não ativar Cache Components, Instant Navigations ou outras capacidades opcionais como parte do patch.
 
 ### Dependências, riscos e limite

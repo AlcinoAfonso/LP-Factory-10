@@ -2117,27 +2117,20 @@ Catalogado em 2026-10-14
 
 ### Status no Projeto
 
-- Status: aviso aplicável às APIs HTTP; impacto nos clientes do projeto não comprovado.
-- Evidência: `docs/platform-config.md` registra o endpoint Supabase; o repositório não inventaria clientes legados nem notificações do provedor.
-- Natureza de uso: compatibilidade transversal de Auth, Data API, Storage, Realtime e Edge Functions.
-- Relação com a stack: afeta HTTPS; não afeta Postgres direto, pooler ou Management API.
-- Horizonte: operação atual; nenhuma infraestrutura adicional.
-- Estado atual: retirada anunciada para 10/11/2026, no mínimo; TLS 1.3 preservado.
-- Ação pendente: revisão read-only de notificações e clientes suportados antes da janela.
-- Prioridade: temporal, antes de 10/11/2026; sem prova de falha atual.
-- Motivo da permanência: dependência das APIs HTTPS nas jornadas existentes.
-- Gatilho: prazo anunciado ou notificação de cliente afetado.
-- Critério de encerramento: avaliação documentada de impacto; eventual correção exige recorte próprio.
+- Estado atual: retirada anunciada a partir de 10/11/2026, no mínimo, nas APIs HTTP usadas pelo projeto; levantamento delimitado PB 18D.1 concluído, com incertezas de impacto preservadas.
+- Conclusão delimitada: capacidade compatível comprovada somente no processo local inspecionado; Vercel e browsers inconclusivos. Cobertura de integrações externas não confirmada; informação ausente não comprova ausência. Nenhuma incompatibilidade ou correção necessária comprovada.
+- Ação pendente: reavaliar e encaminhar o saldo diante do gatilho, usando a evidência disponível sem repetir buscas esgotadas; eventual correção exige recorte próprio. Sem coleta adicional ou consulta ao suporte nesta rodada.
+- Prioridade: temporal, antes de 10/11/2026.
+- Motivo da permanência: dependência das APIs HTTPS e capacidade efetiva não demonstrada para todos os consumidores conhecidos.
+- Gatilho: prazo anunciado (a partir de 10/11/2026, no mínimo), notificação específica de cliente afetado, identificação concreta de consumidor existente ou disponibilidade de nova prova efetiva de capacidade/configuração no fluxo autorizado.
+- Critério de encerramento do saldo: impacto delimitado sustentado por evidência suficiente e eventual correção aplicável validada em recorte próprio; concluir o levantamento não resolve este saldo.
+- Provas e limites: [PR #1067 — diagnóstico final e cobertura por ambiente](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6173085395).
 
-### Valor e limites
+### Fontes oficiais
 
-- Evita incompatibilidade com sistemas ou dispositivos desatualizados que dependam das quatro cifras TLS 1.2 CBC retiradas.
-- Não inferir exposição pelo uso de Supabase; não reduzir segurança nem alterar configurações.
-- A leitura usa fontes existentes sem contratação; qualquer correção depende de custo e autorização próprios.
+- [Supabase — retirada das cifras CBC](https://supabase.com/changelog/cbc-tls-ciphers-deprecated)
+- [Supabase — TLS das APIs de projeto](https://supabase.com/docs/guides/security/tls)
 
-### Fonte oficial
-
-- [Supabase Changelog — CBC TLS ciphers deprecated](https://supabase.com/changelog/cbc-tls-ciphers-deprecated)
 
 ---
 
