@@ -2988,7 +2988,7 @@
 
 23. E23 — Segurança e governança transversal da plataforma
 - Objetivo: remover riscos prioritários de segurança e governança da plataforma por recortes independentes e controlados.
-- Status: E23.1 concluída no repositório e no Preview; E23.2 concluída operacionalmente sob decisão funcional conservadora, com seu merge e a correção pós-merge concluídos; E23.3 concluída documentalmente; E23.4 concluída, com gates locais/remotos, Preview e Production aprovados.
+- Status: E23.1 concluída no repositório e no Preview; E23.2 concluída operacionalmente sob decisão funcional conservadora, com seu merge e a correção pós-merge concluídos; E23.3 concluída documentalmente; E23.4 concluída, com gates locais/remotos, Preview e Production aprovados; E23.6 em diagnóstico, com aplicabilidade dos avisos Next.js e impacto TLS nos clientes ainda inconclusivos.
 
 23.1 Atualização de segurança do Next.js
 
@@ -3127,6 +3127,36 @@
 23.5.3 Retirar e validar a capacidade GraphQL não utilizada
 - Status: concluída; instalação limpa, check, Security Checks, prova SQL, guardas de apply, Preview/smoke autenticado e Code Review independente aprovados no HEAD corrente; Production `Ready` e smoke Auth/REST aprovados após o apply.
 - Conteúdo: ausência de consumidor e dependência externa comprovada; retirada transacional com bloqueio atômico de dependente inesperado e retomada idempotente. Os papéis públicos recebem somente o stub desabilitado, sem dados GraphQL; owners/grants dos schemas gerenciados, metadados, policies e ACLs fora do GraphQL ficaram equivalentes. Sem nova automação, job, infraestrutura ou custo incremental.
+
+23.6 Diagnóstico de segurança Next.js e compatibilidade TLS Supabase
+
+23.6.1 Objetivo e status
+- Objetivo: determinar a aplicabilidade dos avisos de segurança Next.js e o impacto da retirada de cifras CBC no HTTPS Supabase, com evidências, limites e recomendação mínima separada da autorização de aplicação.
+- Status: PB 18D.1 em diagnóstico sob Supervisão Autônomo; ambos os pontos permanecem inconclusivos por falta de evidência essencial, sem conclusão integral do plano.
+- Limites: investigação somente leitura; nenhuma alteração de dependência, código funcional, configuração, banco, credencial, workflow ou plataforma, teste exploratório, redução de segurança ou recurso pago adicional. Eventual correção exige recorte e autorização próprios.
+
+23.6.2 Registros do recorte
+- Referências:
+  - V1 aprovada: Debate 18D — seção 4.1, preservada na mensagem do commit `a75c3c5a1971e7ca2c4a2ad84e94de9509039164`.
+  - Avisos Next.js e acompanhamento upstream: `docs/vercel-up.md` — `vercel#34`.
+  - Retirada de cifras CBC no HTTPS Supabase: `docs/supa-up.md` — `supa#73`.
+
+23.6.3 Determinar a aplicabilidade dos avisos Next.js ao projeto
+- Status: pendente; classificação inconclusiva na consulta de 14/10/2026.
+- Conteúdo:
+  - o pré-aviso oficial de 08/10/2026 anuncia três vulnerabilidades upstream, duas críticas e uma alta, incluindo duas adiadas de setembro; a consulta ao blog e às seis releases mais recentes não recuperou advisories completos nem faixas afetadas e corrigidas, sem comprovar ausência global de publicação final;
+  - o baseline versionado mantém `next` e `eslint-config-next` em `16.3.8` e React/React DOM em `19.2.1`; existem consumidores de App Router, SSR/RSC e Server Actions, mas a aplicabilidade das vulnerabilidades anunciadas ainda não pode ser determinada;
+  - a busca local não encontrou consumidores de geração de imagens OG; essa ausência não exclui vulnerabilidades ainda não descritas. Ocorrência de exploração não foi avaliada;
+  - falta confrontar os advisories oficiais completos com o baseline e os consumidores reais. Prioridade alta; versão de patch e necessidade de correção permanecem não determinadas, sem autorização de upgrade.
+
+23.6.4 Determinar o impacto da mudança TLS Supabase nos clientes e integrações existentes
+- Status: pendente; incompatibilidade individual ou global inconclusiva na consulta de 14/10/2026.
+- Conteúdo:
+  - o aviso oficial reconfirma retirada de quatro cifras CBC nas APIs HTTP padrão e custom domains a partir de 10/11/2026, no mínimo; TLS 1.3 e cifras TLS 1.2 GCM/ChaCha20 permanecem. Postgres direto, pooler e Management API estão excluídos;
+  - os consumidores existentes de Auth no browser e no servidor, Data API e Storage alcançam as superfícies HTTP afetadas; versões das bibliotecas JavaScript não comprovam as capacidades TLS de browsers, sistemas operacionais ou runtimes efetivos;
+  - as consultas delimitadas de notificações em Gmail e Outlook não retornaram resultados, sem confirmar cobertura da caixa do titular nem ausência de notificação. Não foram comprovados inventário efetivo de clientes suportados, runtime Vercel ao vivo ou cifras negociadas;
+  - falta obter evidências dos clientes, sistemas operacionais, runtimes e negociações TLS, ou notificação aplicável ao projeto, antes da janela anunciada. Atualização somente de cliente comprovadamente incompatível pode ser recomendada em recorte separado, sem reduzir segurança.
+
 
 24. E24 — Governança e compatibilidade transversal de updates
 - Objetivo: tornar o ciclo semanal de updates rastreável, economicamente delimitado e coerente entre fornecedores, preservando ações operacionais em recortes independentes.

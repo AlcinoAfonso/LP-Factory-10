@@ -2118,12 +2118,14 @@ Catalogado em 2026-10-14
 ### Status no Projeto
 
 - Status: aviso aplicável às APIs HTTP; impacto nos clientes do projeto não comprovado.
-- Evidência: `docs/platform-config.md` registra o endpoint Supabase; o repositório não inventaria clientes legados nem notificações do provedor.
+- Evidência: baseline `54e0395462c6e736bec35c3075fd74c78b07541c`; `lib/supabase/client.ts` atende Auth no browser; `lib/supabase/server.ts`, `middleware.ts` e `service.ts` atendem Auth/SSR e Data API; `lib/communication-base/adapters/communicationMaterialAdapter.ts` usa Storage. Lockfile: `@supabase/supabase-js` `2.89.0` e `@supabase/ssr` `0.4.0`. Essas versões não comprovam a negociação TLS dos clientes.
+- Cobertura: Node `22.x` consta em `docs/platform-config.md`, sem reconfirmação do runtime ao vivo. Não foi encontrado inventário de SO/browser/TLS ou política de suporte nas fontes locais consultadas; chamadas de Realtime/Edge Functions não foram identificadas em `app`, `components` e `lib`. O `pipeline-supabase-inspect` usa `pg` para conexão de banco, fora deste aviso, e não foi disparado.
+- Notificações: buscas read-only em Gmail (remetente Supabase, desde 12/10, CBC/TLS/cipher) e Outlook (Supabase TLS, desde 12/10) não retornaram resultados. A caixa do owner não foi confirmada; resultado vazio não prova ausência de aviso. Consulta agregada aos logs Supabase de 13–14/10 retornou erro de backend, sem evidência de negociação.
 - Natureza de uso: compatibilidade transversal de Auth, Data API, Storage, Realtime e Edge Functions.
 - Relação com a stack: afeta HTTPS; não afeta Postgres direto, pooler ou Management API.
 - Horizonte: operação atual; nenhuma infraestrutura adicional.
-- Estado atual: retirada anunciada para 10/11/2026, no mínimo; TLS 1.3 preservado.
-- Ação pendente: revisão read-only de notificações e clientes suportados antes da janela.
+- Estado atual: diagnóstico PB 18D.1 / E23.6.4 inconclusivo quanto à incompatibilidade dos clientes. Em 14/10/2026, changelog e documentação TLS reconfirmam retirada a partir de 10/11/2026, no mínimo; TLS 1.3 e cifras TLS 1.2 GCM/ChaCha20 permanecem.
+- Ação pendente: obter inventário efetivo de clientes/SO/runtime/biblioteca TLS e evidência de negociação ou notificação por projeto antes da janela. Recomendar atualização somente de cliente comprovadamente incompatível, por recorte próprio; sem migrar clientes ou alterar suporte por inferência.
 - Prioridade: temporal, antes de 10/11/2026; sem prova de falha atual.
 - Motivo da permanência: dependência das APIs HTTPS nas jornadas existentes.
 - Gatilho: prazo anunciado ou notificação de cliente afetado.
@@ -2138,6 +2140,7 @@ Catalogado em 2026-10-14
 ### Fonte oficial
 
 - [Supabase Changelog — CBC TLS ciphers deprecated](https://supabase.com/changelog/cbc-tls-ciphers-deprecated)
+- [Supabase — TLS for project APIs](https://supabase.com/docs/guides/security/tls)
 
 ---
 

@@ -785,8 +785,10 @@ Atualizado em 2026-10-14
 - Natureza de uso: segurança transversal da stack Next.js atual.
 - Relação com a stack: patch da dependência existente; não requer nova infraestrutura, plano, serviço ou recurso opt-in.
 - Horizonte: Starter, acompanhamento de segurança da dependência existente após conclusão dos gates do PB 18B.1.
-- Estado atual: baseline `16.3.8`; atualização extraordinária anunciada para 14/10/2026, sem versão-alvo validada nesta rodada.
-- Ação pendente: conferir a publicação final e a aplicabilidade dos três advisories, depois encaminhar patch mínimo pelo fluxo competente.
+- Estado atual: diagnóstico PB 18D.1 / E23.6.3 inconclusivo em 14/10/2026; baseline `16.3.8`, sem advisory final ou versão-alvo recuperados nas fontes consultadas.
+- Diagnóstico: manifesto e lockfile no baseline `54e0395462c6e736bec35c3075fd74c78b07541c` resolvem `next`/`eslint-config-next` em `16.3.8` e React/React DOM em `19.2.1`. `app/page.tsx` e `app/auth/update-password/page.tsx` comprovam App Router/SSR e Server Actions; presença da dependência e consumidores não comprovam exploração nem aplicabilidade de vulnerabilidade ainda não descrita.
+- Cobertura upstream: consulta de 14/10/2026 ao blog e ao pré-aviso de 08/10 recuperou apenas anúncio; a API oficial de releases retornou `v16.4.0` (07/10) como última estável, e a consulta de até 100 advisories publicados desde 08/10 não retornou registros. Isso limita as fontes acessíveis, sem provar inexistência global de publicação. Faltam impacto, faixas afetadas/corrigidas e instruções finais; ocorrência de exploração não foi investigada.
+- Ação pendente: obter os advisories completos e as faixas afetadas/corrigidas; confrontá-los com `16.3.8` e os consumidores antes de recomendar versão de patch. Prioridade alta; nenhuma correção autorizada pelo PB 18D.1.
 - Prioridade: alta; revisão temporal imediata da stack existente.
 - Motivo da permanência: os advisories upstream não foram encerrados pela E23.4.
 - Gatilho: publicação da release e dos advisories completos.
