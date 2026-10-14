@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.58
-• Data: 11/10/2026
+• Versão: v0.1.59
+• Data: 14/10/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -31,6 +31,9 @@
 • Fluxo operacional: GitHub Web → PR/merge → Vercel
 • Regra: consultar o repositório real antes de assumir paths, branches, arquivos ou estrutura.
 • Regra: investigações operacionais podem usar GitHub Connector, GitHub Web ou `gh` autenticado no ambiente autorizado; não há secret nomeado `GH_TOKEN` registrado para essa finalidade neste documento.
+
+• Secret Scanning e Push protection: ativos no repositório, confirmados em 07/10/2026 pelas capturas do titular registradas no Debate 18C; nenhum setting foi alterado pela inspeção.
+• Cobertura específica: a classe do `SUPABASE_ACCESS_TOKEN` não foi comprovada por metadados não secretos; não presumir correspondência aos detectores Supabase nem bloqueio pré-push desses padrões. A configuração individual de Push protection do usuário não foi inspecionada.
 
 2.2 GitHub Actions
 • Secrets e variáveis conhecidos:
