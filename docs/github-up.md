@@ -589,6 +589,37 @@ Em 05/10/2026, o GitHub adicionou detectores para `supabase_oauth_access_token` 
 
 ---
 
+## github#17 — Detecção contextual de segredos por IA *(🧪 Capacidade e cobrança variam por superfície)*
+
+2026-10-07
+Catalogado em 2026-10-14
+
+### Status no Projeto
+
+- Status: não implementado; elegibilidade e custo local não validados.
+- Evidência: fluxo atual usa Codex e checks próprios; não há consumidor Copilot CLI/SDK nem prova de AI-detected alerts ativos.
+- Natureza de uso: segurança transversal complementar aos detectores de padrões.
+- Relação com a stack: pode identificar senhas sem formato reconhecível; não substitui `github#13`, `github#16` ou revisão independente.
+- Horizonte: radar; não recomendado para adoção agora.
+- Estado atual: alertas existentes GHSP/GHAS recebem modelo novo; AI push protection em private preview; checks Copilot anunciados.
+- Ação pendente: avaliar elegibilidade, benefício adicional e cobrança somente diante de necessidade comprovada.
+- Prioridade: condicional.
+- Motivo da permanência: cobertura potencial de credenciais não estruturadas.
+- Gatilho: lacuna real dos detectores atuais e acesso/custo comprovados.
+- Critério de encerramento: decisão fundamentada de adoção com reconciliação, ou rejeição/inaplicabilidade comprovada.
+
+### Valor e limites
+
+- Alertas já cobertos por GHSP/GHAS não recebem cobrança adicional pelo novo modelo; isso não prova gratuidade no plano local.
+- Novos checks opt-in de push protection e Copilot consomem AI Credits; não habilitar, contratar nem alterar políticas ou orçamento.
+- Uma verificação pode consumir créditos mesmo sem bloquear push.
+
+### Fonte oficial
+
+- [GitHub Changelog — Purpose-built model for leaked secret detection](https://github.blog/changelog/2026-10-07-purpose-built-model-for-leaked-secret-detection/)
+
+---
+
 ## Registro da rodada — GitHub Update — 10/08/2026
 
 ### Updates ajustados ou incorporados
