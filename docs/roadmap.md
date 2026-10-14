@@ -3140,6 +3140,7 @@
   - V1 aprovada: Debate 18D — seção 4.1, preservada na mensagem do commit `a75c3c5a1971e7ca2c4a2ad84e94de9509039164`.
   - Avisos Next.js e acompanhamento upstream: `docs/vercel-up.md` — `vercel#34`.
   - Retirada de cifras CBC no HTTPS Supabase: `docs/supa-up.md` — `supa#73`.
+  - Evidências e limites do diagnóstico TLS: [PR #1067](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6170466774), [recibo complementar](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6170538549).
 
 23.6.3 Determinar a aplicabilidade dos avisos Next.js ao projeto
 - Status: pendente; classificação inconclusiva na consulta de 14/10/2026.
@@ -3154,9 +3155,10 @@
 - Conteúdo:
   - o aviso oficial reconfirma retirada de quatro cifras CBC nas APIs HTTP padrão e custom domains a partir de 10/11/2026, no mínimo; TLS 1.3 e cifras TLS 1.2 GCM/ChaCha20 permanecem. Postgres direto, pooler e Management API estão excluídos;
   - os consumidores existentes de Auth no browser e no servidor, Data API e Storage alcançam as superfícies HTTP afetadas; versões das bibliotecas JavaScript não comprovam as capacidades TLS de browsers, sistemas operacionais ou runtimes efetivos;
-  - leitura offline do host local confirmou Windows, Node `24.15.0` e OpenSSL `3.5.5`, TLS 1.2–1.3 habilitado e quatro cifras ECDHE AES-GCM comuns com as alternativas mantidas; prova restrita a esse processo, sem conexão ao produto. Na Vercel, a configuração Core confirma Node `22.x`, e o domínio Production aponta para o baseline inspecionado; SO, biblioteca TLS e opções efetivas por Function/middleware não foram expostos pelas fontes acessíveis;
-  - o código HTTP não apresenta customização TLS, e os alvos padrão do Next.js 16 são Chrome/Edge/Firefox `111+` e Safari `16.4+`; suporte do framework não comprova browsers/SOs, biblioteca TLS ou políticas efetivamente usados pelos clientes. Notificações, logs Supabase, variáveis Vercel, arquivos do deployment, Web Analytics, painel e CLI tiveram a cobertura e as limitações registradas em `supa#73`;
-  - falta comprovar capacidade/configuração TLS efetiva das Functions/middleware em Production/Preview e das combinações de browser/SO/integração realmente usadas ou suportadas. Configuração ou documentação do ambiente efetivo pode satisfazer a prova, sem exigir exclusivamente cifra negociada; SDK e conexão bem-sucedida hoje não bastam. Atualização somente de cliente comprovadamente incompatível pode ser recomendada em recorte separado, sem reduzir segurança.
+  - Vercel: Node `22.x` está configurado no projeto Core, e o código HTTP consultado não apresenta customização TLS. Falta confirmar o runtime gerenciado efetivo das Functions/middleware em Production/Preview e a presença ou efeito de overrides TLS. A capacidade compatível comprovada no processo Node local não representa esses ambientes;
+  - browsers: as combinações de browser/SO efetivamente usadas ou suportadas permanecem desconhecidas; os alvos do framework não constituem inventário dos clientes. Falta identificar as combinações conhecidas e confrontar sua capacidade e política TLS com as alternativas mantidas;
+  - integrações HTTP externas: nenhuma foi identificada no repositório e nas fontes consultadas; não há cliente externo comprovado a validar. Eventual integração conhecida pelo titular deve ser identificada antes de avaliar seu impacto, sem presumir sua existência;
+  - as confirmações de runtime/overrides Vercel, combinações de browser/SO e eventual integração conhecida foram solicitadas ao titular e permanecem sem resposta. Evidência não sensível da configuração ou capacidade efetiva pode satisfazer a prova, sem exigir versões exatas de kernel/OpenSSL nem exclusivamente cifra negociada; SDK ou conexão bem-sucedida antes da retirada não bastam. Prioridade: antes da janela anunciada. Nenhuma incompatibilidade ou correção necessária foi comprovada; eventual atualização exige cliente comprovadamente incompatível e recorte próprio, sem reduzir segurança.
 
 
 24. E24 — Governança e compatibilidade transversal de updates

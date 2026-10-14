@@ -2117,39 +2117,20 @@ Catalogado em 2026-10-14
 
 ### Status no Projeto
 
-- Status: aviso alcança as APIs HTTP usadas; capacidade compatível comprovada no processo Node local inspecionado. Cobertura de Production/Preview e browsers permanece inconclusiva; nenhuma incompatibilidade ou correção necessária foi comprovada.
-- Evidência: baseline `54e0395462c6e736bec35c3075fd74c78b07541c`; `lib/supabase/client.ts` atende Auth no browser; `lib/supabase/server.ts`, `middleware.ts` e `service.ts` atendem Auth/SSR e Data API; `lib/communication-base/adapters/communicationMaterialAdapter.ts` usa Storage. Lockfile: `@supabase/supabase-js` `2.89.0` e `@supabase/ssr` `0.4.0`. Essas versões não comprovam a negociação TLS dos clientes.
-- Consumidores e configuração: Auth no browser usa o transporte do navegador; SSR, Server Actions, Data API e Storage usam os clientes server-side, incluindo Auth no `middleware.ts`. Busca em `app`, `components`, `lib`, `automations`, `.github`, manifesto e configurações não encontrou customização TLS dos clientes HTTP (`ciphers`, limites de protocolo, Agent/dispatcher ou flags Node/OpenSSL). O `rejectUnauthorized: false` existente pertence somente ao cliente `pg` do inspector, conexão de banco excluída deste aviso; nenhuma configuração foi alterada. Chamadas de Realtime/Edge Functions não foram identificadas nos consumidores de produto consultados.
-- Development observado, leitura offline em 14/10/2026: Windows `10.0.26200` x64, Node `24.15.0`, OpenSSL `3.5.5`; `tls.DEFAULT_MIN_VERSION=TLSv1.2`, `DEFAULT_MAX_VERSION=TLSv1.3`, três cifras TLS 1.3 padrão e quatro cifras ECDHE AES-GCM TLS 1.2 em comum com o Supabase. `NODE_OPTIONS`, `OPENSSL_CONF` e `NODE_TLS_REJECT_UNAUTHORIZED` ausentes nesse processo; não foram encontrados arquivos `.env*` na raiz da worktree e do checkout-base. Prova de capacidade compatível limitada a esse processo local, sem invocar o produto ou conectar ao Supabase; não representa Vercel nem browsers.
-- Vercel observada: projeto Core com `nodeVersion=22.x`; domínio Production resolve para deployment `dpl_Cs1c7zTNRR6F9pbUdppkbgu2HvoL`, `READY`, SHA `54e0395462c6e736bec35c3075fd74c78b07541c`. A documentação Node 22 descreve OpenSSL, TLS 1.2–1.3 padrão e cifras GCM comuns, mas permite overrides de build/runtime. Metadados e logs de build acessíveis não expõem SO, versão OpenSSL, flags nem runtime efetivo por Function/middleware. A imagem Amazon Linux 2023 documentada pela Vercel é de build; não foi usada como prova do SO em execução.
-- Browsers: sem `browserslist` customizado encontrado, a documentação do Next.js 16 declara Chrome/Edge/Firefox `111+` e Safari `16.4+` como alvos padrão. Isso é suporte do framework, sem inventário dos browsers/SOs, biblioteca TLS, políticas ou proxies dos usuários; não constitui nova política de suporte do produto nem prova da população real.
-- Alternativas de inspeção: listagem Vercel de variáveis com `decrypt=false` retornou `403` sem valores; árvore de arquivos do deployment Git retornou `404`; consulta agregada Web Analytics por SO/browser (01–14/10) retornou `404 Web Analytics not found`; painel browser redirecionou para login; CLI Vercel não instalada. Sem novo login, credencial, consumidor, instrumentação ou retry de logs Supabase. Esses limites não bloquearam o confronto offline/documental.
-- Notificações: buscas read-only em Gmail (remetente Supabase, desde 12/10, CBC/TLS/cipher) e Outlook (Supabase TLS, desde 12/10) não retornaram resultados. A caixa do owner não foi confirmada; resultado vazio não prova ausência de aviso. Consulta agregada aos logs Supabase de 13–14/10 retornou erro de backend, sem evidência de negociação.
-- Natureza de uso: compatibilidade transversal de Auth, Data API, Storage, Realtime e Edge Functions.
-- Relação com a stack: afeta HTTPS; não afeta Postgres direto, pooler ou Management API.
-- Horizonte: operação atual; nenhuma infraestrutura adicional.
-- Estado atual: PB 18D.1 / E23.6.4 com capacidade local comprovada e conclusão global inconclusiva. Em 14/10/2026, changelog e documentação TLS reconfirmam retirada a partir de 10/11/2026, no mínimo; TLS 1.3 e cifras TLS 1.2 GCM/ChaCha20 permanecem. O critério é suporte efetivamente habilitado a uma alternativa mantida, sem exigir exclusivamente a cifra negociada; SDK ou conexão bem-sucedida antes da retirada não bastam.
-- Ação pendente: para Production/Preview, obter evidência não sensível do SO/runtime/biblioteca TLS e das opções efetivas por Function/middleware, inclusive presença/efeito de overrides Node/OpenSSL; para browsers/integrações externas, identificar as combinações realmente usadas ou suportadas e confrontar sua biblioteca/política TLS com as alternativas mantidas. Configuração/capacidade efetiva documentada pode substituir medição de negociação; notificação específica é evidência complementar. Recomendar atualização somente de cliente comprovadamente incompatível, por recorte próprio; sem migrar clientes ou alterar suporte por inferência.
-- Prioridade: temporal, antes de 10/11/2026; sem prova de falha atual.
+- Estado atual: retirada anunciada a partir de 10/11/2026, no mínimo, nas APIs HTTP usadas pelo projeto; diagnóstico de impacto ainda aberto.
+- Conclusão delimitada: a capacidade compatível comprovada restringe-se ao processo local inspecionado; Vercel e browsers permanecem inconclusivos. Nenhuma integração HTTP externa adicional foi identificada, nem incompatibilidade ou correção necessária comprovada.
+- Ação pendente: obter as confirmações mínimas de runtime/configuração TLS Vercel, combinações reais de browser/SO e eventual integração conhecida, conforme o registro de bloqueios no PR; concluir o confronto sem aplicar correções.
+- Prioridade: temporal, antes de 10/11/2026.
 - Motivo da permanência: dependência das APIs HTTPS nas jornadas existentes.
-- Gatilho: prazo anunciado ou notificação de cliente afetado.
-- Critério de encerramento: avaliação documentada de impacto; eventual correção exige recorte próprio.
+- Gatilho: disponibilidade das confirmações focais ou notificação específica de cliente afetado.
+- Critério de encerramento: conclusão sustentada sobre os consumidores existentes; eventual correção exige recorte próprio.
+- Provas e bloqueios: [PR #1067 — consolidação e referências às evidências](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6171291505).
 
-### Valor e limites
+### Fontes oficiais
 
-- Evita incompatibilidade com sistemas ou dispositivos desatualizados que dependam das quatro cifras TLS 1.2 CBC retiradas.
-- Não inferir exposição pelo uso de Supabase; não reduzir segurança nem alterar configurações.
-- A leitura usa fontes existentes sem contratação; qualquer correção depende de custo e autorização próprios.
+- [Supabase — retirada das cifras CBC](https://supabase.com/changelog/cbc-tls-ciphers-deprecated)
+- [Supabase — TLS das APIs de projeto](https://supabase.com/docs/guides/security/tls)
 
-### Fonte oficial
-
-- [Supabase Changelog — CBC TLS ciphers deprecated](https://supabase.com/changelog/cbc-tls-ciphers-deprecated)
-- [Supabase — TLS for project APIs](https://supabase.com/docs/guides/security/tls)
-- [Node 22 — TLS, defaults e overrides](https://nodejs.org/docs/latest-v22.x/api/tls.html)
-- [Node 24.15.0 — TLS](https://nodejs.org/download/release/v24.15.0/docs/api/tls.html)
-- [Vercel — runtime padrão](https://vercel.com/docs/functions/configuring-functions/runtime)
-- [Vercel — imagem de build](https://vercel.com/docs/builds/build-image)
-- [Next.js 16 — requisitos e browsers](https://nextjs.org/docs/app/guides/upgrading/version-16)
 
 ---
 
