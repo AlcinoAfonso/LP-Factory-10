@@ -328,10 +328,66 @@ async function main() {
       } });
     assert.equal(result.ok, true);
   }
+
+  // Barriers prove overlap and ordering without a timing threshold.
+  current = { ...conversation }; effects.length = 0;
+  const readsEntered = new Set<string>();
+  let unblockReads!: () => void;
+  const readBarrier = new Promise<void>(resolve => { unblockReads = resolve; });
+  const read = async <T>(name: string, value: T): Promise<T> => {
+    assert.equal(current.version, 2);
+    readsEntered.add(name);
+    await readBarrier;
+    return value;
+  };
+  let providerBeforeReads = false;
+  let marketAfterReads = false;
+  const concurrentTurn = conductAttendanceTurn(input, { ...deps,
+    catalog: () => read("catalog", context.catalog),
+    primary: () => read("primary", null),
+    operational: options => {
+      assert.equal(options.throwOnReadError, true);
+      return read("operational", null);
+    },
+    market: async (_query, observedCatalog, selectedId) => {
+      assert.deepEqual([...readsEntered].sort(), ["catalog", "operational", "primary"]);
+      assert.equal(observedCatalog, context.catalog);
+      assert.equal(selectedId, null);
+      marketAfterReads = true;
+      return [];
+    },
+    request: async () => {
+      providerBeforeReads = !marketAfterReads;
+      return { ok: true, output: base, responseId: "concurrent", latencyMs: 1 };
+    },
+  });
+  await new Promise<void>(resolve => setImmediate(resolve));
+  const enteredBeforeRelease = [...readsEntered].sort();
+  const effectsBeforeRelease = [...effects];
+  unblockReads();
+  assert.deepEqual(enteredBeforeRelease, ["catalog", "operational", "primary"]);
+  assert.deepEqual(effectsBeforeRelease, ["claim"]);
+  assert.equal((await concurrentTurn).ok, true);
+  assert.equal(providerBeforeReads, false);
+  assert.equal(marketAfterReads, true);
+  assert.deepEqual(effects, ["claim", "commit"]);
+
+  current = { ...conversation }; effects.length = 0;
+  let reservedLoadCount = 0;
+  let readsAfterInvalidReservation = 0;
+  assert.equal((await conductAttendanceTurn(input, { ...deps,
+    load: async () => ++reservedLoadCount === 1 ? current : null,
+    catalog: async () => { readsAfterInvalidReservation++; return context.catalog; },
+    primary: async () => { readsAfterInvalidReservation++; return null; },
+    operational: async () => { readsAfterInvalidReservation++; return null; },
+  })).ok, false);
+  assert.equal(readsAfterInvalidReservation, 0);
+  assert.deepEqual(effects, ["claim", "release"]);
   for (const overrides of [
     { request: async () => ({ ok: false as const }) },
     { commit: async () => ({ ok: false as const, reason: "write_failed" as const }) },
     { catalog: async () => null },
+    { primary: async () => undefined },
     { market: async () => null },
     { request: async () => ({ ok: true as const, output: { ...base, businessUnderstanding: "a".repeat(4000),
       confirmedUnderstanding: "b".repeat(4000) }, responseId: "too-long", latencyMs: 1 }) },

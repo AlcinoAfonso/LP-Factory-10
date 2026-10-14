@@ -414,7 +414,51 @@ async function proveAttendance(
     }
     return { ok: true, providerRequestId, latencyMs };
   };
-  const results = await Promise.all([runConversation(true), runConversation(false), runSemanticClosure(), runWholeMessage(), runNameSemantics()]);
+
+  const runCommercialAdvance = async (): Promise<ProofAttempt> => {
+    const cases = [
+      { id: "10000000-0000-4000-8000-000000000005", name: "Corretor de imóveis",
+        understanding: "Corretor de imóveis residenciais para famílias; quer apresentar melhor imóveis, regiões e diferenciais para gerar confiança.",
+        need: "Sou corretor de imóveis residenciais e atendo famílias. Quero apresentar melhor os imóveis para gerar confiança e interesse. Como a LP Factory pode ajudar?",
+        insight: "Informações verificáveis sobre imóveis, regiões e diferenciais podem ajudar uma comunicação consistente, sem prometer venda." },
+      { id: "10000000-0000-4000-8000-000000000006", name: "Faculdades",
+        understanding: "Instituição de ensino superior; quer prospectar alunos com comunicação clara dos cursos e períodos de ingresso.",
+        need: "Oferecemos cursos de ensino superior e queremos prospectar alunos. A prioridade é atrair interessados; já informei isso. Como a LP Factory pode ajudar?",
+        insight: "Organizar informações verificadas por curso, público e período de ingresso pode tornar a comunicação mais clara, sem prometer matrículas." },
+    ];
+    let latencyMs = 0;
+    let providerRequestId: string | null = null;
+    for (const test of cases) {
+      const commercialCatalog: AttendanceContext["catalog"] = [catalog[0], {
+        id: test.id, name: test.name, level: "niche", parentId: segmentId, active: true, aliases: [],
+      }];
+      let context: AttendanceContext = { preferredName: "Ana", catalog: commercialCatalog,
+        currentPrimaryTaxonId: test.id, displayedUnderstanding: test.understanding,
+        summary: JSON.stringify({ contextualUnderstanding: test.understanding, confirmedUnderstanding: test.understanding,
+          classification: test.name, suggestions: [], pendingReason: null }),
+        marketContext: [{ taxonId: test.id, researchId: segmentId, version: 1, updatedAt: "2026-10-01",
+          items: [{ key: "opportunity", text: test.insight, notes: "Possibilidade contextual; não comprova característica nem oferta." }] }],
+        recent: [{ role: "user", content: test.need }] };
+      for (let turn = 0; turn < 2; turn++) {
+        const result = await requestAttendance({ accountId, context, configurationOverride: workload, environment, apiKey,
+          financialContext: lpFactoryOpenAiCostContext, executionOrigin: "administrative_proof" });
+        if (!result.ok) return { ok: false, code: "provider" };
+        const output = result.output;
+        if (output.action !== "ask" || output.closureReason || !output.sufficientUnderstanding
+          || (turn === 1 && !output.readyToComplete)) {
+          console.warn("pending_setup_attendance_proof_failed", { scenario: 5, check: "commercial_advance", code: "contract" });
+          return { ok: false, code: "contract" };
+        }
+        latencyMs += result.latencyMs ?? 0; providerRequestId = result.responseId;
+        context = { ...context, summary: attendanceSummary(output, test.name, null, context.summary),
+          recent: [...context.recent, { role: "assistant", content: output.reply },
+            { role: "user", content: "A oportunidade de organizar o conhecimento e apoiar a comunicação fez sentido. Não tenho outras dúvidas; quero seguir ao próximo passo comercial. Entendi que serviços e condições específicos precisam de confirmação competente." }] };
+      }
+    }
+    // Persuasion, relevance and value before accessory questions are reviewed in hosted QA, not a phrase parser.
+    return { ok: true, providerRequestId, latencyMs };
+  };
+  const results = await Promise.all([runConversation(true), runConversation(false), runSemanticClosure(), runWholeMessage(), runNameSemantics(), runCommercialAdvance()]);
   for (const [scenario, result] of results.entries()) if (!result.ok) {
     console.warn("pending_setup_attendance_proof_failed", { scenario, code: result.code });
   }

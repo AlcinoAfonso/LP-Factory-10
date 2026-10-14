@@ -53,7 +53,7 @@
 | `OAI-W05` | `landing_page_dynamic_market_research` | configuração encerrada pela E20.8 | histórica | commits e migrations da E20.7 |
 | `OAI-W06` | `communication_base_stage1_assistance` | `gpt-5.4-mini + none` operacional em Preview e Production sob E21/E25.1 | operacional | `lib/openai-workloads/registry.ts`, `docs/platform-config.md`, `docs/roadmap.md` 25.1.4 e `docs/schema.md` 1.28.4 |
 | `OAI-W07` | `communication_base_stage2_intelligence` | `gpt-6-luna + max`, Web Search até duas chamadas, operacional em Preview e Production após E21/E25.1 | operacional | `lib/openai-workloads/registry.ts`, `docs/platform-config.md`, `docs/roadmap.md` 25.1.5 e `docs/schema.md` 1.28.4 |
-| `OAI-W08` | `pending_setup_conversation` | `gpt-6-luna + xhigh`, sem Web Search; prompt `e10_12_sales_context_v13`, contrato 5; revisões operacionais 13 em Preview e 4 em Production | operacional | `lib/openai-workloads/registry.ts`, `docs/platform-config.md`, E10.12 e PR #1058 |
+| `OAI-W08` | `pending_setup_conversation` | `gpt-6-luna + xhigh`, sem Web Search; prompt `e10_12_sales_context_v14`, contrato 5; provas E21 aprovadas nas revisões 14 de Preview e 5 de Production, com configuração ativa por ambiente na fonte operacional | operacional | `lib/openai-workloads/registry.ts`, `docs/platform-config.md`, E10.12 e PR #1069 |
 
 - O registry usa fonte `repo_catalog` revisão `v2` no baseline local; Preview e Production usam exclusivamente `supabase_operational` com revisão decimal ativa e revisão própria por workload, conforme a governança da E21.1.
 - `supabase_inspect` é uma referência de inventário para workflow operacional separado do Core, com fonte `github_actions_default_reference`; não é baseline de workload de produto nem autorização para alterar o workflow.
