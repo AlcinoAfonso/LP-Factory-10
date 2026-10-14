@@ -3,7 +3,7 @@
 ## 1. Roteamento
 
 - Todo plano aprovado → `$lp-factory-executar-plano`
-- O Executor conduz e executa na sessão principal, da V1 à conclusão
+- O Executor conduz e executa na sessão principal, do contrato funcional aprovado à conclusão
 
 A supervisão operacional é Autônoma.
 
