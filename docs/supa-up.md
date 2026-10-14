@@ -2119,10 +2119,10 @@ Catalogado em 2026-10-14
 
 - Estado atual: retirada anunciada a partir de 10/11/2026, no mínimo, nas APIs HTTP usadas pelo projeto; levantamento delimitado PB 18D.1 concluído, com incertezas de impacto preservadas.
 - Conclusão delimitada: capacidade compatível comprovada somente no processo local inspecionado; Vercel e browsers inconclusivos. Cobertura de integrações externas não confirmada; informação ausente não comprova ausência. Nenhuma incompatibilidade ou correção necessária comprovada.
-- Ação pendente: avaliar somente nova evidência concreta dos consumidores existentes quando ocorrer o gatilho; eventual correção exige recorte próprio. Sem coleta adicional ou consulta ao suporte nesta rodada.
+- Ação pendente: reavaliar e encaminhar o saldo diante do gatilho, usando a evidência disponível sem repetir buscas esgotadas; eventual correção exige recorte próprio. Sem coleta adicional ou consulta ao suporte nesta rodada.
 - Prioridade: temporal, antes de 10/11/2026.
 - Motivo da permanência: dependência das APIs HTTPS e capacidade efetiva não demonstrada para todos os consumidores conhecidos.
-- Gatilho: notificação específica de cliente afetado, identificação concreta de consumidor existente ou disponibilidade de nova prova efetiva de capacidade/configuração no fluxo autorizado.
+- Gatilho: prazo anunciado (a partir de 10/11/2026, no mínimo), notificação específica de cliente afetado, identificação concreta de consumidor existente ou disponibilidade de nova prova efetiva de capacidade/configuração no fluxo autorizado.
 - Critério de encerramento do saldo: impacto delimitado sustentado por evidência suficiente e eventual correção aplicável validada em recorte próprio; concluir o levantamento não resolve este saldo.
 - Provas e limites: [PR #1067 — diagnóstico final e cobertura por ambiente](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6173085395).
 
