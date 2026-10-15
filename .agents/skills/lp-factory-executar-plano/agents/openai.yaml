@@ -1,4 +1,4 @@
 interface:
   display_name: "Executar decisões aprovadas"
-  short_description: "Conduz Definidos, Escopo negativo, V2 e execução"
-  default_prompt: "Use $lp-factory-executar-plano para conduzir e implementar diretamente os Definidos autorizados e o Escopo negativo do Debate na sessão principal, conforme o Pipeline vigente, preservando autonomia, dependências e gates independentes."
+  short_description: "Deriva a V2 e executa decisões aprovadas até a conclusão."
+  default_prompt: "Use $lp-factory-executar-plano para derivar a V2 e executar os Definidos aprovados indicados no handoff, respeitando o Escopo negativo aplicável, na sessão principal, preservando autonomia, dependências e gates vigentes."
