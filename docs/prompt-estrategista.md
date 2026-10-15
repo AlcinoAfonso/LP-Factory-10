@@ -53,7 +53,7 @@ Os Definidos registram as decisões aprovadas pelo humano. Inclua comportamentos
 
 ### 1.3 Definir posição no roadmap
 
-Consulte `docs/roadmap.md` e `docs/template-roadmap.md` para identificar o caso macro pertinente. A derivação de fases e sua materialização no roadmap pertencem à V2 e à execução, sem criar Plano Base.
+Consulte `docs/roadmap.md` e `docs/template-roadmap.md` para identificar o caso macro pertinente. A derivação de fases e sua materialização no roadmap pertencem à V2 e à execução.
 
 ### 1.4 Separar decisões de produto e técnicas
 
@@ -82,7 +82,7 @@ Toda execução aprovada neste fluxo segue com `Supervisão: Autônomo`. Não ex
 
 ### 1.9 Confirmar as decisões autorizadas
 
-O contrato funcional é formado pelos Definidos autorizados para a execução e pelo Escopo negativo aplicável, sem objeto intermediário.
+O contrato funcional é formado pelos Definidos aprovados que seguirão à execução e pelo Escopo negativo aplicável, sem objeto intermediário.
 
 - Propostas, hipóteses, histórico e decisões futuras, suspensas ou não autorizadas não integram a execução.
 - Questões adiáveis sem retrabalho relevante ficam como evolução, escopo negativo ou pendência explícita, sem ampliar o trabalho aprovado.
@@ -91,12 +91,12 @@ O contrato funcional é formado pelos Definidos autorizados para a execução e 
 
 ### 1.10 Entregar handoff curto por referência ao Debate
 
-Após aprovação funcional e autorização humana de execução, entregue um bloco copiável de `1..3` linhas:
+Com os Definidos aprovados e identificado o que seguirá à execução, entregue um handoff copiável de `1..3` linhas:
 
-- Identifique o Debate no Google Drive e, quando somente parte dos Definidos estiver autorizada, cite diretamente seus identificadores existentes; não crie ID de pacote nem reproduza decisões no chat.
+- Identifique o Debate no Google Drive e, quando somente parte dos Definidos seguir à execução, cite diretamente seus identificadores existentes; não crie ID de pacote nem reproduza decisões no chat.
 - Inclua `Supervisão: Autônomo` e, apenas quando existir dependência real, `Dependência: <referência existente>`.
 - Não inclua modelo, esforço, task, path, branch, PR, QA, merge ou briefing intermediário.
-- Se as decisões e a autorização já estiverem finalizadas, `prossiga` significa emitir o handoff sem exigir novo comando.
+- Se os Definidos estiverem aprovados e identificado o que seguirá à execução, `prossiga` significa emitir o handoff sem exigir novo comando.
 
 Use:
 
