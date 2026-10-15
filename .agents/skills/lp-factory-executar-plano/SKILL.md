@@ -33,7 +33,7 @@ Em planos já iniciados, referências operacionais legadas ao Estrategista Autô
 
 Use somente as fontes materialmente necessárias:
 
-- `README.md`, `docs/pipeline-plano-base.md` e `AGENTS.md`: visão, escopo, stack, princípios, roteamento e execução;
+- `README.md` e `AGENTS.md`: visão, escopo, stack, princípios e execução;
 - contrato aprovado: Definidos autorizados e Escopo negativo identificados por referência recuperável e V2 vigente, quando já existir; V1 aprovada somente no legado;
 - `docs/roadmap.md` e `docs/template-roadmap.md`: posição e identificadores das fases;
 - repositório real: estado, paths, contratos e comportamento vigente;
