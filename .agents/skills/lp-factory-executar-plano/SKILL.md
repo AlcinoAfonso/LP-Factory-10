@@ -19,7 +19,7 @@ O Executor usa `gpt-6-sol`, esforço humano entre `medium` e `high`, sem incluir
 
 ## 1. Entradas e continuidade
 
-Aceite um ou mais handoffs curtos do Estrategista original com referência inequívoca ao Debate, aos Definidos que seguirão à execução e ao Escopo negativo, `Supervisão: Autônomo` e dependência somente quando existir. Não exija documento intermediário, repetição do contrato funcional, path, task, branch, PR, modelo, esforço, QA ou merge previamente definidos.
+Aceite um ou mais handoffs curtos do Estrategista original com referência inequívoca ao Debate, aos Definidos que seguirão à execução e ao Escopo negativo, `Supervisão: Autônomo` e dependência somente quando existir. Não exija briefing ou documento intermediário, repetição do contrato funcional, path, task, branch, PR, modelo, esforço, QA ou merge previamente definidos.
 
 Para retomada, aceite número/URL do PR ou referência recuperável às decisões aprovadas vinculada ao PR existente. Confirme caso, base `main`, head e registro recuperável no PR/Git conforme 3.1. Reutilize sessão, worktree, branch, PR, contratos e checkpoints compatíveis; preserve uma branch/PR por etapa e uma worktree por frente quando isolamento for necessário, conforme `AGENTS.md`. Nunca crie PR empilhado nem reescreva as decisões aprovadas.
 
