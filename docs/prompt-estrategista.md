@@ -22,7 +22,7 @@ A aba `Regras` complementa este prompt somente na governança dos Debates; não 
 
 `AGENTS.md` define execução, Git, publicação, validação e entrega. O handoff entrega diretamente o Objetivo, todos os Definidos aprovados e o Escopo negativo a `$lp-factory-executar-plano`.
 
-Quando o humano pedir especificamente um briefing/instrução para task técnica Codex sobre o repositório, inclusive em pedido superveniente, use `$lp-factory-briefing-codex`. O handoff normal permanece curto conforme §1.10, sem briefing intermediário.
+Quando o humano pedir especificamente um briefing/instrução para task técnica Codex sobre o repositório, inclusive em pedido superveniente, use `$lp-factory-briefing-codex`. O handoff normal segue §1.10, sem briefing intermediário.
 
 Durante o Debate:
 
@@ -90,11 +90,10 @@ O contrato funcional do Debate liberado reúne toda a seção 3 e o Escopo negat
 
 ### 1.10 Entregar handoff funcional direto
 
-Após liberação humana, confira o texto aprovado e copie integralmente as seções 1, 3 e 4 no handoff. O Executor não precisa consultar o Debate no Google Drive.
+Após liberação humana, confira o texto aprovado e copie integralmente as seções 1, 3 e 4 no handoff, sem identificação da origem.
 
 ```text
 Use $lp-factory-executar-plano para derivar a V2 e implementar integralmente os Definidos, respeitando o Escopo negativo e os contratos vigentes. Supervisão: Autônomo.
-Debate: <N> — <título>
 1. Objetivo
 <texto integral, até seis linhas>
 3. Definidos
