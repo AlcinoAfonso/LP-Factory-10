@@ -44,13 +44,12 @@ Durante o Debate:
 
 ### 1.2 Completar os Definidos e o Escopo negativo
 
-Os Definidos descrevem, de forma enxuta, os resultados funcionais esperados de uma única entrega completa: comportamentos observáveis, condições, permissões, limites, riscos e critérios funcionais de aceite somente quando indispensáveis. Não exija campos ou status por Definido.
+Os Definidos descrevem os resultados funcionais completos e observáveis de uma entrega: comportamentos, condições, permissões, limites, riscos e critérios de aceite quando indispensáveis, sem campos ou status individuais. Num Debate liberado, todos são aprovados, autorizados e obrigatórios; resolva lacunas indispensáveis com o humano antes do handoff.
 
-- Todos os Definidos de um Debate liberado devem estar completos, aprovados e autorizados para implementação integral; resolva com o humano lacunas funcionais indispensáveis antes do handoff.
-- Entregas funcionalmente independentes pertencem a Debates próprios da mesma família, com dependências reais identificadas; fases técnicas pertencem à V2.
-- Decisão não implementada que perder validade sai dos Definidos após decisão humana, com rastreabilidade pelos registros existentes. Remoção de comportamento já implementado exige novo Definido aprovado.
-- Registre no Escopo negativo apenas restrições expressas e necessárias à entrega, sem duplicar limites dos Definidos nem incluir backfill de contas QA/teste descartáveis por padrão.
-- Não crie Plano Base, PB, vínculo de inclusão em PB, V1 ou documento intermediário para organizar os Definidos.
+- Entregas funcionalmente independentes pertencem a Debates próprios da mesma família, com dependências reais; fases técnicas ficam na V2, sem recortes funcionais internos.
+- Decisão não implementada e revogada sai dos Definidos após decisão humana, com rastreabilidade existente. Remover comportamento já implementado exige novo Definido aprovado.
+- Escopo negativo: apenas restrições expressas e pertinentes, sem duplicar limites dos Definidos nem acrescentar por padrão backfill de contas QA/teste descartáveis.
+- Não crie Plano Base/PB, V1, vínculo ou documento intermediário.
 
 ### 1.3 Definir posição no roadmap
 
@@ -83,33 +82,28 @@ Toda execução aprovada neste fluxo segue com `Supervisão: Autônomo`. Não ex
 
 ### 1.9 Confirmar as decisões autorizadas
 
-O contrato funcional de um Debate liberado reúne todos os Definidos da seção 3 e o Escopo negativo da seção 4. O Objetivo orienta a interpretação, sem ampliar o contrato.
+O contrato funcional do Debate liberado reúne toda a seção 3 e o Escopo negativo da seção 4. O Objetivo contextualiza, sem ampliar a autorização.
 
-- Propostas, hipóteses, histórico e decisões futuras, suspensas ou não autorizadas ficam fora da execução; antes da liberação, resolva seu destino conforme 1.1.
-- Não selecione apenas parte dos Definidos nem crie recortes funcionais internos. A V2 não pode ampliar o contrato funcional; novas decisões funcionais exigem aprovação humana.
+- Propostas, hipóteses, histórico e decisões futuras, suspensas ou não autorizadas não integram a execução.
+- Novas decisões funcionais exigem aprovação humana; a V2 não pode ampliar o contrato.
 - V1 já aprovada de trabalho iniciado permanece como contrato funcional legado e não é reescrita.
 
 ### 1.10 Entregar handoff funcional direto
 
-Quando o humano liberar o Debate para execução, entregue um handoff copiável com o texto integral aprovado das seções 1, 3 e 4, sem resumo intermediário nem necessidade de o Executor consultar o Debate no Google Drive.
+Após liberação humana, confira o texto aprovado e copie integralmente as seções 1, 3 e 4 no handoff. O Executor não precisa consultar o Debate no Google Drive.
 
-Use:
+```text
+Use $lp-factory-executar-plano para derivar a V2 e implementar integralmente os Definidos, respeitando o Escopo negativo e os contratos vigentes. Supervisão: Autônomo.
+Debate: <N> — <título>
+1. Objetivo
+<texto integral, até seis linhas>
+3. Definidos
+<todos os Definidos, texto integral>
+4. Escopo negativo
+<restrições expressas ou "Sem restrições adicionais">
+```
 
-`Use $lp-factory-executar-plano para derivar a V2 e implementar integralmente os Definidos aprovados abaixo, respeitando o Escopo negativo e os contratos vigentes. Supervisão: Autônomo.`
-
-`Debate: <N> — <título>`
-`1. Objetivo`
-`<texto integral aprovado, até seis linhas>`
-`3. Definidos`
-`<todos os Definidos aprovados, texto integral>`
-`4. Escopo negativo`
-`<restrições expressas; quando inexistentes, Sem restrições adicionais>`
-
-- Confira a fidelidade do conteúdo ao aprovado antes do envio. O Objetivo não acrescenta obrigações aos Definidos; conflito funcional requer decisão humana.
-- Inclua `Dependência: <referência existente>` apenas quando houver dependência real. Não inclua modelo, esforço, task, path, branch, PR, QA, merge ou briefing intermediário.
-- Com o Debate liberado, `prossiga` significa emitir o handoff sem exigir novo comando.
-
-O Estrategista não cria branch, PR, issue, V2 ou implementação durante esse handoff.
+Inclua `Dependência: <referência existente>` somente quando necessária. Não acrescente modelo, esforço, task, path, branch, PR, QA, merge ou briefing intermediário; `prossiga` em Debate liberado emite o handoff. O Estrategista não cria branch, PR, issue, V2 ou implementação.
 
 ## 3. Supervisão Autônoma
 
@@ -121,5 +115,4 @@ Se o fluxo autônomo parar por questão que não consiga resolver dentro da auto
 
 - Se for detalhe técnico resolvível dentro do contrato funcional, devolva o ponto ao fluxo técnico sem reabrir o Debate.
 - Se envolver produto, resultado funcional, escopo, mudança dos Definidos ou do escopo negativo, conflito de fontes sem precedência ou decisão humana indispensável, resolva com o humano.
-- Se o Executor relatar algum Definido não entregue, confira a pendência: devolva a correção técnica ao Executor ou decida com o humano sobre ajuste, revogação ou transferência da decisão para outro Debate. Não trate a entrega parcial como concluída.
 - Depois da decisão, devolva uma instrução objetiva ao fluxo autônomo e encerre novamente a supervisão rotineira.
