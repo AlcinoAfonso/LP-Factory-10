@@ -1,5 +1,5 @@
 22/07/2026 — Workflow de Atualização dos Catálogos de Updates
-Atualizado em 05/10/2026
+Atualizado em 15/10/2026
 
 Fontes: chat, repositório e documentos indicados nos itens 2 e 3
 
@@ -83,7 +83,7 @@ Fontes secundárias podem apoiar, mas não substituir a fonte oficial.
    - avaliar função, natureza de uso, relação com a stack, caso de uso, valor, maturidade das fontes, custo, complexidade, segurança, manutenção, dependências, riscos e horizonte;
    - registrar horizonte como Starter, Lite, Pro, Ultra ou indefinido quando houver evidência suficiente, sem transformar a classificação em decisão final de plano;
    - classificar a forma de aplicação como dependente de recorte ou transversal ao projeto:
-     - dependente de recorte quando a utilidade e a aplicação precisarem ser decididas em cada plano-base, fase ou recorte;
+     - dependente de recorte quando a utilidade e a aplicação precisarem ser decididas em cada execução, fase ou recorte;
      - transversal quando o recurso afetar stack, segurança, operação ou governança do projeto como um todo e exigir avaliação técnica ou operacional própria antes de eventual implementação;
    - exigir hipótese de superioridade e gatilho objetivo para recurso sobreposto ou substituto;
    - classificar itens existentes como manter, ajustar ou arquivar/absorver, e recursos pesquisados como adicionar, não adicionar ou não validado;
@@ -187,8 +187,8 @@ Os itens 1 a 10 compõem o relatório de cada catálogo. O item 11 é produzido 
    - concluir explicitamente se existe implementação, configuração ou revisão operacional transversal recomendada para o momento atual, separando ação imediata ou temporal de capacidade ainda condicional;
 - quando existir ação transversal recomendada agora, criar ou atualizar o Debate competente em `LP Factory/Debates` sem nova aprovação humana rotineira, sob a autorização permanente deste workflow limitada à abertura e ao registro de propostas para discussão;
 - antes de escrever, consultar o `docs/prompt-estrategista.md` vigente e diretamente as abas `Regras` e `Debates` do Controle de Debates oficial; aplicar somente regras com `Status=Vigente`, ler os Debates pertinentes e confirmar pasta, objetivo, IDs e vínculo com a rodada;
-- manter os encaminhamentos na família temática 18. Se a pendência já estiver coberta por Debate existente, preservar seu número e link; atualizar somente propostas ou contexto factual pertinente, sem alterar decisões aprovadas, contrato funcional, planos-base, objetivo ou status de implementação. Não duplicar pendência em novo Debate nem reabrir Debate concluído por rotina;
-- para novo recorte, conferir números usados na planilha e no Drive, incluindo Debates concluídos, e usar o próximo sufixo de letras livre da família 18, sem reutilizar identificadores nem criar outro número-base. Registrar a origem no Debate 18 e os vínculos pertinentes com seus recortes; se as fontes divergirem ou a decisão exigir mudar objetivo ou plano aprovado, registrar o bloqueio e pedir exatamente a decisão necessária;
+- manter os encaminhamentos na família temática 18. Se a pendência já estiver coberta por Debate existente, preservar seu número e link; atualizar somente propostas ou contexto factual pertinente, sem alterar decisões aprovadas, contrato funcional, artefatos históricos, objetivo ou status de implementação. Não duplicar pendência em novo Debate nem reabrir Debate concluído por rotina;
+- para novo recorte, conferir números usados na planilha e no Drive, incluindo Debates concluídos, e usar o próximo sufixo de letras livre da família 18, sem reutilizar identificadores nem criar outro número-base. Registrar a origem no Debate 18 e os vínculos pertinentes com seus recortes; se as fontes divergirem ou a decisão exigir mudar objetivo ou contrato funcional aprovado, registrar o bloqueio e pedir exatamente a decisão necessária;
 - estruturar o novo Debate conforme o Prompt Estrategista e as regras vigentes, com objetivo, propostas, prioridades, dependências, ordem sugerida, critérios de conclusão, riscos, limites e itens fora do escopo. Manter as recomendações como propostas, sem declarar decisões ou contrato funcional aprovado nem autorizar implementação; registrar o novo Debate no Controle com status `Aguardando` e verificar documento, pasta, linha e link após a escrita;
 - no capítulo 2, informar o número, título e link de cada Debate criado, atualizado ou já responsável, os IDs encaminhados e o próximo ponto de decisão humana. Em retomada, localizar o vínculo de rodada/IDs no Drive e no Controle antes de escrever para evitar duplicação;
 - quando nenhuma ação transversal for recomendada para o momento atual, não criar Debate por rotina; apresentar as pendências condicionais e seus vínculos existentes, ou declarar ausência de pendências;
@@ -199,7 +199,7 @@ Os itens 1 a 10 compõem o relatório de cada catálogo. O item 11 é produzido 
 
 - Não alterar código, roadmap, Base Técnica, schema, configuração ou outro catálogo.
 - Não transformar catalogação em implementação, mudança de stack, nova infraestrutura ou novo escopo do MVP.
-- Não decidir aplicação final em plano-base, fase ou recorte; o Gestor de Updates recomenda horizonte e o Estrategista consolida no fluxo competente.
+- Não decidir aplicação final em execução, fase ou recorte; o Gestor de Updates recomenda horizonte e o Estrategista consolida no fluxo competente.
 - Não criar catálogo, seção permanente ou controle paralelo de pendências transversais; os catálogos permanecem como fonte.
 - Criar ou atualizar Debates da família 18 somente nos limites da autorização permanente do item 5.11 e conforme o Prompt Estrategista e as regras vigentes; os catálogos permanecem como fonte técnica e a decisão de implementação permanece humana.
 - Não adicionar item sem fonte oficial, valor concreto e compatibilidade com o `README.md`.
