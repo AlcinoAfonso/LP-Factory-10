@@ -1,4 +1,4 @@
 interface:
   display_name: "Executar decisões aprovadas"
   short_description: "Deriva a V2 e executa decisões aprovadas até a conclusão."
-  default_prompt: "Use $lp-factory-executar-plano para derivar a V2 e implementar integralmente os Definidos aprovados recebidos no handoff, com Objetivo como contexto e Escopo negativo como limite; em retomadas, use o contrato aprovado recuperável, preservando autonomia, dependências e gates vigentes na sessão principal."
+  default_prompt: "Use $lp-factory-executar-plano para derivar a V2 e executar integralmente os Definidos aprovados do handoff, ou o contrato recuperável em retomadas, respeitando o Escopo negativo e os gates vigentes."
