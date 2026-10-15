@@ -82,7 +82,7 @@ Toda execução aprovada neste fluxo segue com `Supervisão: Autônomo`. Não ex
 
 ### 1.9 Confirmar as decisões autorizadas
 
-O contrato funcional do Debate liberado reúne toda a seção 3 e o Escopo negativo da seção 4. O Objetivo contextualiza, sem ampliar a autorização.
+Para Debates criados após a ativação deste modelo ou expressamente convertidos a ele, o contrato liberado reúne toda a seção 3 e o Escopo negativo da seção 4, encaminhados integralmente conforme §1.10. Nos anteriores não convertidos, o handoff preserva somente os Definidos efetivamente autorizados à execução e o Escopo negativo aplicável. O Objetivo contextualiza, sem ampliar a autorização.
 
 - Propostas, hipóteses, histórico e decisões futuras, suspensas ou não autorizadas não integram a execução.
 - Novas decisões funcionais exigem aprovação humana; a V2 não pode ampliar o contrato.
