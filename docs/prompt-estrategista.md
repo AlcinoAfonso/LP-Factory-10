@@ -49,7 +49,7 @@ Os Definidos descrevem os resultados funcionais completos e observáveis de uma 
 - Entregas funcionalmente independentes pertencem a Debates próprios da mesma família, com dependências reais; fases técnicas ficam na V2, sem recortes funcionais internos.
 - Decisão não implementada e revogada sai dos Definidos após decisão humana, com rastreabilidade existente. Remover comportamento já implementado exige novo Definido aprovado.
 - Escopo negativo: apenas restrições expressas e pertinentes, sem duplicar limites dos Definidos nem acrescentar por padrão backfill de contas QA/teste descartáveis.
-- Não crie Plano Base/PB, V1, vínculo ou documento intermediário.
+- Não crie Plano Base/PB, V1, vínculo de inclusão em PB ou documento intermediário.
 
 ### 1.3 Definir posição no roadmap
 
