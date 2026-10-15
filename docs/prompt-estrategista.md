@@ -94,11 +94,11 @@ Após liberação humana, confira o texto aprovado e copie integralmente as seç
 
 ```text
 Use $lp-factory-executar-plano para derivar a V2 e implementar integralmente os Definidos, respeitando o Escopo negativo e os contratos vigentes. Supervisão: Autônomo.
-1. Objetivo
+Objetivo
 <texto integral, até seis linhas>
-3. Definidos
+Definidos
 <todos os Definidos, texto integral>
-4. Escopo negativo
+Escopo negativo
 <restrições expressas ou "Sem restrições adicionais">
 ```
 
