@@ -1,4 +1,4 @@
-# docs/prompt-abc.md vs21
+# docs/prompt-abc.md vs22
 
 PROMPT ABC
 
@@ -58,7 +58,7 @@ Um assunto deve ter uma única residência. Não duplicar fonte canônica.
 ### 6.1 Roadmap
 
 * Consultar `docs/template-roadmap.md`.
-* Respeitar a estrutura do template e as subseções indicadas no relatório; registros materiais de Banco, Repositório, Updates e Referências pertencem exclusivamente a `X.Y.2`, reconciliados com o estado e o diff do recorte, sem duplicação em `X.Y.3+`.
+* Respeitar o template com texto mínimo: estado vigente, funcionalidades, limites e pendências, sem histórico nem relato de implementação, correções ou QA. Em `X.Y.2`, somente registros materiais exigidos, sem duplicação em `X.Y.3+`.
 * Em `ETAPA: consolidação final`, considerar o estado final e o diff acumulado do recorte.
 * Se `X.Y.2` estiver ocupado por conteúdo legado de outra natureza, usar `SUBSTITUIR_SECAO` no mesmo fluxo quando a estrutura final e seus impactos estiverem integralmente determinados dentro do recorte autorizado; parar somente diante de ambiguidade material, referência externa não reconciliada ou ampliação de escopo.
 * Para o recorte afetado, a conformidade com o template prevalece sobre o menor delta textual; não normalizar recortes não afetados.
