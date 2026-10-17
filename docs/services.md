@@ -15,7 +15,7 @@
 
 1.1 Estado atual da camada
 - Nenhum service implantável ou MCP operacional. Projeto `lpf-10-services` removido, sem configuração externa remanescente; estado em `docs/platform-config.md` — 3.2.
-- `automations/supabase-inspect/` é automação GitHub read-only, preservada em `docs/automations.md` — 3.1.
+- `automations/supabase-inspect/` é automação GitHub; consultas SQL read-only e captura financeira condicionada seguem `docs/automations.md` — 3.1.
 
 2. Regras de fronteira desta camada
 - Catalogar somente services com identidade própria e referências técnicas locais; demais assuntos seguem as residências de 0.3.
