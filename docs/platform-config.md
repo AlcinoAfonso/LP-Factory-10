@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.60
-• Data: 14/10/2026
+• Versão: v0.1.61
+• Data: 17/10/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -266,9 +266,9 @@
 • Finalidade: gate server-only do atendimento inicial por IA.
 • Desligamento suspende conversas já iniciadas por IA; não as encaminha ao legado nem limpa proposta ou intenção. O novo atendimento exige conversa nova, sem conversão do histórico legado; seu QA usa conta/conversa nova de teste.
 • Plataforma e escopo aprovados: Vercel Core, Preview e Production, com configuração independente por ambiente; habilitação somente pelo literal `true`.
-• Estado: `true` em Production e em Preview para as branches `codex-app/e10-12-rpc-acl`, `codex-app/e10-12-encerramento-economia`, `codex-app/e10-12-mensagem-integral` e `codex-app/e10-12-comercial-leituras`. A nova entrada é restrita à branch comercial; configurações anteriores e Production foram preservadas. Preview comercial passou por redeploy e QA autenticado; promoção e QA pós-merge de Production seguem os gates vigentes, com recibo recuperável no PR #1069. Nenhuma migration ou apply integra esse delta; `SUPABASE_APPLY_MIGRATIONS_ENABLED` permanece em `false`.
+• Estado: `true` em Production e em Preview para as branches `codex-app/e10-12-rpc-acl`, `codex-app/e10-12-encerramento-economia`, `codex-app/e10-12-mensagem-integral` e `codex-app/e10-12-comercial-leituras`, com configuração independente por ambiente. Delta comercial promovido após o merge do PR #1069; Production READY e QA autenticado de Preview e Production aprovados. Nenhuma migration ou apply integra esse delta; `SUPABASE_APPLY_MIGRATIONS_ENABLED` permanece em `false`.
 • Classificação: Config, não Secret. Alteração exige redeploy do ambiente afetado.
-• Workload `pending_setup_conversation`: `gpt-6-luna`/`xhigh`, contrato 5, sem Web Search; a configuração efetiva é a revisão ativa E21 do respectivo ambiente. O prompt `e10_12_sales_context_v14` recebeu provas E21 independentes aprovadas nas revisões 14 de Preview e 5 de Production; qualificação não substitui ativação nem QA da aplicação em Production. Ativações, promoção e QA pós-merge do delta comercial ficam registrados no recibo do PR #1069. Evidências do baseline: PRs #1050, #1053, #1054, #1056, #1058 e #1059.
+• Workload `pending_setup_conversation`: `gpt-6-luna`/`xhigh`, contrato 5, sem Web Search; a configuração efetiva é a revisão ativa E21 do respectivo ambiente. O prompt `e10_12_sales_context_v14` recebeu provas E21 independentes aprovadas nas revisões 14 de Preview e 5 de Production; a revisão 5 foi ativada em Production após o merge, com QA pós-merge aprovado. Recibo final: [PR #1069](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1069#issuecomment-6173160187). Evidências do baseline: PRs #1050, #1053, #1054, #1056, #1058 e #1059.
 
 • `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED`
 • Finalidade histórica: gate do provider consultivo E20.8.7, removido com o workload factual pela E22.7.
