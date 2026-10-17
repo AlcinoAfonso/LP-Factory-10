@@ -16,7 +16,7 @@ Regra de reconciliação: antes de adicionar, avaliar nesta ordem: remover; ajus
 
 ## 2. Objetivo
 
-Gerar ABC humano, curto, delta-only e executável, com `CONTEUDO` AI-first, conciso e íntegro.
+Gerar ABC delta-only executável, com `CONTEUDO` AI-first: Markdown simples, hierarquia numerada preservada e bullets no último nível; frases curtas e inequívocas, com texto mínimo; somente informação vigente e necessária, sem histórico ou duplicação; referências breves às fontes canônicas; preservar integralmente contratos, regras, limites e capacidades funcionais.
 
 ## 3. Fontes obrigatórias
 
