@@ -1,320 +1,91 @@
 0.1 Cabeçalho
-Data: 01/10/2026
-Versão: v1.37
-Status: Alinhado ao catálogo operacional vigente; Pending Setup E10.9 integrado ao workload de nicho
+- Data: 17/10/2026
+- Versão: v1.38
+- Status: catálogo operacional vigente.
 
 0.2 Função do documento
-Registrar a camada de automações operacionais do LP Factory 10 como referência para integrações, automações operacionais e componentes consumidores, sem expor segredos.
+- Automações, modo de uso, resultado esperado, consumidores e dependências, sem secrets.
 
 0.3 Relação com outros documentos
-docs/services.md: services implantáveis, MCPs, endpoints e infraestrutura reutilizável com identidade própria.
-docs/base-tecnica.md: regras estruturais gerais, guardrails, checks e workflows técnicos de manutenção.
-docs/schema.md: banco, tabelas, views, policies e functions.
-docs/roadmap.md: evolução funcional.
-docs/platform-config.md: configurações operacionais de plataformas, secrets por nome, workflows, ambientes, endpoints e regras de plataforma usados por automações.
+- Services: `docs/services.md`; regras técnicas: `docs/base-tecnica.md`; banco: `docs/schema.md`; evolução funcional: `docs/roadmap.md`; configuração externa e catálogo de workflows: `docs/platform-config.md`.
 
-0.4 Atualização estrutural — 26/03/2026
-- `automations/` passa a ser a raiz canônica para novas automações.
-- `.github/workflows/` permanece como camada de entrada/orquestração.
-- `pipelines/` permanece como estrutura em revisão/migração, sem migração ampla neste marco inicial.
-- Novas automações canônicas devem nascer como subprojetos isolados em `automations/<nome>/`.
+0.4 Estrutura canônica
+- Subprojetos isolados em `automations/<nome>/`; `.github/workflows/` somente como entrada/orquestração.
 
-0.5 Status de migração estrutural — 26/03/2026
-- `supabase-inspect` migrado para `automations/supabase-inspect/` com execução a partir da nova raiz canônica e sem fallback `npm install --no-save` no workflow.
-- `docs-apply-report` migrado para `automations/docs-apply-report/` com execução a partir da nova raiz canônica.
-- `pipelines/validador-final/`, `pipelines/supabase-inspect/` e `pipelines/docs-apply-report/` deixaram de ser paths oficiais.
+0.5 Residência dos runtimes
+- `automations/supabase-inspect/` e `automations/docs-apply-report/` são as raízes vigentes. Paths antigos em `pipelines/` não são oficiais; Inspect não usa fallback `npm install --no-save`.
 
 1. Objetivo e escopo
-Registrar a camada de automações operacionais do LP Factory 10: catálogo de automações, status, como usar, componentes consumidores e dependências.
-
-Configurações de plataformas, secrets por nome, ambientes, endpoints e lista consolidada de workflows devem ficar em `docs/platform-config.md`.
-
-Este documento não substitui:
-- `docs/services.md`, para services, MCPs, endpoints e infraestrutura reutilizável;
-- `docs/base-tecnica.md`, para guardrails, checks, segurança e regras estruturais;
-- `docs/schema.md`, para banco, tabelas, views, policies e functions;
-- `docs/roadmap.md`, para evolução funcional.
-
-Regra de vínculo com o roadmap:
-- automação funcional que materialize parte do estado final de um caso deve informar `Aplicação funcional no roadmap` ou `Aplicações funcionais no roadmap`, com a seção E* correspondente;
-- facilitador de testes deve informar `Caso funcional validado`, sem se tornar referência funcional inversa no roadmap;
-- infraestrutura genérica deve omitir esses blocos quando não estiver ligada materialmente a um caso E* específico.
-
-Regra de segurança:
-Nunca registrar segredos brutos. Registrar apenas nome da credencial, plataforma, ambiente, localização, finalidade e escopo.
+- Catálogo operacional conforme 0.2; demais assuntos nas fontes de 0.3.
+- Automação que materialize caso informa Aplicação funcional no roadmap; facilitador de testes informa Caso funcional validado, sem referência funcional inversa. Infraestrutura genérica sem vínculo material omite esses blocos.
+- Credenciais somente por nome, plataforma, ambiente, localização, finalidade e escopo; nunca valores reais.
 
 2. Plataformas e configuração global
-
-Status: Deprecada em 04/08/2026.
-
-Motivo: configurações operacionais de plataformas, secrets por nome, ambientes, endpoints e workflows estão consolidados em `docs/platform-config.md`.
-
-Destino canônico: `docs/platform-config.md`.
+- Deprecada em 04/08/2026: conteúdo consolidado em `docs/platform-config.md`.
 
 3. Catálogo de automações operacionais
 
 3.1 Supabase Inspect Actions
-Objetivo:
-Executar inspeções read-only no Supabase via GitHub Actions, sem mutação, com resultado em logs e Job Summary.
-
-Status:
-Implementada
-
-Acesso:
-GitHub → Actions → workflow `pipeline-supabase-inspect`
-
-Como usar:
-Executar o workflow informando `briefing_path` ou inputs manuais
-
-Resposta esperada:
-Job Summary com SQL executado, rowCount, colunas e sample de dados
-
-Referências / dependências:
-README local: `automations/supabase-inspect/README.md`
-Workflow: `.github/workflows/pipeline-supabase-inspect.yml`
-Runtime: `automations/supabase-inspect/`
-Referência estrutural: `docs/base-tecnica.md`
+- Objetivo/status: inspeção Supabase implementada via GitHub Actions; consultas SQL read-only e amostras somente em logs/Job Summary.
+- Captura financeira: quando OPENAI_COST_INGESTION_ENABLED habilita o ingresso, eventos assinados de execução/operação são gravados no ledger ativo pelo Core. Essa escrita não persiste consultas nem amostras; configuração em `docs/platform-config.md` — 2.2 e 3.5.
+- Uso: GitHub → Actions → pipeline-supabase-inspect; informar briefing_path ou inputs manuais. SQL livre e batch seguem o README local.
+- Resultado: logs e Job Summary com SQL executado, rowCount, colunas, amostra e diagnóstico; guardrails e limites em `automations/supabase-inspect/README.md`.
+- Dependências: runtime `automations/supabase-inspect/`; workflow `.github/workflows/pipeline-supabase-inspect.yml`; credenciais/configuração em `docs/platform-config.md` — 2.2.
 
 3.1.1 Supabase Inspect — presets opcionais de verificação
-
-Objetivo:
-Registrar a possibilidade futura de presets opcionais no `supabase-inspect` para reduzir SQL manual recorrente e apoiar a verificação do estado real do BD, sem substituir o modo livre por SQL nem o contrato canônico de `docs/schema.md`.
-
-Status:
-Proposto
-
-Observações:
-Exemplos futuros de presets: `schema_columns`, `rls_policies`, `indexes`, `triggers`, `functions`, `views`.
-A necessidade real desses presets deve ser avaliada antes de implementação.
+- Não implementados nem autorizados; modo livre por SQL permanece disponível. Proposta futura não altera a operação atual nem substitui `docs/schema.md`.
 
 3.2 Pipeline Docs Apply Report
-Objetivo:
-Aplicar reports JSON em documentos Markdown e automatizar branch, commit e Pull Request para revisão humana.
-
-Status:
-Implementada
-
-Acesso:
-GitHub → Actions → workflow `pipeline-docs-apply-report`
-
-Como usar:
-Executar o workflow informando `report_path`
-
-Resposta esperada:
-Alteração documental aplicada em branch própria com Pull Request para revisão humana
-
-Referências / dependências:
-README local: `automations/docs-apply-report/README.md`
-Workflow: `.github/workflows/pipeline-docs-apply-report.yml`
-Runtime: `automations/docs-apply-report/`
+- Objetivo/status: aplicação de reports JSON em Markdown implementada, com branch, commit e PR para revisão humana.
+- Uso: GitHub → Actions → pipeline-docs-apply-report, informando report_path.
+- Resultado: alterações documentais em branch própria e PR; não faz merge.
+- Referências: `automations/docs-apply-report/README.md`; workflow `.github/workflows/pipeline-docs-apply-report.yml`; runtime `automations/docs-apply-report/`.
 
 3.3 Supabase Inspect Agente
-Objetivo:
-Registrar a validação funcional histórica do Supabase Inspect no Agent Builder por meio da MCP base documentada em `docs/services.md`, sem acesso direto ao banco.
-
-Status:
-Removido manualmente em 01/09/2026; não é automação vigente nem consumidor necessário independente.
-
-Nota de legado:
-O Agent Builder deixará de receber novos recursos e será descontinuado na plataforma OpenAI até 30/11/2026; esta integração não deve ser expandida.
-
-Decisão da E22.3:
-O workflow `wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7` é alvo da retirada controlada e não deve ser preservado como consumidor necessário independente do MCP.
-
-Estado externo final:
-A remoção manual do workflow foi confirmada pelo responsável em 01/09/2026. Não há workflow Agent Builder operacional a catalogar; nenhuma ferramenta de leitura independente do Agent Builder esteve disponível nesta execução.
-
-Referência histórica:
-Workflow ID: `wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7`
+- Retirado em 01/09/2026; sem workflow Agent Builder operacional ou consumidor independente do MCP. Estado externo em `docs/platform-config.md` — 6.4.
 
 3.3.1 Update — Agents SDK
-Status:
-Não iniciado; fora do escopo E22.3.4 e não autorizado como substituto.
-
-Objetivo:
-Registro histórico de update não materializado; a E22.3.4 não cria Agents SDK nem qualquer substituto.
+- Não implementado nem autorizado como substituto.
 
 3.3.2 Update — ChatGPT + MCP
-Status:
-Não iniciado; sem continuidade operacional após a retirada controlada do MCP.
-
-Motivo:
-Incompatibilidade de autenticação no contrato histórico da MCP; nenhuma migração ou substituto foi criado.
+- Sem continuidade operacional após a retirada do MCP; nenhum substituto criado.
 
 3.5 Resolver IA de Nicho no pending_setup
-
-Objetivo:
-Interpretar o nicho bruto informado no `pending_setup` quando o matching determinístico não resolver com segurança e preparar uma saída estruturada para confirmação, escolha ou revisão, sem criar taxon, alias ou vínculo oficial.
-
-Status:
-Implementada e integrada ao fluxo server-side do onboarding.
-
-Recurso utilizado:
-- Responses API
-- Structured Outputs com JSON Schema estrito
-- Server Action versionada do Pending Setup E10.9
-
-Natureza:
-- Automação com IA em fluxo controlado.
-
-Ambiente principal:
-- Runtime do LP Factory.
-
-Plataforma dependente:
-- OpenAI Platform.
-
-Participação humana:
-- Gatilho por turno ambíguo do Pending Setup e confirmação humana quando houver sugestão oficial ou fallback operacional legítimo; sem intervenção humana durante a chamada.
-
-Acesso:
-Execução server-side durante `continuePendingSetupConversationAction`, após autorização owner e reserva otimista do turno; o matching determinístico continua anterior à IA.
-
-Como funciona:
-- Executa primeiro o matching determinístico e a avaliação tipada de confiança.
-- Chama a Responses API somente quando a decisão determinística exige escalonamento.
-- Produz saída estruturada transitória que o consumidor reduz a `confirm_official`, `ask_clarifying_question` ou `unresolved_fallback`, com no máximo uma pergunta code-owned por turno.
-- Persiste o resultado operacional, o modelo, a versão do schema e o estado da execução em `account_niche_resolutions`.
-- Mantém criação automática do vínculo oficial restrita à alta confiança determinística; sugestão da IA nunca cria vínculo diretamente e exige confirmação humana, revalidação do candidato ativo/permitido e `source_type = user_confirmed_ai`.
-- Envia projeção recente, limitada e sanitizada; a request usa `store:false`, `background:false`, deadline e não usa tools, conversation ou `previous_response_id`.
-- Registra logs estruturados com status, contagens e correlação, sem registrar prompt ou resposta completa nos logs.
-- Ausência de configuração, recusa, timeout ou falha da IA é registrada como `skipped` ou `failed` e mantém a conversa em estado não terminal para retry ou nova explicação; somente ausência semântica legítima de taxon pode oferecer fallback operacional, confirmado depois por ação humana inequívoca.
-
-Limites:
-- Não cria nem aprova taxon ou alias.
-- Não grava `account_taxonomy`.
-- Não executa retry automático nem chamada em loop.
-- Não é agente e não usa Agents SDK, Sandbox Agents, tool, job, fila ou execução recorrente.
-- Não substitui o matching determinístico nem o contrato funcional da E10.5.6.
-
-Aplicação funcional no roadmap:
-- `docs/roadmap.md` — E10.5.6.5, dentro do recorte E10.5.6.
-
-Referências / dependências:
-Regra técnica: `docs/base-tecnica.md`
-Configuração de modelo: `docs/platform-config.md`
-Action consumidora: `app/a/[account]/actions.ts`
-Adapter OpenAI: `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
-Persistência operacional: `lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter.ts`
-Decisão determinística: `lib/onboarding/niche-resolution/deterministicConfidence.ts`
+- Objetivo/status: resolvedor complementar implementado no onboarding server-side; matching determinístico precede a IA e governa o escalonamento. Não é o atendimento E10.12 de 3.11.
+- Uso: turno ambíguo da conversa legada E10.9 em continuePendingSetupConversationAction, após autorização owner e reserva otimista. Sem intervenção durante a chamada.
+- Resultado: saída estruturada reduzida a confirm_official, ask_clarifying_question ou unresolved_fallback, com no máximo uma pergunta code-owned por turno. Resolução, modelo, schema e estado persistidos em account_niche_resolutions.
+- Confirmação: sugestão oficial exige ação humana, candidato ativo/permitido revalidado e user_confirmed_ai; a automação não grava account_taxonomy. Vínculo automático permanece restrito à alta confiança determinística pelo consumidor competente.
+- Falha: configuração ausente, recusa, timeout ou erro registra skipped/failed e mantém retry ou nova explicação disponíveis. Somente ausência semântica legítima permite fallback operacional, confirmado por ação humana inequívoca.
+- Transporte/logs: Responses API/Structured Outputs estritos; projeção recente, limitada e sanitizada, store:false, background:false e deadline; sem tools, conversation ou previous_response_id. Logs só de status, contagens e correlação, sem prompt/resposta completa.
+- Limites: não cria/aprova taxon ou alias; sem retry automático, loop, Agents SDK, Sandbox Agents, job, fila ou recorrência. Não substitui matching determinístico.
+- Aplicação funcional no roadmap: `docs/roadmap.md` — E10.5.6.5.
+- Referências: `docs/base-tecnica.md` — 3.14.5; `docs/platform-config.md` — 3.5; action `app/a/[account]/pending-setup-actions.ts`; adapters `lib/onboarding/niche-resolution/adapters/openAiResolver.ts` e `lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter.ts`; confiança em `lib/onboarding/niche-resolution/deterministicConfidence.ts`.
 
 3.6 Apply versionado de migrations no Supabase
+- Objetivo/status: apply versionado implementado; automático integral suspenso, duas migrations E10.10 excluídas. Applies seletivos concluídos e escopos disponíveis em `docs/platform-config.md` — 2.3.
+- Uso: criar migration em supabase/migrations/<timestamp>_<nome>.sql e validar no PR. Apply exige merge autorizado e decisão operacional própria; executar pipeline-supabase-apply-migrations somente pelo fluxo aprovado.
+- Controles: push na main não autoriza apply integral; retomada exige resolução separada ou revisão explícita do filtro canônico. Não usar SQL Editor no fluxo normal; migration aplicada é imutável, com correção/reversão por nova migration incremental.
+- Referências: `docs/base-tecnica.md` — 3.4.4; gates, ambientes, filtros e secrets em `docs/platform-config.md` — 2.2–2.3.
 
-Objetivo:
-Aplicar migrations versionadas do Supabase após merge e autorização, sem usar o SQL Editor para alterações de schema. O apply automático integral está suspenso durante o backlog E10.10.
+3.8 Geração administrativa de draft comercial por taxon
+- Objetivo/status: automação implementada para gerar draft commercial_activation server-side/Admin, com Responses API e Structured Outputs.
+- Uso: ação administrativa protegida, com gatilho humano e revisão posterior; sem intervenção durante a chamada. Não roda no runtime público.
+- Resultado: content_json validado antes de persistir draft em content_artifacts; fontes relacionais somente business_buyer, contexto end_customer em provenance_json e CTA seguro server-side. Falha após criação invalida/arquiva o draft parcial e retorna erro seguro.
+- Limites: não publica nem altera published; sem agente, Agents SDK, Sandbox Agents, job, fila ou recorrência.
+- Aplicação funcional no roadmap: `docs/roadmap.md` — E10.7.3.
+- Referências: `docs/base-tecnica.md` — 3.15.1; `docs/platform-config.md` — 3.5; action `app/admin/(protected)/templates/actions.ts`; geração `lib/conversion-content/commercial-activation/draft-generation.ts`; verificação `supabase/snippets/e10_7_phase_2_draft_verify.sql`.
 
-Status:
-Implementada; os applies seletivos E25.1, E10.11, E22.7, E23.5 e E10.12 foram concluídos sob autorizações próprias. Os escopos `e23_5_only` e `e10_12_only` aplicaram somente suas migrations autorizadas após merge com SHA exato e dry-run seletivo, com gate restaurado a `false`; SHAs, runs e ledger final constam em `docs/platform-config.md` — seção 2.3. As duas migrations E10.10 permanecem excluídas; o fluxo automático integral permanece suspenso.
-
-Acesso:
-GitHub → Actions → workflow `pipeline-supabase-apply-migrations`
-
-Como usar:
-Criar migration em `supabase/migrations/<timestamp>_<nome>.sql` e validar no PR do plano. Durante a pendência E10.10, o push na `main` não aplica automaticamente. Todo apply exige PR e merge autorizados e decisão operacional própria; configurações de ambiente, gates e escopos de filtro pertencem a `docs/platform-config.md`.
-
-Resumo de controle:
-As migrations E10.10 permanecem excluídas e o fluxo automático integral segue suspenso enquanto a pendência não for resolvida ou o filtro canônico não for explicitamente revisado; novas execuções exigem decisão operacional própria. Migration já aplicada não pode ser editada, apagada ou substituída; correções e reversões exigem nova migration incremental.
-
-Referências / dependências:
-`docs/base-tecnica.md`
-`docs/platform-config.md`
-`docs/lousa-automations3-6-1.md` — registro histórico da baseline concluída.
-
-3.8 E10.7 Fase 2 — geração administrativa de draft comercial por taxon
-
-Objetivo:
-Gerar draft comercial `commercial_activation` por taxon em fluxo assistido por IA, server-side/Admin, sem publicação automática.
-
-Status:
-Implementada e validada como automação operacional administrativa.
-
-Recurso utilizado:
-- Responses API
-- Structured Outputs
-- Server Action administrativa protegida
-
-Natureza:
-- Automação com IA em fluxo controlado.
-
-Ambiente principal:
-- Runtime do LP Factory.
-
-Plataforma dependente:
-- OpenAI Platform.
-
-Participação humana:
-- Gatilho administrativo e revisão do draft; sem intervenção durante a execução.
-
-Acesso:
-Action administrativa protegida por permissão administrativa.
-
-Como funciona:
-- Usa OpenAI Responses API com Structured Outputs.
-- Gera e valida `content_json` antes da persistência.
-- Persiste somente `status = draft` em `content_artifacts`.
-- Registra fontes relacionais apenas `business_buyer`.
-- Mantém contexto `end_customer` apenas em `provenance_json`.
-- Usa CTA seguro definido server-side.
-- Em falha após criação do artifact e antes do registro completo das fontes, invalida/arquiva o draft parcial e retorna erro seguro.
-
-Limites:
-- Não publica.
-- Não altera `published`.
-- Não roda em runtime público.
-- Não é agente.
-- Não usa Agents SDK, Sandbox Agents, job, fila nem execução recorrente.
-
-Aplicação funcional no roadmap:
-- `docs/roadmap.md` — E10.7.3.
-
-Referências / dependências:
-Regra técnica: `docs/base-tecnica.md`
-Configuração de modelo: `docs/platform-config.md`
-Action administrativa: `app/admin/(protected)/templates/actions.ts`
-Adapter de geração: `lib/conversion-content/commercial-activation/draft-generation.ts`
-Snippet de validação: `supabase/snippets/e10_7_phase_2_draft_verify.sql`
-
-3.10 E20.8.7 — avaliação assistida da suficiência factual corrente por taxon
-Objetivo:
-Manter a âncora histórica da automação retirada, referenciada pelo registro histórico E20.8.7 no roadmap.
-
-Status:
-Retirada no REF pré-merge da E22.7 em 01/10/2026; sem consumidor operacional corrente.
-
-Motivo:
-A avaliação factual assistida e o workload correspondente foram removidos do runtime pela E22.7.
-
-Destino canônico:
-`docs/roadmap.md` — E22.7.4; `docs/platform-config.md` — seções 2.3 e 3.5.
+3.10 Avaliação assistida da suficiência factual por taxon
+- Retirada em 01/10/2026, sem consumidor operacional. Motivo/destino: retirada E20 pela E22.7 em `docs/roadmap.md` — 22.7.4; configuração em `docs/platform-config.md` — 2.3 e 3.5.
 
 3.11 Atendimento inicial por IA
-
-Objetivo:
-Compreender o negócio e as necessidades do lead, oferecer orientação comercial pertinente aos serviços comprovadamente disponíveis, confirmar classificação existente quando segura e consolidar contexto útil para continuidade comercial.
-
-Status:
-Implementada e ativa em Preview e Production após apply seletivo, provas E21 independentes e QA autenticado aprovados; PRs #1050 e #1053. Conversas legadas permanecem preservadas, sem backfill ou conversão histórica.
-
-Modo de uso e consumidores:
-Pending Setup da conta, server-side, após autorização do owner e reserva do turno. O lead confirma a categoria existente proposta ou o entendimento operacional quando não houver correspondência segura. Confirmar classificação não encerra automaticamente o atendimento.
-
-Resultado esperado:
-Entendimento suficiente, orientação pertinente e próximo passo comercial claro, com classificação confirmada ou ausência de identificação explícita. Histórico atribuível ao participante e resumo contextual único da conta distinguem síntese contextual proposta pela IA, entendimento explicitamente aceito pelo lead, classificação e sugestões, sem substituir fontes oficiais. Ausência de categoria não impede continuidade comercial nem concede acesso ou entitlement. Falha de gravação não produz anúncio de sucesso.
-
-Dependências:
-OpenAI Responses API, Structured Outputs e catálogo ativo com repertório de mercado disponibilizado pelo D21/E10.13; workload `pending_setup_conversation` sob governança E21. Bootstrap de configuração não substitui prova empírica nem autoriza ativação.
-
-Limites:
-Interpretação por IA não concede autoridade administrativa. O atendimento não executa pesquisa Web classificatória nem cria, ativa, reativa ou mantém taxons ou aliases. Atomicidade, deduplicação, hierarquia, categorias inativas e proteção do primário permanecem determinísticas. Sem fonte comercial competente, não inventa serviço, condição, prazo ou disponibilidade; o aprofundamento comercial permanece no D17. Não há relacionamento operacional com a Base, consumidor futuro, engine genérica, job, fila ou retorno assíncrono.
-
-Aplicação funcional no roadmap:
-`docs/roadmap.md` — E10.12.
-
-Referências:
-`docs/base-tecnica.md` — seção 3.14.6.
-`docs/platform-config.md` — seção 3.5.
+- Objetivo/status: atendimento implementado e ativo em Preview/Production, para compreender negócio/necessidades, orientar sobre serviços comprovados e definir próximo passo. Conversas legadas permanecem sem backfill/conversão.
+- Uso/consumidor: Pending Setup server-side, após autorização owner e reserva do turno. Lead confirma categoria existente ou entendimento operacional sem correspondência segura; classificação não conclui automaticamente o atendimento.
+- Resultado: histórico atribuível ao participante e Resumo contextual único por conta distinguem síntese proposta, entendimento aceito, classificação e sugestões; fontes oficiais prevalecem. Ausência de categoria não impede continuidade nem concede acesso/entitlement; falha de gravação não anuncia sucesso.
+- Dependências: Responses API/Structured Outputs, catálogo ativo e repertório E10.13; workload pending_setup_conversation sob E21. Bootstrap não substitui prova empírica nem autoriza ativação.
+- Limites: sem autoridade administrativa, Web classificatória ou manutenção de taxons/aliases. Atomicidade, deduplicação, hierarquia, categorias inativas e proteção do primário são determinísticas. Serviço, condição, prazo ou disponibilidade exigem fonte comercial competente; aprofundamento no D17. Sem relacionamento operacional com a Base, consumidor futuro, engine genérica, job, fila ou retorno assíncrono.
+- Aplicação funcional no roadmap: `docs/roadmap.md` — E10.12, com comportamento e critérios de conclusão.
+- Referências: `docs/base-tecnica.md` — 3.14.6; configuração `docs/platform-config.md` — 3.5.
 
 4. Aprendizados operacionais
-
-Status: Deprecada em 04/08/2026.
-
-Motivo: seção histórica e parcialmente superada; regras operacionais vigentes permanecem nos itens correspondentes do catálogo e nas demais fontes canônicas aplicáveis.
+- Deprecada em 04/08/2026: conteúdo histórico superado; aprendizados vigentes nos respectivos itens do catálogo e fontes canônicas.

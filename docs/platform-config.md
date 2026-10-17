@@ -1,664 +1,368 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.61
-• Data: 17/10/2026
+- Documento: LP Factory 10 — Platform Config
+- Versão: v0.1.62
+- Data: 17/10/2026
 
 0.2 Contrato do documento
-• O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
-• USAR PARA: variáveis, secrets por nome, endpoints, URLs, redirects, SMTP, DNS, projetos externos, ambientes e regras de redeploy.
-• NÃO USAR PARA: regras de runtime/código, contrato de DB, status de casos E* ou padrões visuais.
-• REGRA: nunca registrar valores reais de secrets; registrar apenas nome, finalidade, plataforma e escopo.
-• LEITURA OPERACIONAL: secrets, variáveis, workflows, endpoints e conectores listados aqui devem ser tratados como disponíveis no ambiente/plataforma indicada, salvo marcação explícita de futuro, pendente, bloqueado ou não validado.
-• LIMITE: este documento não versiona valores reais de secrets e não garante que o chat tenha acesso direto a eles; quando o uso exigir segredo, a execução deve ocorrer na plataforma autorizada, por exemplo GitHub Actions, Vercel ou Supabase.
+- Fonte única das configurações externas confirmadas: plataformas, projetos, ambientes, variáveis/secrets por nome, endpoints, URLs, redirects, SMTP, DNS e redeploy.
+- Runtime: `docs/base-tecnica.md`; banco: `docs/schema.md`; casos: `docs/roadmap.md`; visual: `docs/design-system.md`.
+- Nunca registrar valores reais de secrets; somente nome, finalidade, plataforma e escopo.
+- Recursos listados estão disponíveis na plataforma indicada, salvo marcação de futuro, pendente, bloqueado ou não validado. Isso não concede ao chat acesso ao secret; consumi-lo somente na plataforma autorizada.
 
 1. Visão geral de plataformas
-• GitHub: repositório, PRs, Actions e secrets de automações.
-• Vercel: deploy do Core, serviços e variáveis de ambiente.
-• Supabase: backend, Auth, Storage, Redirect URLs, SMTP Auth e infraestrutura.
-• Resend: envio transacional via SMTP.
-• OpenAI Platform: Projects, Service Accounts, API e modelo do resolvedor IA.
-• Stripe: provedor inicial de checkout em modo teste para assinatura.
-• Registro.com: domínio e DNS.
-• Zoho Mail: e-mail humano/corporativo quando aplicável.
+- GitHub: repositório, PRs, Actions e secrets de automações.
+- Vercel: deploy do Core, serviços e variáveis de ambiente.
+- Supabase: backend, Auth, Storage, Redirect URLs, SMTP Auth e infraestrutura.
+- Resend: envio transacional via SMTP.
+- OpenAI Platform: Projects, Service Accounts, API e modelo do resolvedor IA.
+- Stripe: provedor inicial de checkout em modo teste para assinatura.
+- Registro.com: domínio e DNS.
+- Zoho Mail: e-mail humano/corporativo quando aplicável.
 
 2. GitHub
 
 2.1 Repositório
-• Repositório canônico: `AlcinoAfonso/LP-Factory-10`
-• URL: `https://github.com/AlcinoAfonso/LP-Factory-10`
-• Fluxo operacional: GitHub Web → PR/merge → Vercel
-• Regra: consultar o repositório real antes de assumir paths, branches, arquivos ou estrutura.
-• Regra: investigações operacionais podem usar GitHub Connector, GitHub Web ou `gh` autenticado no ambiente autorizado; não há secret nomeado `GH_TOKEN` registrado para essa finalidade neste documento.
-
-• Secret Scanning e Push protection: ativos no repositório, confirmados em 07/10/2026 pelas capturas do titular registradas no Debate 18C; nenhum setting foi alterado pela inspeção.
-• Cobertura específica: a classe do `SUPABASE_ACCESS_TOKEN` não foi comprovada por metadados não secretos; não presumir correspondência aos detectores Supabase nem bloqueio pré-push desses padrões. A configuração individual de Push protection do usuário não foi inspecionada.
+- Repositório: `AlcinoAfonso/LP-Factory-10`, `https://github.com/AlcinoAfonso/LP-Factory-10`; consultar antes de assumir paths, branches ou estrutura.
+- PR/merge → Vercel; execução e autoridade em `AGENTS.md`. Inspeção por conector, GitHub Web ou gh autenticado; não há GH_TOKEN registrado aqui.
+- Secret Scanning e Push protection ativos, confirmados em 07/10/2026. Cobertura do SUPABASE_ACCESS_TOKEN e configuração individual do usuário não comprovadas; não presumir bloqueio pré-push.
 
 2.2 GitHub Actions
-• Secrets e variáveis conhecidos:
-• `OPENAI_API_KEY`: usado por automações/CI que chamam OpenAI. Consumidor atual: `pipeline-supabase-inspect`.
-• `SUPABASE_DB_URL_READONLY`: conexão read-only para inspeções/automação de banco. Consumidor atual: `pipeline-supabase-inspect`.
-• `OPENAI_COST_INGESTION_HMAC_SECRET`: secret de assinatura do ingresso financeiro do `pipeline-supabase-inspect`; configurado no GitHub Actions e no Core, sem valor versionado.
-• `OPENAI_COST_INGESTION_ENABLED`: variável não sensível que libera o envio financeiro do `pipeline-supabase-inspect`; configurada e ativa no fluxo Production validado.
-• `OPENAI_COST_INGESTION_URL`: URL HTTPS do endpoint interno do Core; configurada no GitHub Actions para o ingresso Production validado.
-• `OPENAI_COST_INGESTION_ENVIRONMENT`: ambiente explícito enviado pelo workflow, restrito a `production`, `preview` ou `development`; configurada como variável do fluxo validado.
-• `OPENAI_COST_INGESTION_PROTOCOL_VERSION`: versão do protocolo aceito pelo cliente do `supabase_inspect`; configurada como variável do fluxo validado.
-• `MAILBOX_EMAIL`: e-mail institucional preservado para o futuro Operador Institucional Autônomo de QA da E17.9.3; sem consumidor operacional vigente após a E22.6.
-• `MAILBOX_PASSWORD`: senha/app password da mailbox preservada para o futuro Operador Institucional Autônomo de QA da E17.9.3; sem consumidor operacional vigente após a E22.6.
-• `SUPABASE_ACCESS_TOKEN`: token usado pelo workflow de apply de migrations Supabase.
-• `SUPABASE_DB_PASSWORD`: senha do banco usada pelo workflow de apply de migrations Supabase.
-• `SUPABASE_APPLY_MIGRATIONS_ENABLED`: variável de repositório usada como gate operacional; valor reconfirmado no GitHub em 11/10/2026 após o apply seletivo E10.12: `false`.
-• Regra: valores reais de secrets não devem ser versionados.
-• Regra: secrets de mailbox devem existir apenas nos escopos necessários dos workflows que os consomem.
-• Regra: `SUPABASE_DB_URL_READONLY` deve autenticar com role/usuário read-only e usar preferencialmente session pooler.
-• Regra: workflows que acessam banco para inspeção devem ser read-only, salvo caso explicitamente aprovado.
-• Retenção observada em leitura read-only de GitHub → Settings → Actions → General em 06/09/2026: artefatos e logs são mantidos por 90 dias, que também é o limite máximo exibido para este repositório público.
-• A partir de 01/10/2026, checks, workflow runs e commit statuses passam a seguir a mesma configuração de retenção de artefatos e logs. Dados já expirados não são restaurados por aumento posterior da janela.
-• Regra de evidência: a expiração das evidências operacionais é normal; o estado final durável permanece em PR, commit, roadmap e documentos canônicos competentes, sem exportação ou armazenamento paralelo por padrão.
+- Secrets e variáveis conhecidos:
+- `OPENAI_API_KEY`: usado por automações/CI que chamam OpenAI. Consumidor atual: `pipeline-supabase-inspect`.
+- `SUPABASE_DB_URL_READONLY`: conexão read-only para inspeções/automação de banco. Consumidor atual: `pipeline-supabase-inspect`.
+- `OPENAI_COST_INGESTION_HMAC_SECRET`: secret de assinatura do ingresso financeiro do `pipeline-supabase-inspect`; configurado no GitHub Actions e no Core, sem valor versionado.
+- `OPENAI_COST_INGESTION_ENABLED`: variável não sensível que libera o envio financeiro do `pipeline-supabase-inspect`; configurada e ativa no fluxo Production validado.
+- `OPENAI_COST_INGESTION_URL`: URL HTTPS do endpoint interno do Core; configurada no GitHub Actions para o ingresso Production validado.
+- `OPENAI_COST_INGESTION_ENVIRONMENT`: ambiente explícito enviado pelo workflow, restrito a `production`, `preview` ou `development`; configurada como variável do fluxo validado.
+- `OPENAI_COST_INGESTION_PROTOCOL_VERSION`: versão do protocolo aceito pelo cliente do `supabase_inspect`; configurada como variável do fluxo validado.
+- `MAILBOX_EMAIL`: e-mail institucional preservado para o futuro Operador Institucional Autônomo de QA da E17.9.3; sem consumidor operacional vigente após a E22.6.
+- `MAILBOX_PASSWORD`: senha/app password da mailbox preservada para o futuro Operador Institucional Autônomo de QA da E17.9.3; sem consumidor operacional vigente após a E22.6.
+- `SUPABASE_ACCESS_TOKEN`: token usado pelo workflow de apply de migrations Supabase.
+- `SUPABASE_DB_PASSWORD`: senha do banco usada pelo workflow de apply de migrations Supabase.
+- `SUPABASE_APPLY_MIGRATIONS_ENABLED`: variável de repositório usada como gate operacional; valor reconfirmado no GitHub em 11/10/2026 após o apply seletivo E10.12: `false`.
+- Regra: valores reais de secrets não devem ser versionados.
+- Regra: secrets de mailbox devem existir apenas nos escopos necessários dos workflows que os consomem.
+- Regra: `SUPABASE_DB_URL_READONLY` deve autenticar com role/usuário read-only e usar preferencialmente session pooler.
+- Regra: workflows que acessam banco para inspeção devem ser read-only, salvo caso explicitamente aprovado.
+- Retenção observada em leitura read-only de GitHub → Settings → Actions → General em 06/09/2026: artefatos e logs são mantidos por 90 dias, que também é o limite máximo exibido para este repositório público.
+- A partir de 01/10/2026, checks, workflow runs e commit statuses passam a seguir a mesma configuração de retenção de artefatos e logs. Dados já expirados não são restaurados por aumento posterior da janela.
+- Regra de evidência: a expiração das evidências operacionais é normal; o estado final durável permanece em PR, commit, roadmap e documentos canônicos competentes, sem exportação ou armazenamento paralelo por padrão.
 
 2.3 Workflows conhecidos
-• `.github/workflows/security.yml`: checks de segurança.
-• `.github/workflows/pipeline-supabase-inspect.yml`: pipeline de inspeção Supabase read-only, com uso de `OPENAI_API_KEY` e `SUPABASE_DB_URL_READONLY`.
-• `.github/workflows/pipeline-docs-apply-report.yml`: aplicação automatizada de reports em documentos Markdown e criação de Pull Request automático.
-• `.github/workflows/pipeline-supabase-apply-migrations.yml`: workflow canônico de migrations Supabase versionadas; o apply automático integral está suspenso durante o backlog E10.10.
-• Gatilhos: push em `main` com mudanças em `supabase/migrations/**` e execução manual por `workflow_dispatch`.
-• Setup: `supabase/setup-cli` v2.1.1 fixada pelo SHA completo `3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf`, com Supabase CLI `2.106.0`.
-• Motivo do pin por SHA: reprodutibilidade e proteção contra alteração futura da referência móvel `@v2`.
-• Gate: `SUPABASE_APPLY_MIGRATIONS_ENABLED = false` bloqueia instalação da CLI, link e push. O fluxo automático integral permanece suspenso durante o backlog E10.10, mesmo com o gate aberto.
-• Os applies seletivos E25.1 e E10.11 foram concluídos sob autorizações próprias; o escopo `e10_11_only` aplicou somente uma vez a migration E10.11 após merge na `main` com SHA exato e dry-run seletivo, mantendo as duas migrations E10.10 excluídas e restaurando o gate a `false`.
-• Escopo seletivo E22.7 `e22_7_only` mergeado e aplicado com sucesso na `main` no SHA `362842f41fc9ee1c11315565d7647b1c61b51058`; exige SHA exato, inventário de 62 migrations, exclui as duas migrations E10.10 e preserva o gate fechado e o dry-run. Somente `supabase/migrations/20261001030000_e22_7_retire_factual_authority.sql` foi aplicada; o ledger avançou de 59 para 60 e `SUPABASE_APPLY_MIGRATIONS_ENABLED` foi restaurado a `false`.
-• Novas migrations seguem PR e merge autorizados conforme `AGENTS.md`; `workflow_dispatch` permanece excepcional e cada apply exige decisão operacional própria. O fluxo automático integral segue suspenso até resolução separada de E10.10 ou revisão explícita do filtro canônico.
-• Exceção de sequência E25.3 executada após checks e Code Review independente do HEAD final sem achado material pendente e comprovação dos recursos desligados nos dois ambientes: PR #1055 mergeado no SHA `d86538971c1464d711c894572c4f995f35450429`. O apply seletivo `e25_3_only` concluiu com sucesso no mesmo SHA pelo [run 38089206086](https://github.com/AlcinoAfonso/LP-Factory-10/actions/runs/38089206086), com inventário de 67 migrations, staging de 65 e as duas E10.10 excluídas. Dry-run e apply incluíram exclusivamente `20261010202505_e25_3_communication_resources.sql`; ledger final 65 e `SUPABASE_APPLY_MIGRATIONS_ENABLED` restaurado a `false`. O fluxo integral permanece suspenso. Ativação e validação seguem a sequência de ambientes registrada em 3.5; falha material interrompe a progressão.
-• Escopo seletivo E23.5 `e23_5_only` concluído no SHA de merge `a220a39e94759c471fdb679dc11909203748bc13`, pelo run [37406266349](https://github.com/AlcinoAfonso/LP-Factory-10/actions/runs/37406266349). Inventário fechado de 63 migrations e staging de 61, com as duas E10.10 excluídas; o dry-run e o apply incluíram somente `20261005170954_e23_5_retire_unused_graphql.sql`. Ledger final: 61; gate restaurado a `false`.
-• Escopo seletivo E10.12 `e10_12_only`: aplicadas `20261007153217_e10_12_account_context_attendance.sql`, `20261009171607_e10_12_sales_attendance.sql`, `20261009204000_e10_12_restrict_attendance_commit_acl.sql` e `20261011121811_e10_12_summary_capacity.sql`. O último dry-run/apply incluiu somente a migration de capacidade, pelo run [38146176193](https://github.com/AlcinoAfonso/LP-Factory-10/actions/runs/38146176193), no SHA de merge `fc36895ea153206cecb670544f4d4c4f12eef3ed`, com E25.3 previamente registrada no ledger. Inventário de 68 migrations, staging/ledger de 66, duas E10.10 excluídas e gate restaurado a `false`; sem backfill ou alteração de dados históricos.
-• Regra: não usar SQL Editor para alterações de schema no fluxo normal.
-• Regra: migration aplicada não pode ser editada, apagada, renomeada ou substituída; correções e reversões exigem nova migration.
-• Reversão operacional da capacidade do Resumo exige `E10_12_ATTENDANCE_ENABLED` suspenso, runtime compatível e nova migration canônica baseada em `supabase/rollbacks/20261011121811_e10_12_summary_capacity.rollback.sql`; é bloqueada enquanto existir Resumo acima de 4.000 caracteres, sem truncamento ou exclusão para forçá-la.
-• Com o gate fechado, um passo separado sem secrets registra `skipped`; a CLI não é instalada e `supabase link` e `supabase db push` não são executados.
-• `Setup Supabase CLI` e `Apply migrations` possuem condição explícita de gate aberto.
-• Secrets exigidos somente para apply autorizado com gate aberto: `SUPABASE_ACCESS_TOKEN` e `SUPABASE_DB_PASSWORD`, disponíveis apenas no passo `Apply migrations`.
-• Projeto alvo: definido no workflow por `SUPABASE_PROJECT_REF`; o valor não é credencial, mas deve apontar somente para o projeto aprovado.
-• `.github/workflows/upgrade-next-16-1-1.yml`: manutenção de Next.js + lockfile.
+- Workflows: `.github/workflows/security.yml` (segurança), `.github/workflows/pipeline-supabase-inspect.yml` (inspeção read-only), `.github/workflows/pipeline-docs-apply-report.yml` (reports/PR), `.github/workflows/pipeline-supabase-apply-migrations.yml` (apply) e `.github/workflows/upgrade-next-16-1-1.yml` (Next/lockfile).
+- Apply: push na main com supabase/migrations/** ou workflow_dispatch. Automático integral suspenso mesmo com gate aberto; duas migrations E10.10 excluídas. Novas execuções exigem PR/merge autorizados e decisão operacional própria; retomada integral exige resolução separada ou revisão explícita do filtro.
+- Gate SUPABASE_APPLY_MIGRATIONS_ENABLED: false, reconfirmado após apply E10.12 em 11/10/2026. Fechado registra skipped em passo sem secrets e impede CLI, link e push. Setup e apply têm condição explícita de gate aberto.
+- Setup controlado: supabase/setup-cli v2.1.1 no SHA 3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf; CLI 2.106.0. Detalhes executáveis no workflow.
+- Apply manual seletivo exige main, expected_main_sha exato, inventário validado, staging sem E10.10 e dry-run exclusivo das migrations autorizadas. Escopos disponíveis no workflow: e25_1_only, e10_11_only, e22_7_only, e23_5_only, e10_12_only e e25_3_only.
+- Estado aplicado: E25.1, E10.11, E22.7, E23.5, E10.12 e E25.3 concluídos sob autorizações próprias. Última conferência de ledger em 11/10/2026: 68 migrations versionadas, 66 aplicadas/staged e duas E10.10 excluídas; gate restaurado a false. Recibos nos PRs; contratos físicos em `docs/schema.md`.
+- E10.12 aplicadas: 20261007153217_e10_12_account_context_attendance.sql, 20261009171607_e10_12_sales_attendance.sql, 20261009204000_e10_12_restrict_attendance_commit_acl.sql e 20261011121811_e10_12_summary_capacity.sql; E25.3: 20261010202505_e25_3_communication_resources.sql. Sem backfill histórico. Ativação por ambiente em 3.5.
+- Secrets SUPABASE_ACCESS_TOKEN e SUPABASE_DB_PASSWORD disponíveis somente no passo Apply migrations autorizado; projeto alvo por SUPABASE_PROJECT_REF no workflow, restrito ao projeto aprovado.
+- Schema muda por migration versionada, sem SQL Editor no fluxo normal. Migration aplicada não pode ser editada, apagada, renomeada ou substituída; correção/reversão exige nova migration.
+- Reversão da capacidade do Resumo exige E10_12_ATTENDANCE_ENABLED suspenso, runtime compatível e nova migration baseada em `supabase/rollbacks/20261011121811_e10_12_summary_capacity.rollback.sql`. Bloqueada enquanto houver Resumo acima de 4.000 caracteres; sem truncar/excluir para forçar reversão.
 
 2.4 Mailbox operacional para automações
-• Provedor atual: Gmail via POP3.
-• Identidade institucional: `lpfactoryqa@gmail.com`.
-• Finalidade: caixa postal exclusiva do projeto para QA de confirmação de cadastro, convite e recuperação de senha, sem dependência do e-mail pessoal de Alcino.
-• Host/porta: `pop.gmail.com:995`.
-• Uso planejado: recurso institucional reservado à implementação futura da E17.9.3; não há consumidor operacional vigente após a E22.6.
-• Estado operacional: conta dedicada criada, e-mail de recuperação confirmado, verificação em duas etapas ativa e POP3 habilitado.
-• Credencial técnica: senha de app identificada no Google como `LP Factory QA Automation`; o valor não é recuperável por este documento.
-• Localização autorizada: repository secrets do GitHub Actions no repositório `AlcinoAfonso/LP-Factory-10`.
-• Secrets relacionados:
-• `MAILBOX_EMAIL`: contém o endereço-base institucional.
-• `MAILBOX_PASSWORD`: contém a senha de app exclusiva da automação; não é a senha principal da Conta Google.
-• Consumidores vigentes: nenhum; mailbox e secrets preservados por decisão aprovada para a E17.9.3.
-• Contrato para executores e novos chats: consultar esta seção e tratar mailbox e secrets somente por referência; não solicitar, copiar, revelar, recriar nem presumir consumidor autorizado antes da implementação competente da E17.9.3.
-• Limite de acesso: todos os chats podem identificar a mailbox, sua finalidade, os nomes dos secrets e o caminho autorizado de consumo, mas não podem ler ou descriptografar os valores armazenados pelo GitHub Actions.
-• Limite de superfície: esta credencial habilita leitura automatizada da mailbox por POP3; não fornece login interativo na interface web do Gmail nem credenciais permanentes do Admin Dashboard ou Account Dashboard.
-• Regra: usar conta dedicada de teste, nunca e-mail humano principal.
-• Regra: preservar `MAILBOX_EMAIL` como caixa base institucional e manter o valor exclusivamente no GitHub Actions repository secret.
-• Regra: alterar a mailbox operacional não modifica usuários, aliases, contas ou evidências existentes.
-• Regra: não registrar valores reais.
-• Regra: se a senha/app password vazar, revogar imediatamente e substituir.
+- Mailbox institucional: lpfactoryqa@gmail.com, Gmail POP3 em pop.gmail.com:995; exclusiva do projeto para QA de signup, convite e recuperação, sem e-mail pessoal.
+- Estado: conta dedicada, recuperação confirmada, 2FA e POP3 ativos. Reservada à futura E17.9.3, sem consumidor vigente após E22.6.
+- Credencial: app password LP Factory QA Automation; repository secrets GitHub de AlcinoAfonso/LP-Factory-10. MAILBOX_EMAIL é a caixa base; MAILBOX_PASSWORD é a senha de app, não a principal do Google. Valores somente nos secrets.
+- Consultar/consumir por referência e escopo necessário; não solicitar, copiar, revelar ou recriar valores nem presumir consumidor autorizado. Chats não leem/descriptografam secrets do GitHub.
+- POP3 não fornece login web do Gmail nem credenciais permanentes dos dashboards. Alterar mailbox não modifica usuários, aliases, contas ou evidências existentes. Vazamento exige revogar/substituir a senha de app.
 
 3. Vercel
 
 3.1 Projeto Core
-• Projeto Vercel: `lp-factory-10`
-• Finalidade: runtime principal do produto.
-• Deploy: Preview + Production.
-• Deploy automático via Git: o `vercel.json` da raiz desabilita somente branches abrangidas pelo padrão minimatch `docs/**`; branches não abrangidas preservam o default `true`, incluindo Preview de implementação e Production da `main`.
-• Domínio oficial atual do app em produção: `https://lp-factory-10.vercel.app`
-• Base URL das API routes do app: `https://lp-factory-10.vercel.app/api`
-• Plano operacional confirmado: Hobby.
-• Retenção vigente no Hobby: além do deployment de produção atual e das demais exceções da plataforma, permanecem os três deployments de produção mais recentes e os três deployments mais recentes de qualquer tipo; Previews não possuem proteção própria.
-• Preview e deployment histórico são evidências suplementares e expiráveis. Não preservar deployment por rotina, contratar upgrade ou criar storage paralelo para evidências; reconfirmar as exceções vigentes quando uma retenção específica for material.
+- Projeto Vercel: `lp-factory-10`
+- Finalidade: runtime principal do produto.
+- Deploy: Preview + Production.
+- Deploy automático via Git: o `vercel.json` da raiz desabilita somente branches abrangidas pelo padrão minimatch `docs/**`; branches não abrangidas preservam o default `true`, incluindo Preview de implementação e Production da `main`.
+- Domínio oficial atual do app em produção: `https://lp-factory-10.vercel.app`
+- Base URL das API routes do app: `https://lp-factory-10.vercel.app/api`
+- Plano operacional confirmado: Hobby.
+- Retenção vigente no Hobby: além do deployment de produção atual e das demais exceções da plataforma, permanecem os três deployments de produção mais recentes e os três deployments mais recentes de qualquer tipo; Previews não possuem proteção própria.
+- Preview e deployment histórico são evidências suplementares e expiráveis. Não preservar deployment por rotina, contratar upgrade ou criar storage paralelo para evidências; reconfirmar as exceções vigentes quando uma retenção específica for material.
 
 3.2 Projeto de serviços
-• Projeto Vercel: `lpf-10-services`
-• Estado: removido em 01/09/2026 após confirmação read-only de ausência de workload; não há projeto ou configuração operacional remanescente.
-• O projeto, domínio, endpoint, Root Directory e regras de build exclusivos foram removidos. `MCP_SUPABASE_INSPECT_URL` e `LPF_MCP_SECRET`, encontrados sem consumidor Vercel canônico no Core, também foram removidos por autorização expressa na E23.2.
+- lpf-10-services removido em 01/09/2026; sem projeto, domínio, endpoint, Root Directory ou configuração de build remanescente.
+- MCP_SUPABASE_INSPECT_URL e LPF_MCP_SECRET removidos do Core por ausência de consumidor. Não representa retirada da automação GitHub preservada.
 
 3.3 Runtime e build
-• Node.js: `22.x`
-• Regra: versão de Node deve ser conferida em Vercel > Settings > Build and Deployment > Node.js Version.
-• Regra: mudança de variável de ambiente na Vercel só entra no runtime após redeploy do deployment alvo.
-• Regra: testar primeiro em Preview da feature branch antes de Production, quando aplicável.
+- Node.js: `22.x`
+- Regra: versão de Node deve ser conferida em Vercel > Settings > Build and Deployment > Node.js Version.
+- Regra: mudança de variável de ambiente na Vercel só entra no runtime após redeploy do deployment alvo.
+- Regra: testar primeiro em Preview da feature branch antes de Production, quando aplicável.
 
 3.4 Variáveis públicas no Vercel
-• `NEXT_PUBLIC_SITE_URL`
-• Finalidade: origem canônica usada pelo fluxo de Auth para formar o callback `/auth/confirm`.
-• Escopo: Production e Preview.
-• Produção: `https://lp-factory-10.vercel.app`.
-• Preview: usar a origem HTTPS do deployment validado, sem path adicional.
+- `NEXT_PUBLIC_SITE_URL`
+- Finalidade: origem canônica usada pelo fluxo de Auth para formar o callback `/auth/confirm`.
+- Escopo: Production e Preview.
+- Produção: `https://lp-factory-10.vercel.app`.
+- Preview: usar a origem HTTPS do deployment validado, sem path adicional.
 
-• `NEXT_PUBLIC_SUPABASE_URL`
-• Finalidade: URL pública do projeto Supabase usado pelo app.
-• Escopo: Production e Preview.
-• Valor atual conhecido: `https://dpikmjgiteuafsbaubue.supabase.co`
+- `NEXT_PUBLIC_SUPABASE_URL`
+- Finalidade: URL pública do projeto Supabase usado pelo app.
+- Escopo: Production e Preview.
+- Valor atual conhecido: `https://dpikmjgiteuafsbaubue.supabase.co`
 
-• `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-• Finalidade: chave pública/publishable usada pelo client Supabase.
-• Escopo: Production e Preview.
-• Observação: é variável pública, mas deve ser registrada com mínimo necessário.
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- Finalidade: chave pública/publishable usada pelo client Supabase.
+- Escopo: Production e Preview.
+- Observação: é variável pública, mas deve ser registrada com mínimo necessário.
 
 3.5 Secrets e variáveis server-side no Vercel
-• `E11_MEMBERS_ENABLED`
-• Finalidade: gate operacional da gestão de membros e convites.
-• Escopo: Production e Preview.
-• Estado atual: `true` em Production e Preview.
-• Estado operacional: PR #656 mergeado, redeploy de Production concluído e smoke final aprovado em 30/07/2026.
-
-• `E20_5_SELECTED_RESEARCH_ENABLED`
-• Finalidade histórica: gate da seleção e consumo da pesquisa `end_customer` por taxon, retirado do runtime E20 pela E22.7.
-• Estado pós-cutover: todas as entradas dessa variável foram removidas da Vercel Core após autorização humana; não há consumidor no runtime vigente.
-• Regra operacional: não recriar nem reutilizar a variável sem decisão operacional própria.
-
-• `E19_5_WORKSPACE_ENABLED`
-• Finalidade histórica: gate server-only do workspace operacional de landing pages retirado no SV-PR03.
-• Escopo histórico: Preview e Production do projeto Core, sem branch scope.
-• Estado atual: as duas ocorrências sem consumidor foram removidas da Vercel Core por autorização expressa na E23.2.
-• Regra operacional: não recriar a variável nem criar novo consumidor sem decisão própria.
-
-• `INVITE_STATE_SECRET`
-• Finalidade: assinar o estado opaco transportado pelo convite nativo do Supabase Auth.
-• Escopo: Production e Preview.
-• Estado atual: configurada em Production e Preview, com valores independentes por ambiente e sem versionar o conteúdo.
-• Estado operacional conjunto: configurado em Production e Preview; fluxo corretivo aprovado no Preview e operação final aprovada em Production.
-• Regra operacional: manter configurada antes de habilitar `E11_MEMBERS_ENABLED`.
-
-• `SUPABASE_SECRET_KEY`
-• Finalidade: chave server-side Supabase para operações autorizadas do runtime.
-• Escopo: Production e Preview.
-• Valor real: não versionar.
-
-• `ACCESS_CONTEXT_ENFORCED`
-• Finalidade: flag de enforcement do Access Context.
-• Escopo: Production e Preview.
-• Valor esperado: `true`
-
-• `ACCESS_CTX_USE_V2`
-• Finalidade: flag para uso do Access Context v2.
-• Escopo: Production e Preview.
-• Valor esperado: `true`
-
-• `OPENAI_API_KEY`
-• Finalidade: chave server-side compartilhada pelos consumidores OpenAI de produto autorizados no Core.
-• Escopo: Production e Preview.
-• Estado atual: configurada em Production e Preview; os consumidores autorizados ativos compartilham a chave sem exposição do valor.
-• Valor real: não versionar.
-• Regra operacional: os consumidores autorizados podem compartilhar a mesma chave; não criar outra sem necessidade aprovada.
-
-• `OPENAI_ADMIN_KEY`
-• Finalidade: chave administrativa server-side usada exclusivamente pelo Core para leitura read-only do gasto oficial total na Costs API da organização.
-• Permissão: `Read only` na OpenAI Platform.
-• Escopo: Preview e Production do projeto Core na Vercel, como secret server-side.
-• Estado operacional: Organization Admin Key criada; Preview e Production redeployados e validados em runtime com leitura oficial real da Costs API de `US$ 0,4064` para agosto de 2026.
-• Separação: `OPENAI_API_KEY` permanece configurada separadamente e não foi substituída, reutilizada ou alterada; `OPENAI_ADMIN_KEY` não atravessa client, log, banco ou payload sanitizado.
-• Valor real: não versionado nem registrado.
-
-• `OPENAI_LP_COST_TRACKING_ENABLED`
-• Finalidade histórica: gate server-side da persistência financeira prospectiva dos antigos workloads de texto e imagem de Landing Pages.
-• Escopo hospedado conhecido: configurado com `true` somente em Production; Preview e Development permanecem sem a variável operacional.
-• Estado atual: sem consumidor no código após a retirada do write-side de custos e dos dois workloads produtores; o valor hospedado é inerte e não produz novos eventos.
-• Série preservada: a data de corte, a cobertura e os eventos anteriores permanecem somente leitura para o histórico congelado e a reconciliação administrativa.
-• Regra operacional: não é necessário remover a variável da Vercel neste recorte e nenhum novo consumidor deve ser criado sem decisão própria.
-• Valor real: não versionar.
-
-• `OPENAI_ACTIVE_COST_TRACKING_ENABLED`
-• Finalidade: gate server-side independente por ambiente do ledger ativo transversal de custos OpenAI.
-• Escopo: Preview e Production do Core.
-• Estado operacional: configurada e ativa em Preview e Production; migrations, Security Controls, redeploys e smokes dos quatro workloads Core foram aprovados nos dois ambientes.
-• Regra operacional: ausência, vazio ou valor diferente do literal `true` mantém a captura financeira desligada sem bloquear o workload; alterações exigem redeploy e validação do ambiente afetado.
-• Classificação: Config, não Secret.
-
-• `OPENAI_COST_INGESTION_ENABLED`
-• Finalidade: gate server-side do endpoint interno que recebe fatos assinados do `supabase_inspect`.
-• Escopo: Preview e Production do Core, alinhado ao ambiente do workflow chamador.
-• Estado operacional: configurada no Core e no GitHub Actions; o ingresso Production foi aprovado com assinatura válida, rejeição de assinatura inválida e expirada e execução real concluída do `pipeline-supabase-inspect`.
-• Classificação: Config, não Secret.
-
-• `OPENAI_COST_INGESTION_HMAC_SECRET`
-• Finalidade: segredo exclusivo para autenticar envelopes financeiros do GitHub Actions no endpoint interno do Core.
-• Escopo: GitHub Actions e ambiente correspondente do Core; usar valores independentes por ambiente.
-• Estado operacional: configurado no GitHub Actions e no Core para o ingresso Production validado; valor real não versionar.
-• Classificação: Secret.
-
-• `OPENAI_COST_INGESTION_ENVIRONMENT`
-• Finalidade: validar no Core o ambiente declarado pelo `supabase_inspect`; a revisão de referência permanece code-owned no inventário E21.
-• Escopo: Preview e Production.
-• Estado operacional: configurada no GitHub Actions e no Core para o fluxo Production validado.
-• Classificação: Config, não Secret.
-
-• `OPENAI_OPERATIONAL_CONFIG_ENABLED`
-• Finalidade: gate server-side temporário do cutover da configuração operacional dinâmica dos workloads OpenAI de produto.
-• Escopo: Preview e Production do projeto Core, com configuração independente por ambiente; Development ignora o gate e permanece no baseline local.
-• Habilitação: somente o literal `true` ativa a leitura operacional no Supabase. Variável ausente, vazia ou com qualquer outro valor mantém `repo_catalog` em Preview e Production.
-• Estado operacional final: configurada com `true` em Preview e Production após cutover sequencial aprovado; os dois ambientes foram redeployados com o gate ativo.
-• Regra de falha: com o gate habilitado, o runtime consulta exclusivamente o Supabase a cada execução, sem cache nem fallback para `repo_catalog`.
-• Progressão operacional concluída: Preview foi habilitado e aprovado antes de Production; apply, invariantes, Security Controls, smoke completo de Preview e smoke mínimo de Production foram aprovados.
-• Redeploy: a habilitação ou desabilitação do gate exige redeploy do ambiente afetado; alterações ordinárias da configuração ativa após o cutover não exigem redeploy.
-• Valor real por ambiente: não versionar neste documento.
-
-• `E25_1_COMMUNICATION_BASE_ENABLED`
-• Finalidade: gate server-only da Base de Comunicação E25.1, abrangendo rota, ações, navegação e assistência de IA.
-• Escopo: Preview e Production do projeto Core, independente por ambiente; somente o literal `true` habilita. Ausência ou qualquer outro valor mantém a Base indisponível sem consulta à sua tabela.
-• Estado operacional: `true` em Preview e Production, de forma independente, após apply seletivo das duas migrations E25, prova SQL, registro prospectivo das quatro coberturas E21.5 e ativação E21 da configuração avaliada. Os dois ambientes foram redeployados e passaram por QA autenticado; alterações do gate exigem novo redeploy do ambiente afetado.
-• Classificação: Config, não Secret. Valor real por ambiente não versionar.
-
-• `E25_3_COMMUNICATION_RESOURCES_ENABLED`
-• Finalidade: gate server-only dos recursos manuais das três categorias da Base e da gestão global de seções no Admin; separado do gate E25.1 da Base existente.
-• Plataforma e escopo aprovados: Vercel Core `lp-factory-10`, Preview e Production, com configuração independente por ambiente.
-• Habilitação: somente o literal `true`; ausência ou qualquer outro valor mantém os recursos E25.3 desligados. Classificação: Config, não Secret.
-• Estado confirmado em 11/10/2026: Config com `true` em Preview e Production, configurada independentemente por ambiente. Ambos foram redeployados e passaram por QA autenticado; Production está operacional no domínio oficial `https://lp-factory-10.vercel.app`. [Recibo de ativação e QA final](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1057#issuecomment-6112021128).
-• Progressão operacional concluída: PR #1057 mergeado com os recursos comprovadamente desligados em Preview e Production, após checks e Code Review independente do HEAD final sem achados. Preview foi reativado, redeployado e revalidado antes da habilitação, redeploy e QA aprovado de Production.
-• Redeploy: habilitar ou desabilitar exige novo deployment do ambiente afetado; desligar este gate preserva a Base E25.1 e os dados persistidos.
-
-• `E10_11_PASSAGE_ENABLED`
-• Finalidade: gate server-only da coleta do nome público, conclusão versionada do Pending Setup e encaminhamento de conta autorizada à Base.
-• Escopo: Preview e Production do Core, independente por ambiente; somente o literal `true` ativa. Ausência ou outro valor preserva a conclusão e a rota anteriores, sem consulta à coluna nova.
-• Estado operacional: `true` em Preview e Production, de forma independente, após o apply seletivo E10.11; ambos os ambientes foram redeployados e passaram por QA autenticado. A alteração exige novo redeploy do ambiente afetado.
-• Classificação: Config, não Secret. Valor real por ambiente não versionar.
-
-• `E10_12_ATTENDANCE_ENABLED`
-• Finalidade: gate server-only do atendimento inicial por IA.
-• Desligamento suspende conversas já iniciadas por IA; não as encaminha ao legado nem limpa proposta ou intenção. O novo atendimento exige conversa nova, sem conversão do histórico legado; seu QA usa conta/conversa nova de teste.
-• Plataforma e escopo aprovados: Vercel Core, Preview e Production, com configuração independente por ambiente; habilitação somente pelo literal `true`.
-• Estado: `true` em Production e em Preview para as branches `codex-app/e10-12-rpc-acl`, `codex-app/e10-12-encerramento-economia`, `codex-app/e10-12-mensagem-integral` e `codex-app/e10-12-comercial-leituras`, com configuração independente por ambiente. Delta comercial promovido após o merge do PR #1069; Production READY e QA autenticado de Preview e Production aprovados. Nenhuma migration ou apply integra esse delta; `SUPABASE_APPLY_MIGRATIONS_ENABLED` permanece em `false`.
-• Classificação: Config, não Secret. Alteração exige redeploy do ambiente afetado.
-• Workload `pending_setup_conversation`: `gpt-6-luna`/`xhigh`, contrato 5, sem Web Search; a configuração efetiva é a revisão ativa E21 do respectivo ambiente. O prompt `e10_12_sales_context_v14` recebeu provas E21 independentes aprovadas nas revisões 14 de Preview e 5 de Production; a revisão 5 foi ativada em Production após o merge, com QA pós-merge aprovado. Recibo final: [PR #1069](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1069#issuecomment-6173160187). Evidências do baseline: PRs #1050, #1053, #1054, #1056, #1058 e #1059.
-
-• `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED`
-• Finalidade histórica: gate do provider consultivo E20.8.7, removido com o workload factual pela E22.7.
-• Estado pós-cutover: todas as entradas dessa variável foram removidas da Vercel Core após autorização humana; não há consumidor no runtime vigente.
-• Regra operacional: não recriar nem reutilizar a variável sem decisão operacional própria.
-
-• `E20_6_INPUT_CATALOG_REVIEW_ENABLED`
-• Finalidade histórica: gate de revisão do catálogo factual E20, sem consumidor no runtime vigente da E22.7.
-• Estado pós-cutover: todas as entradas dessa variável foram removidas da Vercel Core após autorização humana; não há consumidor no runtime vigente.
-• Regra operacional: não recriar nem reutilizar a variável para outro comportamento sem decisão operacional própria.
-
-• Configuração efetiva dos workloads OpenAI de produto
-• Fonte canônica: `lib/openai-workloads/registry.ts` mantém identidade, baseline local e allowlist; Development usa `repo_catalog` revisão `v2`, e Preview/Production usam exclusivamente `supabase_operational` com revisão decimal ativa.
-• Workloads textuais validados operacionalmente: `niche_resolution` e `commercial_activation_draft_generation`, com modelo `gpt-5.4-mini` e esforço de raciocínio `none`.
-• Workload retirado: `landing_page_dynamic_market_research` não integra registry, allowlist, configuração administrativa ou transporte corrente. Após o apply E20.8, suas unidades mutáveis deixam o agregado; revisões, ativações e custos históricos permanecem inertes e não autorizam novo consumo.
-• Validação operacional: `niche_resolution` e `commercial_activation_draft_generation` foram executados uma única vez em Production em 10/08/2026; os Runtime Logs confirmaram sucesso e telemetria sanitizada, sem prompt, resposta integral, credencial ou dado pessoal.
-• Estado dos workloads antigos: quatro unidades hospedadas dos workloads de draft permanecem como história física; as duas unidades mutáveis da E20.7 foram removidas após o apply E20.8.
-• Workload factual retirado pela E22.7: as duas unidades Preview/Production de `taxon_input_catalog_sufficiency_evaluation` foram removidas no apply autorizado; não há consumidor na allowlist runtime. Revisões e ativações permanecem históricas e inertes.
-• Validação do cutover E21.2: Preview e Production permanecem em `supabase_operational`; registros históricos fora da allowlist vigente não alteram a cardinalidade nem invalidam a leitura corrente.
-• Duração da Function: o segmento produtivo permanece configurado com `maxDuration = 300`; deployment READY e duas execuções integradas completas sem timeout incompatível corroboraram operacionalmente o gate.
-• Variáveis legadas de modelo na Vercel
-• Nomes: `OPENAI_NICHE_RESOLVER_MODEL`, `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL` e `OPENAI_COMMERCIAL_ACTIVATION_MODEL`.
-• Escopo: Production e Preview.
-• Uso runtime atual: nenhum nos consumidores de produto ativos; a configuração efetiva vem do catálogo versionado no repositório.
-• Estado operacional: ausentes da configuração vigente de Production e Preview, sem branch override, após retirada controlada em 10/08/2026.
-• Validação pós-retirada das variáveis legadas: `OPENAI_API_KEY` permaneceu configurada nos dois ambientes; os redeploys de Production e Preview ficaram verdes; `/admin/workloads-openai` confirmou `repo_catalog`, modelo `gpt-5.4-mini` e esforço `none` para os consumidores textuais então ativos.
-• Regra: não recriar as variáveis sem necessidade futura aprovada.
-
-• `SUPABASE_DB_URL_READONLY`
-• Estado: compartilhado e preservado para a automação GitHub `automations/supabase-inspect`; não há consumidor Vercel.
-• Finalidade: conexão read-only usada pela automação GitHub de inspeção do Supabase.
-• Regra: não usar para mutações.
-• Valor real: não versionar.
+- E11_MEMBERS_ENABLED: gestão de membros/convites; true em Production e Preview.
+- INVITE_STATE_SECRET: assinatura do estado opaco do convite; configurado em Preview/Production com valores independentes. Deve existir antes de habilitar E11_MEMBERS_ENABLED.
+- SUPABASE_SECRET_KEY: operações Supabase autorizadas do runtime, server-side em Preview/Production.
+- ACCESS_CONTEXT_ENFORCED e ACCESS_CTX_USE_V2: enforcement/Access Context v2; esperado true em Preview/Production.
+- OPENAI_API_KEY: configurada em Preview/Production e compartilhada pelos consumidores de produto autorizados; não criar outra sem necessidade aprovada.
+- OPENAI_ADMIN_KEY: Organization Admin Key com Read only, exclusiva do Core para Costs API em Preview/Production. Configurada e validada nos dois ambientes; separada de OPENAI_API_KEY, nunca em client, log, banco ou payload sanitizado.
+- OPENAI_LP_COST_TRACKING_ENABLED: true somente em Production; ausente em Preview/Development. Sem consumidor após retirada do write-side E21.4; valor inerte, série/corte/cobertura preservados somente leitura. Sem remoção obrigatória ou novo consumidor autorizado.
+- OPENAI_ACTIVE_COST_TRACKING_ENABLED: ledger ativo transversal; Config ativa em Preview/Production, independente por ambiente. Ausência/vazio/diferente de true desliga captura sem bloquear workload. Alteração exige redeploy e validação do ambiente.
+- OPENAI_COST_INGESTION_ENABLED: Config do ingresso financeiro assinado de supabase_inspect, escopo Preview/Production do Core alinhado ao workflow. Configurada no Core/GitHub; fluxo Production validado, inclusive rejeição de assinatura inválida/expirada.
+- OPENAI_COST_INGESTION_HMAC_SECRET: Secret exclusivo do ingresso, configurado no GitHub e Core para Production validado; valores independentes por ambiente.
+- OPENAI_COST_INGESTION_ENVIRONMENT: Config para validar ambiente declarado pelo workflow; escopo Preview/Production, configurada no GitHub/Core para Production validado. Revisão de referência code-owned E21.
+- OPENAI_OPERATIONAL_CONFIG_ENABLED: true em Preview/Production, independente por ambiente; Development ignora gate. Somente true lê revisão ativa Supabase em cada execução, sem cache/fallback após erro; ausente/vazio/outro valor usa repo_catalog. Alterar gate exige redeploy; alteração ordinária da configuração ativa não exige. Ativação sequencial Preview → Production concluída.
+- E25_1_COMMUNICATION_BASE_ENABLED: Config true em Preview/Production, independente por ambiente; controla rota, actions, navegação e assistência da Base. Ausente/outro valor desabilita sem consultar tabela. Apply, configuração E21 e ativação concluídos; alteração exige redeploy.
+- E25_3_COMMUNICATION_RESOURCES_ENABLED: Config true em Preview/Production do lp-factory-10, independente por ambiente, confirmada em 11/10/2026. Recursos manuais das três categorias e gestão global de seções separados de E25.1; somente true habilita. Preview reativado/validado antes de Production, ambos operacionais. Alterar exige redeploy; desligar preserva E25.1 e dados persistidos. [Recibo final](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1057#issuecomment-6112021128).
+- E10_11_PASSAGE_ENABLED: Config true em Preview/Production, independente por ambiente; coleta nome público, conclusão versionada e passagem autorizada à Base. Ausente/outro valor preserva conclusão/rota anteriores sem consultar coluna nova. Apply/ativação concluídos; alteração exige redeploy.
+- E10_12_ATTENDANCE_ENABLED: Config habilitada somente por true; Production e Previews das branches codex-app/e10-12-rpc-acl, codex-app/e10-12-encerramento-economia, codex-app/e10-12-mensagem-integral e codex-app/e10-12-comercial-leituras, independentes por ambiente. Alteração exige redeploy. Desligar suspende conversas IA sem encaminhar ao legado nem limpar proposta/intenção; novas conversas sem conversão histórica, inclusive no QA.
+- Configuração operacional comprovada do pending_setup_conversation: gpt-6-luna/xhigh, contrato 5, sem Web Search; efetiva é a revisão ativa E21 por ambiente. Prompt e10_12_sales_context_v14 qualificado em Preview revisão 14 e Production revisão 5; revisão 5 ativada em Production após merge, com promoção/QA concluídos. [Recibo final #1069](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1069#issuecomment-6173160187). Delta comercial sem migration/apply; gate de migrations permanece false.
+- Gates removidos da Vercel Core e sem consumidor: E20_5_SELECTED_RESEARCH_ENABLED (seleção de pesquisa end_customer), E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED (provider factual), E20_6_INPUT_CATALOG_REVIEW_ENABLED (revisão factual) e E19_5_WORKSPACE_ENABLED (workspace LP, antes Preview/Production gerais). Não recriar/reutilizar sem decisão própria.
+- Configuração efetiva de produto: identidade, baseline e allowlist em `lib/openai-workloads/registry.ts`; Development usa repo_catalog v2, Preview/Production supabase_operational com revisão decimal ativa. Referências validadas niche_resolution e commercial_activation_draft_generation: gpt-5.4-mini/none; a revisão ativa do ambiente governa o efetivo.
+- Configuração registrada de communication_base_stage2_intelligence em Preview/Production: gpt-6-luna/max Standard pelo lifecycle E21; configuração efetiva sempre pela revisão ativa do ambiente.
+- Workloads retirados: landing_page_dynamic_market_research e taxon_input_catalog_sufficiency_evaluation sem unidades mutáveis ou consumidores correntes. Revisões/ativações/custos e quatro unidades antigas de drafts permanecem históricos e inertes; fora da allowlist não invalidam leitura corrente.
+- maxDuration = 300 no segmento produtivo, operacionalmente validado; contrato executável no código.
+- OPENAI_NICHE_RESOLVER_MODEL, OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL e OPENAI_COMMERCIAL_ACTIVATION_MODEL: ausentes de Preview/Production, sem branch override ou consumidor ativo. Não recriar sem necessidade aprovada; modelo efetivo pela configuração E21 acima.
+- SUPABASE_DB_URL_READONLY: sem consumidor Vercel; preservado somente no GitHub para automations/supabase-inspect, sem mutações.
 
 3.6 Classificação Config e Secret no Core
-• Inspeção metadata-only confirmada em 07/09/2026 no projeto `lp-factory-10`: das 51 entradas inicialmente inventariadas por combinação de nome, ambiente e branch scope, seis ocorrências sem consumidor foram removidas e 45 permanecem ativas; nenhum valor foi lido, recuperado, copiado, reinserido ou substituído.
-• Regra: `Secret` é reservado a credenciais, tokens, senhas, chaves privadas e material de assinatura ou autenticação; `Config` é usado para URLs, chaves publishable, flags, gates, IDs e demais configurações não sensíveis, inclusive server-side. Toda variável `NEXT_PUBLIC_*` deve permanecer `Config`.
-• Classificações conformes de credenciais: `INVITE_STATE_SECRET`, `SUPABASE_SECRET_KEY`, `OPENAI_API_KEY`, `OPENAI_ADMIN_KEY`, `STRIPE_SECRET_KEY` e `STRIPE_WEBHOOK_SECRET` estão como `Secret` nos ambientes cadastrados.
-• Classificações conformes de configuração: `ACCESS_CONTEXT_ENFORCED`, `ACCESS_CTX_USE_V2`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` e `OPENAI_LP_COST_TRACKING_ENABLED` estão como `Config`; `E11_MEMBERS_ENABLED` e `OPENAI_OPERATIONAL_CONFIG_ENABLED` possuem ao menos uma entrada geral conforme e outras divergências listadas abaixo.
-• Estado conservador aprovado: 18 configurações permanecem sobreclassificadas como `Secret` — `E11_MEMBERS_ENABLED` no branch scope legado, `OPENAI_OPERATIONAL_CONFIG_ENABLED` em Preview e os 16 nomes `STRIPE_TEST_*_PRODUCT_ID`/`STRIPE_TEST_*_PRICE_ID`. A Vercel mantém secrets salvos como write-only; não houve substituição ou reinserção de valor.
-• Branch scopes preservados por decisão funcional: `codex-app/e11-11-1-7`, `codex-app/e20-5-pos-merge`, `codex-app/e20-6-5-post-apply-corrections` e `codex-app/e11-2-orquestracao`; as entradas scoped dos gates E20 foram retiradas, sem alterar as configurações independentes preservadas. Não há impacto material comprovado no runtime.
-• Remoções concluídas: duas ocorrências de `E19_5_WORKSPACE_ENABLED` e uma ocorrência de cada nome `MCP_SUPABASE_INSPECT_URL`, `LPF_MCP_SECRET`, `SUPABASE_DB_URL_READONLY` e `E7_ONBOARD_SERVICE_ONLY` foram removidas somente da Vercel Core. O secret GitHub homônimo `SUPABASE_DB_URL_READONLY` e seu consumidor permanecem preservados.
-• Estado da reconciliação: após a remoção das sete entradas dos gates E20, 38 configurações permanecem ativas. Não houve reclassificação nem outras remoções neste recorte; nova correção exige risco ou impacto funcional material comprovado e decisão própria.
-• Registro histórico da E23.2 (07/09/2026): o Preview gerado após as remoções ficou `READY` e o smoke proporcional confirmou HTTP 200 na rota de login; Production não foi redeployada naquele recorte.
-• Estado pós-E22.7: Production `dpl_33SZh5rQtLd65323GXrBBHSyr68N` ficou `READY` após redeploy de `main` no SHA `362842f41fc9ee1c11315565d7647b1c61b51058`; Preview `dpl_D3hNnNi7LRUiYFXxXZVGXtQGHFWK` ficou `READY` após redeploy do branch `codex-app/e22-7-retirada-terminal` no SHA `5591b593277eb8a143917f79a5c88fabfc9e0723`. QA autenticado pós-apply/redeploy concluído com sucesso.
+- Secret: credenciais, tokens, senhas, chaves privadas e assinatura/autenticação. Config: URLs, publishable keys, flags/gates/IDs e demais valores não sensíveis, inclusive server-side; NEXT_PUBLIC_* deve ser Config.
+- Secret confirmado: INVITE_STATE_SECRET, SUPABASE_SECRET_KEY, OPENAI_API_KEY, OPENAI_ADMIN_KEY, STRIPE_SECRET_KEY e STRIPE_WEBHOOK_SECRET nos ambientes cadastrados.
+- Config confirmado: ACCESS_CONTEXT_ENFORCED, ACCESS_CTX_USE_V2, NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY e OPENAI_LP_COST_TRACKING_ENABLED. E11_MEMBERS_ENABLED e OPENAI_OPERATIONAL_CONFIG_ENABLED possuem entradas gerais conformes e exceções abaixo.
+- Sobreclassificações preservadas por decisão conservadora: E11_MEMBERS_ENABLED em branch scope legado, OPENAI_OPERATIONAL_CONFIG_ENABLED em Preview e os 16 nomes STRIPE_TEST_*_PRODUCT_ID/STRIPE_TEST_*_PRICE_ID. Secrets salvos são write-only; não substituir/reinserir valores para reclassificar por rotina.
+- Branch scopes preservados: codex-app/e11-11-1-7, codex-app/e20-5-pos-merge, codex-app/e20-6-5-post-apply-corrections e codex-app/e11-2-orquestracao; entradas scoped dos gates E20 foram retiradas, sem mudar configurações independentes.
+- Ausentes do Core: E19_5_WORKSPACE_ENABLED, MCP_SUPABASE_INSPECT_URL, LPF_MCP_SECRET, SUPABASE_DB_URL_READONLY, E7_ONBOARD_SERVICE_ONLY e gates E20 de 3.5. SUPABASE_DB_URL_READONLY do GitHub permanece preservado.
+- Nova correção exige risco ou impacto funcional material comprovado e decisão própria. Inspeção somente de metadados, sem recuperar, copiar, substituir ou expor valores.
 
 4. Supabase
 
 4.1 Projeto
-• Projeto Supabase: `lp-factory-10`
-• URL pública conhecida: `https://dpikmjgiteuafsbaubue.supabase.co`
-• PostgreSQL: `17.6.1.063`
-• PostgREST/Data API: `14.1`
-• Auth: ativo.
-• Storage: ativo.
-• RLS: obrigatório para tabelas sensíveis.
-• GraphQL: capacidade desabilitada; extensão e resolvedor ausentes, com stub gerenciado sem dados. Contrato de banco em `docs/schema.md` — seção 6.2; configuração local `supabase/config.toml` expõe somente `public` em `api.schemas`.
+- Projeto Supabase: `lp-factory-10`
+- URL pública conhecida: `https://dpikmjgiteuafsbaubue.supabase.co`
+- PostgreSQL: `17.6.1.063`
+- PostgREST/Data API: `14.1`
+- Auth: ativo.
+- Storage: ativo.
+- RLS: obrigatório para tabelas sensíveis.
+- GraphQL: capacidade desabilitada; extensão e resolvedor ausentes, com stub gerenciado sem dados. Contrato de banco em `docs/schema.md` — seção 6.2; configuração local `supabase/config.toml` expõe somente `public` em `api.schemas`.
 
 4.2 Ambiente
-• Estado atual: não existe ambiente Supabase STAGING ativo.
-• Regra: previews usam o projeto principal neste momento.
-• Regra: se houver novo staging no futuro, não manter sem controles mínimos de segurança.
+- Estado atual: não existe ambiente Supabase STAGING ativo.
+- Regra: previews usam o projeto principal neste momento.
+- Regra: se houver novo staging no futuro, não manter sem controles mínimos de segurança.
 
 4.3 JWT Signing Keys
-• Current: ECC (P-256)
-• Previous: Legacy HS256
-• Regra: não revogar chave anterior por padrão.
-• Regra: integrações futuras devem validar JWT via JWKS + `kid`.
+- Current: ECC (P-256)
+- Previous: Legacy HS256
+- Regra: não revogar chave anterior por padrão.
+- Regra: integrações futuras devem validar JWT via JWKS + `kid`.
 
 4.4 Auth Redirect URLs
-• Local: Supabase Dashboard → Authentication → URL Configuration → Redirect URLs
-• Regra: permitir somente domínios/paths necessários.
-• Produção: incluir URLs necessárias do domínio oficial do app.
-• Localhost: incluir apenas quando necessário para desenvolvimento/teste.
-• Preview Vercel: quando necessário, usar wildcard com `/**` para cobrir paths profundos.
-• Regra: não usar curingas amplos fora de preview.
+- Local: Supabase Dashboard → Authentication → URL Configuration → Redirect URLs
+- Regra: permitir somente domínios/paths necessários.
+- Produção: incluir URLs necessárias do domínio oficial do app.
+- Localhost: incluir apenas quando necessário para desenvolvimento/teste.
+- Preview Vercel: quando necessário, usar wildcard com `/**` para cobrir paths profundos.
+- Regra: não usar curingas amplos fora de preview.
 
 4.5 Supabase Auth — SMTP via Resend
-• Finalidade: envio transacional de signup confirm e reset password.
-• Provedor SMTP: Resend.
-• Sender: `no-reply@lpfactory.com.br`
-• SMTP host/porta: `smtp.resend.com:587`
-• Username SMTP: `resend`
-• Password SMTP: secret configurado no Supabase; não versionar.
-• Regra: manter SPF/DKIM compatíveis com Resend.
-• Validação atual conhecida: signup e forgot password testados, entrega confirmada, links funcionais e sem erro de envio.
+- Finalidade: envio transacional de signup confirm e reset password.
+- Provedor SMTP: Resend.
+- Sender: `no-reply@lpfactory.com.br`
+- SMTP host/porta: `smtp.resend.com:587`
+- Username SMTP: `resend`
+- Password SMTP: secret configurado no Supabase; não versionar.
+- Regra: manter SPF/DKIM compatíveis com Resend.
+- Validação atual conhecida: signup e forgot password testados, entrega confirmada, links funcionais e sem erro de envio.
 
 4.6 Supabase Auth — convite de membro
-• Auth Hook: ausência de hook configurado confirmada operacionalmente em 27/07/2026.
-• Envio: usar o convite nativo `inviteUserByEmail`; não configurar envio customizado no Core.
-• Template: `Invite user` configurado em português do Brasil em 28/07/2026; o estado assinado é codificado no `redirectTo` específico de cada emissão e transportado por `{{ .RedirectTo }}`, sem `data` ou `user_metadata` compartilhado.
-• Link aprovado para o template: `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=invite`.
-• Redirect de Production: `https://lp-factory-10.vercel.app/auth/confirm` cadastrado na allowlist do Supabase Auth em 28/07/2026.
-• Redirect de Preview: wildcard restrito a `https://*-alcino-afonsos-projects.vercel.app/**` confirmado na allowlist; a prova deve usar somente o deployment autorizado.
-• Email OTP Expiration: `3600` segundos confirmados no Dashboard em 28/07/2026; o Core não adiciona validade local paralela.
-• Estado: template, redirects e expiração configurados; correção do transporte concorrente implementada e testes humanos hospedados aprovados no Preview autorizado da fase `11.1.7`.
-• Estado final: PR #656 mergeado; gate habilitado em Production; redeploy concluído; smoke final aprovado na página de membros e convites.
-• Evidência hospedada aprovada: convite novo, reenvio idempotente, link adulterado rejeitado, link legítimo concluído com definição de senha antes da ativação, dois convites concorrentes para contas diferentes e isolamento entre memberships por `account_user_id`.
+- Convite nativo inviteUserByEmail; nenhum Auth Hook configurado na última confirmação operacional de 27/07/2026, sem envio customizado no Core.
+- Template Invite user em pt-BR: `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=invite`. Estado assinado específico de cada emissão em redirectTo, sem data/user_metadata compartilhado.
+- Redirect Production: https://lp-factory-10.vercel.app/auth/confirm. Preview: wildcard restrito https://*-alcino-afonsos-projects.vercel.app/**, somente deployment autorizado.
+- Email OTP Expiration: 3600 segundos; sem validade local paralela no Core. Template, redirects e expiração configurados; gate E11 habilitado em Production.
+- Jornada e regras de concorrência, reenvio, senha e isolamento em `docs/roadmap.md` — 11.1.4.
 
 4.7 Acesso operacional read-only para automações
-• Role operacional read-only: `ai_readonly`.
-• Secret relacionado: `SUPABASE_DB_URL_READONLY`.
-• Uso: inspeções e verificações read-only em automações.
-• Regra: não usar esse acesso para mutações.
-• Regra: revisar permissões antes de ampliar o escopo operacional.
+- Role operacional read-only: `ai_readonly`.
+- Secret relacionado: `SUPABASE_DB_URL_READONLY`.
+- Uso: inspeções e verificações read-only em automações.
+- Regra: não usar esse acesso para mutações.
+- Regra: revisar permissões antes de ampliar o escopo operacional.
 
 4.8 Storage privado das revisões de landing page
-• Bucket definido no repositório: `landing-page-revision-assets`.
-• Estado operacional: infraestrutura hospedada preservada, porém inerte após a retirada dos readers, Preview e assinatura de assets do produto legado.
-• Configuração aprovada: privado, limite de 5 MB e MIME permitido somente `image/webp`.
-• Acesso do produto: não há consumidor runtime; nenhuma policy direta para anon ou authenticated foi alterada.
-• Limpeza do bucket ou de objetos depende de recorte destrutivo próprio.
+- Bucket definido no repositório: `landing-page-revision-assets`.
+- Estado operacional: infraestrutura hospedada preservada, porém inerte após a retirada dos readers, Preview e assinatura de assets do produto legado.
+- Configuração aprovada: privado, limite de 5 MB e MIME permitido somente `image/webp`.
+- Acesso do produto: não há consumidor runtime; nenhuma policy direta para anon ou authenticated foi alterada.
+- Limpeza do bucket ou de objetos depende de recorte destrutivo próprio.
 
 4.9 Health Check Advisors
-• Projeto alvo: `LP-Factory-10`.
-• Acesso manual: Supabase Studio → Advisors → Health.
-• Procedimento: executar o refresh manual e registrar data/hora e os estados de Data API/PostgREST, Auth, Storage e Edge Functions.
-• Semântica: resultado vazio significa verificações executadas sem achados; `advisor_check_unavailable` significa verificação indisponível e nunca estado saudável.
-• Uso: achado é sinal de investigação a correlacionar com horário, release, logs seguros e comportamento observado; não prova causa nem autoriza correção.
-• Baseline observado em 22/09/2026 19:31, America/Sao_Paulo: `0 errors`, `0 warnings` e `0 suggestions`, sem `advisor_check_unavailable`.
-• Limite: leitura manual somente; não criar token, chamar Management API, executar SQL ou correção, nem criar monitor, job, agente ou automação sem recorte futuro aprovado.
+- Projeto alvo: `LP-Factory-10`.
+- Acesso manual: Supabase Studio → Advisors → Health.
+- Procedimento: executar o refresh manual e registrar data/hora e os estados de Data API/PostgREST, Auth, Storage e Edge Functions.
+- Semântica: resultado vazio significa verificações executadas sem achados; `advisor_check_unavailable` significa verificação indisponível e nunca estado saudável.
+- Uso: achado é sinal de investigação a correlacionar com horário, release, logs seguros e comportamento observado; não prova causa nem autoriza correção.
+- Baseline observado em 22/09/2026 19:31, America/Sao_Paulo: `0 errors`, `0 warnings` e `0 suggestions`, sem `advisor_check_unavailable`.
+- Limite: leitura manual somente; não criar token, chamar Management API, executar SQL ou correção, nem criar monitor, job, agente ou automação sem recorte futuro aprovado.
 
 5. Resend
 
 5.1 Uso
-• Finalidade: envio transacional usado pelo Supabase Auth.
-• Domínio verificado: `lpfactory.com.br`
-• Plano atual conhecido: Free.
-• Sender usado: `no-reply@lpfactory.com.br`
-• Uso atual: indireto via Supabase Auth SMTP.
-• O app Core não chama a API Resend diretamente no runtime.
-• Não há SDK Resend versionado no repositório no estado atual.
+- Finalidade: envio transacional usado pelo Supabase Auth.
+- Domínio verificado: `lpfactory.com.br`
+- Plano atual conhecido: Free.
+- Sender usado: `no-reply@lpfactory.com.br`
+- Uso atual: indireto via Supabase Auth SMTP.
+- O app Core não chama a API Resend diretamente no runtime.
+- Não há SDK Resend versionado no repositório no estado atual.
 
 5.2 DNS relacionado
-• SPF/DKIM devem permanecer compatíveis com Resend.
-• Regra: não alterar SPF raiz sem avaliar impacto em e-mails humanos/corporativos.
-• Regra: Resend permanece para envio transacional, não para mailbox humano.
+- SPF/DKIM devem permanecer compatíveis com Resend.
+- Regra: não alterar SPF raiz sem avaliar impacto em e-mails humanos/corporativos.
+- Regra: Resend permanece para envio transacional, não para mailbox humano.
 
 6. OpenAI Platform
 
 6.1 Projects
-• Project DEV: `LPF10-DEV`
-• Project PROD: `LPF10-PROD`
-• Sharing atual conhecido: “Enabled for selected projects” com apenas `LPF10-DEV` selecionado.
-• Regra: Default e PROD não devem compartilhar por padrão.
+- Project DEV: `LPF10-DEV`
+- Project PROD: `LPF10-PROD`
+- Sharing atual conhecido: “Enabled for selected projects” com apenas `LPF10-DEV` selecionado.
+- Regra: Default e PROD não devem compartilhar por padrão.
 
 6.2 Service Accounts e keys
-• Service Account criada no `LPF10-DEV` para uso em DEV.
-• Estado final conhecido: 1 key ativa no `LPF10-DEV`.
-• Regra: manter apenas keys necessárias ativas.
-• Regra: revogar imediatamente keys expostas ou indevidas.
+- Service Account criada no `LPF10-DEV` para uso em DEV.
+- Estado final conhecido: 1 key ativa no `LPF10-DEV`.
+- Regra: manter apenas keys necessárias ativas.
+- Regra: revogar imediatamente keys expostas ou indevidas.
 
 6.3 Variáveis relacionadas
-• `OPENAI_API_KEY`
-• Plataforma: Vercel e/ou GitHub Actions, conforme uso.
-• Finalidade: autenticação com OpenAI API; no Core, a mesma chave server-side pode atender os consumidores de produto autorizados.
-• Valor real: não versionar.
-
-• A seleção de modelo, esforço ou configuração de mídia dos workloads OpenAI de produto não usa variáveis Vercel; Development usa o baseline versionado no repositório e Preview/Production resolvem a revisão ativa no Supabase por meio do gate operacional registrado em 3.5.
-• As três variáveis legadas de modelo estão ausentes da configuração vigente da Vercel conforme 3.5.
+- OPENAI_API_KEY: autenticação OpenAI, server-only; consumidores de produto autorizados podem compartilhar a chave. Escopos Vercel em 3.5 e GitHub em 2.2.
+- Modelo/effort/mídia não vêm de variáveis Vercel legadas: Development usa baseline versionado; Preview/Production usam revisão ativa Supabase pelo gate de 3.5.
 
 6.3.1 Endpoint externo atual
-• Endpoint OpenAI Responses API: `https://api.openai.com/v1/responses`
-• Endpoint OpenAI Models API: `GET https://api.openai.com/v1/models/{id}`; consulta síncrona do cadastro administrativo de identidade, exclusivamente server-side no Core com a `OPENAI_API_KEY` compartilhada de Preview e Production. Falha ou ID divergente bloqueia o cadastro.
-• Endpoint OpenAI Costs API: `https://api.openai.com/v1/organization/costs`
-• Atalho oficial OpenAI Usage: `https://platform.openai.com/usage`
-• Atalho oficial OpenAI faturamento e créditos: `https://platform.openai.com/settings/organization/billing/overview`
-• Regra dos atalhos: `/admin/custos-openai` abre os destinos externamente, sem iframe, integração adicional, rota intermediária ou transmissão de credencial, período, conta, Landing Page ou outro dado da LP Factory; o acesso depende das permissões do usuário na organização OpenAI.
-• Consumidor versionado da Costs API: `lib/openai-costs/providers/openAiCostsProvider.ts`, exclusivamente server-side e autenticado por `OPENAI_ADMIN_KEY`.
-• Leitura agregada interna: `lib/openai-costs/adapters/lpCostReadModelAdapter.ts`, exclusivamente server-side via RPC read-only paginada, preserva a série histórica congelada em `/admin/custos-openai`; não existe adapter de persistência prospectiva vigente.
-• Consumidores atuais conhecidos:
-• `lib/conversion-content/adapters/commercialActivationOpenAiAdapter.ts`
-• `lib/conversion-content/adapters/inputCatalogEvaluationOpenAiAdapter.ts`
-• `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
-• `automations/supabase-inspect/run.mjs`
-• Regra: novas APIs ou endpoints OpenAI devem ser registrados aqui quando virarem dependência operacional.
+- Responses API: https://api.openai.com/v1/responses.
+- Models API: GET https://api.openai.com/v1/models/{id}; validação síncrona do ID no cadastro Admin, server-side com OPENAI_API_KEY compartilhada em Preview/Production. Falha/divergência bloqueia cadastro.
+- Costs API: https://api.openai.com/v1/organization/costs; `lib/openai-costs/providers/openAiCostsProvider.ts`, server-side com OPENAI_ADMIN_KEY.
+- Atalhos: https://platform.openai.com/usage e https://platform.openai.com/settings/organization/billing/overview. /admin/custos-openai abre externamente, sem iframe/rota intermediária ou transmissão de credencial, período, conta, LP ou outro dado do produto; permissões dependem da organização OpenAI.
+- Histórico financeiro somente leitura por `lib/openai-costs/adapters/lpCostReadModelAdapter.ts`; ledger ativo separado, em `docs/schema.md` — 3.11. Consumidores de IA em `docs/automations.md` e nos boundaries públicos de `lib/openai-workloads/`.
+- Registrar nova API/endpoint quando virar dependência operacional.
 
 6.4 Histórico de integração Agent Builder — Supabase Inspect
-• Estado: removido manualmente em 01/09/2026; não é workflow operacional nem consumidor necessário independente.
-• Workflow ID: `wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7`.
-• Uso histórico: validação operacional do Supabase Inspect via Agent Builder.
-• Regra: não tratar como camada final robusta de orquestração.
-• Estado externo final: o workflow foi removido manualmente em 01/09/2026, conforme confirmação do responsável; não há workflow operacional a catalogar. Nenhuma ferramenta de leitura independente do Agent Builder esteve disponível nesta execução.
+- Integração Agent Builder Supabase Inspect retirada manualmente em 01/09/2026; sem workflow operacional ou consumidor independente. Nenhum substituto autorizado por essa retirada; automação GitHub em `docs/automations.md` — 3.1.
 
 7. Stripe
 
 7.1 Uso
-• Finalidade: provedor inicial de checkout e webhook do E9.
-• Ambiente atual validado: teste.
-• Modo: `subscription`.
-• O app cria Checkout Session server-side.
-• Webhook mínimo produtivo validado em `POST /api/stripe/webhook`.
-• `invoice.paid` ativa/renova entitlement local.
-• Redirect de sucesso não confirma pagamento e não libera entitlement.
+- Provedor de checkout/webhook em teste, modo subscription; Checkout Session server-side. Contrato comercial e eventos aceitos em `docs/roadmap.md` — 9.4.
 
 7.2 Endpoint usado pelo app
-• Checkout Sessions API: `https://api.stripe.com/v1/checkout/sessions`
-• Regra: chamada somente server-side.
-• Regra: não expor secret Stripe no client.
-• Webhook Stripe: `POST /api/stripe/webhook`
-• Endpoint externo usado para subscription lookup: `https://api.stripe.com/v1/subscriptions`
-• Regra: webhook exige assinatura Stripe válida.
-• Regra: payload bruto Stripe não deve ser persistido.
+- Checkout Sessions API: `https://api.stripe.com/v1/checkout/sessions`
+- Regra: chamada somente server-side.
+- Regra: não expor secret Stripe no client.
+- Webhook Stripe: `POST /api/stripe/webhook`
+- Endpoint externo usado para subscription lookup: `https://api.stripe.com/v1/subscriptions`
+- Regra: webhook exige assinatura Stripe válida.
+- Regra: payload bruto Stripe não deve ser persistido.
 
 7.3 Vercel — secrets e variáveis Stripe
-• `STRIPE_SECRET_KEY`
-• Finalidade: secret server-side Stripe para criar Checkout Sessions.
-• Plataforma: Vercel.
-• Escopo conhecido: Production validado; Preview quando necessário para testes.
-• Valor real: não versionar.
+- `STRIPE_SECRET_KEY`
+- Finalidade: secret server-side Stripe para criar Checkout Sessions.
+- Plataforma: Vercel.
+- Escopo conhecido: Production validado; Preview quando necessário para testes.
+- Valor real: não versionar.
 
-• `STRIPE_WEBHOOK_SECRET`
-• Finalidade: secret server-side para validação da assinatura do webhook Stripe.
-• Plataforma: Vercel.
-• Escopo conhecido: Production validado.
-• Valor real: não versionar.
+- `STRIPE_WEBHOOK_SECRET`
+- Finalidade: secret server-side para validação da assinatura do webhook Stripe.
+- Plataforma: Vercel.
+- Escopo conhecido: Production validado.
+- Valor real: não versionar.
 
 Products/Prices de teste
-• `STRIPE_TEST_STARTER_MONTHLY_PRODUCT_ID`
-• `STRIPE_TEST_STARTER_MONTHLY_PRICE_ID`
-• `STRIPE_TEST_STARTER_ANNUAL_PRODUCT_ID`
-• `STRIPE_TEST_STARTER_ANNUAL_PRICE_ID`
-• `STRIPE_TEST_LITE_MONTHLY_PRODUCT_ID`
-• `STRIPE_TEST_LITE_MONTHLY_PRICE_ID`
-• `STRIPE_TEST_LITE_ANNUAL_PRODUCT_ID`
-• `STRIPE_TEST_LITE_ANNUAL_PRICE_ID`
-• `STRIPE_TEST_PRO_MONTHLY_PRODUCT_ID`
-• `STRIPE_TEST_PRO_MONTHLY_PRICE_ID`
-• `STRIPE_TEST_PRO_ANNUAL_PRODUCT_ID`
-• `STRIPE_TEST_PRO_ANNUAL_PRICE_ID`
-• `STRIPE_TEST_ULTRA_MONTHLY_PRODUCT_ID`
-• `STRIPE_TEST_ULTRA_MONTHLY_PRICE_ID`
-• `STRIPE_TEST_ULTRA_ANNUAL_PRODUCT_ID`
-• `STRIPE_TEST_ULTRA_ANNUAL_PRICE_ID`
+- `STRIPE_TEST_STARTER_MONTHLY_PRODUCT_ID`
+- `STRIPE_TEST_STARTER_MONTHLY_PRICE_ID`
+- `STRIPE_TEST_STARTER_ANNUAL_PRODUCT_ID`
+- `STRIPE_TEST_STARTER_ANNUAL_PRICE_ID`
+- `STRIPE_TEST_LITE_MONTHLY_PRODUCT_ID`
+- `STRIPE_TEST_LITE_MONTHLY_PRICE_ID`
+- `STRIPE_TEST_LITE_ANNUAL_PRODUCT_ID`
+- `STRIPE_TEST_LITE_ANNUAL_PRICE_ID`
+- `STRIPE_TEST_PRO_MONTHLY_PRODUCT_ID`
+- `STRIPE_TEST_PRO_MONTHLY_PRICE_ID`
+- `STRIPE_TEST_PRO_ANNUAL_PRODUCT_ID`
+- `STRIPE_TEST_PRO_ANNUAL_PRICE_ID`
+- `STRIPE_TEST_ULTRA_MONTHLY_PRODUCT_ID`
+- `STRIPE_TEST_ULTRA_MONTHLY_PRICE_ID`
+- `STRIPE_TEST_ULTRA_ANNUAL_PRODUCT_ID`
+- `STRIPE_TEST_ULTRA_ANNUAL_PRICE_ID`
 
 Regra:
-• Registrar apenas nomes e finalidade das envs.
-• Nunca versionar Product IDs, Price IDs, secret key, session ID, customer ID ou subscription ID reais.
-• Alteração de env Stripe na Vercel exige redeploy do deployment alvo.
+- Registrar apenas nomes e finalidade das envs.
+- Nunca versionar Product IDs, Price IDs, secret key, session ID, customer ID ou subscription ID reais.
+- Alteração de env Stripe na Vercel exige redeploy do deployment alvo.
 
 7.4 Redirects de checkout
-• Success URL: gerada server-side a partir do origin da requisição.
-• Cancel URL: gerada server-side a partir do origin da requisição.
-• Redirect de sucesso não confirma pagamento e não libera entitlement.
-• Confirmação de pagamento/assinatura deve ocorrer por webhook em fase própria.
+- Success URL e Cancel URL geradas server-side pelo origin da requisição.
+- Redirect não comprova pagamento nem libera entitlement; confirmação pelo webhook já implementado, conforme 7.1/7.2.
 
 8. Domínios e DNS
 
 8.1 Domínios conhecidos
-• `lpfactory.com.br`
-• Uso: domínio da marca/projeto LP Factory.
-• Status conhecido: registrado e publicado.
+- `lpfactory.com.br`
+- Uso: domínio da marca/projeto LP Factory.
+- Status conhecido: registrado e publicado.
 
-• `unicodigital.com.br`
-• Uso: domínio relacionado à Unico Digital e e-mail corporativo existente.
+- `unicodigital.com.br`
+- Uso: domínio relacionado à Unico Digital e e-mail corporativo existente.
 
 8.2 Registro.com
-• Uso: registrar e gerenciar DNS/domínios quando aplicável.
-• Regra: alterações DNS devem ser feitas com cuidado, preservando e-mail humano/corporativo e entregabilidade transacional.
+- Uso: registrar e gerenciar DNS/domínios quando aplicável.
+- Regra: alterações DNS devem ser feitas com cuidado, preservando e-mail humano/corporativo e entregabilidade transacional.
 
 8.3 E-mail humano/corporativo
-• Provedor conhecido: Zoho Mail para `unicodigital.com.br`.
-• Direção operacional: e-mails humanos da LP Factory devem usar provedor humano/corporativo, como Zoho/M365/Workspace, não Resend.
-• Resend deve permanecer como transacional.
+- Provedor conhecido: Zoho Mail para `unicodigital.com.br`.
+- Direção operacional: e-mails humanos da LP Factory devem usar provedor humano/corporativo, como Zoho/M365/Workspace, não Resend.
+- Resend deve permanecer como transacional.
 
 9. Regras operacionais de mudança
 
 9.1 Alteração de env na Vercel
-• Alterar variável no ambiente correto: Preview, Production ou ambos.
-• Executar redeploy após alteração.
-• Validar primeiro em Preview quando for alteração de feature ou risco operacional.
-• Só promover para Production após validação mínima.
+- Alterar no ambiente correto e redeployar; validar primeiro Preview quando houver feature/risco operacional e promover Production somente após validação mínima.
 
 9.2 Alteração de SMTP/Auth
-• Validar signup confirm.
-• Validar forgot password.
-• Confirmar que links funcionam.
-• Confirmar que não houve erro de envio.
-• Não expor senha SMTP em prints, logs ou chat.
+- Validar signup confirm, forgot password, funcionamento dos links e ausência de erro de envio. Senha SMTP nunca em prints, logs ou chat.
 
 9.3 Alteração de DNS
-• Identificar o registro atual antes de alterar.
-• Avaliar impacto em site, e-mail humano e e-mail transacional.
-• Não substituir SPF/DKIM/DMARC sem mapear dependências.
-• Registrar mudança em relatório operacional quando houver impacto.
+- Identificar registro atual e dependências antes de alterar DNS/SPF/DKIM/DMARC; preservar site e entregabilidade humana/transacional. Registrar mudança operacional quando houver impacto.
 
 9.4 Alteração de GitHub Actions secrets
-• Não registrar valor real.
-• Confirmar qual workflow consome o secret.
-• Confirmar ambiente/escopo.
-• Reexecutar workflow necessário após alteração.
+- Confirmar workflow consumidor e ambiente/escopo; alterar sem registrar valor real e reexecutar somente o workflow necessário.
 
 10. Relação com outros documentos
 
 10.1 Base Técnica
-• `docs/base-tecnica.md` deve manter regras de implementação, runtime, segurança, adapters e observability.
-• Configurações de plataforma devem morar neste documento.
-• Quando a Base Técnica depender de uma configuração, deve referenciar este documento de forma curta.
+- `docs/base-tecnica.md`: runtime, segurança, adapters e observabilidade; configuração externa fica aqui, com referência curta pelos consumidores.
 
 10.2 Schema
-• `docs/schema.md` permanece como fonte única para objetos de banco, RLS, policies, RPCs, triggers, constraints, grants e permissões de DB.
+- `docs/schema.md`: objetos, RLS/policies, RPCs, triggers, constraints, grants e permissões de banco.
 
 10.3 Roadmap
-• `docs/roadmap.md` permanece como fonte única para estado final dos casos E*, escopo, artefatos, status e pendências.
+- `docs/roadmap.md`: estado, escopo, artefatos e pendências dos casos.
 
 10.4 Design System
-• `docs/design-system.md` permanece como fonte única para padrões visuais, componentes UI e regras de uso visual.
-
+- `docs/design-system.md`: padrões visuais e componentes.
 
 10.5 Automations
-• `docs/automations.md` permanece como fonte para catálogo, uso, status, dependências e aprendizados das automações.
-• Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
+- `docs/automations.md`: catálogo, uso, status, dependências e aprendizados operacionais. Plataformas, secrets por nome, workflows, ambientes e endpoints ficam aqui.
 
-99. Changelog
-v0.1.52 — 27/09/2026 — Reconciliado o gate de migrations observado como `false` e documentada a exceção E25.1 candidata, mantendo E10.10 fora do apply e o fluxo automático integral suspenso.
-
-v0.1.45 — 12/09/2026 — Reconciliada a configuração operacional concluída da E21.5: captura ativa validada em Preview e Production e ingresso assinado do `supabase_inspect` validado em Production, sem registrar valores de secrets.
-
-v0.1.44 — 07/09/2026 — Consolidado o fechamento da E23.2: seis ocorrências sem consumidor removidas da Vercel Core; 22 sobreclassificações como Secret e quatro branch scopes legados preservados por decisão funcional conservadora; Preview aprovado sem exposição ou substituição de valores.
-
-v0.1.40 — 02/09/2026 — Marcados `E19_5_WORKSPACE_ENABLED` e `landing-page-revision-assets` como recursos sem consumidor runtime após o SV-PR03; nenhuma variável, secret, bucket ou infraestrutura externa foi alterada.
-v0.1.39 — 02/09/2026 — Removidos do inventário de consumidores atuais os wrappers server-only de texto e imagem do LP Builder, confirmados sem consumidor funcional; os cores usados diretamente pelas provas administrativas permanecem inalterados.
-
-v0.1.38 — 02/09/2026 — Reconciliado o estado dos workloads de Landing Page após a retirada da orquestração antiga: texto e imagem permanecem para prova administrativa, a integração E19.3 deixou de ser consumidora e o adapter inexistente foi removido do inventário, sem alteração de variável, secret, endpoint ou infraestrutura externa.
-
-v0.1.37 — 01/09/2026 — Consolidado o estado final da E22.3: workflow Agent Builder e projeto Vercel `lpf-10-services` removidos; nenhum deployment/redeploy foi solicitado ou executado manualmente, e a publicação final do commit acionou automaticamente um Preview do Core `lp-factory-10` pela integração Git/Vercel, concluído com sucesso; nenhum novo deployment adicional deve ser provocado.
-
-v0.1.36 — 31/08/2026 — Reclassificada a integração Agent Builder como histórico e alvo de retirada da E22.3.4; a configuração externa de `lpf-10-services` permanece explicitamente pendente da E22.3.5, sem criação de substituto ou remoção de recursos compartilhados.
-
-v0.1.35 — 31/08/2026 — Registradas a identidade institucional `lpfactoryqa@gmail.com`, sua credencial técnica por nome e localização autorizada, o contrato de reutilização por executores e a evidência operacional da confirmação automatizada, sem versionar valores secretos.
-
-v0.1.34 — 30/08/2026 — Mailbox operacional definida como caixa base Gmail sem `+tag`; novos aliases passam a ser derivados de `MAILBOX_EMAIL`, com preservação integral das execuções anteriores e proibição de senha de cadastro em artifacts e Job Summary.
-
-v0.1.33 — 29/08/2026 — Atualizado o estado pós-merge da E20.7.4: migration aplicada, bootstrap `gpt-5.6-luna + high` presente em Preview/Production e prova/promoção/ativação diferidas ao futuro recorte E19.3 consumidor, sem pendência operacional aberta na E20.7.
-
-v0.1.30 — 29/08/2026 — Registrados o workload repo-side `landing_page_dynamic_market_research`, o reuso obrigatório da `OPENAI_API_KEY` compartilhada, os limites de Web Search e os gates separados de apply, reconciliação v6, prova e ativação hospedada.
-
-v0.1.29 — 28/08/2026 — Registrados `OPENAI_ADMIN_KEY`, Costs API, `OPENAI_LP_COST_TRACKING_ENABLED` nascendo desligado e o rollout pós-merge da persistência prospectiva dos dois workloads de Landing Page.
-
-v0.1.18 — 21/08/2026 — Registrado o gate exclusivo do provider E20.6.5, sua composição obrigatória com fonte `supabase_operational` hospedada e a preservação do handoff Codex durante o estado gate-off.
-
-v0.1.17 — 20/08/2026 — Registrado `OPENAI_OPERATIONAL_CONFIG_ENABLED`, seus defaults gate-off, habilitação pelo literal `true`, isolamento por ambiente, progressão Preview → Production e regras de redeploy/fail-closed da E21.2.3.
-
-v0.1.16 — 31/07/2026 — Registradas a correção de `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL` para `gpt-5.4-mini`, a ampliação para Production e Preview, o redeploy e a validação operacional da assistência somente em Production no domínio oficial.
-
-v0.1.15 — 30/07/2026 — Registrados o merge do PR #656, a habilitação do gate, o redeploy e o smoke final aprovado em Production.
-
-v0.1.14 — 30/07/2026 — Registrada a aprovação dos testes humanos da correção do transporte concorrente no Preview autorizado, removida a pendência de reteste e mantida Production desabilitada até o merge humano do PR #656.
-
-v0.1.13 — 28/07/2026 — Corrigido o transporte do estado assinado por emissão no `RedirectTo` do convite nativo, removida a dependência de metadata compartilhado e preparado o reteste hospedado restrito, com Production desabilitada.
-
-v0.1.12 — 28/07/2026 — Registrada a prova hospedada aprovada da E11.1.7 no Preview autorizado e preservado o gate de Production até o merge humano e o smoke pós-merge.
-
-v0.1.11 — 28/07/2026 — Registrada `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL`, seus ambientes, estado pendente e consumidor server-side da E12.4.3.
-
-v0.1.10 — 28/07/2026 — Registradas as variáveis da E11 configuradas em Production e Preview, os redeploys concluídos e a configuração remanescente do Supabase Auth.
-
-v0.1.8 — 02/07/2026 — Configuração Stripe atualizada com uso de webhook produtivo, endpoint `/api/stripe/webhook`, lookup de subscriptions e secret `STRIPE_WEBHOOK_SECRET`.
-
-v0.1.7 — 25/06/2026 — Atualizado `OPENAI_COMMERCIAL_ACTIVATION_MODEL` para escopo Production e Preview, com referência `gpt-5.4-mini` e regra operacional de não prender configuração a branch no MVP.
-
-v0.1.6 — 23/06/2026 — Registrado o estado operacional de `OPENAI_COMMERCIAL_ACTIVATION_MODEL` para E10.7 Fase 3: configurada e validada em Vercel Preview com modelo de referência, Production pendente de decisão operacional e sem exposição de secrets.
-
-v0.1.5 (22/06/2026) — Registrada a variável `OPENAI_COMMERCIAL_ACTIVATION_MODEL` como configuração server-side da geração administrativa de drafts `commercial_activation`, sem versionar valor real nem modelo padrão definitivo.
-
-v0.1.4 (12/06/2026) — Apply automático de migrations Supabase liberado
-• Registrado `SUPABASE_APPLY_MIGRATIONS_ENABLED = true` como estado operacional normal.
-• Consolidado o fluxo PR, merge na `main` e apply automático.
-• Registradas as regras de não uso do SQL Editor e histórico forward-only com reversão por nova migration.
-
-v0.1.3 (11/06/2026) — Workflow de migrations Supabase reproduzível e mantido bloqueado
-• Registrados `supabase/setup-cli` v2.1.1 fixada por SHA completo, Supabase CLI `2.106.0`, gatilhos, secrets e variável de gate do workflow.
-• Documentado que gate fechado usa passo separado sem secrets, sem instalar a CLI nem executar `supabase link` ou `supabase db push`.
-• Restringidos os secrets de apply ao passo condicionado ao gate aberto.
-• Reforçado que o workflow e o apply automático ainda não estão liberados.
-
-v0.1.2 (27/05/2026) — Clarificação de snapshot operacional
-• Clarificado que o Platform Config reflete o estado conhecido/cadastrado nas plataformas.
-• Definida a leitura operacional para secrets, variáveis, workflows, endpoints e conectores listados.
-• Reforçado que valores reais de secrets não são versionados e devem ser consumidos apenas por plataformas autorizadas.
-
-v0.1.1 (26/05/2026) — Alinhamento com Automations
-• Registrados secrets de mailbox usados por automações.
-• Complementada a lista de workflows operacionais conhecidos.
-• Registrado acesso operacional read-only `ai_readonly`/`SUPABASE_DB_URL_READONLY`.
-• Registrado ativo Agent Builder — Supabase Inspect.
-• Definida relação entre Platform Config e Automations.
-
-v0.1.0 (15/05/2026) — Criação do Platform Config
-• Criado documento inicial para centralizar configurações operacionais de plataformas.
-• Registradas plataformas em uso: GitHub, Vercel, Supabase, Resend, OpenAI Platform, Registro.com e Zoho Mail.
-• Registradas variáveis, endpoints e regras operacionais conhecidas sem incluir valores reais de secrets.
-• Definida a separação documental entre Platform Config, Base Técnica, Schema, Roadmap e Design System.
+99. Histórico
+- Git e PRs do repositório.
