@@ -26,7 +26,8 @@
 3. Catálogo de automações operacionais
 
 3.1 Supabase Inspect Actions
-- Objetivo/status: inspeção Supabase read-only implementada via GitHub Actions, sem mutação nem persistência de resultados.
+- Objetivo/status: inspeção Supabase implementada via GitHub Actions; consultas SQL read-only e amostras somente em logs/Job Summary.
+- Captura financeira: quando OPENAI_COST_INGESTION_ENABLED habilita o ingresso, eventos assinados de execução/operação são gravados no ledger ativo pelo Core. Essa escrita não persiste consultas nem amostras; configuração em `docs/platform-config.md` — 2.2 e 3.5.
 - Uso: GitHub → Actions → pipeline-supabase-inspect; informar briefing_path ou inputs manuais. SQL livre e batch seguem o README local.
 - Resultado: logs e Job Summary com SQL executado, rowCount, colunas, amostra e diagnóstico; guardrails e limites em `automations/supabase-inspect/README.md`.
 - Dependências: runtime `automations/supabase-inspect/`; workflow `.github/workflows/pipeline-supabase-inspect.yml`; credenciais/configuração em `docs/platform-config.md` — 2.2.
