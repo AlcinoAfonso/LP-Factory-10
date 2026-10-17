@@ -1,424 +1,326 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Documento: Base Técnica LP Factory 10
-• Versão: v2.0.95
-• Data: 01/10/2026
+- Documento: Base Técnica LP Factory 10
+- Versão: v2.0.96
+- Data: 17/10/2026
 
 0.2 Contrato do documento (consulta)
-• Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
+- Regras técnicas duráveis; não mantém inventários, configuração externa ou histórico de casos.
 
 0.2.1 TIPO_DO_DOCUMENTO
-• TIPO_DO_DOCUMENTO: prescritivo
+- TIPO_DO_DOCUMENTO: prescritivo
 
 0.2.2 GUIA_DE_CONSULTA
-• O QUE É: a fonte única de regras técnicas de runtime e implementação segura do produto.
-• POR QUE CONSULTAR: para evitar implementação errada, manter consistência técnica e reduzir risco em código, acesso, SSR, adapters, segurança e observabilidade.
-• COMO USAR: ao gerar plano, macro-roteiro, código ou ajuste de código, consultar este documento como contrato técnico.
-• QUANDO CONSULTAR: decisões de runtime, rotas/gating/estados, segurança de implementação, padrões mínimos de logs, adapters, imports, camadas e convenções de código.
-• QUANDO NÃO CONSULTAR:
-• configurações de plataformas, envs, secrets, endpoints, URLs, DNS, SMTP e redirects (usar `docs/platform-config.md`)
-• detalhes/inventário de DB (usar `docs/schema.md`)
-• status/escopo/histórico de casos E* (usar `docs/roadmap.md`)
-• padrões visuais/componentes UI (usar `docs/design-system.md`)
+- Consultar em runtime, SSR, acesso, segurança, adapters, imports, camadas e observabilidade.
+- Fontes próprias: execução em `AGENTS.md`; plataformas/envs/secrets em `docs/platform-config.md`; banco em `docs/schema.md`; casos em `docs/roadmap.md`; visual em `docs/design-system.md`.
 
 1. Identificação do Projeto
-• Nome: LP Factory 10
-• Repositório canônico: `AlcinoAfonso/LP-Factory-10`
-• Regra: consultar o repositório real via GitHub/conectores/fontes acessíveis antes de assumir paths, branches, arquivos ou estrutura.
-• Configurações operacionais de plataformas, URLs, endpoints, projetos externos, envs e secrets: ver `docs/platform-config.md`.
+- LP Factory 10; repositório canônico `AlcinoAfonso/LP-Factory-10`.
+- Consultar o GitHub real antes de assumir paths, branches, arquivos ou estrutura. Configuração externa em `docs/platform-config.md`.
 
 2. Stack & Dependências
 
 2.1 Framework
-• Fontes canônicas de dependências e versões: `package.json` e `package-lock.json`; não duplicar versões neste documento.
-• O Core usa Next.js com App Router, SSR e Server Components, React, TypeScript em modo strict e Zod para contratos e validação runtime.
-• Runtime JavaScript server-side: Node.js; versão operacional deve ser confirmada na configuração real do ambiente.
-• Package manager canônico: npm; `package-lock.json` deve permanecer versionado e alinhado ao `package.json`.
-• Preferir recursos e defaults do framework, incluindo Turbopack quando aplicável; evitar customização por `webpack()` quando alias em `tsconfig.json` resolver o caso.
+- Core: Next.js App Router, SSR/Server Components, React, TypeScript strict e Zod.
+- Versões: `package.json` e `package-lock.json`; npm canônico com lockfile alinhado e versionado.
+- Runtime Node.js; versão confirmada no ambiente real. Defaults do framework seguem 3.13.
 
 2.2 Backend
-• O backend usa Supabase para PostgreSQL, Auth, Storage e RLS, com PostgREST/Data API no runtime.
-• A versão do client Supabase e demais dependências pertence ao `package.json` e ao `package-lock.json`.
-• `.maxAffected(1)` é obrigatório em mutações 1-a-1.
-• Integrações que validam JWT devem usar JWKS + `kid`.
-• Configurações operacionais do Supabase: ver `docs/platform-config.md`.
+- Supabase: PostgreSQL, Auth, Storage, RLS e PostgREST/Data API; configuração em `docs/platform-config.md`.
+- Mutações 1:1 exigem `.maxAffected(1)`; validação JWT usa JWKS + `kid`.
 
 2.3 UI
-• Contrato visual, componentes, tipografia, tokens, estados e superfícies: consultar `docs/design-system.md`.
-• Esta Base Técnica mantém somente guardrails técnicos de UI que afetem segurança, imports ou boundaries.
-• SULB (auth forms): definição: rotas/arquivos de autenticação copiados do Supabase (vendor interno).
-• Regra (SULB): não criar auth fora do escopo SULB/autorizado; exceções só quando explicitamente previstas nesta Base Técnica (ex.: allowlist 6.4).
-• Alterações no SULB: somente quando necessário e sempre respeitando a allowlist 6.4.
+- Visual/componentes/tokens/estados: `docs/design-system.md`; aqui somente segurança, imports e boundaries.
+- SULB é o vendor interno de Auth copiado do Supabase. Auth fora desse escopo exige exceção expressa nesta Base; alterações somente quando necessárias e conforme allowlist 6.4.
 
 2.4 Configurações operacionais de Auth
-• Redirect URLs, SMTP Auth, sender, DNS e demais configurações operacionais do Supabase Auth ficam em `docs/platform-config.md`.
-• Configuração SMTP/Resend do Supabase Auth: ver `docs/platform-config.md`.
+- Redirect URLs, SMTP/Resend, sender e DNS: `docs/platform-config.md`.
 
 2.5 Regras de Import (canônica)
-• @supabase/* somente em adapters do domínio, em lib/supabase/* e na allowlist SULB autorizada em 6.4.
-• UI e componentes client não acessam Supabase para dados de domínio; exceções de Auth/SULB devem usar wrappers em lib/supabase/*, salvo imports diretos explicitamente autorizados na allowlist 6.4.
-• Esta é a regra normativa principal para imports; seções 3.2, 6.4 e 7 apenas referenciam este bloco.
+- `@supabase/*` somente em adapters de domínio, `lib/supabase/*` e exceções SULB de 6.4.
+- UI/client não consulta dados de domínio no Supabase. Auth/SULB usa wrappers de `lib/supabase/*`, salvo import direto expressamente autorizado em 6.4.
+- Este bloco é normativo para imports; demais seções somente o referenciam.
 
 3. Regras Técnicas Globais
 
 3.1 Segurança
-• Views que expõem dados de usuário devem usar security_invoker = true.
-• RLS obrigatório em todas as tabelas sensíveis.
-• Cookie last_account_subdomain só pode ser definido/lido no SSR (HttpOnly, Secure, SameSite=Lax).
-• Nenhum dado sensível pode ser acessível no client.
+- Views expostas a usuário: `security_invoker = true`; tabelas sensíveis: RLS obrigatório.
+- Dados sensíveis não podem ficar acessíveis no client. Cookie da última conta segue 5.1.2.
 
 3.2 Fluxo de acesso a dados
-• Fluxo: UI → Providers → Adapters → DB; imports Supabase seguem 2.5.
+- Fluxo: UI → Providers → Adapters → DB; imports Supabase seguem 2.5.
 
 3.3 Estrutura canônica
-• Por domínio: adapters/ (DB), contracts.ts (interface pública) e index.ts (re-exports). DB somente via adapters; tipos canônicos somente em lib/types/status.ts.
+- Domínio: `adapters/` para DB, `contracts.ts` público e `index.ts` para reexports; DB somente por adapters. Tipos canônicos de status seguem 6.3.
 
 3.3.1 Vocabulário e topologia
-• Camada: recorte de primeiro nível: Core (runtime no root), `automations/` (automações) ou `services/` (serviços com deploy independente). `.github/workflows/` apenas orquestra.
-• Seção do Core: recorte de produto: Account Dashboard, Admin Dashboard ou Partner Dashboard.
-• Domínio transversal do Core: capacidade entre seções. `access` concentra acesso compartilhado entre as áreas do produto.
-• Boundary: fronteira entre recortes reais, criada somente com responsabilidade e massa de código próprias.
-• Path canônico: localização física obrigatória para artefatos novos.
+- Camada: Core no root, `automations/` ou `services/` com deploy independente; `.github/workflows/` somente orquestra.
+- Seção do Core: Account, Admin ou Partner Dashboard. Domínio transversal serve seções; `access` concentra acesso compartilhado.
+- Boundary exige responsabilidade e massa de código próprias. Path canônico é a residência obrigatória de artefatos novos.
 
 3.3.2 Classificação, boundaries e paths
-• Nova seção, domínio transversal ou path canônico exige definição prévia de classificação, boundary e path.
-• Ordem: camada → seção ou domínio → boundary → path canônico → shared real ou falso shared.
-• Não inventar paths: confirmar no repositório. Artefato novo nasce no path canônico; exceção existente não vira padrão.
-• Componentes específicos de rota que dependem de Server Action, estado ou boundary da própria rota devem nascer como route-local em `app/.../_components`; não promover para `components/features` sem boundary compartilhada real.
-• Partner Dashboard não ganha boundary antecipada; produto retirado não preserva seção ou boundary sem consumidor.
+- Antes de novo recorte: camada → seção/domínio → boundary → path → shared real ou falso shared.
+- Confirmar paths no repositório; exceção existente não vira padrão.
+- Componente dependente de action, estado ou boundary da rota nasce em `app/.../_components`; `components/features` exige compartilhamento real.
+- Não antecipar boundary Partner nem manter seção/boundary de produto retirado sem consumidor.
 
 3.3.3 Billing checkout
-• Boundary canônico: `lib/billing-checkout/`, server-side, com contratos públicos, normalização e adapters de provedor definidos no próprio código.
-• UI/client não acessa secrets nem cria sessão de checkout diretamente.
-• Redirect de sucesso ou cancelamento não comprova pagamento e não libera entitlement.
-• Provedor, planos, recorrências, mapeamentos e configuração operacional pertencem ao boundary real e a `docs/platform-config.md`; não duplicar suas listas aqui.
-• Checkout não substitui o domínio de entitlement comercial; ativação exige confirmação server-side pelo fluxo aprovado.
+- Checkout server-side em `lib/billing-checkout/`; contratos/adapters no código e configuração externa em `docs/platform-config.md`.
+- UI não acessa secrets nem cria sessão diretamente. Redirect não comprova pagamento; entitlement exige confirmação server-side pelo fluxo aprovado.
 
 3.4 CI e validação
-• Alterações devem passar por PR, validações aplicáveis e preview quando houver impacto no runtime ou na UI; o merge final segue a autoridade por modo definida no `AGENTS.md`.
-• Checks de segurança devem falhar fechado e bloquear padrões proibidos no client/UI; exceções server-side devem ser explícitas e mínimas no workflow canônico.
-• Alterações em acesso ou Auth devem validar os fluxos afetados conforme os contratos operacionais em `docs/automations.md` e nos READMEs locais.
-• Workflows, gatilhos, runners, actions, versões, inputs e steps têm fonte canônica no repositório real e em `docs/platform-config.md`; não duplicar esses detalhes aqui.
-• Runs, checks, commit statuses, logs, Job Summaries e artefatos do GitHub Actions, assim como URLs de Preview e deployments históricos da Vercel, são evidências operacionais suplementares e expiráveis; nenhum encerramento de recorte pode depender exclusivamente deles. A prova durável deve permanecer no PR, no commit e no estado final registrado no roadmap e nos documentos canônicos competentes.
-• Antes do merge, aplicar o checklist da seção 7.
+- Git, PR, autoridade de merge e validações: `AGENTS.md`; Preview quando houver impacto em runtime/UI.
+- Checks de segurança falham fechado contra padrões proibidos no client; exceções server-side explícitas e mínimas no workflow canônico.
+- Acesso/Auth valida fluxos afetados conforme `docs/automations.md` e READMEs locais. Workflows/configuração externa não são inventariados aqui.
+- Runs, checks, commit statuses, logs, Job Summaries, artefatos, Previews e deployments históricos expiram e nunca são prova exclusiva de encerramento. Conclusão durável no PR/Git e nas fontes canônicas.
+- Antes do merge, aplicar a seção 7.
 
 3.4.1 Manutenção de dependências
-• Atualizações de dependências devem preservar o alinhamento entre `package.json` e `package-lock.json` e usar instalação reprodutível.
-• Rotinas automatizadas de manutenção devem executar validações aplicáveis, bloquear publicação quando a validação crítica falhar e commitar somente quando houver mudança real.
-• O workflow e seus detalhes operacionais permanecem canônicos em `.github/workflows/` e no repositório real.
+- Manter package/lockfile alinhados e instalação reprodutível.
+- Manutenção automática valida, bloqueia publicação se falhar gate crítico e commita somente mudança real; detalhes no workflow vigente.
 
 3.4.2 Validação local e sandbox
-• `AGENTS.md` é a fonte canônica das regras de execução e validação no ambiente de agentes.
-• Para alterações de código, a rotina padrão é `npm ci` seguida de `npm run check`; os scripts exatos permanecem em `package.json`.
-• Para alterações exclusivamente documentais, essas validações podem ser não aplicáveis, com justificativa na entrega.
-• Build não integra a rotina padrão do sandbox; quando aplicável, deve ser validado pelo CI ou pela Vercel.
+- Rotina de validação, exceção documental e build no sandbox: `AGENTS.md`; scripts em `package.json`. Build aplicável é validado em CI/Vercel.
 
 3.4.3 Automações e inspeções operacionais
-• Automações devem permanecer isoladas em `automations/`; `.github/workflows/` atua somente como entrada e orquestração.
-• Catálogo, uso e comportamento operacional pertencem a `docs/automations.md` e aos READMEs locais; secrets, ambientes e configuração de workflows pertencem a `docs/platform-config.md`.
-• Inspeções de banco por automação devem ser read-only, salvo mutação expressamente aprovada em contrato próprio.
+- Automações isoladas em `automations/`; workflows somente orquestram.
+- Catálogo/uso: `docs/automations.md` e README local; plataformas/secrets por nome: `docs/platform-config.md`.
+- Inspeção de banco read-only, salvo mutação expressamente aprovada.
 
 3.4.4 Migrations Supabase versionadas
-• Runtime não pode depender de objeto ou comportamento de banco ainda não aplicado e validado no ambiente alvo.
-• Alterações de schema devem usar nova migration em `supabase/migrations/`, com revisão e validação antes do apply remoto.
-• SQL avulso é permitido apenas para inspeção read-only ou exceção expressamente autorizada; o SQL Editor não integra o fluxo normal de alteração de schema.
-• Migration aplicada é imutável; correção ou reversão exige nova migration incremental, preservando histórico forward-only.
-• Apply remoto deve ocorrer somente pelo workflow aprovado após merge autorizado conforme o `AGENTS.md`; gatilhos, gates, secrets, versões de CLI/Actions e projeto alvo pertencem ao workflow real e a `docs/platform-config.md`.
-• Actions e CLIs capazes de alterar schema devem usar referências controladas e passar por revisão antes de qualquer mudança.
+- Runtime só depende de banco aplicado e validado no ambiente alvo.
+- Schema muda por nova migration em `supabase/migrations/`, revisada e validada antes do apply remoto. Migration aplicada é imutável; correção/reversão incremental forward-only.
+- SQL avulso só para inspeção read-only ou exceção expressa; SQL Editor fora do fluxo normal.
+- Apply somente pelo workflow aprovado após merge autorizado; gates, versões, CLI, secrets e projeto em `docs/platform-config.md` e no workflow.
+- Actions/CLIs mutáveis exigem referências controladas e revisão prévia.
 
 3.5 Secrets & Variáveis
-• Código client nunca deve acessar secrets server-side.
-• Código server-side deve ler variáveis apenas pelos nomes definidos em `docs/platform-config.md`.
-• Nunca expor keys em chat, logs, prints, client bundle ou documentação.
-• Se uma key vazar, revogar imediatamente e substituir por nova key.
-• Variáveis, flags, endpoints, projetos externos e escopos de ambiente: ver `docs/platform-config.md`.
+- Código server-side lê variáveis somente pelos nomes de `docs/platform-config.md`. Secrets nunca em chat, log, print, client bundle ou documento.
+- Vazamento exige revogação e substituição imediatas. Flags, endpoints, projetos e escopos ficam na fonte operacional.
 
 3.6 Tipos TypeScript
-• Fonte única: lib/types/status.ts
-• Proibido redefinir tipos em qualquer outro módulo
-• Adapters normalizam valores lidos do DB
+- Tipos canônicos de `lib/types/status.ts` não são redefinidos em outro módulo; ver 6.3. Adapters normalizam valores do DB.
 
 3.7 Convenções
-• TS: camelCase
-• SQL: snake_case
-• -1 = ilimitado para limites numéricos
+- TS: camelCase
+- SQL: snake_case
+- -1 = ilimitado para limites numéricos
 
 3.8 Integração com o contrato de banco
-• `docs/schema.md` é a fonte canônica do estado real e dos detalhes de objetos do banco.
-• Alteração de schema exige migration versionada, atualização de `docs/schema.md` e revisão de views, functions, RPCs e adapters dependentes.
-• Runtime não pode redefinir nem assumir objetos, colunas ou comportamentos ausentes do ambiente alvo.
+- `docs/schema.md` governa objetos e comportamentos do banco. Mudança exige migration, atualização do Schema e revisão de views, functions, RPCs e adapters dependentes.
+- Runtime não redefine nem presume contrato ausente do ambiente alvo.
 
 3.8.1 Convenções transversais para novas tabelas
 
 3.8.1.1 Chave primária
-• Entidade: `id uuid primary key default gen_random_uuid()`
-• Relação 1:1: FK como PK
-• Vínculo puro N:N: PK composta
+- Entidade: `id uuid primary key default gen_random_uuid()`
+- Relação 1:1: FK como PK
+- Vínculo puro N:N: PK composta
 
 3.8.1.2 Relacionamentos
-• Toda FK deve ser explícita
-• Toda FK deve definir `ON DELETE` e `ON UPDATE`
+- Toda FK deve ser explícita
+- Toda FK deve definir `ON DELETE` e `ON UPDATE`
 
 3.8.1.3 Campos de domínio
-• Campos como `status`, `type`, `scope`, `source_type`, `context_type` e equivalentes não nascem como texto solto sem contrato
-• Quando a tabela tiver histórico operacional, deve haver decisão explícita sobre `created_at` e `updated_at`
+- Campos como `status`, `type`, `scope`, `source_type`, `context_type` e equivalentes não nascem como texto solto sem contrato
+- Quando a tabela tiver histórico operacional, deve haver decisão explícita sobre `created_at` e `updated_at`
 
 3.8.1.4 Constraints e índices
-• Toda unicidade relevante deve ser protegida no BD
-• Índice só entra por motivo claro: FK relevante, unicidade, hierarquia ou consulta operacional prevista
+- Toda unicidade relevante deve ser protegida no BD
+- Índice só entra por motivo claro: FK relevante, unicidade, hierarquia ou consulta operacional prevista
 
 3.8.1.5 Segurança e governança
-• Toda tabela deve ter decisão explícita de segurança, acesso, auditoria e participação no Trigger Hub.
-• Tabela exposta ao app, tenant, admin ou fluxo operacional deve nascer com RLS, policies e grants aplicáveis na mesma migration.
-• Tabela interna pode omitir grants para `anon` e `authenticated` quando seu modelo de acesso estiver explícito.
-• Grants e RLS/policies são controles independentes; nenhum substitui o outro.
+- Toda tabela deve ter decisão explícita de segurança, acesso, auditoria e participação no Trigger Hub.
+- Tabela exposta ao app, tenant, admin ou fluxo operacional deve nascer com RLS, policies e grants aplicáveis na mesma migration.
+- Tabela interna pode omitir grants para `anon` e `authenticated` quando seu modelo de acesso estiver explícito.
+- Grants e RLS/policies são controles independentes; nenhum substitui o outro.
 
 3.9 Rate limit administrativo
-• Não reutilizar contratos legados de tokens ou limites removidos.
-• Nova política de limite deve ser definida no boundary administrativo responsável, com escopo, chave, janela, resposta e observabilidade explicitamente contratados.
-• Ausência de política aprovada não autoriza fallback permissivo nem limite inventado no client.
+- Não reutilizar contratos legados de tokens ou limites removidos.
+- Nova política de limite deve ser definida no boundary administrativo responsável, com escopo, chave, janela, resposta e observabilidade explicitamente contratados.
+- Ausência de política aprovada não autoriza fallback permissivo nem limite inventado no client.
 
 3.10 Anti-Patterns
-• Importar Supabase na UI para dados de domínio (exceções de Auth/SULB seguem 2.5 e 6.4)
-• Views sem security_invoker=true
-• Hardcode de lógica de planos/limites
-• Modificar SULB fora dos arquivos autorizados
-• Manipular last_account_subdomain no client
+- Não hardcodar lógica de planos/limites. Demais proibições: imports/SULB em 2.5 e 6.4; views em 3.1; cookie em 5.1.2.
 
 3.11 Capacidades comerciais e grants
-• Nunca usar `plan_id`, nome de plano ou metadado legado isoladamente para liberar capacidade.
-• O boundary canônico de capacidades comerciais é `lib/commercial-capabilities/`; sua fonte é repo-only, o registry permanece interno e consumidores usam somente a API pública fail-closed.
-• `lib/commercial-entitlements/` informa o plano efetivo; o boundary de capacidades informa o que esse plano permite; medição de uso e gate operacional permanecem no domínio consumidor.
-• `get_feature(account_id, feature_key)`, a hierarquia `section → lp → account → plan → default` e snapshot por conta não estão materializados e não regem o contrato atual de capacidades comerciais.
-• Grants, overrides ou snapshots futuros exigem recorte aprovado e substituição explícita da fonte canônica; não criar resolver paralelo.
+- `lib/commercial-entitlements/` informa plano efetivo; `lib/commercial-capabilities/` resolve capacidades repo-only por API pública fail-closed, com registry interno.
+- Medição e gate ficam no consumidor; plan_id, nome ou metadado legado isolados não liberam capacidade.
+- get_feature, herança section → lp → account → plan → default e snapshot por conta não são contratos materializados. Grants/overrides/snapshots futuros exigem recorte aprovado e substituição explícita da fonte, sem resolver paralelo.
 
 3.12 PostgREST e Data API
-• `search_path` deve permanecer fixado conforme o contrato de banco aplicável.
-• Consultas com múltiplas relações devem usar aliases explícitos para evitar colisão de chaves.
-• Busca textual exige índice justificado pela consulta ativa e pela necessidade de desempenho.
-• Em paginação por range, HTTP 416 / PGRST103 representa fim da lista, não erro de sistema; preservar itens carregados e interromper novas requisições.
-• Erros de domínio expostos pela Data API não devem usar códigos de falha transacional que possam acionar retry automático; conflitos funcionais devem preservar o contrato de domínio sem serem transportados como falha retryable do banco.
+- Fixar search_path conforme Schema e usar aliases explícitos em consultas com múltiplas relações.
+- Índice de busca textual exige consulta ativa e necessidade de desempenho justificada.
+- HTTP 416/PGRST103 terminal encerra paginação por range e preserva itens carregados.
+- Erro de domínio/conflito não usa código transacional que acione retry automático.
 
 3.13 Compatibilidade do framework
-• APIs assíncronas de SSR e Server Components, como `cookies()`, `headers()`, `params` e `searchParams`, devem ser aguardadas quando exigido pelo framework.
-• Rotas que dependem de sessão ou cookies devem permanecer dinâmicas e sem cache entre usuários.
-• Preferir recursos nativos e o bundler padrão do framework; evitar `webpack()` customizado quando `tsconfig.json` resolver o caso.
-• Formulários e Server Actions devem usar APIs vigentes do framework; versões e contratos exatos pertencem às dependências e ao código.
+- Aguardar APIs assíncronas de SSR/Server Components quando exigido: cookies, headers, params e searchParams.
+- Sessão/cookie exigem rota dinâmica, sem cache compartilhado entre usuários.
+- Preferir bundler/defaults nativos, incluindo Turbopack quando aplicável; evitar webpack customizado quando tsconfig resolver.
+- Formulários/actions seguem APIs vigentes; versões e contratos exatos no código/dependências.
 
 3.14 Padrão de Adapters
-• Novos casos de uso acessam o DB somente por adapters no boundary canônico.
-• Adapters existentes fora dos paths canônicos podem permanecer por compatibilidade, sem expansão de escopo.
-• Cada adapter deve permanecer coeso; dividir quando concentrar múltiplos casos de uso ou responsabilidades.
-• Adapter retorna DTO final; UI não normaliza nem recebe DBRow.
-• Mudança incompatível de shape exige contrato versionado e migração explícita, sem substituição silenciosa.
-• Queries usam colunas explícitas e ordenação determinística.
-• Enums não admitem fallback silencioso; paginação segue 3.12; gates devem distinguir deny de erro operacional.
+- DB via adapters coesos no boundary; legado fora do path pode permanecer por compatibilidade, sem expansão. Dividir quando houver múltiplas responsabilidades.
+- Retornar DTO final, sem DBRow ou normalização na UI. Shape incompatível exige versão e migração explícitas.
+- Colunas explícitas, ordem determinística e enums sem fallback silencioso. Paginação segue 3.12; deny difere de erro operacional.
 
 3.14.1 Commercial entitlements
-• Boundary canônico: `lib/commercial-entitlements/`; contratos públicos e adapter de leitura permanecem como fonte da API real.
-• Leitura de elegibilidade é server-side e fail-closed para entrada inválida, ausência de linha, erro ou exceção.
-• UI/client não consulta Supabase diretamente para determinar entitlement comercial.
-• View, campos e estados persistidos pertencem a `docs/schema.md` e ao código; não duplicar seus inventários aqui.
+- Elegibilidade por API pública server-side de `lib/commercial-entitlements/`; entrada inválida, ausência, erro ou exceção falham fechado. UI não consulta Supabase diretamente.
+- View/campos/estados no Schema e no código.
 
 3.14.2 Admin commercial entitlements
-• Mutação administrativa é server-only, protegida por `requirePlatformAdmin()` e centralizada no boundary Admin existente.
-• O fluxo manual pode conceder, atualizar ou cancelar entitlement, deve atualizar o registro ativo quando aplicável e falhar fechado diante de conflito ou duplicidade.
-• Checkout, Stripe e webhook não podem servir como bypass da operação administrativa autorizada.
-• Superfícies, funções, payloads e persistência exatos permanecem canônicos no código e em `docs/schema.md`.
+- Mutação server-only no Admin, protegida por requirePlatformAdmin; concede, atualiza ou cancela, atualizando ativo quando aplicável e recusando conflito/duplicidade.
+- Checkout/Stripe/webhook não contornam essa autoridade. Payloads e persistência no código/Schema.
 
 3.14.3 Stripe webhook
-• Endpoint e processamento permanecem server-side no boundary `lib/billing-checkout/`.
-• Assinatura e tipo de evento devem ser validados antes de qualquer persistência.
-• Processamento deve ser idempotente, tolerar retry seguro e liberar entitlement somente pelo evento aprovado no código.
-• Eventos, secrets, tabelas e estados exatos pertencem ao endpoint real, a `docs/platform-config.md` e a `docs/schema.md`.
-• Logs e metadata devem ser mínimos e não conter payload bruto, secrets, cartão ou PII sensível.
+- Processamento server-side em `lib/billing-checkout/`; validar assinatura e evento antes de persistir, com idempotência e retry seguro.
+- Entitlement somente pelo evento aprovado no código. Configuração em `docs/platform-config.md`; persistência no Schema; sem payload bruto, cartão, secret ou PII sensível em logs/metadata.
 
 3.14.5 Resolução de nicho e taxonomia
-• Boundary canônico: `lib/onboarding/niche-resolution/`; contratos, thresholds, reasons, schemas e adapters permanecem canônicos no código.
-• Matching, avaliação de confiança e persistência devem ocorrer server-side; UI, routes e actions não podem chamar RPC diretamente nem reimplementar thresholds ou decisões semânticas.
-• No resolvedor complementar de nicho, IA só pode ser usada quando o resultado determinístico for insuficiente, com Structured Outputs e configuração operacional em `docs/platform-config.md`; o atendimento conversacional segue 3.14.6.
-• O resolvedor complementar não cria taxon ou alias nem grava vínculo oficial diretamente; sugestão oficial inferida exige confirmação humana e revalidação server-side do candidato permitido, com proveniência `user_confirmed_ai`. A confirmação de classificação existente pelo atendimento conversacional permanece sob os controles determinísticos de 3.14.6.
-• `account_niche_resolutions` representa a resolução operacional; `account_taxonomy` é a autoridade do vínculo oficial. Sua escrita exige validação determinística pelo contrato do consumidor autorizado e nunca substitui silenciosamente vínculo primário diferente.
-• Falhas técnicas de matching ou IA mantêm o fluxo não terminal para retry ou correção; ausência semântica legítima de taxon pode oferecer entendimento operacional, mas sua confirmação exige ação humana inequívoca e nunca inventa vínculo oficial. Falha de persistência continua fail-closed e impede conclusão parcial.
-• Logs e telemetria do provider não devem conter prompt, resposta integral, payload bruto, aliases, candidatos completos, formulário ou PII. A persistência de domínio pode manter o contexto e a descrição estritamente necessários sob os limites, ACLs e campos exatos de `docs/schema.md`.
-• Taxons novos nascem inativos. A ativação pelo CRUD administrativo exige guard `platform_admin`, pai ativo e concorrência otimista. O atendimento conversacional não cria, ativa, reativa ou mantém taxons ou aliases. Cobertura factual E20 não é pré-condição.
+- `lib/onboarding/niche-resolution/` governa contratos, thresholds e schemas. Matching, confiança e persistência server-side; UI/actions/routes não chamam RPC nem duplicam decisões semânticas.
+- Resolvedor complementar só usa IA quando determinístico insuficiente, com Structured Outputs e configuração operacional canônica. Não cria taxon/alias nem grava vínculo oficial; sugestão inferida exige confirmação humana e revalidação do candidato permitido com proveniência user_confirmed_ai.
+- Resolução operacional difere do vínculo oficial em account_taxonomy. Escrita autorizada exige validação determinística e não substitui primário diferente silenciosamente.
+- Falha técnica permite retry/correção; ausência semântica legítima permite entendimento operacional confirmado, sem inventar taxon. Falha de persistência impede conclusão parcial.
+- Logs não levam prompt, resposta, formulário, payload, aliases ou candidatos completos; domínio persiste somente contexto necessário sob limites/ACLs do Schema.
+- Taxon nasce inativo; CRUD administrativo exige platform_admin, pai ativo e concorrência otimista. Atendimento não mantém taxons/aliases; sem gate factual E20. Conversa segue 3.14.6.
 
 3.14.6 Pending Setup conversacional
-• Boundary canônico: `lib/onboarding/pending-setup/`; client e boundaries de access, perfil ou taxonomia não acessam diretamente sua persistência.
-• `/a/[account]` entrega a conversa somente para conta `pending_setup`, membership ativa e owner autenticado; após `active`, transcript e vínculo permanecem preservados sem chat executável.
-• Histórico é append-only e isolado por conta/usuário. Reserva, versão e token cercam o turno antes dos efeitos externos; autorização é revalidada na escrita, e interrupção permite retomada idempotente sem duplicar entrada ou efeito.
-• Novas conversas E10.12 inicializam Diálogo e Resumo sem backfill, cópia ou inferência histórica. Conversas legadas conservam seu fluxo e não são convertidas. Após iniciar um turno IA, desligar o gate suspende o atendimento preservando estado e histórico; reativar permite continuar no mesmo motor, sem estado adicional de alternância.
-• Diálogo pertence à conta e identifica o usuário participante; Resumo é memória compacta única da conta. Ambos são contexto, nunca autoridade: fontes oficiais prevalecem, sem sincronização automática ou reconciliação retroativa obrigatória. O Resumo distingue síntese contextual proposta pela IA, entendimento explicitamente aceito pelo lead, classificação confirmada, sugestões comerciais e ausência de identificação. A síntese inclui somente contexto pertinente ao negócio e à orientação comercial; sua elaboração não implica aceite do lead nem transforma sugestões em características confirmadas do negócio. Informação posterior pode corrigir ou substituir conteúdo anterior; a memória pode reexpressar e compactar semanticamente entendimento anteriormente aceito, preservando significado comercial ainda vigente e separação de sugestões. A confirmação do turno usa exatamente o entendimento exibido e persistido; a redação histórica integral permanece no Diálogo. Estado específico do fluxo permanece separado desses conceitos.
-• Atendimento por IA interpreta a mensagem inteira do lead, inclusive contexto comercial fornecido antecipadamente ou junto de outra resposta, sem exigir repetição. Nome preferido, nome contextual do negócio e nome público oficial permanecem distintos; interpretação semântica não dispensa validação determinística do campo nem confirmação competente para efeitos oficiais. Usa projeção pertinente, limitada e sanitizada, Structured Outputs e transporte foreground sem memória autoritativa do provider. Consulta o catálogo ativo e o repertório de mercado disponível, sem pesquisa Web classificatória; aliases vigentes podem apoiar reconhecimento somente por leitura. Orientação comercial exige fontes competentes para serviços, condições, prazos e disponibilidade, sem converter conteúdo ilustrativo ou sugestão em oferta efetiva. O resolvedor complementar preserva seu contrato próprio.
-• Classificação proposta permanece contextual até confirmação humana inequívoca. Sua escrita oficial revalida deterministicamente categoria e hierarquia ativas, deduplica o vínculo e impede substituição silenciosa de primário diferente. Ausência de correspondência segura preserva entendimento operacional sem inventar categoria.
-• Mensagem, estado, resumo e efeito taxonômico do turno são gravados atomicamente. Alteração externa impede sobrescrita indevida e falso sucesso; proposta obsoleta pode ser descartada preservando contexto e histórico, sem reavaliação ou nova confirmação automáticas.
-• A evolução do atendimento não introduz relacionamento operacional, sincronização, escrita cruzada ou dependência com a Base de Comunicação, nem altera seu reaproveitamento legado de contexto aprovado. A Base não passa a consumir Diálogo ou Resumo da conta; consumidores futuros desses conceitos exigem recorte próprio, sem engine ou infraestrutura antecipada.
-• A IA redireciona desvios ocasionais e encerra cordialmente diante de desvio persistente ou ausência de avanço útil, sem contador de chamadas ou tempo fixo. Encerramento inconclusivo preserva contexto comercial e pendência no Resumo, não promove a conta nem bloqueia retomada; a decisão transitória não cria estado operacional. O Resumo prioriza significado comercial vigente e pendência pertinente, com compactação semântica e histórico integral no Diálogo; excesso ao contrato físico falha fechado, sem descartar silenciosamente contexto comercial para anunciar sucesso.
-• Confirmação de classificação não implica conclusão automática do atendimento. A conclusão exige compreensão útil do negócio e das necessidades, orientação pertinente, próximo passo claro, taxon primário oficial ativo ou fallback operacional confirmado e os demais requisitos vigentes. É transacional e idempotente, promove `pending_setup` para `active` e não cria entitlement. Após conclusão correta, o atendimento não governa alterações futuras da conta.
-• O formulário E10.4 não é fallback paralelo. `account_profiles` permanece como dado histórico; o card de resolução de nicho permanece somente para seu consumidor real em contas `active`.
+- `lib/onboarding/pending-setup/` isola persistência; client e boundaries de acesso, perfil e taxonomia não a acessam diretamente.
+- Conversa executável somente para conta pending_setup, membership ativa e owner autenticado. Após active, preservar transcript/vínculo sem chat executável.
+- Histórico append-only por conta/usuário. Reservar versão/token antes dos efeitos; reautorizar na escrita; retomada idempotente sem duplicar entrada ou efeito.
+- Novas conversas inicializam Diálogo/Resumo sem backfill, cópia ou inferência histórica; legadas mantêm seu motor. Desligar gate após turno IA suspende, preservando estado; reativar retoma o mesmo motor, sem estado de alternância.
+- Diálogo pertence à conta e identifica o participante; Resumo é único por conta e separado do estado do fluxo. Ambos são contexto subordinado às fontes oficiais, sem sincronização ou reconciliação retroativa obrigatórias.
+- Resumo distingue síntese proposta, entendimento aceito, classificação confirmada, sugestões e ausência de identificação. Síntese não implica aceite. Só contexto pertinente ao negócio/orientação; compactação e correções preservam significado vigente sem converter sugestão em fato. Confirmação usa exatamente o entendimento exibido/persistido; texto integral no Diálogo.
+- Interpretar mensagem inteira sem repetir contexto antecipado. Nome preferido, nome contextual do negócio e nome público oficial são distintos; efeitos oficiais exigem validação determinística e confirmação competente.
+- IA usa projeção pertinente, limitada e sanitizada, Structured Outputs e transporte foreground sem memória autoritativa do provider. Catálogo/aliases somente leitura, sem pesquisa Web classificatória; resolvedor complementar mantém contrato próprio.
+- Classificação só vira vínculo após confirmação inequívoca e validação determinística de categoria/hierarquia ativas, com deduplicação e proteção do primário. Sem correspondência segura, preservar entendimento operacional.
+- Mensagem, estado, Resumo e efeito taxonômico são atômicos. Alteração externa impede sobrescrita/falso sucesso; descartar proposta obsoleta preserva contexto/histórico sem reavaliação ou reconfirmação automáticas.
+- Sem escrita cruzada, relacionamento operacional ou dependência com a Base. Ela não consome Diálogo/Resumo; reaproveitamento legado aprovado preservado. Novo consumidor exige recorte próprio, sem engine/infra antecipadas.
+- Comportamentos comerciais e requisitos de conclusão: `docs/roadmap.md` — E10.11–E10.12. Encerramento inconclusivo preserva pendência/contexto, não promove conta, não bloqueia retomada nem cria estado; sem contador/tempo fixo. Excesso ao contrato físico falha fechado, sem perda silenciosa para anunciar sucesso.
+- Conclusão exige taxon primário oficial ativo ou entendimento operacional confirmado; é transacional/idempotente e promove pending_setup → active sem entitlement. Atendimento não governa mudanças posteriores. Formulário E10.4 não é fallback; account_profiles histórico e card de nicho somente no consumidor active existente.
 
 3.15 Conteúdo composicional de `commercial_activation`
-• Boundary canônico: `lib/conversion-content/commercial-activation/`; registry, schemas, resolver e renderer são fontes do contrato executável.
-• Composição define módulo, variante, ordem e obrigatoriedade; o artefato não deve duplicar essas decisões.
-• Conteúdo persistido deve ser estruturado e validado estritamente no servidor; HTML bruto, scripts, CSS, Tailwind e nomes livres de componentes são proibidos.
-• Seção obrigatória ausente ou inválida invalida o artefato; seção opcional inválida pode ser omitida somente com log seguro.
-• IDs desconhecidos, duplicados ou combinações não registradas devem falhar fechado.
-• CTAs devem usar destino seguro aprovado pelo contrato; schemas, variantes e casos executáveis permanecem canônicos no código e em `package.json`.
+- `lib/conversion-content/commercial-activation/` governa registry, schema, resolver e renderer. Composição define módulo, variante, ordem e obrigatoriedade; artefato não duplica essas decisões.
+- Validação estrita server-side: sem HTML bruto, scripts, CSS, Tailwind ou nomes livres de componentes. IDs desconhecidos/duplicados ou combinações não registradas falham fechado.
+- Obrigatória inválida/ausente invalida artefato; opcional inválida só pode ser omitida com log seguro. CTAs usam destino seguro aprovado; contratos executáveis no código/package.json.
 
 3.15.1 Geração administrativa de draft de `commercial_activation`
-• Geração é server-side/Admin, protegida por `requirePlatformAdmin()`, usando Responses API com Structured Outputs e configuração em `docs/platform-config.md`.
-• O fluxo é linear e não depende de Agents SDK, job, fila, agente ou IA no runtime público.
-• Somente fontes aprovadas pelo código e pelo Schema podem alimentar a geração; dados de planos são fonte parcial e não autorizam garantias, condições, descontos, promoções ou promessas comerciais.
-• Antes de persistir, validar o envelope e cada seção contra a composição e o registry efetivos.
-• Persistência é somente como draft; publicação exige fluxo próprio. Proveniência relacional e contextual deve respeitar o contrato do código e do Schema.
-• Falha parcial após criação deve ser compensada para não aparentar conclusão; logs não incluem prompt integral, pesquisas brutas, payload sensível ou resposta completa da IA.
+- Geração Admin server-side com requirePlatformAdmin, Responses API/Structured Outputs e configuração operacional canônica; fluxo linear, sem Agents SDK, job, fila, agente ou IA no runtime público.
+- Fontes somente aprovadas pelo código/Schema; planos são fonte parcial, sem autorizar garantias, condições, descontos, promoções ou promessas.
+- Validar envelope/seções contra composição/registry antes de persistir draft. Publicação separada; proveniência relacional/contextual conforme contrato.
+- Compensar falha parcial após criação para não aparentar conclusão; sem prompt integral, pesquisa bruta, payload sensível ou resposta completa em logs.
 
 3.15.2 Parametrização raiz de `landing_page`
-• Boundary canônico: `lib/conversion-content/landing-page/`; contracts, registry, schema e resolver são fontes executáveis.
-• Consumidores devem usar a API pública exportada por `lib/conversion-content/index.ts`, sem acessar registry ou schema diretamente.
-• Versão, preset ou parâmetro desconhecido deve falhar fechado, sem fallback implícito; a saída resolvida deve permanecer imutável.
-• Evolução deve preservar a precedência `raiz → módulo → variante`; APIs removidas não podem ser reutilizadas.
+- `lib/conversion-content/landing-page/` mantém contrato raiz; consumir somente API pública de `lib/conversion-content/index.ts`, sem registry/schema interno.
+- Versão, preset ou parâmetro desconhecidos falham fechado, sem fallback; saída imutável. Evolução preserva raiz → módulo → variante; APIs removidas não são reutilizadas.
 
 3.15.4 Catálogo de entradas de `landing_page`
-• Status: Deprecada em 01/10/2026 no REF pré-merge da E22.7.
-• Motivo: a E22.7 retirou o catálogo factual E20.8 e seus consumidores do runtime.
-• Destino canônico: `docs/roadmap.md` — E22.7.4; `docs/schema.md` — seção 1.35.
-• A âncora é mantida para resolver referências históricas à E20.8 no roadmap.
+- Deprecada em 01/10/2026: catálogo factual retirado, sem consumidor ativo. Destino: `docs/roadmap.md` — E22.7; `docs/schema.md` — 1.35.
 
 3.15.7 Preparação factual do taxon para `landing_page`
-• Status: Deprecada em 01/10/2026 no REF pré-merge da E22.7.
-• Motivo: a preparação factual e a avaliação assistida E20.8 foram retiradas do runtime.
-• Destino canônico: `docs/roadmap.md` — E22.7.4; `docs/schema.md` — seção 1.35.
-• A âncora é mantida para resolver referências históricas à E20.8 no roadmap.
+- Deprecada em 01/10/2026: preparação/avaliação factual retiradas. Destino: `docs/roadmap.md` — E22.7; `docs/schema.md` — 1.35.
 
 3.15.8 Liberação factual administrativa de taxon
-• Status: Deprecada em 01/10/2026 no REF pré-merge da E22.7.
-• Motivo: a liberação baseada em cobertura factual foi retirada; a ativação atual pertence ao CRUD independente de taxonomia.
-• Destino canônico: `docs/roadmap.md` — E22.7.4; seção 3.14.5 desta Base Técnica.
-• A âncora é mantida para resolver referências históricas à E20.8 no roadmap.
+- Deprecada em 01/10/2026: liberação por cobertura factual retirada. Ativação no CRUD independente segue 3.14.5; retirada na E22.7 do roadmap.
 
 3.15.9 Estado residual do antigo produto de `landing_page`
-• O Account Dashboard não possui criação, onboarding operacional, workspace, configuração operacional, histórico, Preview, renderer, aprovação, readers de materialização ou assinatura de assets do produto legado.
-• Tabelas, RPCs, migrations, ponteiro de aprovação, dados históricos e o bucket privado permanecem fisicamente preservados e inertes; nenhum runtime corrente os usa para leitura, escrita, reprodução, entrega de revisão ou compatibilidade do catálogo.
-• Eventual limpeza destrutiva de banco, dados ou Storage exige recorte próprio; o contrato físico continua inventariado em `docs/schema.md`.
+- Produto LP legado sem consumidor de runtime, inclusive leitura, escrita, revisão, reprodução, entrega de assets ou compatibilidade de catálogo.
+- Resíduos físicos inertes no `docs/schema.md`; limpeza destrutiva de banco/dados/Storage exige recorte próprio.
 
 3.16 Configuração e observabilidade de workloads OpenAI
-• O boundary transversal canônico é `lib/openai-workloads/`; consumidores de produto usam somente sua API pública para resolver modelo e reasoning effort, sem ler variáveis de modelo nem acessar o registry interno.
-• Os workloads correntes de produto são textuais. O catálogo global de modelos preserva suporte independente a modelos e parâmetros de texto e imagem sem transformar disponibilidade de modelo em workload de produto.
-• O boundary comum não executa chamadas OpenAI e não contém secrets, prompts, schemas funcionais, regras de fallback ou persistência; transporte e comportamento funcional permanecem nos domínios consumidores.
-• O registry mantém identidade, modalidade, apresentação code-owned, vocabulário tipado e baseline determinístico de Development; modelos elegíveis para novas candidatas não ficam hardcoded por workload. Resolvers recebem o ambiente explicitamente e retornam proveniência verificável: `repo_catalog` com revisão versionada ou `supabase_operational` com revisão decimal positiva.
-• Em Production e Preview, o gate server-side temporário aceita somente o literal `true`: desligado, preserva o baseline do repositório; ligado, lê a revisão ativa no Supabase em cada execução, sem cache, seleção automática de outra revisão ou fallback para o repositório após erro.
-• O catálogo global Supabase responde somente quais pares exatos `modelo + parâmetro tipado` podem ser escolhidos agora; o lifecycle separado por `ambiente + workload` responde qual revisão está ativa e preserva candidata, revisão pendente, ativações e histórico. Objetos físicos e estado de apply pertencem a `docs/schema.md`.
-• O cadastro administrativo de identidade nova confirma ao vivo o ID exato pela API de modelos da OpenAI antes da persistência; falha ou divergência bloqueia o cadastro. Essa confirmação não infere efforts nem substitui a prova operacional da combinação modelo + parâmetro. Identidades que diferem apenas por caixa não formam novas escolhas; variantes históricas preservam sua grafia e revisões anteriores.
-• Leituras administrativas de unidades, revisões e ativações delimitam o estado corrente pela allowlist de workloads vigente. Linhas físicas de workloads retirados permanecem históricas e inertes, sem compatibilizador por ID legado.
-• Somente criação/edição, prova e promoção de nova candidata consultam elegibilidade vigente. Save e promoção revalidam sob locks ordenados; a prova revalida fail-closed imediatamente antes do transporte e não mantém lock durante a chamada externa. Ativação de pendente já validada e rollback histórico não consultam o catálogo.
-• Revisões ativas, históricas e snapshots funcionais revalidam identidade do workload, origem, revisão, modalidade, identificador técnico do modelo e shape tipado do parâmetro, sem exigir disponibilidade atual nem presença do modelo em lista estática.
-• Cada tentativa de provider deve emitir somente metadados operacionais normalizados e seguros, preservando métricas ausentes como `null`; prompts, respostas integrais, payloads de negócio, PII, secrets e cálculo monetário não entram no evento comum.
-• Workloads textuais podem acrescentar telemetria segura e nullable de chamadas Web Search e quantidade de fontes; URLs e conteúdo das fontes permanecem fora do evento comum.
-• Leitura administrativa de Costs, contratos financeiros e cálculo monetário pertencem ao boundary separado `lib/openai-costs/`; `lib/openai-workloads/` pode fornecer apenas identidade, configuração e usage públicos necessários, sem receber provider administrativo, persistência financeira ou regra de preço.
-• O boundary `lib/openai-costs/` mantém separado o ledger ativo transversal e o read-side da série histórica congelada `openai_lp_*`; consumidores declaram contexto econômico explícito e usam somente a API pública do recorder, sem importar Supabase, rows financeiras ou pricing.
-• A captura financeira é best-effort aguardada em orçamento curto: timeout, indisponibilidade ou erro de persistência produzem somente evento operacional sanitizado e nunca substituem o sucesso, a falha ou o fallback funcional do workload.
-• Execução funcional, operação cobrável e retry possuem identidades idempotentes distintas. Universo, atribuição e conta nunca são inferidos por heurística; ausência de vínculo comprovável permanece não atribuída.
-• O pricing ativo é code-owned, prospectivo e versionado por vigência. A finalização calcula com aritmética decimal exata, separa entrada ordinária, cache read, cache write, saída e chamadas Web Search, persiste o snapshot usado e mantém toda a operação como indisponível quando falta qualquer regra ou unidade necessária; histórico terminal nunca é reprecificado.
-• O read model ativo percorre o ledger por keyset `(started_at, execution_id, operation_sequence)`, preserva execuções sem operação, retries, exceções não atribuídas e custos indisponíveis, e não publica agregado parcial após cursor inválido, repetido ou regressivo.
-• `/admin/custos-openai` é a superfície financeira separada, exclusivamente sob demanda e protegida por `platform_admin`; a Server Action reautoriza o papel e consulta em paralelo o total oficial, o ledger ativo e o histórico congelado do mesmo período, sem polling, cache periódico, job ou automação.
-• A composição financeira E21.5 preserva o total oficial como visão organizacional e calcula globalmente `oficial - ativo calculável - histórico congelado`; filtros de universo, conta ou workload alteram somente a projeção ativa interna, nunca o total oficial nem a reconciliação global.
-• O DTO administrativo ativo expõe somente cobertura, IDs técnicos, universo, atribuição, workload, ambiente, execução, operação/retry, modelo, effort, usage, baseline opcional, estado e custo; prompt, resposta integral, payload de negócio, URL de fonte, PII e secrets não atravessam o boundary do cliente.
-• O read model financeiro histórico pagina integralmente e expõe somente conta, Landing Page, workload, contagens, cobertura, instantes e totais sanitizados. Falha oficial indisponibiliza a visão; falha interna preserva o total oficial e explicita indisponibilidade parcial; gastos oficiais sem evento histórico permanecem apenas na reconciliação.
-• Eventos financeiros históricos preservam somente status HTTP, código e tipo sanitizados para diagnóstico administrativo agregado; mensagem, payload bruto e detalhe financeiro interno não atravessam o boundary do cliente.
-• A gestão administrativa consome somente projeção pública imutável e read model seguro; a página reautoriza `platform_admin` antes da leitura privilegiada, cada mutação reexecuta o guard e o ator é derivado exclusivamente no servidor.
-• Leituras administrativas de catálogo, revisões e ativações paginam integralmente com ordem determinística; `416/PGRST103` terminal preserva páginas já acumuladas e qualquer erro ou resposta parcial produz estado tipado fail-closed.
-• `/admin/workloads-openai` separa catálogo global, seletor Preview/Production e lifecycle expansível; nomes e recortes dos workloads vigentes vêm de uma única matriz pública code-owned.
-• Candidata, prova, revisão validada pendente, ativação e rollback permanecem estados explícitos. A prova usa fixture segura nos transportes funcionais existentes, não persiste dados de negócio e somente promove a candidata após sucesso; a configuração ativa muda apenas por ação humana posterior.
-• `OPENAI_API_KEY` permanece server-only e restrita à validação explícita de identidade e à prova operacional autorizada; não atravessa client, formulário, read model ou log. Falha, recusa ou metadado inseguro encerram a prova sem promover nem descartar a candidata.
+- `lib/openai-workloads/` resolve configuração somente pela API pública, sem variáveis legadas de modelo ou registry interno no consumidor. Produto é textual; catálogo de modelos de imagem permanece independente.
+- Boundary comum não transporta chamadas nem contém secrets, prompts, schemas funcionais, fallback ou persistência de domínio.
+- Registry code-owned mantém identidade, modalidade, apresentação, vocabulário e baseline Development. Ambiente explícito; proveniência repo_catalog com revisão versionada ou supabase_operational com revisão decimal positiva.
+- Em Preview/Production, gate aceita somente true: desligado usa baseline; ligado lê ativa Supabase a cada execução, sem cache, seleção automática de revisão alternativa ou fallback local após erro.
+- Catálogo global governa pares exatos modelo/parâmetro tipado disponíveis, sem elegíveis hardcoded por workload; lifecycle por ambiente/workload governa candidata, revisão pendente, ativações e histórico. Estado físico/apply no Schema.
+- Novo ID exige confirmação ao vivo pela OpenAI; erro/divergência bloqueia cadastro. Não infere efforts nem substitui prova operacional; variantes de caixa não criam escolhas e grafias históricas permanecem.
+- Elegibilidade corrente somente em criação/edição, prova e promoção de candidata. Save/promoção revalidam sob locks ordenados; prova revalida imediatamente antes do transporte sem lock externo. Ativação pendente validada e rollback não consultam catálogo.
+- Ativas, históricas e snapshots revalidam workload, origem, revisão, modalidade, ID técnico e parâmetro tipado, sem exigir disponibilidade atual ou lista estática.
+- Leitura corrente limitada à allowlist vigente; workload retirado permanece inerte, sem compatibilizador por ID legado.
+- Admin usa projeção pública imutável; reautoriza platform_admin antes de leitura privilegiada e em cada mutação; ator derivado no servidor. Paginação completa/ordenada conforme 3.12, sem projeção utilizável após falha/parcialidade. Nomes/recortes vêm da matriz pública code-owned.
+- Candidata, prova, pendente, ativação e rollback são explícitos. Prova usa fixture segura no transporte existente, sem persistir negócio; promove somente após sucesso. Ativa só muda por ação humana posterior.
+- OPENAI_API_KEY server-only, restrita nessa gestão à validação explícita de identidade/prova autorizada. Nunca em client/form/read model/log. Falha, recusa ou metadado inseguro não promove nem descarta candidata.
+- Cada tentativa registra só metadados técnicos seguros, resultado, categoria de falha, latência, IDs e usage disponíveis; ausentes null. Web Search admite contagens nullable, sem URLs/conteúdo. Sem prompt, resposta integral, negócio, PII, secrets ou cálculo monetário no evento comum.
+- `lib/openai-costs/` governa finanças separado dos workloads, que só fornecem identidade, configuração e usage públicos; sem provider administrativo, persistência ou preço no boundary comum.
+- Ledger ativo separado do histórico congelado openai_lp_*. Consumidor declara contexto econômico e usa API pública do recorder, sem Supabase, rows financeiras ou pricing.
+- Captura financeira best-effort aguardada em orçamento curto; timeout/falha só emite evento sanitizado, sem alterar sucesso, falha ou fallback funcional.
+- Execução, operação cobrável e retry têm IDs idempotentes distintos. Universo/conta/atribuição nunca por heurística; sem vínculo comprovável permanece não atribuído.
+- Pricing code-owned, prospectivo e temporal: decimal exato, unidades confirmadas, snapshot imutável. Falta de regra/unidade torna toda operação indisponível; terminal nunca reprecificado. Categorias/unidades exatas no contrato de pricing.
+- Read model ativo por keyset mantém execução sem operação, retry, não atribuído e indisponível; cursor inválido/repetido/regressivo impede agregado parcial.
+- /admin/custos-openai é superfície única sob demanda para platform_admin; action reautoriza e lê em paralelo oficial, ativo e histórico do mesmo período. Sem polling, cache periódico, job ou automação.
+- Reconciliação global = oficial - ativo calculável - histórico congelado. Filtros de universo/conta/workload só alteram projeção ativa; total oficial e reconciliação permanecem globais.
+- DTO financeiro somente sanitizado do contrato público; sem prompt, resposta integral, negócio, URL de fonte, PII, secret ou detalhe financeiro interno indevido. Histórico pagina integralmente; diagnóstico expõe só HTTP/código/tipo sanitizados.
+- Falha oficial indisponibiliza visão; falha interna preserva total oficial com indisponibilidade parcial explícita. Gasto oficial sem evento histórico permanece na reconciliação.
 
 4. DB Contract
-• `docs/schema.md` é a fonte única de tabelas, views, functions, RPCs, triggers, policies, constraints, grants e do estado exato do banco.
-• Esta Base Técnica mantém somente guardrails transversais de implementação e não deve duplicar inventários de objetos.
-• Alterações no banco exigem atualização do Schema e revisão das dependências no código.
-• `SECURITY DEFINER` só é permitido quando estiver explicitamente aprovado no Schema, com motivo e limites.
-• Views expostas a usuário devem usar `security_invoker = true` e estar registradas no Schema.
+- Objetos/estado exatos: `docs/schema.md`; dependências e migrations seguem 3.8/3.4.4, sem inventário duplicado.
+- SECURITY DEFINER exige aprovação explícita no Schema, motivo e limites; views de usuário usam security_invoker e registro no Schema.
 
 5. Arquitetura de Acesso
 
 5.1 Conceitos Fundamentais
 
 5.1.1 Access Context
-• O boundary `access` concentra a decisão server-side de acesso; a view e os objetos exatos pertencem a `docs/schema.md`, e contratos, adapters e guards pertencem ao código real.
-• Decisões de acesso devem falhar fechado e distinguir contexto inexistente de conta ou membership existentes, porém bloqueados.
-• UI, providers e componentes client podem consumir contexto, mas não autorizam nem elevam privilégios.
-• Conclusão de setup e gating devem usar o estado canônico da conta; campos legados ou deprecated não podem voltar a decidir acesso.
+- access decide server-side com objetos no Schema e contratos/guards no código. Ausência difere de conta/membership bloqueados; falhar fechado quando não permitidos.
+- UI/providers consomem contexto sanitizado sem autorizar ou elevar privilégios. Setup/gates usam estado canônico, nunca campos legados/deprecated.
 
 5.1.2 Persistência SSR da última conta
-• `last_account_subdomain` é cookie exclusivamente server-side, `HttpOnly`, `SameSite=Lax`, com `Secure` em produção; duração e detalhes exatos permanecem canônicos no código.
-• Middleware pode persistir a última conta em navegação real como best-effort; o guard SSR é a escrita autoritativa após decisão de acesso permitida.
-• Conta inválida ou bloqueada exige limpeza do cookie antes do fallback seguro, evitando loops de redirecionamento.
-• Rotas que dependem de sessão ou cookie devem permanecer dinâmicas e sem cache entre usuários.
+- last_account_subdomain somente server-side: HttpOnly, SameSite=Lax e Secure em Production; duração no código.
+- Middleware persiste em navegação real como best-effort; guard SSR faz a escrita autoritativa após allow. Conta inválida/bloqueada exige limpeza antes do fallback sem loop; cache segue 3.13.
 
 5.2 Adapters, Guards e Consumidores
-• Estado atual de adapters, guards, providers, APIs e superfícies deve ser consultado no repositório; esta Base não mantém inventário desses arquivos.
-• Acesso ao banco ocorre por adapters server-side; guards SSR aplicam a autorização final e consumidores no client não reinterpretam decisões de acesso.
-• Privilégios administrativos devem permanecer centralizados nos guards existentes, sem autorização paralela em páginas ou componentes.
-• Deny, bloqueio e erro operacional devem permanecer distinguíveis, sem fallback permissivo.
+- Adapters acessam DB; guards SSR autorizam; client não reinterpreta decisão. Privilégio Admin centralizado nos guards existentes.
+- Distinguir deny, bloqueio e erro, sem fallback permissivo; inventário no repositório.
 
 5.3 Fluxos de Sessão e Auth
 
 5.3.1 Login e redirecionamentos
-• Login pode ocorrer pelo client SULB autorizado, mas a autorização da conta permanece responsabilidade do SSR.
-• Parâmetros de retorno aceitam somente paths internos seguros; URLs externas, protocolos e paths iniciados por `//` devem cair no destino padrão seguro.
-• Rotas, mensagens, estados de loading e tratamento exato de erros permanecem canônicos no código.
+- Login pode usar client SULB autorizado; autorização de conta permanece SSR.
+- Retorno somente por path interno seguro; URL externa, protocolo ou prefixo // cai no destino padrão seguro. Copy/loading/erros exatos no código.
 
 5.3.2 Signup, confirmação e recuperação
-• Signup e reenvio devem usar somente os clients e imports autorizados pelo SULB, com redirects internos aprovados; templates, Redirect URLs e configuração de e-mail pertencem a `docs/platform-config.md`.
-• Links de confirmação ou recuperação não podem consumir token no GET; verificação, criação de sessão e eventual atualização de senha ocorrem somente no POST.
-• Recuperação de senha deve usar resposta neutra contra enumeração de usuários; mensagens, cooldowns e limites de UX exatos permanecem no código, e limitação server-side pertence ao Supabase Auth.
-• Senha só pode ser atualizada após validação do token ou código e estabelecimento da sessão correspondente.
-• E-mail, senha, token, código e valores sensíveis de formulário não podem ser registrados em logs.
+- Signup/reenvio usam clients/imports SULB autorizados e redirects internos aprovados; templates/e-mail em `docs/platform-config.md`.
+- GET nunca consome token/código. Verificação, sessão e senha somente no POST; senha exige token/código validado e sessão correspondente.
+- Recuperação neutra contra enumeração; limitação server-side no Supabase Auth, copy/cooldown no código. Sem e-mail, senha, token, código ou formulário sensível em logs.
 
 5.3.3 Observabilidade
-• Decisões críticas de acesso, Auth e Server Actions devem emitir logs estruturados com resultado, motivo seguro, `request_id` e latência quando disponíveis.
-• Nomes de eventos e campos específicos permanecem canônicos no código; a Base mantém apenas o contrato mínimo de diagnóstico.
-• Logs não devem conter PII, secrets, credenciais, tokens, códigos, payloads brutos, prompts ou valores de formulário.
-• Falha de logging não pode bloquear o fluxo principal.
-• Mutação seguida de redirect deve revalidar a rota afetada quando houver risco de UI stale.
+- Acesso, Auth e actions críticas emitem logs estruturados de resultado/motivo seguro, request_id e latência disponíveis; nomes/campos específicos no código.
+- Sem PII, secrets, credenciais, tokens, códigos, payload bruto, prompts ou formulário. Falha de logging não bloqueia fluxo.
+- Mutação seguida de redirect revalida rota quando houver risco de UI stale.
 
 5.4 Gateway `/a` e seção privada
-• `/a/home` é o gateway público; a seção privada existe somente sob uma conta resolvida e autorizada.
-• Usuário autenticado deve tentar a última conta permitida e depois um fallback determinístico de conta; o gateway não decide allow/deny por conta própria.
-• Usuário sem qualquer membership pode criar a primeira conta somente pelo fluxo server-side aprovado; a existência de qualquer membership impede auto-criação adicional.
-• O guard SSR da seção privada é responsável por allow/deny, bloqueios e redirecionamentos seguros; mapeamentos exatos de status e destinos pertencem ao código.
-• Negação com cookie inválido deve limpar a última conta e voltar ao gateway sem loop; ausência de contexto autenticado deve usar fallback informativo seguro.
+- /a/home é gateway público; seção privada exige conta resolvida/autorizada. Tentar última conta permitida e fallback determinístico, sem allow/deny próprio no gateway.
+- Primeira conta só pelo fluxo server-side aprovado e sem qualquer membership; vínculo existente impede auto-criação adicional.
+- Guard SSR governa allow/deny, bloqueios e redirects. Limpar cookie inválido antes de voltar ao gateway sem loop; ausência autenticada usa fallback informativo seguro. Status/destinos no código.
 
 6. Estrutura de Arquivos Essencial
 
 6.1 Repositório real
-• O repositório real é a fonte única do estado atual de pastas, arquivos, exports e paths; esta Base não mantém árvore nem inventário.
-• Antes de criar ou mover artefato, confirmar classificação, boundary e path no repositório conforme 3.3.2.
+- Pastas, arquivos, exports e paths: repositório real. Antes de criar/mover, aplicar 3.3.2; sem árvore duplicada.
 
 6.2 Paths normativos
-• Esta Base registra path somente quando ele define boundary, fonte canônica ou exceção normativa.
-• Mudança de path exige atualização documental apenas quando alterar classificação, boundary, allowlist ou contrato técnico.
+- Path documental só quando normativo para boundary, fonte ou exceção. Atualizar quando mudar classificação, boundary, allowlist ou contrato.
 
 6.3 Tipos e contratos críticos
-• Contratos, exports e tipos específicos permanecem canônicos no código; consumidores devem usar a API pública do boundary.
-• `lib/types/status.ts` é fonte única de `AccountStatus`, `MemberStatus` e `MemberRole`; não redefinir esses tipos.
-• Compatibilidade legada não autoriza novos artefatos fora do path canônico.
+- Usar API pública do boundary; tipos/exports específicos no código.
+- AccountStatus, MemberStatus e MemberRole têm fonte única em lib/types/status.ts; não redefinir. Legado não autoriza novo path não canônico.
 
 6.4 Arquivos SULB autorizados a importar Supabase (fonte única normativa)
 Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo em app/auth/ não pode importar @supabase/* até ser incluído nesta lista.
-• lib/supabase/client.ts
-• lib/supabase/middleware.ts
-• lib/supabase/server.ts
-• lib/supabase/service.ts
-• app/auth/confirm/route.ts
-• app/auth/update-password/page.tsx
-• app/auth/protected/page.tsx
+- lib/supabase/client.ts
+- lib/supabase/middleware.ts
+- lib/supabase/server.ts
+- lib/supabase/service.ts
+- app/auth/confirm/route.ts
+- app/auth/update-password/page.tsx
+- app/auth/protected/page.tsx
 
 7. Checklist mínima (anti-regressão)
-• Residência e estrutura: confirmar o repositório real, 3.3.2 e as fontes documentais canônicas antes de alterar path ou contrato.
-• Segurança e banco: validar 3.1, 3.4.4, 3.8, 4 e `docs/schema.md`.
-• Boundaries e acesso a dados: validar 2.5, 3.2, 3.3, 3.14 e a allowlist 6.4.
-• Acesso e Auth: validar a seção 5 e, quando aplicável, `docs/platform-config.md`, `docs/automations.md` e os READMEs operacionais.
-• Contratos de domínio: consumir APIs públicas e validadores canônicos do código, sem duplicar lógica de registry, schema, provedor ou resolução.
-• Release: seguir 3.4 e `AGENTS.md`, executar ou justificar validações aplicáveis, revisar preview quando necessário e respeitar a autoridade de merge definida por modo.
+- Residência/estrutura: repositório real e 3.3.2.
+- Segurança/banco: 3.1, 3.4.4, 3.8, 4 e Schema.
+- Boundaries/imports: 2.5, 3.2, 3.3, 3.14 e allowlist 6.4.
+- Acesso/Auth: seção 5 e fontes operacionais aplicáveis.
+- Domínios: API pública e validadores canônicos, sem duplicar lógica.
+- Release: 3.4/AGENTS.md; executar ou justificar validações/Preview e respeitar autoridade de merge.
