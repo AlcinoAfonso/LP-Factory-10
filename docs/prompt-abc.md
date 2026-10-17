@@ -16,7 +16,7 @@ Regra de reconciliação: antes de adicionar, avaliar nesta ordem: remover; ajus
 
 ## 2. Objetivo
 
-Gerar um ABC humano, curto, delta-only e executável.
+Gerar ABC humano, curto, delta-only e executável, com `CONTEUDO` AI-first, conciso e íntegro.
 
 ## 3. Fontes obrigatórias
 
@@ -40,7 +40,6 @@ Gerar um ABC humano, curto, delta-only e executável.
    * passo superado.
 4. Comparar com o documento atual aplicando a Regra de reconciliação.
 5. Aplicar o gate específico do DOC_ALVO antes de emitir qualquer operação.
-6. Emitir somente o menor delta; redigir o `CONTEUDO` em formato AI-first: Markdown simples, frases curtas, hierarquia e numeração aplicáveis, preservando toda informação canônica necessária.
 
 ## 5. Residência documental
 
