@@ -2304,7 +2304,7 @@
 21.5.2 Registros do recorte
 - Banco:
   - Criados:
-  - `openai_cost_executions`
+    - `openai_cost_executions`
     - `openai_cost_operations`
     - `openai_cost_coverage`
     - `start_openai_cost_execution_v1`
