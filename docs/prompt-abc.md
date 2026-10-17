@@ -1,4 +1,4 @@
-# docs/prompt-abc.md vs22
+# docs/prompt-abc.md vs23
 
 PROMPT ABC
 
@@ -16,7 +16,7 @@ Regra de reconciliação: antes de adicionar, avaliar nesta ordem: remover; ajus
 
 ## 2. Objetivo
 
-Gerar um ABC humano, curto, delta-only e executável.
+Gerar ABC delta-only executável com o menor delta necessário e `CONTEUDO` AI-first: Markdown simples, hierarquia numerada preservada e bullets no último nível; frases curtas e inequívocas, com texto mínimo; somente informação vigente e necessária, sem histórico ou duplicação; referências breves às fontes canônicas; preservar integralmente contratos, regras, limites e capacidades funcionais.
 
 ## 3. Fontes obrigatórias
 
@@ -40,7 +40,6 @@ Gerar um ABC humano, curto, delta-only e executável.
    * passo superado.
 4. Comparar com o documento atual aplicando a Regra de reconciliação.
 5. Aplicar o gate específico do DOC_ALVO antes de emitir qualquer operação.
-6. Emitir somente o menor delta necessário.
 
 ## 5. Residência documental
 
