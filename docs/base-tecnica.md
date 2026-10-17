@@ -199,7 +199,7 @@
 - Mensagem, estado, Resumo e efeito taxonômico são atômicos. Alteração externa impede sobrescrita/falso sucesso; descartar proposta obsoleta preserva contexto/histórico sem reavaliação ou reconfirmação automáticas.
 - Sem escrita cruzada, relacionamento operacional ou dependência com a Base. Ela não consome Diálogo/Resumo; reaproveitamento legado aprovado preservado. Novo consumidor exige recorte próprio, sem engine/infra antecipadas.
 - Comportamentos comerciais e requisitos de conclusão: `docs/roadmap.md` — E10.11–E10.12. Encerramento inconclusivo preserva pendência/contexto, não promove conta, não bloqueia retomada nem cria estado; sem contador/tempo fixo. Excesso ao contrato físico falha fechado, sem perda silenciosa para anunciar sucesso.
-- Conclusão transacional/idempotente promove pending_setup → active sem entitlement; atendimento não governa mudanças posteriores. Formulário E10.4 não é fallback; account_profiles histórico e card de nicho somente no consumidor active existente.
+- Conclusão exige taxon primário oficial ativo ou entendimento operacional confirmado; é transacional/idempotente e promove pending_setup → active sem entitlement. Atendimento não governa mudanças posteriores. Formulário E10.4 não é fallback; account_profiles histórico e card de nicho somente no consumidor active existente.
 
 3.15 Conteúdo composicional de `commercial_activation`
 - `lib/conversion-content/commercial-activation/` governa registry, schema, resolver e renderer. Composição define módulo, variante, ordem e obrigatoriedade; artefato não duplica essas decisões.
