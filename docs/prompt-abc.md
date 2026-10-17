@@ -1,4 +1,4 @@
-# docs/prompt-abc.md vs22
+# docs/prompt-abc.md vs23
 
 PROMPT ABC
 
@@ -40,7 +40,7 @@ Gerar um ABC humano, curto, delta-only e executável.
    * passo superado.
 4. Comparar com o documento atual aplicando a Regra de reconciliação.
 5. Aplicar o gate específico do DOC_ALVO antes de emitir qualquer operação.
-6. Emitir somente o menor delta necessário.
+6. Emitir somente o menor delta; redigir o `CONTEUDO` em formato AI-first: Markdown simples, frases curtas, hierarquia e numeração aplicáveis, preservando toda informação canônica necessária.
 
 ## 5. Residência documental
 
