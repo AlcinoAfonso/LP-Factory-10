@@ -96,7 +96,7 @@
 - Actions/CLIs mutáveis exigem referências controladas e revisão prévia.
 
 3.5 Secrets & Variáveis
-- Secrets são server-only, lidos pelos nomes de `docs/platform-config.md`; nunca em chat, log, print, client bundle ou documento.
+- Código server-side lê variáveis somente pelos nomes de `docs/platform-config.md`. Secrets nunca em chat, log, print, client bundle ou documento.
 - Vazamento exige revogação e substituição imediatas. Flags, endpoints, projetos e escopos ficam na fonte operacional.
 
 3.6 Tipos TypeScript
@@ -268,7 +268,7 @@
 
 5.1.2 Persistência SSR da última conta
 - last_account_subdomain somente server-side: HttpOnly, SameSite=Lax e Secure em Production; duração no código.
-- Middleware persiste em navegação real como best-effort; guard SSR escreve após allow. Conta inválida/bloqueada exige limpeza antes do fallback sem loop; cache segue 3.13.
+- Middleware persiste em navegação real como best-effort; guard SSR faz a escrita autoritativa após allow. Conta inválida/bloqueada exige limpeza antes do fallback sem loop; cache segue 3.13.
 
 5.2 Adapters, Guards e Consumidores
 - Adapters acessam DB; guards SSR autorizam; client não reinterpreta decisão. Privilégio Admin centralizado nos guards existentes.
