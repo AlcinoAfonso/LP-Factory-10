@@ -5,29 +5,24 @@
 - Versão: v1.5.258
 
 0.2 Contrato do documento (consulta)
-- Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
+- Estado vigente dos casos; sem narrativa operacional.
 
 0.2.1 TIPO_DO_DOCUMENTO
 - TIPO_DO_DOCUMENTO: prescritivo
 
 0.2.2 GUIA_DE_CONSULTA
-- O QUE É: a referência única do projeto para o contrato de casos (E*): status, escopo final e dependências.
-- POR QUE CONSULTAR: para entender “o que já foi definido/implementado” e “qual é o próximo marco”, evitando drift com docs técnicas.
-- COMO USAR: ao planejar execução, priorização e validação de escopo por caso, consultar este documento para o estado final de cada E*.
-- QUANDO CONSULTAR: status/escopo/dependências de E*, decisões de produto/UX registradas no caso, e paths/artefatos quando fizerem parte do estado final do caso.
-- QUANDO NÃO CONSULTAR: regras técnicas do runtime (usar `docs/base-tecnica.md`) e contrato/inventário de DB (usar `docs/schema.md`).
-- NOTA: este documento registra estado final por caso; não é lugar de narrativa operacional.
-
+- Consultar para funcionalidades, estado, decisões, dependências, limites, pendências e registros materiais de casos.
+- Contratos técnicos: docs/base-tecnica.md; banco: docs/schema.md. Histórico e evidências no Git/PRs.
 
 1. E1 — Estrutura de Dados
-- Objetivo: estabelecer a base estrutural multi-tenant para contas, vínculos de usuários, planos, parceiros e auditoria.
-- Status: concluído; a base permanece em uso e seu contrato atual é mantido em `docs/schema.md` e nos recortes posteriores que a evoluíram.
+- Objetivo: fundação multi-tenant.
+- Status: concluído.
 
 1.1 Base estrutural multi-tenant
 
 1.1.1 Objetivo e status
-- Objetivo: disponibilizar as entidades e relações iniciais necessárias para identificar contas, vincular usuários, associar planos e parceiros e registrar auditoria.
-- Status: concluído; estruturas preservadas no estado atual do produto.
+- Objetivo: contas, memberships, planos, parceiros e auditoria.
+- Status: implementado.
 
 1.1.2 Registros do recorte
 - Banco:
@@ -46,29 +41,22 @@
   - Contrato atual do banco: `docs/schema.md` — seções 1, 2 e 4.
 
 1.1.3 Invariantes preservados
-- Status: implementado e vigente.
-- Conteúdo:
-  - contas mantêm identificadores únicos de subdomínio, domínio e slug;
-  - vínculos entre conta e usuário permanecem únicos por par `account_id` e `user_id`;
-  - cada conta mantém um `owner_user_id`, e o ciclo de membros protege a permanência de ao menos um owner ativo;
-  - `audit_logs` permanece como destino da auditoria das estruturas centrais governadas pelo Trigger Hub.
+- Status: vigente.
+- Conteúdo: identidade única de conta, vínculo usuário/conta único, proteção do último owner ativo e auditoria central; contratos físicos em docs/schema.md — 1.1–1.3 e 4.
 
 1.1.4 Limite do recorte
 - Status: vigente.
-- Conteúdo:
-  - a E1 registra somente a fundação estrutural inicial;
-  - tabelas, views, funções, constraints, índices e políticas adicionados ou alterados posteriormente pertencem aos respectivos recortes do roadmap;
-  - o contrato completo e atual do banco reside exclusivamente em `docs/schema.md`.
+- Conteúdo: fundação inicial; evoluções nos casos responsáveis, contrato atual no Schema.
 
 2. E2 — Núcleo de Acesso
-- Objetivo: estabelecer autenticação e autorização básicas para o acesso seguro às contas da plataforma.
-- Status: concluído; autenticação, recuperação de senha e helpers de autorização permanecem em uso, enquanto o Access Context e a gestão de membros evoluem nos recortes E8 e E11.
+- Objetivo: autenticação e autorização básicas.
+- Status: concluído; jornadas E5, contexto E8 e membros E11.
 
 2.1 Autenticação e autorização básicas
 
 2.1.1 Objetivo e status
-- Objetivo: autenticar usuários por e-mail e senha, aplicar papéis de conta e proteger o acesso a dados por políticas e helpers server-side.
-- Status: concluído; contratos essenciais preservados no estado atual do produto.
+- Objetivo: identidade autenticada e acesso protegido por papel.
+- Status: implementado.
 
 2.1.2 Registros do recorte
 - Banco:
@@ -82,47 +70,30 @@
   - Redirects e envio transacional de Auth: `docs/platform-config.md` — seções 4.4 e 4.5.
 
 2.1.3 Identidade e papéis
-- Status: implementado e vigente.
-- Conteúdo:
-  - autenticação de usuário ocorre pelo Supabase Auth com e-mail e senha;
-  - os papéis canônicos de membership são `owner`, `admin`, `editor` e `viewer`;
-  - `platform_admin` representa autoridade da plataforma e não integra os papéis de membership;
-  - `super_admin` permanece como compatibilidade técnica no helper e guard existentes, incluída pela verificação de `platform_admin`;
-  - autenticação não concede acesso isoladamente: a autorização final de conta permanece server-side e falha fechada.
+- Status: vigente.
+- Conteúdo: login Supabase por e-mail/senha; papéis owner/admin/editor/viewer. platform_admin é autoridade de plataforma, inclui super_admin legado e não é membership. Autenticação não concede acesso à conta; decisão server-side fail-closed.
 
 2.1.4 Autorização de dados
-- Status: implementado e vigente.
-- Conteúdo:
-  - RLS protege as estruturas expostas do núcleo de acesso conforme o contrato atual do schema;
-  - helpers de banco resolvem privilégios de plataforma, membership ativo e papel mínimo sem transferir a decisão para a UI;
-  - políticas, funções e grants exatos residem exclusivamente em `docs/schema.md` e no banco versionado.
+- Status: vigente.
+- Conteúdo: RLS e helpers de privilégio conforme docs/schema.md — 1 e 3.3; autorização final conforme docs/base-tecnica.md — 5, sem autoridade na UI.
 
 2.1.5 Login e recuperação de senha
-- Status: implementado e vigente.
-- Conteúdo:
-  - login utiliza e-mail e senha e encaminha o usuário autenticado ao gateway seguro da área de contas;
-  - solicitação de recuperação usa resposta neutra contra enumeração de usuários;
-  - links de confirmação e recuperação não consomem token ou código no GET;
-  - verificação, criação da sessão e atualização de senha ocorrem somente no POST;
-  - senha somente é alterada depois da validação do token ou código e do estabelecimento da sessão correspondente;
-  - redirects e envio transacional pertencem a `docs/platform-config.md`; validade de token ou código permanece sob autoridade do Supabase Auth.
+- Status: implementado.
+- Conteúdo: jornadas em E5; segurança de confirmação/recuperação em docs/base-tecnica.md — 5.3. Validade do token/código pertence ao Supabase Auth; redirects/SMTP em docs/platform-config.md — 4.4–4.5.
 
 2.1.6 Limites do recorte
 - Status: vigente.
-- Conteúdo:
-  - resolução do contexto e autorização final de uma conta pertencem à E8;
-  - gestão de membros, convites e transições de membership pertence à E11;
-  - Magic Link, login social e autenticação em dois fatores não integram o escopo implementado ou uma pendência aprovada da E2.
+- Conteúdo: Access Context E8 e membros/convites E11. Magic Link, login social e 2FA não estão implementados nem são pendências aprovadas deste caso.
 
 3. E3 — Adapters Base
-- Objetivo: estabelecer boundaries server-side para acesso a dados e transformação de registros do banco em contratos consumíveis pela aplicação.
-- Status: concluído; os adapters-base permanecem em uso e foram expandidos por boundaries de domínio nos recortes posteriores.
+- Objetivo: acesso a dados por boundaries server-side.
+- Status: concluído.
 
 3.1 Fundação de adapters server-side
 
 3.1.1 Objetivo e status
-- Objetivo: concentrar leituras, mutações e normalização de dados fora da UI, preservando autorização, tipos de domínio e falha fechada.
-- Status: concluído; fundação preservada no repositório atual.
+- Objetivo: normalizar dados fora da UI com autorização e falha fechada.
+- Status: implementado.
 
 3.1.2 Registros do recorte
 - Repositório:
@@ -135,31 +106,22 @@
   - Regras de PostgREST e Data API: `docs/base-tecnica.md` — seção 3.12.
 
 3.1.3 Contrato dos adapters-base
-- Status: implementado e vigente.
-- Conteúdo:
-  - acesso ao banco ocorre em adapters server-side, sem consulta direta pela UI;
-  - registros do banco são convertidos em tipos e estados de domínio antes do consumo;
-  - adapters de acesso usam o client adequado ao contexto de leitura ou mutação e preservam as políticas RLS quando aplicáveis;
-  - leituras e mutações retornam estados controlados aos consumidores, enquanto a autorização final permanece responsabilidade dos guards server-side;
-  - `accessContextAdapter.ts` registra decisões estruturadas de acesso sem transferir a autorização para o logging.
+- Status: vigente.
+- Conteúdo: adapters entregam DTOs normalizados, usam client/RLS do contexto e estados controlados; guards autorizam, logging não autoriza. Regras duráveis em docs/base-tecnica.md — 3.14 e 5.2–5.3.
 
 3.1.4 Evolução por boundary de domínio
 - Status: vigente.
-- Conteúdo:
-  - novos adapters surgem dentro do boundary responsável e somente diante de consumidor e responsabilidade reais;
-  - o repositório é a fonte única do inventário atual de adapters, guards, providers e APIs;
-  - não permanecem pendentes adapters genéricos de plano, landing page ou seção definidos apenas por antecipação;
-  - mudanças de PostgREST ou Data API são avaliadas quando afetarem consultas reais, conforme o contrato durável de `docs/base-tecnica.md`.
+- Conteúdo: novos adapters exigem consumidor e responsabilidade reais no boundary competente; sem adapters genéricos antecipados pendentes. Paths/exports no código; classificação e PostgREST em docs/base-tecnica.md — 3.3 e 3.12.
 
 4. E4 — Account Dashboard (Infraestrutura SSR)
-- Objetivo: estabelecer o gateway e a seção privada server-side do Account Dashboard, com redirecionamento seguro e contexto sanitizado para a UI.
-- Status: concluído; infraestrutura SSR permanece ativa e suporta as jornadas funcionais implementadas nos recortes posteriores.
+- Objetivo: gateway e seção privada do Account Dashboard.
+- Status: concluído.
 
 4.1 Gateway e seção privada do Account Dashboard
 
 4.1.1 Objetivo e status
-- Objetivo: direcionar cada sessão ao destino seguro disponível, proteger `/a/[account]` por guard SSR e evitar loops ou exposição indevida de contexto.
-- Status: concluído; fluxo-base preservado no estado atual do produto.
+- Objetivo: proteger /a/[account] por SSR e direcionar sessões sem loop ou exposição de contexto.
+- Status: implementado.
 
 4.1.2 Registros do recorte
 - Repositório:
@@ -175,41 +137,26 @@
   - Contrato do Access Context: `docs/schema.md` — seção 2.1.
 
 4.1.3 Gateway e destino inicial
-- Status: implementado e vigente.
-- Conteúdo:
-  - `/a` redireciona server-side para `/a/home`;
-  - `/a/home` permanece acessível sem sessão e funciona como gateway para usuários autenticados;
-  - sessão autenticada tenta a última conta permitida e depois um fallback determinístico;
-  - usuário sem qualquer membership pode receber a primeira conta `pending_setup` somente pelo fluxo server-side aprovado;
-  - existência de qualquer membership impede criação automática de outra conta;
-  - ausência de destino permitido leva a estado informativo seguro, sem loop de redirecionamento.
+- Status: vigente.
+- Conteúdo: /a redireciona a /a/home, gateway público. Autenticado tenta última conta permitida e fallback determinístico; sem destino recebe informação segura. Primeira conta pending_setup somente sem qualquer membership. Contrato em docs/base-tecnica.md — 5.4.
 
 4.1.4 Seção privada e contexto para a UI
-- Status: implementado e vigente.
-- Conteúdo:
-  - `/a/[account]` usa um guard SSR como ponto autoritativo de allow, deny e redirecionamento;
-  - conta ou membership bloqueados seguem destinos específicos por estado, sem deny genérico quando o contexto conhecido permite distinção;
-  - a última conta permitida é persistida em cookie exclusivamente server-side e removida quando inválida ou bloqueada;
-  - `AccessProvider` recebe contexto já resolvido e sanitizado pelo servidor e não autoriza, consulta banco ou eleva privilégios;
-  - rotas dependentes de sessão e cookie permanecem dinâmicas e sem cache compartilhado entre usuários.
+- Status: vigente.
+- Conteúdo: guard SSR decide allow/deny e destinos por estado; AccessProvider só recebe contexto sanitizado. Cookie da última conta, limpeza e cache por usuário seguem docs/base-tecnica.md — 5.1–5.2 e 3.13.
 
 4.1.5 Limites e evoluções posteriores
 - Status: vigente.
-- Conteúdo:
-  - resolução e governança do Access Context pertencem à E8;
-  - experiências de bloqueio por membership e status de conta pertencem às E15 e E16;
-  - páginas comerciais do Account Dashboard pertencem à E10; o antigo onboarding/workspace de Landing Pages foi retirado na E22.4;
-  - convites exibidos no gateway pertencem à E11 e não alteram a responsabilidade estrutural da E4.
+- Conteúdo: contexto E8, bloqueios E15/E16, comercial E10 e convites E11; produto LP legado retirado pela E22.4.
 
 5. E5 — UI/Auth Account Dashboard
-- Objetivo: oferecer fluxos page-based de login, signup, confirmação e recuperação de senha com tratamento seguro e orientação clara ao usuário.
-- Status: funcionalmente implementado; permanecem pendências residuais de normalização da copy e dos erros do signup e de validação ponta a ponta em mobile.
+- Objetivo: jornadas page-based de Auth.
+- Status: implementado; pendências em 5.2.5.
 
 5.1 Login e recuperação de senha
 
 5.1.1 Objetivo e status
-- Objetivo: permitir entrada por e-mail e senha e recuperação segura sem enumeração de usuários ou consumo de token no GET.
-- Status: implementado e em uso.
+- Objetivo: login e recuperação seguros.
+- Status: implementado.
 
 5.1.2 Registros do recorte
 - Repositório:
@@ -228,27 +175,22 @@
   - Redirects e envio transacional: `docs/platform-config.md` — seções 4.4 e 4.5.
 
 5.1.3 Fluxo page-based
-- Status: implementado e vigente.
-- Conteúdo:
-  - login, solicitação de recuperação e definição de nova senha usam páginas próprias, sem modal como superfície principal;
-  - login por e-mail e senha aceita somente destino interno seguro e usa `/a/home` como fallback;
-  - recuperação apresenta resposta neutra, aplica cooldown visual e encaminha o usuário ao fluxo de nova senha;
-  - token ou código de recuperação é verificado somente no POST de `/auth/confirm`, antes da atualização da senha.
+- Status: vigente.
+- Conteúdo: páginas próprias de login, recuperação e nova senha; retorno interno seguro, fallback /a/home e cooldown visual. Segurança anti-enumeração, GET/POST e sessão conforme docs/base-tecnica.md — 5.3.
 
 5.1.4 Mensagens públicas de erro
-- Status: implementado e validado.
+- Status: implementado.
 - Conteúdo:
-  - credenciais não aceitas exibem `E-mail ou senha inválidos.` sem distinguir e-mail inexistente de senha incorreta;
-  - e-mail ainda não confirmado exibe `Não foi possível entrar. Verifique se o e-mail foi confirmado e tente novamente.`, sem criar reenvio, rota ou fluxo adicional de confirmação;
-  - falhas operacionais e demais erros não classificados exibem `Não foi possível entrar agora. Tente novamente em instantes.`, sem mensagem técnica crua do provedor;
-  - falhas emitem evento estruturado seguro sem PII, credenciais ou erro bruto;
-  - login válido, redirect vigente, alerta programático e link `Esqueci minha senha` permanecem preservados.
+  - Credenciais recusadas: `E-mail ou senha inválidos.`, sem distinguir e-mail inexistente/senha incorreta.
+  - Não confirmado: `Não foi possível entrar. Verifique se o e-mail foi confirmado e tente novamente.`, sem reenvio/fluxo extra.
+  - Erro operacional/não classificado: `Não foi possível entrar agora. Tente novamente em instantes.`, sem erro bruto. Logging seguro conforme docs/base-tecnica.md — 5.3.3.
+  - Preservar login válido, redirect, alerta programático e Esqueci minha senha.
 
 5.2 Signup, confirmação e e-mail já cadastrado
 
 5.2.1 Objetivo e status
-- Objetivo: iniciar cadastro, confirmar o e-mail, orientar o pós-envio e tratar e-mail previamente cadastrado sem criar fluxo paralelo.
-- Status: implementado; estado dedicado de e-mail já cadastrado e reenvio confirmados no código atual.
+- Objetivo: cadastro, confirmação e tratamento de e-mail já cadastrado.
+- Status: implementado, incluindo reenvio.
 
 5.2.2 Registros do recorte
 - Repositório:
@@ -263,58 +205,40 @@
   - Redirects e envio transacional: `docs/platform-config.md` — seções 4.4 e 4.5.
 
 5.2.3 Signup e confirmação anti-scanner
-- Status: implementado e vigente.
-- Conteúdo:
-  - signup envia confirmação com destino em `/auth/confirm`, retorno para `/a/home` e identificador de correlação sem PII;
-  - `/auth/sign-up-success` orienta o usuário a confirmar o cadastro pelo e-mail;
-  - o GET de confirmação apresenta intersticial e não consome token ou código;
-  - verificação e criação da sessão ocorrem somente no POST;
-  - após confirmação, o gateway da E4 resolve o destino permitido e o fluxo de primeira conta quando aplicável;
-  - eventos de signup, reenvio e confirmação usam correlação por `rid` e não registram e-mail, senha, token ou código como campos diretos.
+- Status: vigente.
+- Conteúdo: signup envia /auth/confirm com retorno /a/home; sign-up-success orienta confirmar por e-mail. GET apresenta intersticial sem consumir token/código; POST verifica/cria sessão e segue gateway E4. Correlação rid sem PII, senha, token ou código em logs; contrato técnico em docs/base-tecnica.md — 5.3.2–5.3.3.
 
 5.2.4 Estado de e-mail já cadastrado
 - Status: implementado.
-- Conteúdo:
-  - duplicidade explícita ou retorno sem identidade nova ativa um estado dedicado;
-  - campos de senha e submit de criação são substituídos por orientação, reenvio de confirmação, acesso ao login e troca de e-mail;
-  - reenvio usa o fluxo nativo de signup do Supabase Auth;
-  - cooldown com contador e feedback trata repetição e rate limit sem criar infraestrutura própria;
-  - o fluxo não tenta distinguir publicamente usuário confirmado de não confirmado.
+- Conteúdo: duplicidade explícita ou ausência de identidade nova substitui senha/submit por orientação, reenvio nativo Supabase, login e troca de e-mail. Cooldown com contador/feedback e rate limit, sem infraestrutura própria ou distinção pública entre confirmado/não confirmado.
 
 5.2.5 Pendências residuais de UX e validação
 - Status: pendente.
-- Conteúdo:
-  - parte da copy e de mensagens do formulário de signup ainda permanece em inglês ou deriva diretamente do provedor;
-  - falta registro conclusivo de repetição manual do happy path signup → e-mail → confirmação → `/a/home` em mobile.
+- Conteúdo: copy/erros do signup ainda parcialmente em inglês ou do provedor; falta comprovação conclusiva do happy path signup → e-mail → confirmação → /a/home em mobile.
 
 5.3 E-mail transacional do Supabase Auth
 
 5.3.1 Objetivo e status
-- Objetivo: assegurar entrega de e-mails de confirmação de signup e recuperação de senha pelo Supabase Auth.
-- Status: concluído; entrega e links funcionais validados.
+- Objetivo: entrega dos e-mails de signup e recuperação.
+- Status: concluído, links e entrega validados.
 
 5.3.2 Registros do recorte
 - Referências:
   - SMTP, sender, DNS e estado operacional: `docs/platform-config.md` — seção 4.5.
 
 5.3.3 Decisão operacional vigente
-- Status: implementado e vigente.
-- Conteúdo:
-  - Supabase Auth usa Resend como provedor SMTP para e-mails transacionais;
-  - o sender permanece no domínio raiz durante o MVP;
-  - Resend é reservado ao envio transacional, enquanto caixas humanas permanecem em provedor próprio;
-  - credenciais, parâmetros SMTP e registros DNS residem exclusivamente em `docs/platform-config.md`;
-  - subdomínio dedicado de e-mail só deve ser reavaliado quando escala, volume ou isolamento de reputação justificarem plano e configuração adicionais.
+- Status: vigente.
+- Conteúdo: Auth usa SMTP Resend e sender no domínio raiz no MVP; mailbox humana separada. Parâmetros/DNS em docs/platform-config.md — 4.5 e 5. Subdomínio só será reavaliado por escala, volume ou reputação que justifique configuração/plano adicionais.
 
 6. E6 — Design System e UI Base
-- Objetivo: estabelecer fundamentos visuais, componentes reutilizáveis, estados de feedback e padrões de layout para as superfícies da LP Factory.
-- Status: base concluída e em uso; adoção permanece incremental e o asset oficial da logo ainda não está versionado.
+- Objetivo: identidade e UI base reutilizável.
+- Status: implementado; adoção incremental, logo oficial ainda não versionada.
 
 6.1 Fundamentos visuais e identidade
 
 6.1.1 Objetivo e status
-- Objetivo: consolidar tipografia, tokens, superfícies e identidade visual próprias sem romper a base shadcn existente.
-- Status: concluído; contrato visual vigente em `docs/design-system.md`.
+- Objetivo: fundamentos visuais próprios sobre shadcn.
+- Status: concluído.
 
 6.1.2 Registros do recorte
 - Repositório:
@@ -330,24 +254,17 @@
 
 6.1.3 Base visual vigente
 - Status: implementado.
-- Conteúdo:
-  - Inter é a tipografia global da UI;
-  - tokens semânticos próprios estendem a base shadcn sem substituir seus tokens essenciais;
-  - remapeamento de superfícies, bordas, foco, estados e sombra permanece canônico no CSS e no Tailwind;
-  - header, menu do usuário e seletor de conta adotam a identidade visual comum.
+- Conteúdo: Inter e identidade comum em header/menu/seletor; tokens semânticos estendem shadcn. Contrato visual em docs/design-system.md; valores em CSS/Tailwind.
 
 6.1.4 Identidade provisória e limite
-- Status: pendente.
-- Conteúdo:
-  - o produto usa wordmark textual “LP Factory” enquanto o asset oficial da logo não estiver versionado;
-  - branding visual por cliente permanece fora do escopo atual;
-  - migração para outro kit de plataforma não constitui pendência aprovada.
+- Status: pendente o asset oficial.
+- Conteúdo: wordmark LP Factory provisória; branding por cliente e migração de kit não são escopo ou pendência aprovados.
 
 6.2 Biblioteca de componentes base
 
 6.2.1 Objetivo e status
-- Objetivo: reduzir markup cru e padronizar campos, ações e superfícies comuns com componentes mínimos.
-- Status: concluído; biblioteca base disponível e adotada em Auth, onboarding e superfícies posteriores.
+- Objetivo: componentes mínimos para campos, ações e superfícies.
+- Status: disponível e adotado em Auth, onboarding e superfícies posteriores.
 
 6.2.2 Registros do recorte
 - Repositório:
@@ -366,17 +283,14 @@
   - Componentes e APIs mínimas: `docs/design-system.md` — seções “Componentes padronizados” e “API mínima esperada”.
 
 6.2.3 Biblioteca vigente e limite
-- Status: implementado e vigente.
-- Conteúdo:
-  - a biblioteca base cobre ações, campos e superfícies comuns nas adoções realizadas;
-  - APIs, acessibilidade e comportamento visual residem exclusivamente no código e em `docs/design-system.md`;
-  - variações novas exigem uso real imediato e não autorizam framework próprio.
+- Status: vigente.
+- Conteúdo: APIs/acessibilidade em código e docs/design-system.md; novas variações exigem uso imediato, sem framework próprio.
 
 6.3 Estados visuais e feedback
 
 6.3.1 Objetivo e status
-- Objetivo: padronizar feedback de erro, sucesso e aviso e estados simples de vazio e carregamento.
-- Status: concluído e adotado nas superfícies previstas.
+- Objetivo: feedback de erro/sucesso/aviso, vazio e loading.
+- Status: implementado nas superfícies previstas.
 
 6.3.2 Registros do recorte
 - Repositório:
@@ -394,63 +308,50 @@
   - Estados reutilizáveis: `docs/design-system.md` — seções “Componentes padronizados”, “API mínima esperada” e “Aplicação mínima visível atual”.
 
 6.3.3 Estados vigentes e limite
-- Status: implementado e vigente.
-- Conteúdo:
-  - feedback e estados reutilizáveis estão disponíveis nas superfícies adotadas;
-  - comportamento visual e acessibilidade residem exclusivamente em `docs/design-system.md`;
-  - a base permanece simples, sem framework adicional de feedback ou carregamento.
+- Status: vigente.
+- Conteúdo: estados/acessibilidade em docs/design-system.md, sem framework adicional de feedback/loading.
 
 6.4 Padrões de layout para dashboards
 
 6.4.1 Objetivo e status
-- Objetivo: consolidar padrões reutilizáveis para coleções, detalhes, navegação e estados nas superfícies autenticadas.
-- Status: vigente no Admin; a aplicação histórica no workspace de Landing Pages foi retirada com essa superfície.
+- Objetivo: layout de coleções, detalhes e navegação autenticada.
+- Status: vigente no Admin; workspace LP retirado.
 
 6.4.2 Registros do recorte
 - Referências:
   - Superfície administrativa: `docs/design-system.md` — seção “Superfície administrativa do Admin”.
 
 6.4.3 Padrões vigentes e limites
-- Status: implementado e vigente.
-- Conteúdo:
-  - o Admin possui padrões próprios documentados e aplicados;
-  - layout, responsividade e estados visuais residem exclusivamente em `docs/design-system.md`;
-  - a padronização não autoriza redesign amplo nem componentização antecipada de superfícies sem necessidade real.
+- Status: vigente.
+- Conteúdo: padrões Admin em docs/design-system.md; sem redesign amplo ou componentização antecipada.
 
 7. E7 — Conta Consultiva — retirada
-- Objetivo: preservar o encerramento do fluxo consultivo legado e seu destino canônico sem reativar arquitetura removida.
-- Status: retirado; sem superfície ativa no runtime ou no Admin.
+- Objetivo: registrar retirada da Conta Consultiva.
+- Status: sem runtime ou Admin ativos.
 
 7.1 Encerramento do fluxo consultivo legado
 
 7.1.1 Objetivo e status
-- Objetivo: remover a dependência de token pós-venda e impedir que o onboarding consultivo legado permanecesse como caminho paralelo.
-- Status: concluído; runtime e contrato de banco atuais não dependem do fluxo removido.
+- Objetivo: encerrar onboarding/token pós-venda legado.
+- Status: concluído.
 
 7.1.3 Estado final e destino
-- Status: vigente.
-- Conteúdo:
-  - não existe superfície consultiva ativa em `/admin`;
-  - onboarding por token e dependência de token pós-venda não integram o runtime atual;
-  - refinamentos de UX anteriormente associados à E7 foram absorvidos pelo Account Dashboard na E10.3;
-  - a E7 permanece apenas para estabilidade do identificador e rastreabilidade da retirada.
+- Status: retirado.
+- Conteúdo: sem superfície Admin, onboarding/token pós-venda ou dependência de banco/runtime; UX absorvida pela E10.3.
 
 7.1.4 Limite de retomada
 - Status: vigente.
-- Conteúdo:
-  - a retirada não autoriza reconstrução do fluxo legado;
-  - operação consultiva futura depende de problema, escopo e plano aprovados em recorte próprio;
-  - integração futura com Billing ou Account Dashboard não constitui pendência vigente sem fonte competente.
+- Conteúdo: sem reconstrução autorizada ou integração Billing pendente; eventual operação consultiva exige recorte próprio aprovado.
 
 8. E8 — Access Context e Governança
-- Objetivo: centralizar a decisão server-side de acesso a contas e fornecer contexto sanitizado aos consumidores sem transferir autorização para a UI.
-- Status: concluído; boundary, view, adapter e guard SSR permanecem ativos, com campos legados de compatibilidade ainda presentes no orquestrador.
+- Objetivo: decisão canônica de acesso por conta.
+- Status: implementado; compatibilidade residual em 8.1.5.
 
 8.1 Decisão canônica de acesso
 
 8.1.1 Objetivo e status
-- Objetivo: resolver conta, membership, allow ou deny e motivo operacional em um único fluxo rastreável e fechado por padrão.
-- Status: concluído; contrato essencial preservado no runtime atual.
+- Objetivo: resolver conta/membership, decisão e motivo com falha fechada.
+- Status: implementado.
 
 8.1.2 Registros do recorte
 - Referências:
@@ -458,40 +359,26 @@
   - View canônica do Access Context: `docs/schema.md` — seção 2.1.
 
 8.1.3 Autoridade e decisão
-- Status: implementado e vigente.
-- Conteúdo:
-  - `public.v_access_context_v2` fornece a relação user ↔ conta, estados de conta e membership, decisão `allow` e motivo;
-  - o adapter server-side lê a view e o orquestrador traduz o resultado para o contrato consumido pelos guards;
-  - ausência de sessão, conta, membership ou contexto permitido falha fechada;
-  - conta ou membership existentes, porém bloqueados, preservam contexto suficiente para tratamento específico;
-  - providers e componentes client recebem somente contexto já resolvido e não autorizam nem elevam privilégios.
+- Status: vigente.
+- Conteúdo: v_access_context_v2 → adapter/orquestrador → guard SSR; ausência falha fechada, bloqueio conhecido preserva contexto, UI só consome projeção sanitizada. Contratos em docs/schema.md — 2.1 e docs/base-tecnica.md — 5.1–5.2.
 
 8.1.4 Governança, bloqueios e rastreabilidade
-- Status: implementado e vigente.
-- Conteúdo:
-  - decisões do adapter e do guard SSR produzem eventos estruturados de allow, deny ou erro seguro;
-  - bloqueios conhecidos são diferenciados por estado de membership ou conta;
-  - redirects inválidos ou loops retornam ao gateway seguro e limpam a última conta quando necessário;
-  - UX específica de membership e conta bloqueados permanece nas E15 e E16, e o gateway permanece na E4.
+- Status: vigente.
+- Conteúdo: eventos estruturados de allow/deny/erro seguro; bloqueios E15/E16 e gateway E4. Logging/redirects/cookie conforme docs/base-tecnica.md — 5.
 
 8.1.5 Compatibilidade residual
-- Status: vigente, não autoritativo.
-- Conteúdo:
-  - `getAccessContext.ts` ainda expõe campos legados de compatibilidade como `is_super_admin`, `acting_as`, `plan` e `limits`;
-  - esses campos recebem placeholders e não podem decidir privilégio, entitlement, plano ou limite;
-  - autoridade administrativa pertence aos guards próprios, e autoridade comercial pertence ao sinal canônico da E9;
-  - remoção dos campos legados depende de confirmar consumidores reais e não autoriza refactor antecipado.
+- Status: residual, não autoritativo.
+- Conteúdo: getAccessContext.ts expõe placeholders is_super_admin, acting_as, plan e limits, sem decidir privilégio/entitlement/plano/limite. Guards governam Admin; E9 governa comercial. Remoção depende de consumidores reais, sem refactor antecipado.
 
 9. E9 — Billing, trial e entitlements
-
-- Objetivo: separar condição comercial da conta do lifecycle operacional da conta; definir elegibilidade comercial por entitlement local efetivo; manter provedores de pagamento como mecanismos de confirmação/persistência, não como prova direta de liberação de produto.
-- Status: base universal, liberação manual administrativa, Stripe mínimo e gate produtivo concluídos; trial e provedores alternativos não implementados; o contrato do catálogo de capacidades está concluído, com catálogo inicial e integração aos consumidores ainda planejados.
+- Objetivo: condição comercial por entitlement local, separada do lifecycle.
+- Status: entitlement, liberação manual e Stripe mínimo implementados; trial/provedores alternativos não implementados; catálogo/consumo de capacidades ainda planejados.
 
 9.1 Base universal de entitlement comercial
 
 9.1.1 Objetivo e status
-- Objetivo: definir a base universal de entitlement comercial.
-- Status: concluído; persistência local, leitura efetiva, sinal server-side e gate produtivo estão ativos.
+- Objetivo: elegibilidade comercial por sinal local efetivo.
+- Status: implementado.
 
 9.1.2 Registros do recorte
 - Banco:
@@ -508,7 +395,7 @@
 
 9.1.3 Separação entre lifecycle operacional e condição comercial
 - Status: vigente.
-- Conteúdo: accounts.status governa conta/setup; account_users.status governa membership. Trial, plano, assinatura e liberação manual só controlam uso quando materializados como entitlement válido. Domínio comercial separado de lib/access, public.plans e plan.ts.
+- Conteúdo: conta/setup e membership não são condição comercial. Trial/plano/assinatura/liberação manual só controlam uso por entitlement válido; domínio separado de access/plans legados.
 
 9.1.4 Origem comercial e confirmação
 - Status: implementado para plano_pago_confirmado e liberacao_manual; trial futuro.
@@ -520,7 +407,7 @@
 
 9.1.6 Modelo mínimo de entitlement comercial
 - Status: implementado.
-- Conteúdo: account_commercial_entitlements é a fonte local; CommercialEntitlementSignal fornece elegibilidade, status efetivo e planKey aos consumidores server-side.
+- Conteúdo: fonte account_commercial_entitlements; sinal público server-side com elegibilidade, status efetivo e planKey. Contrato técnico em docs/base-tecnica.md — 3.14.1.
 
 9.1.7 View efetiva
 - Status: implementado.
@@ -541,7 +428,7 @@
 9.2 Liberação manual administrativa mínima
 
 9.2.1 Objetivo e status
-- Objetivo: permitir concessão, atualização e cancelamento manual mínimo de entitlement por `platform_admin`.
+- Objetivo: conceder, atualizar ou cancelar entitlement manual por platform_admin.
 - Status: concluído.
 
 9.2.2 Registros do recorte
@@ -558,31 +445,31 @@
 
 9.2.3 Contrato operacional mínimo
 - Status: implementado.
-- Conteúdo: platform_admin, incluindo super_admin pelo guard vigente, concede, atualiza ou cancela entitlement por action e adapter Admin server-only. Persistência exclusiva em account_commercial_entitlements com origem liberacao_manual, plano canônico, vigência válida e metadata mínima. Atualiza manual ativo sem duplicar; conflito com plano pago ou trial efetivo falha fechado.
+- Conteúdo: origem liberacao_manual, plano canônico, vigência válida e metadata mínima. Atualiza manual ativo sem duplicar; conflito com plano pago/trial efetivo falha fechado. Autoridade e boundary em docs/base-tecnica.md — 3.14.2.
 
 9.3 Trial
 
 9.3.1 Objetivo e status
-- Objetivo: definir trial como origem futura de entitlement comercial.
-- Status: não implementado; contrato operacional, vigência, limites, expiração e auditoria ainda dependem de recorte aprovado.
+- Objetivo: trial como origem de entitlement.
+- Status: não implementado; depende de recorte aprovado.
 
 9.3.3 Trial como origem futura de entitlement
 - Status: futuro.
-- Conteúdo: origem distinta da liberação manual, usando a cadeia universal local de entitlement para controlar uso; não define accounts.status.
+- Conteúdo: usa entitlement local E9.1, distinto da liberação manual e sem alterar lifecycle.
 
 9.3.4 Vigência, expiração e limites a definir
 - Status: a definir.
-- Conteúdo: vigência, expiração, limites e efeitos comerciais exigem decisão antes de implementação.
+- Conteúdo: vigência, expiração, limites e efeitos comerciais.
 
 9.3.5 Pendências para implementação operacional
 - Status: não implementado.
-- Conteúdo: contrato operacional, origem e auditoria dependem de recorte futuro aprovado; liberação manual existente não implementa trial.
+- Conteúdo: contrato operacional e auditoria exigem aprovação; liberação manual não implementa trial.
 
 9.4 Stripe
 
 9.4.1 Objetivo e status
-- Objetivo: integrar Stripe como mecanismo inicial de checkout e confirmação assíncrona, persistindo o resultado no entitlement comercial local.
-- Status: concluído para Checkout em modo `subscription` no ambiente de teste e webhook mínimo baseado em `invoice.paid`.
+- Objetivo: checkout e confirmação Stripe com persistência local.
+- Status: subscription em teste e webhook invoice.paid concluídos.
 
 9.4.2 Registros do recorte
 - Banco:
@@ -626,8 +513,8 @@
 9.5 Mercado Pago
 
 9.5.1 Objetivo e status
-- Objetivo: preservar a decisão sobre Mercado Pago sem antecipar integração.
-- Status: explicitamente adiado; não há adapter, SDK, endpoint, webhook, persistência ou credencial desse provedor no recorte atual.
+- Objetivo: avaliar Mercado Pago futuramente.
+- Status: adiado; sem integração ou credencial.
 
 9.5.3 Critérios para abertura futura
 - Uma integração futura exige recorte aprovado e deve seguir o contrato universal de entitlement definido em 9.1.
@@ -635,8 +522,8 @@
 9.6 Asaas
 
 9.6.1 Objetivo e status
-- Objetivo: preservar Asaas como reserva operacional para avaliação posterior, sem antecipar integração.
-- Status: não implementado; não há adapter, SDK, endpoint, webhook, persistência ou credencial desse provedor no recorte atual.
+- Objetivo: manter Asaas como alternativa futura.
+- Status: não implementado; sem integração ou credencial.
 
 9.6.3 Critérios para abertura futura
 - Uma avaliação futura exige recorte aprovado e deve seguir o contrato universal de entitlement definido em 9.1.
@@ -644,8 +531,8 @@
 9.7 Catálogo canônico de capacidades e limites por plano
 
 9.7.1 Objetivo e status
-- Objetivo: definir e resolver um contrato canônico único que traduza o plano efetivo da conta em capacidades, níveis, limites e sinais suficientes para os domínios consumidores decidirem quais configurações podem ser apresentadas.
-- Status: em andamento; o contrato canônico está concluído, enquanto o catálogo inicial e a integração pelo plano efetivo permanecem planejados.
+- Objetivo: traduzir plano efetivo em capacidades/limites canônicos.
+- Status: contrato concluído; catálogo e integração planejados, fora da execução atual.
 
 9.7.2 Registros do recorte
 - Repositório:
@@ -666,40 +553,25 @@
 
 9.7.3 Contrato canônico e fonte de resolução
 - Status: concluído.
-- Conteúdo:
-  - materializa a identificação mínima por chave estável, nome, descrição, categoria, tipo com contrato de valor inequívoco e domínio consumidor;
-  - suporta tipos booleano, nível fechado e limite numérico, inclusive `-1` somente quando o contrato do limite adota ilimitado explicitamente;
-  - centraliza a fonte repo-only em `lib/commercial-capabilities/`, com `index.ts` como única API pública, registry interno e resolução de produção fail-closed por `planKey` e chave de capacidade;
-  - mantém o registry runtime vazio, sem capacidade Starter inferida, e isola fixtures sintéticas do runtime e da API pública;
-  - valida contrato, duplicidades, valores, desconhecidos, ausência de associação, fonte vazia e imutabilidade pelo comando `validate:commercial-capabilities`, integrado ao `npm run check`;
-  - não cria banco, `get_feature`, grants, snapshot, integração com entitlement ou consumidor, UI, rota, serviço, job, agente ou automação.
+- Conteúdo: definição por chave, nome, descrição, categoria, tipo e consumidor; booleano, nível fechado ou limite numérico (-1 ilimitado somente se contratado). API pública fail-closed em lib/commercial-capabilities; registry runtime vazio, sem Starter inferido, fixtures isoladas e saída imutável. Contratos/validator no código, governança em docs/base-tecnica.md — 3.11. Sem banco, get_feature, grants, snapshot, consumidor ou infraestrutura novos.
 
 9.7.4 Catálogo inicial do Starter
-- Status: Planejado; fora do escopo da execução atual por decisão humana.
-- Conteúdo:
-  - incluir somente capacidades admitidas por decisão humana, com consumidor real existente ou já aprovado para a jornada imediata;
-  - registrar separadamente a definição da capacidade e seu valor aprovado para o Starter;
-  - manter capacidades ainda candidatas como dependências, sem completar Lite, Pro ou Ultra por extrapolação;
-  - distinguir capacidade admitida, consumidor capaz de aplicá-la e recurso efetivamente existente.
+- Status: planejado, execução não autorizada.
+- Conteúdo: somente capacidades aprovadas com consumidor real/aprovado imediato; definição separada do valor Starter, candidatas como dependências. Sem extrapolar Lite/Pro/Ultra ou confundir capacidade admitida, consumidor apto e recurso existente.
 
 9.7.5 Resolução e contrato de consumo pelo plano efetivo
-- Status: Planejado; fora do escopo da execução atual por decisão humana.
-- Conteúdo:
-  - resolver o contrato canônico a partir do `planKey` efetivo fornecido pelo entitlement;
-  - disponibilizar contrato server-side determinístico para os domínios consumidores, preservando no consumidor a medição de uso e a aplicação do gate no ponto da ação;
-  - manter entitlement como prova do plano e a E9.7 como prova da capacidade, sem inferência de comportamento pela UI a partir do nome do plano;
-  - falhar fechado para plano, capacidade, associação ou valor ausente, desconhecido ou inválido.
+- Status: planejado, execução não autorizada.
+- Conteúdo: resolver pelo planKey efetivo; entitlement comprova plano, E9.7 comprova capacidade. Contrato server-side determinístico, com medição/gate no consumidor; UI não infere pelo nome. Plano/capacidade/associação/valor ausente, desconhecido ou inválido falha fechado.
 
 10. E10 — Account Dashboard e jornada da conta
-
-- Objetivo: consolidar a experiência pós-login por conta, da navegação multi-conta e do setup inicial à resolução de nicho e à apresentação comercial, preservando decisões server-side de acesso, papel, entitlement e estado operacional.
-- Status: os fluxos principais estão implementados e a substituição do Pending Setup pela jornada E10.9 foi concluída e validada em Production; permanecem como lacunas a ação inefetiva de criar outra conta no switcher, a ausência dos eventos específicos do switcher e a edição manual de copy da página comercial personalizada. O onboarding factual E10.10 foi retirado funcionalmente pela E22.7; suas migrations permanecem não aplicadas e excluídas do apply.
+- Objetivo: jornada por conta, do setup ao comercial e à Base.
+- Status: fluxos principais operacionais; pendências do switcher em 10.3.3 e edição manual de copy em 10.7.6. Factual E10.10 retirado.
 
 10.3 Navegação multi-conta e cabeçalho
 
 10.3.1 Objetivo e status
-- Objetivo: permitir que o usuário identifique a conta atual, alterne entre vínculos disponíveis e retome com segurança a última conta acessada.
-- Status: implementado para listagem, troca e persistência da última conta; a ação “Criar outra conta” ainda não cria nem inicia uma conta nova.
+- Objetivo: identificar/trocar conta e retomar a última permitida.
+- Status: implementado; Criar outra conta ainda inefetivo.
 
 10.3.2 Registros do recorte
 - Banco:
@@ -724,18 +596,14 @@
   - Contrato de banco: `docs/schema.md` — seção 2.2.
 
 10.3.3 Experiência vigente
-- O cabeçalho da conta exibe identidade, status, nicho resolvido quando disponível e acesso a membros para `owner` ou `admin` quando a funcionalidade está habilitada.
-- O menu do usuário incorpora o switcher; a lista vem de `v_user_accounts_list`, respeita o status do vínculo e oculta o gatilho quando há no máximo uma conta.
-- O switcher oferece navegação por teclado, foco controlado, estados de carregamento e erro e bloqueia contas ou memberships não clicáveis.
-- O gateway `/a/home` e o guard SSR mantêm a retomada por `last_account_subdomain` em cookie HttpOnly de 90 dias; a decisão de acesso e os redirects seguros residem em E4 e E8.
-- A ação “Criar outra conta” ainda aponta para `/a/home?consultive=1`; o gateway não interpreta esse parâmetro e não provisiona conta.
-- Os eventos históricos `account_switcher_open`, `account_selected` e `create_account_click` não são emitidos pelo código atual.
+- Header mostra conta/status/nicho e membros para owner/admin com gate habilitado. Menu contém switcher de v_user_accounts_list, oculto até uma conta, com teclado, foco, loading/erro e bloqueio de vínculos/contas não clicáveis.
+- Retomada SSR por cookie HttpOnly de 90 dias; acesso E4/E8. Criar outra conta aponta /a/home?consultive=1 sem provisionamento; account_switcher_open, account_selected e create_account_click não são emitidos.
 
 10.4 Primeiros passos com status `pending_setup`
 
 10.4.1 Objetivo e status
-- Objetivo: registrar o destino do formulário inicial de setup.
-- Status: substituído pela jornada E10.9; entrada executável retirada.
+- Objetivo: destino do setup por formulário.
+- Status: substituído por E10.9.
 
 10.4.2 Registros do recorte
 - Referências:
@@ -744,17 +612,17 @@
 
 10.4.3 Campos e validação compartilhada
 - Status: retirado.
-- Conteúdo: formulário, action e validação E10.4 não integram o runtime. Identidade, contexto e conclusão seguem os contratos das jornadas substitutas.
+- Conteúdo: formulário/action/validação fora do runtime; jornada substituta E10.9–E10.12.
 
 10.4.4 Persistência e transição
 - Status: substituído.
-- Conteúdo: account_profiles permanece histórico, sem adapter runtime órfão. A promoção pending_setup → active continua idempotente no fluxo conversacional; timestamps legados não governam acesso ou logs.
+- Conteúdo: account_profiles histórico sem adapter órfão; conclusão conversacional idempotente. Timestamps legados não decidem acesso/logs.
 
 10.5 Taxonomia, pesquisa de mercado e resolução de nicho
 
 10.5.1 Objetivo e status
-- Objetivo: transformar o nicho informado no setup em classificação operacional rastreável, vínculo oficial seguro e insumo reutilizável para conteúdo comercial.
-- Status: implementado para matching determinístico, escalonamento IA, persistência, vínculo oficial de alta confiança e confirmação ou reescrita pelo usuário.
+- Objetivo: classificação segura e contexto comercial do nicho.
+- Status: matching, IA complementar, vínculo determinístico e confirmação/reescrita implementados.
 
 10.5.2 Registros do recorte
 - Banco:
@@ -788,32 +656,24 @@
   - Fluxo operacional: `docs/prompt-nicho-identificacao.md`, `docs/prompt-nicho-pesquisa.md`, `docs/prompt-nicho-itens-estruturados.md`, `docs/prompt-nicho-carregamento.md` e `docs/prompt-nicho-verificacao.md`.
 
 10.5.3 Base de taxonomia e pesquisa
-- `business_taxons` e `business_taxon_aliases` sustentam a classificação; `taxon_market_research` e `taxon_market_research_items` armazenam pesquisas versionadas e seus itens estruturados.
-- O fluxo operacional separa identificação do taxon, pesquisa bruta, estruturação, carregamento e verificação.
-- Para elegibilidade de `commercial_activation`, a versão 1 ativa deve ter itens nos blocos `strategic_core`, `lp_overview`, `lp_sections` e `seo` para `business_buyer` e `end_customer`.
+- Taxonomia/aliases e pesquisas/itens versionados conforme docs/schema.md — 1.11–1.19; operação separa identificar → pesquisar → estruturar → carregar → verificar.
+- Elegibilidade comercial: pesquisas v1 ativas de business_buyer e end_customer, com itens ativos nos blocos strategic_core, lp_overview, lp_sections e seo.
 
 10.5.4 Resolução determinística e IA
-- O matching server-side usa normalização textual, FTS e `pg_trgm`, produz candidatos tipados e passa por `evaluateDeterministicTaxonMatch`.
-- A resolução operacional é persistida em `account_niche_resolutions`, inclusive decisão, proveniência, estado IA e necessidade de confirmação ou revisão.
-- Quando o determinístico não resolve com segurança, `openAiResolver.ts` usa Structured Outputs server-side.
-- A IA não cria taxon, alias ou vínculo oficial e nunca grava diretamente `account_taxonomy`.
+- Matching server-side tipado antes da IA; resolução/proveniência/confirmação persistidas em account_niche_resolutions. Structured Outputs só quando o determinístico é insuficiente, sem criar taxon/alias/vínculo oficial. Regras em docs/base-tecnica.md — 3.14.5; operação em docs/automations.md — 3.5.
 
 10.5.5 Confirmação pelo usuário
-- `NicheResolutionCard` aparece somente para conta `active`, sem taxon primário e com resolução acionável.
-- O usuário pode confirmar a sugestão oficial, escolher entre opções ou reescrever o nicho.
-- Opções sem taxon oficial podem encerrar a confirmação operacional, mas não inventam vínculo taxonômico.
+- NicheResolutionCard somente em conta active sem primário e com resolução acionável. Permite confirmar, escolher ou reescrever; fallback operacional não inventa vínculo oficial.
 
 10.5.6 Classificação oficial e consumo
-- `account_taxonomy` é o vínculo oficial da conta; a gravação automática ocorre apenas para alta confiança determinística e não substitui silenciosamente outro primário.
-- O banco permite no máximo um vínculo primário ativo por conta; leituras com cardinalidade inesperada falham fechado.
-- A rota da conta usa o taxon primário ativo para tentar conteúdo personalizado e mantém a página genérica quando não existe bundle publicável.
-- E10.7 resolve o conteúdo comercial publicado. Resolução antecipada de template e produto operacional E19 foram retirados.
+- account_taxonomy governa vínculo oficial; automático só por alta confiança determinística, sem substituir primário diferente. No máximo um primário ativo; cardinalidade inesperada falha fechado.
+- Primário ativo permite tentar página publicada E10.7; sem bundle publicável, genérica E10.6. Template antecipado/produto E19 retirados.
 
 10.6 Página comercial genérica
 
 10.6.1 Objetivo e status
-- Objetivo: oferecer uma apresentação comercial responsiva e segura para contas `active` quando não houver página personalizada consumível.
-- Status: implementado como `generic-v1` e fallback da página personalizada.
+- Objetivo: apresentação comercial de conta active sem página personalizada consumível.
+- Status: generic-v1 implementado como fallback.
 
 10.6.2 Registros do recorte
 - Banco:
@@ -830,21 +690,17 @@
     - `app/a/[account]/page.tsx`
 
 10.6.3 Experiência e tracking
-- A página reúne hero, benefícios, serviços, medição, planos, diferenciais, funcionamento, FAQ e CTA final.
-- Planos e ações financeiras aparecem somente quando a política da jornada autoriza; a autoridade de papel reside em E11.2 e o checkout Stripe em E9.4.
-- Os botões dos planos iniciam Checkout Stripe mensal server-side; o CTA final permanece direcionado ao WhatsApp.
-- `commercial_page_view`, `commercial_primary_cta_click` e `commercial_plan_cta_click` são persistidos via `audit_context_event`, vinculados a `account_id` e sem campos diretos de PII.
+- Hero, benefícios, serviços, medição, planos, diferenciais, funcionamento, FAQ e CTA final. Financeiro conforme E11.2; planos iniciam Checkout mensal E9.4, CTA final vai ao WhatsApp.
+- Eventos commercial_page_view, commercial_primary_cta_click e commercial_plan_cta_click via audit_context_event, com account_id e sem PII direta.
 
 10.6.4 Limites e fallback
-- Os preços e serviços de `generic-v1` são ilustrativos e não constituem oferta comercial definitiva.
-- `NicheResolutionCard` permanece acima da página quando há confirmação de nicho pendente.
-- Ausência, erro ou bundle personalizado inválido mantêm a conta na página genérica; a rota não chama IA para renderizar conteúdo comercial.
+- Preços/serviços ilustrativos, sem oferta definitiva. NicheResolutionCard acima quando houver confirmação pendente; ausência/erro/bundle inválido mantém genérica. Renderização sem IA.
 
 10.7 Páginas comerciais personalizadas por nicho
 
 10.7.1 Objetivo e status
-- Objetivo: gerar, revisar, publicar e consumir páginas `commercial_activation` por taxon, mantendo a IA no fluxo administrativo e o runtime da conta restrito a conteúdo publicado e validado.
-- Status: geração, operação Admin, publicação, consumo e fallback estão implementados; edição manual de copy permanece planejada.
+- Objetivo: gerar/revisar/publicar commercial_activation por taxon no Admin e consumir publicado na conta.
+- Status: implementado; edição manual de copy planejada.
 
 10.7.2 Registros do recorte
 - Banco:
@@ -882,44 +738,33 @@
   - Contrato de banco: `docs/schema.md` — seções 1.22–1.23 e 3.3.
 
 10.7.3 Elegibilidade e geração
-- Um taxon elegível exige pesquisas ativas da versão 1 para `business_buyer` e `end_customer`, cada uma com os quatro blocos definidos em 10.5.3 e itens ativos.
-- O template de página é universal para `commercial_activation`; a composição técnica é materializada por taxon quando necessário.
-- A geração cria draft administrativo com fontes vinculadas e proveniência; inconsistência de fontes ou conteúdo impede publicação.
-- A estrutura do MVP é fixa em Hero, Benefícios, Serviços, Planos, Diferenciais, Como funciona, FAQ e CTA final; a IA preenche copy, mas não decide seções, ordem, layout ou cores.
+- Taxon elegível pelas pesquisas E10.5.3; template universal, composição técnica por taxon. Draft com fontes/proveniência, sem publicação inconsistente.
+- Hero, Benefícios, Serviços, Planos, Diferenciais, Como funciona, FAQ e CTA final fixos; IA preenche copy, não decide estrutura/ordem/layout/cores. Geração segura em docs/base-tecnica.md — 3.15.1.
 
 10.7.4 Operação administrativa
-- `/admin/templates` lista taxons e estados; `/admin/templates/commercial-activation/[taxonSlug]` concentra geração ou regeneração, preview, publicação, diagnóstico e histórico.
-- As operações exigem `platform_admin`; publicação usa `publish_content_artifact_draft(uuid)`, valida o bundle e arquiva a versão publicada anterior.
-- O fluxo atual não oferece edição manual do `content_json`.
+- Operações exclusivas de platform_admin: /admin/templates lista taxons/estados; detalhe commercial-activation/[taxonSlug] reúne geração/regeneração, preview, publicação, diagnóstico/histórico. platform_admin publica bundle válido transacionalmente, arquivando anterior; sem edição manual de content_json.
 
 10.7.5 Consumo na conta
-- `/a/[account]` tenta resolver `commercial_activation` pelo taxon primário ativo e sua cadeia hierárquica.
-- Somente artifact `published`, composição válida e render model `ready` são consumidos.
-- Conta sem taxon válido, composição, publicação ou conteúdo consumível retorna a `generic-v1`.
-- A variante publicada reutiliza os eventos comerciais e o Checkout Stripe da página genérica, respeitando a mesma política de ações financeiras.
-- O runtime da conta não consome `draft` ou `archived` e não chama IA.
+- Rota da conta resolve pela cadeia do primário ativo; somente published + composição válida + render model ready. Falta/invalidez retorna generic-v1; sem draft/archived ou IA no runtime. Eventos, Checkout e autoridade financeira iguais à genérica.
 
 10.7.6 Próximo recorte aprovado
 - Status: planejado.
-- Conteúdo: permitir edição manual de copy e gestão simples de versões sem introduzir editor visual, edição independente por bloco, múltiplos `published` ativos, alteração do template, da composição, do layout, das cores ou do runtime público.
+- Conteúdo: copy manual e versões simples; sem editor visual/por bloco, published simultâneos ou mudança de template/composição/layout/cores/runtime público.
 
 10.8 Resolução de pesquisas estruturadas para `landing_page` — retirada
 
 10.8.1 Objetivo e status
-- Objetivo: registrar o encerramento do boundary histórico de resolução de pesquisas para `landing_page`.
-- Status: retirado pela E22.1.6; não existe substituto vigente no E10.
+- Objetivo: destino da resolução de pesquisas landing_page.
+- Status: retirada pela E22.1.6, sem substituto E10.
 
 10.8.3 Estado e destino
-- `lib/conversion-content/landing-page/research-resolution/`, o adapter de pesquisa, os exports e o validator foram removidos.
-- E20.5 e E20.6 preservam a seleção e a avaliação da pesquisa integral `end_customer`, sem consumidor no fluxo retirado de Landing Pages.
-- Os objetos `taxon_market_research` e `taxon_market_research_items` e seus consumidores independentes permanecem preservados.
-- O inventário material da retirada reside em E22.1.2.
+- Boundary/adapters/exports/validator retirados; registros em E22.1.2. Pesquisas compartilhadas preservadas. Seleção/avaliação E20 também encerradas pela E22.7.
 
 10.9 Pending Setup pré-comercial e continuidade conversacional
 
 10.9.1 Objetivo e status
-- Objetivo: substituir a experiência E10.4 por uma jornada conversacional pré-comercial que receba a pessoa, compreenda o negócio, resolva ou preserve operacionalmente o nicho, mantenha histórico por relação usuário/conta e promova `pending_setup` para `active` sem criar entitlement.
-- Status: concluído em Production. Novas conversas usam E10.12; conversas legadas mantêm E10.9, sem conversão histórica.
+- Objetivo: setup pré-comercial conversacional sem entitlement.
+- Status: operacional em Production; somente conversas legadas mantêm E10.9, novas usam E10.12, sem conversão.
 
 10.9.2 Registros do recorte
 - Banco:
@@ -951,26 +796,26 @@
   - Persistência, RLS e grants: `docs/schema.md` — seção 1.19A.
 
 10.9.3 Entrada e identidade sem fricção
-- Status: implementado no repositório.
-- Conteúdo: criar entrada única após confirmação de e-mail, reutilizar nome preferido válido ou perguntar uma vez quando ausente e iniciar a conversa por pergunta aberta, sem exigir Site/LP, canal preferido ou “Nome do projeto”.
+- Status: implementado.
+- Conteúdo: entrada única após confirmar e-mail; reutiliza nome preferido válido ou pergunta uma vez e abre conversa. Sem exigir Site/LP, canal ou Nome do projeto.
 
 10.9.4 Conversa adaptativa e resolução do nicho
-- Status: implementado no repositório.
-- Conteúdo: reservar a versão antes de qualquer efeito, executar matching determinístico antes da IA, usar o workload `niche_resolution` somente quando houver ambiguidade, manter falha técnica em estado tentável e exigir confirmação humana tanto da sugestão oficial quanto do fallback operacional legítimo, sem inventar taxon.
+- Status: implementado.
+- Conteúdo: determinístico antes de niche_resolution para ambiguidade; sugestão oficial/fallback legítimo exigem confirmação, falha técnica permite retry sem inventar taxon. Reserva/atomicidade em docs/base-tecnica.md — 3.14.5–3.14.6.
 
 10.9.5 Histórico conversacional e retomada
-- Status: implementado no repositório.
-- Conteúdo: persistir turnos e estado por relação usuário/conta, permitir retomada executável enquanto a conta estiver `pending_setup` e preservar o histórico, sem chat executável, após a promoção para `active`.
+- Status: implementado.
+- Conteúdo: turnos/estado por usuário e conta, retomáveis em pending_setup; histórico preservado sem chat após active.
 
 10.9.6 Conclusão, cutover e passagem ao comercial
 - Status: concluído em Production.
-- Conteúdo: conclusão transacional e idempotente promove conta sem entitlement. Entrada executável E10.4 retirada; account_profiles histórico, NicheResolutionCard de conta active, gates comerciais, checkout e entitlement preservados.
+- Conteúdo: conclusão transacional/idempotente sem entitlement; mantém account_profiles histórico, card active, checkout e gates independentes. E10.4 sem entrada executável.
 
 10.10 Onboarding factual pós-compra/trial
 
 10.10.1 Objetivo e status
-- Objetivo: confirmar o mínimo factual aplicável após entitlement comercial válido e taxon primário resolvido, sem refazer o Pending Setup nem exigir IA.
-- Status: E10.10 foi retirada funcionalmente pela E22.7; suas migrations permanecem não aplicadas.
+- Objetivo: destino do onboarding factual.
+- Status: retirado pela E22.7; migrations não aplicadas.
 
 10.10.2 Registros do recorte
 - Banco:
@@ -996,18 +841,18 @@
   - Contrato de banco: `docs/schema.md` — seções 1.8 e 1.35.
 
 10.10.3 Recorte factual e cutover
-- Status: retirado pela E22.7.
-- Conteúdo: as duas migrations E10.10 não foram aplicadas e permanecem excluídas do apply. Não há cutover factual pendente nem consumidor ativo; dados e migrations históricos permanecem preservados.
+- Status: retirado.
+- Conteúdo: duas migrations E10.10 excluídas do apply; sem cutover ou consumidor pendente, dados/migrations históricos preservados.
 
 10.10.4 UX factual e prontidão para a Base
-- Status: retirada pela E22.7.
-- Conteúdo: não integra a jornada vigente. A passagem à Base é definida na E10.11, sem prontidão factual E10.10.
+- Status: retirado.
+- Conteúdo: passagem atual E10.11, sem prontidão factual.
 
 10.11 Passagem mínima para a Base
 
 10.11.1 Objetivo e status
-- Objetivo: garantir nome público explícito e reaproveitamento inicial do contexto confirmado, preservando o comercial para contas sem autorização e encaminhando contas autorizadas diretamente à Base sem exigir taxon oficial.
-- Status: concluído e operacional em Preview e Production.
+- Objetivo: nome público e contexto inicial consentido na Base; acesso comercial preservado.
+- Status: operacional em Preview/Production.
 
 10.11.2 Registros do recorte
 - Banco:
@@ -1022,22 +867,22 @@
 
 10.11.3 Nome público e contexto de saída
 - Status: implementado.
-- Conteúdo: coletar nome público ausente na conclusão da conversa sem confundi-lo com nome preferido, razão social ou nome da conta. Copiar nome confirmado de uma única conversa concluída ao iniciar a Base e contexto confirmado somente com consentimento; conversas históricas sem nome deixam a seção editável e vazia. A Base não sincroniza edições de volta.
+- Conteúdo: nome público explícito, distinto de nome preferido/razão social/conta. Base inicia pelo nome de uma única conversa concluída e contexto confirmado só com consentimento; histórico sem nome deixa seção vazia/editável. Sem sincronização de volta.
 
 10.11.4 Gate e encaminhamento
-- Status: habilitado em Preview e Production.
-- Conteúdo: conta autorizada segue diretamente à Base, inclusive por liberação manual E9.2 e sem taxon oficial. Conta sem autorização conserva comercial E10.6/E10.7, papéis e ações financeiras vigentes. Falha de leitura de entitlement ou taxon exigido bloqueia a decisão. A rota ativa não encaminha ao onboarding factual E10.10 após o cutover.
+- Status: habilitado em Preview/Production.
+- Conteúdo: conta active resolve entitlement antes da taxonomia; autorizado vai à Base, inclusive manual E9.2 sem taxon; demais mantêm comercial/espera e financeiro E11.2. Erro em entitlement/taxon exigido bloqueia decisão. Sem desvio a E10.10.
 
 10.11.5 Continuidade e regressão
 - Status: vigente.
-- Conteúdo: matching, fallback de nicho, checkout, membership e entitlement preservados. Migrations E10.10 continuam fora do apply; o fluxo automático integral permanece suspenso.
+- Conteúdo: matching/fallback, checkout, membership e entitlement preservados. E10.10 excluído do apply integral ainda suspenso; operação em docs/platform-config.md — 2.3.
 
 10.12 Atendimento inicial por IA e agente vendedor
 
 10.12.1 Objetivo e status
-- Objetivo: compreender o negócio, as necessidades e o interesse do lead, oferecer orientação comercial pertinente aos serviços efetivamente disponíveis e concluir com próximo passo claro, preservando contexto e confirmando classificação existente quando houver correspondência segura.
-- Status: concluído e operacional em Preview e Production, incluindo condução comercial orientada a valor e leituras independentes em paralelo. Conversas legadas E10.9 permanecem preservadas.
-- Dependência: E10.13/PB-A concluída; catálogo e inteligência de mercado disponíveis e utilizados na ativação e no QA.
+- Objetivo: compreender negócio/necessidades/interesse, orientar sobre serviços reais e definir próximo passo, confirmando categoria segura.
+- Status: operacional em Preview/Production; legadas E10.9 preservadas.
+- Dependência: catálogo/repertório E10.13 disponível; PB-B não é pré-condição.
 
 10.12.2 Registros do recorte
 - Banco:
@@ -1062,33 +907,32 @@
   - Apply, reversão e configuração operacional: `docs/platform-config.md` — seções 2.3 e 3.5.
 
 10.12.3 Atendimento, Diálogo da conta e Resumo da conta
-- Status: implementado em Preview e Production.
-- Conteúdo:
-  - o agente adapta perguntas, orientação e conclusão enquanto houver avanço útil, sem herdar o teto de três chamadas. Diálogo preserva histórico integral com conta e usuário participante identificados; Resumo permanece único por conta, compacto, evolutivo e contextual, sem autoridade ou versionamento funcional próprio. Distinguir síntese contextual proposta pela IA, entendimento explicitamente aceito pelo lead, classificação confirmada, sugestões ou oportunidades do vendedor e ausência de identificação. Fontes oficiais prevalecem sobre ambos.
-  - interpretar a mensagem inteira, preservando contexto comercial antecipado sem exigir repetição. Na resposta composta de nome, negócio e ofertas, persistir somente o nome preferido validado no campo competente; nome do negócio permanece contextual até confirmação competente de nome público. A memória pode compactar semanticamente conteúdo anteriormente confirmado e incorporar correções posteriores, preservando significado comercial ainda vigente sem transformar sugestões em fatos. Teto global do Resumo: 6.000 caracteres, sem meta de preenchimento; entendimento individual permanece limitado a 4.000. Histórico integral permanece no Diálogo, e a confirmação do turno conserva o entendimento exibido e persistido.
-- Limites: nenhuma nova tabela, estado, memória paralela, parser frase a frase, formulário oculto ou infraestrutura; demais campos mantêm seus limites. Falha de leitura operacional ou excesso ao contrato físico falha fechado, sem anúncio de sucesso.
+- Status: operacional.
+- Conteúdo: interpretar a mensagem inteira sem repetir contexto antecipado. Nome preferido validado é persistido no campo próprio; negócio permanece contextual até confirmação de nome público. Diálogo integral por conta/participante e Resumo contextual único, sem autoridade ou versionamento funcional próprio, subordinados às fontes oficiais.
+- Resumo distingue síntese proposta, entendimento aceito, categoria confirmada, sugestões/oportunidades e ausência de identificação; compactação/correções preservam significado vigente e não tornam sugestão fato. Confirmação usa o entendimento exibido/persistido; texto integral no Diálogo. Governança em docs/base-tecnica.md — 3.14.6.
+- Limites: Resumo 6.000 caracteres sem meta de preenchimento; entendimento 4.000, demais limites preservados. Sem teto herdado de três chamadas, nova tabela/estado/memória/parser frase a frase/formulário oculto/infraestrutura. Leitura operacional falha ou excesso físico não anuncia sucesso.
 
 10.12.4 Identificação pelo catálogo
-- Status: implementado e validado em Preview e Production.
-- Conteúdo: consultar categorias ativas e repertório pertinente do D21, comparar semanticamente o entendimento e fazer pergunta focal quando necessário. Apresentar categoria existente ao lead; somente confirmação e validação determinística permitem alterar o vínculo oficial. Não executar pesquisa Web classificatória nem criar, ativar, reativar ou manter taxons ou aliases. Sem correspondência segura, explicitar ausência de identificação, preservar entendimento operacional e permitir continuidade comercial sem inventar classificação.
+- Status: operacional.
+- Conteúdo: categorias ativas/repertório D21, comparação semântica e pergunta focal quando necessária. Vínculo oficial só após confirmação e validação determinística. Sem Web classificatória ou manutenção de taxons/aliases; sem correspondência, explicitar ausência e preservar entendimento/continuidade comercial.
 
 10.12.5 Repertório do nicho e apoio à venda
-- Status: implementado em Preview e Production.
-- Conteúdo:
-  - usar conteúdo de mercado efetivamente disponível do D21 para orientação pertinente, sem transformá-lo em fala obrigatória, característica declarada pelo cliente ou promessa de resultado. Apresentar serviço, condição, prazo ou disponibilidade como efetivos somente com fonte comercial vigente competente; conteúdo ilustrativo e visão estratégica não comprovam oferta. Na ausência dessa fonte, não inventar disponibilidade. D21 mantém cadastro, manutenção, pesquisa do catálogo e política global de aliases.
-  - conduzir por Entender → Impressionar → Conectar → Avançar, sem quatro turnos obrigatórios ou roteiro fixo. Paralelizar somente leituras independentes; efeitos, provider e commit mantêm a ordem segura. Não há garantia de duração nem ganho causal de latência comprovado. Após compreender minimamente atividade, oferta e necessidade central, entregar insight ou oportunidade pertinente e conexão com a proposta real da LP Factory antes de outra pergunta comercial. Perguntar informação acessória somente quando material para compreender o negócio, demonstrar valor, orientar decisão ou definir o próximo passo; preservar identidade e confirmações obrigatórias. Avançar quando os critérios de conclusão vigentes estiverem satisfeitos, sem exigir diagnóstico completo ou venda esgotada e sem encerrar prematuramente conversa útil. Persuasão permanece específica ao contexto e fiel às fontes; aprofundamento comercial do D17 e independência da Base permanecem preservados.
+- Status: operacional.
+- Conteúdo: Entender → Impressionar → Conectar → Avançar, adaptativo, sem quatro turnos ou roteiro obrigatório. Após atividade/oferta/necessidade mínimas, entregar insight pertinente ligado à proposta real antes de outra pergunta comercial. Informação acessória só quando material para compreensão, valor, decisão ou próximo passo; identidade/confirmações obrigatórias preservadas.
+- Repertório D21 é contexto, não fala obrigatória, característica declarada ou promessa. Serviço/condição/prazo/disponibilidade efetivos exigem fonte comercial vigente; sem fonte, não inventar. D21 mantém catálogo, pesquisa e política de aliases; aprofundamento D17 preservado.
+- Avançar com os critérios de 10.12.6, sem diagnóstico completo, venda esgotada ou término prematuro de conversa útil. Paralelizar só leituras independentes; efeitos/provider/commit ordenados. Sem garantia de duração ou ganho causal de latência comprovado.
 
 10.12.6 Conclusão e experiência
-- Status: implementado e validado em Preview e Production.
-- Conteúdo: concluir quando negócio e necessidades estiverem suficientemente compreendidos, a orientação pertinente tiver sido entregue e o próximo passo comercial estiver claro, com classificação confirmada ou ausência de identificação explicitada. Confirmar categoria não encerra automaticamente o atendimento. Preservar requisitos de conclusão E10.11, identidade, WhatsApp, histórico, acesso e fronteiras comerciais. Ausência de taxon oficial não impede continuidade comercial nem bloqueia posteriormente a Base com entendimento operacional suficiente; não concede entitlement, acesso pago, trial ou contratação.
-- Encerramento inconclusivo: a IA responde naturalmente a desvio ocasional e redireciona; diante de desvio persistente, repetição, dúvidas circulares ou ausência de avanço útil, encerra cordialmente e preserva contexto comercial e pendência no Resumo. Não promete análise posterior, prazo, retorno automático ou novo contato; retomada útil permanece possível, sem contador de chamadas, tempo fixo ou failsafe econômico.
-- Limites: D17 conserva objeções, comparação/recomendação e encaminhamento aprofundado à contratação enquanto sua absorção não for explicitamente aprovada. Não criar relacionamento operacional com a Base, sincronização de fontes oficiais, engine genérica, consumidores futuros ou continuidade assíncrona. Falha preserva contexto válido para retomada; alteração externa impede sobrescrita, duplicação e falso sucesso sem reconstruir proposta ou exigir reavaliação e nova confirmação automáticas. Após conclusão correta, Pending Setup não governa mudanças posteriores da conta.
+- Status: operacional.
+- Conteúdo: concluir com negócio/necessidades compreendidos, orientação pertinente e próximo passo claro, categoria confirmada ou ausência explícita. Categoria confirmada não conclui sozinha. Manter identidade, WhatsApp e E10.11; entendimento suficiente sem taxon não bloqueia comercial/Base nem concede entitlement, acesso pago, trial ou contratação.
+- Encerramento inconclusivo: redirecionar desvio ocasional; diante de desvio persistente, repetição, circularidade ou falta de avanço útil, encerrar cordialmente, com contexto/pendência no Resumo e retomada útil possível. Sem prometer análise posterior, prazo, retorno/contato automático; sem contador, tempo fixo ou failsafe econômico.
+- Limites: objeções, comparação/recomendação e encaminhamento aprofundado à contratação continuam no D17 até absorção aprovada. Sem relacionamento operacional com a Base, sincronização, engine/consumidor futuro ou continuidade assíncrona. Falha preserva contexto; conflito externo não sobrescreve/duplica/anuncia sucesso nem reconstrói proposta ou exige reavaliação/reconfirmação automáticas. Após conclusão, Pending Setup não governa alterações da conta.
 
 10.13 Cadastro inicial de taxonomia e inteligência de mercado
 
 10.13.1 Objetivo e status
-- Objetivo: reconciliar integralmente o Nichos.zip e a pasta original com o catálogo compartilhado, cadastrar e ativar somente segmentos e nichos válidos e ausentes e disponibilizar a inteligência de mercado aproveitável pelas estruturas existentes.
-- Status: carga inicial e disponibilidade operacional concluídas; E10.5 e E10.12 preservadas, sem dependência de PB-B.
+- Objetivo: incorporar Nichos.zip/pasta original ao catálogo e disponibilizar inteligência aproveitável.
+- Status: carga inicial e disponibilidade concluídas, preservando E10.5/E10.12; PB-B não iniciado.
 
 10.13.2 Registros do recorte
 - Banco:
@@ -1106,32 +950,23 @@
     - `supabase/snippets/e10_13_editorial_review.md`
 
 10.13.3 Reconciliação e carga da taxonomia
-- Status: concluído; cinco ocorrências de quatro rótulos ambíguos permanecem justificadamente pendentes, sem impedir o aceite aprovado.
-- Conteúdo:
-  - inventariar todas as entradas do acervo e justificar cada destino como reutilizado, nova categoria, especialização/contexto, duplicado ou pendente, sem cota de nichos;
-  - confrontar o catálogo completo, incluindo aliases e categorias inativas, reutilizando a hierarquia e inserindo apenas segmentos e nichos semanticamente seguros e ausentes, com pais ativos e válidos;
-  - não criar ultranichos ou aliases, reativar categorias, duplicar inativos ou transformar oferta, público, localidade ou atributo do cliente em nicho artificial;
-  - preservar registros existentes, abortar integralmente colisões ou concorrência e comprovar hierarquia, estados e ausência de duplicações por comparação antes/depois e leitura separada após a escrita; ambiguidades permanecem justificadas sem bloquear os itens seguros.
+- Status: concluído; cinco ocorrências de quatro rótulos ambíguos aceitas como pendentes.
+- Conteúdo: carga reconciliada pelo inventário de 10.13.2, com destinos justificados e pais ativos/válidos, sem duplicação na hierarquia. Somente segmentos/nichos seguros ausentes; sem ultranichos, aliases, reativação, duplicação de inativos ou nicho artificial por oferta/público/localidade/atributo. Registros existentes preservados; colisão/concorrência abortam integralmente.
 
 10.13.4 Adaptação e disponibilidade do conteúdo
-- Status: concluído; conteúdo comercial disponível, pesquisas e itens preexistentes preservados. Oito novos nichos sem pesquisa específica e lacunas de validação e atualização permanecem identificados para PB-B, sem autorizar execução.
-- Conteúdo:
-  - adaptar o material aproveitável ao taxon correto, com panorama, tendências, maturidade digital pertinente, oportunidades de comunicação e diferenciação condicional, sem tamanho uniforme ou pesquisa extensa por nicho;
-  - distinguir fontes, períodos, dados históricos, incertezas e limitações; indicadores exigem fonte e período, e hipóteses não podem ser atribuídas à empresa;
-  - persistir conteúdo aditivo nas estruturas compartilhadas existentes, preservando pesquisas válidas, e comprovar vínculos, amostras representativas e leitura autorizada; escrita isolada não comprova disponibilização;
-  - identificar lacunas por nicho para PB-B, sem iniciar pesquisa complementar de rotina ou manutenção periódica; integração conversacional pertence ao D15B, e dores, crenças, copy e particularidades da empresa pertencem ao D14D;
-  - preservar contas, Bases, produtos publicados, entitlement, busca e consumidores existentes; não criar interface, runtime, schema, permissões, infraestrutura, job, agente operacional, automação ou contato automático com leads.
+- Status: conteúdo disponível, preexistentes preservados; oito nichos novos sem pesquisa específica e lacunas de validação/atualização para PB-B, sem execução autorizada.
+- Conteúdo: panorama, tendências, maturidade digital e oportunidades/diferenciação condicionais por taxon, sem tamanho uniforme. Fontes/períodos/incertezas explícitos; indicador exige fonte/período, hipótese não vira característica da empresa. Disponibilidade comprovada por leitura autorizada, não apenas escrita.
+- Limites: sem pesquisa complementar/manutenção periódica de rotina, mudança de schema/permissões/UI/runtime ou infraestrutura/automação/contato com leads. Integração conversacional D15B; dores/crenças/copy/particularidades da empresa D14D; contas/Bases/publicados/entitlement/busca/consumidores preservados.
 
 11. E11 — Gestão de membros e autoridade comercial
-
-- Objetivo: permitir gestão segura de membros não-owner por conta e tornar explícitas as regras de papel e entitlement para checkout, novos convites e manutenção de vínculos.
-- Status: implementado e habilitado em Preview e Production; gestão de membros, convites, autoatendimento do convidado e políticas comerciais estão ativas.
+- Objetivo: gestão de membros não-owner e autoridade comercial por papel/entitlement.
+- Status: implementado em Preview/Production.
 
 11.1 Gestão de membros e convites
 
 11.1.1 Objetivo e status
-- Objetivo: permitir que `owner` e `admin` convidem e administrem membros `admin`, `editor` e `viewer`, preservando o owner, o próprio ator e o isolamento multi-tenant.
-- Status: implementado, com gate `E11_MEMBERS_ENABLED=true` nos ambientes hospedados.
+- Objetivo: owner/admin gerem admin/editor/viewer, protegendo owner, próprio ator e isolamento.
+- Status: operacional com E11_MEMBERS_ENABLED=true.
 
 11.1.2 Registros do recorte
 - Banco:
@@ -1164,38 +999,28 @@
   - Configuração hospedada: `docs/platform-config.md` — seções 3.5 e 4.6.
 
 11.1.3 Autoridade e transições
-- A rota `/a/[account]/members`, suas leituras e suas ações exigem o gate habilitado e contexto de `owner` ou `admin`.
-- Os papéis administráveis são `admin`, `editor` e `viewer`; `owner` não entra nas mutações comuns.
-- Alteração de papel, desativação e revogação operam sobre membership específico e são idempotentes quando o estado já corresponde ao resultado.
-- O owner e o próprio ator são protegidos contra mutações administrativas indevidas.
-- As funções legadas de convite permanecem no banco sem `EXECUTE` para os papéis de runtime; o fluxo atual usa o boundary server-only `lib/access/account-members/`.
+- Rota /a/[account]/members, leituras e ações exigem gate e owner/admin. Mutações comuns excluem owner e protegem o próprio ator.
+- Alteração de papel, desativação e revogação são específicas por membership e idempotentes no estado final. Boundary server-only account-members; funções legadas sem EXECUTE de runtime.
 
 11.1.4 Convite por e-mail
-- Usuário novo ou ainda não confirmado recebe o template nativo `Invite user` do Supabase Auth.
-- Cada emissão carrega estado versionado e assinado, vinculado a um único `account_user_id`, no `redirectTo` específico do convite.
-- A confirmação anti-scanner, a definição de senha e a ativação atingem somente o vínculo validado e aceitam retry idempotente.
-- Validade e reenvio permanecem sob responsabilidade do Supabase Auth; não há expiração local, e-mail customizado, Auth Hook amplo, job ou automação para esse ciclo.
-- A E11.1.4 permanece proprietária funcional de toda a jornada de convite.
-- A origem do callback prioriza o override explícito `NEXT_PUBLIC_SITE_URL`; em deployments Vercel, usa `VERCEL_BRANCH_URL` no Preview ou `VERCEL_PROJECT_PRODUCTION_URL` em Production, com `VERCEL_URL` como fallback. Ausência ou origem inválida continua falhando de forma fechada.
-- A validação funcional em Production comprovou e-mail recebido, `/auth/confirm` sem `/auth/error`, cadastro concluído, membership `viewer/active` e login no tenant correto; não houve comprovação de todos os papéis, ambientes ou casos extremos.
+- Novo/não confirmado recebe Invite user nativo do Auth. Cada emissão leva estado versionado/assinado para um único account_user_id no redirectTo; confirmação anti-scanner, senha e ativação só atingem esse vínculo, com retry idempotente.
+- Auth governa validade/reenvio; sem expiração local, e-mail customizado, hook amplo ou job. Esta seção governa funcionalmente a jornada.
+- Callback: NEXT_PUBLIC_SITE_URL explícito; depois VERCEL_BRANCH_URL em Preview ou VERCEL_PROJECT_PRODUCTION_URL em Production; fallback VERCEL_URL. Origem ausente/inválida falha fechado.
+- Limite da comprovação em Production: convite recebido, confirmação, cadastro, viewer/active e login no tenant correto; não cobre todos os papéis, ambientes ou extremos.
 
 11.1.5 Convite dentro do produto
-- Usuário já confirmado recebe a pendência em `/a/home`, sem novo e-mail.
-- Aceite e recusa derivam a identidade da sessão e processam um vínculo pendente por vez.
-- O canal do convite é correlacionado ao ciclo `pending` atual; evento ausente ou pertencente a ciclo anterior falha fechado.
-- O membership permanece `pending` até aceite, recusa ou revogação.
+- Confirmado recebe pendência em /a/home, sem e-mail. Aceite/recusa usam identidade da sessão e um vínculo por tentativa.
+- Canal correlacionado ao ciclo pending atual; evento ausente/antigo falha fechado. Membership fica pending até aceite, recusa ou revogação.
 
 11.1.6 Superfície de gestão
-- A página de membros lista vínculos ativos e convites pendentes.
-- `owner` e `admin` podem convidar, reenviar, revogar, alterar papel e desativar dentro das proteções do domínio.
-- O cabeçalho expõe a navegação para membros apenas aos papéis autorizados e quando o gate está ativo.
-- Com o gate ausente ou diferente do literal `true`, rota, navegação, leituras e mutações permanecem fechadas.
+- Lista ativos/pendentes; owner/admin convidam, reenviam, revogam, alteram papel e desativam com as proteções 11.1.3.
+- Navegação só para autorizados. Gate ausente ou diferente do literal true fecha rota, navegação, leituras e mutações.
 
 11.2 Autoridade comercial por papel
 
 11.2.1 Objetivo e status
-- Objetivo: combinar papéis da conta e o sinal canônico da E9 para decidir checkout, criação ou reenvio de convites e experiência comercial, sem alterar vínculos existentes.
-- Status: implementado; políticas server-side, experiência genérica e publicada e validações de regressão estão integradas ao runtime atual.
+- Objetivo: decidir checkout e novos convites/reenvio por papel e sinal E9, sem alterar vínculos existentes.
+- Status: implementado no servidor e nas variantes comerciais genérica/publicada.
 
 11.2.2 Registros do recorte
 - Repositório:
@@ -1223,57 +1048,42 @@
   - Experiência comercial: E10.6–E10.7.
 
 11.2.3 Checkout
-- Somente `owner` com conta `active`, membership `active` e sem entitlement comercial válido pode visualizar a ação financeira e iniciar o checkout.
-- `admin`, `editor` e `viewer` não iniciam checkout; a Server Action repete o guard independentemente da UI.
-- `owner` já comercialmente elegível não cria nova assinatura pela action atual.
-- A decisão usa apenas `CommercialEntitlementSignal.isCommerciallyEligible`; preço, recorrência, webhook e persistência do pagamento residem em E9.4.
-- Cada decisão de checkout registra no máximo um evento estruturado `commercial_checkout_decision` com resultado `allowed`, `denied` ou `error`, sem campos diretos de PII e sem alterar o resultado da operação.
+- Só owner com conta/membership active e sem entitlement válido vê ações financeiras/inicia Checkout. Action repete o guard; owner já elegível não cria nova assinatura.
+- Decisão usa apenas CommercialEntitlementSignal.isCommerciallyEligible; pagamento em E9.4. No máximo um commercial_checkout_decision por decisão: allowed/denied/error, sem PII direta e sem alterar resultado.
 
 11.2.4 Novos convites e reenvio
-- `owner` e `admin` só criam ou reenviam convites quando a conta está `active` e `isCommerciallyEligible=true`.
-- O guard comercial ocorre antes de leitura ou criação no Auth, preparação de membership, registro de canal ou envio.
-- Ausência ou erro do sinal de entitlement bloqueia criação e reenvio.
-- Cada decisão registra no máximo um evento `account_member_invite_decision`; o logging é não bloqueante.
-- `editor` e `viewer` permanecem sem gestão de membros.
+- Só owner/admin, conta active e isCommerciallyEligible=true. Sinal ausente/erro bloqueia antes de ler/criar Auth, preparar membership, registrar canal ou enviar.
+- No máximo um account_member_invite_decision não bloqueante por decisão; editor/viewer sem gestão.
 
 11.2.5 Experiência sem entitlement
-- `owner` sem entitlement recebe a variante comercial vigente com ações financeiras.
-- `admin`, `editor` e `viewer` sem entitlement recebem estado de espera pela ativação comercial do proprietário, sem cards ou CTA financeiro.
-- `GenericCommercialPage` e `PublishedCommercialActivationPage` aplicam a mesma política; a variante publicada preserva bundle, conteúdo, composição, ordem e schemas da E10.7.
-- A política comercial não cria dashboard paralelo; conta com entitlement segue a jornada vigente E10.11.
+- Sem entitlement: owner recebe comercial com financeiro; demais aguardam ativação pelo proprietário, sem cards/CTA financeiro.
+- Mesma política nas variantes genérica/publicada; bundle e contrato E10.7 preservados. Com entitlement segue E10.11, sem dashboard paralelo.
 
 11.2.6 Operações preservadas
-- Listagem, aceite, recusa, revogação, desativação e alteração de papel independem do entitlement.
-- Entitlement ausente não apaga, desativa ou altera retroativamente memberships existentes.
-- O gate comercial se restringe a criar e reenviar convites e não redefine as transições seguras da E11.1.
+- Entitlement não condiciona listagem, aceite, recusa, revogação, desativação ou alteração de papel, nem modifica memberships retroativamente. Gate comercial só limita criar/reenviar convites; transições E11.1 preservadas.
 
 12. E12 — Admin Dashboard
-
-- Objetivo: oferecer uma seção administrativa protegida e independente do Account Dashboard, com shell próprio, leitura operacional e integração controlada das operações administrativas definidas pelos domínios responsáveis.
-- Status: base, navegação, documentação, contas, resoluções de nicho, taxonomia, páginas comerciais e estrutura da LP estão implementadas; Workloads e Custos OpenAI são integrados sob E21, e Auditoria permanece como área em preparação.
+- Objetivo: Admin protegido, independente da conta, com leitura operacional e operações autorizadas pelos domínios.
+- Status: áreas 12.1.4 implementadas; Auditoria em preparação.
 
 12.1 Contrato administrativo base
 
 12.1.1 Objetivo e status
-- Objetivo: definir a fronteira do Admin Dashboard, sua proteção e a residência das operações integradas.
-- Status: contrato implementado.
+- Objetivo: delimitar proteção, shell e autoridade do Admin.
+- Status: implementado.
 
 12.1.3 Fronteira vigente
-- `/admin` é a entrada pública; as rotas internas usam o gate SSR de `app/admin/(protected)/layout.tsx` e exigem `platform_admin`.
-- O destino administrativo pós-login é `/admin/contas`.
-- Header, menu, sidebar e navegação são próprios do Admin, sem `AccountSwitcher` e sem dependência de conta ativa.
-- O Admin oferece leituras e mutações apenas quando um recorte de domínio as autoriza; o shell não cria autoridade administrativa paralela.
-- Operações de domínio: páginas comerciais E10.7, entitlement manual E9.2, gestão de seções da Base E25.3 e workloads/custos OpenAI E21. Insumos factuais E20 foram retirados.
+- /admin é público; rotas internas exigem platform_admin no layout SSR. Pós-login: /admin/contas. Header/sidebar/menu próprios, sem AccountSwitcher ou conta ativa.
+- Shell não cria autoridade: páginas comerciais E10.7, entitlement manual E9.2, seções da Base E25.3 e workloads/custos E21 governam suas operações. Factual E20 retirado.
 
 12.1.4 Áreas atuais
 - Disponíveis: Base de Comunicação, Contas, Resoluções de nicho, Taxonomia, Páginas comerciais, Estrutura da LP, Workloads OpenAI, Custos OpenAI e Documentação.
-- Em preparação: Auditoria.
-- A navegação é responsiva e preserva o bloqueio de identidade autenticada sem autoridade de plataforma.
+- Auditoria em preparação; navegação responsiva, sem acesso autenticado não autorizado.
 
 12.2 Shell, documentação e leituras administrativas base
 
 12.2.1 Objetivo e status
-- Objetivo: fornecer entrada pública, shell protegido, leitor de documentação e superfícies administrativas base para contas, resoluções de nicho e taxonomia.
+- Objetivo: entrada, shell, documentação e leituras administrativas de contas/resoluções/taxonomia.
 - Status: implementado.
 
 12.2.2 Registros do recorte
@@ -1310,53 +1120,42 @@
     - `next.config.js`
 
 12.2.3 Entrada e proteção
-- A entrada pública apresenta o Admin e envia o usuário para `/auth/login?next=%2Fadmin%2Fcontas`.
-- O layout protegido reexecuta `requirePlatformAdmin`; identidade não autenticada retorna ao login e identidade sem autoridade recebe destino público neutro.
-- O shell protegido usa `AdminHeader`, `AdminSidebar` e menu mobile dentro de uma largura operacional única.
+- Entrada envia a /auth/login?next=%2Fadmin%2Fcontas. Layout reexecuta requirePlatformAdmin: anônimo vai ao login; sem autoridade, destino público neutro.
+- Header/sidebar/menu mobile compartilham largura operacional.
 
 12.2.4 Documentação read-only
-- `/admin/documentacao` lista uma whitelist fixa de documentos do repositório, com filtro e seleção.
-- `readRepoDoc` lê apenas paths autorizados pelo filesystem server-side e o tracing da rota inclui explicitamente esses arquivos.
-- O conteúdo Markdown é exibido como texto bruto; não há GitHub API em runtime, edição, salvamento, publicação, banco ou mutação.
+- /admin/documentacao filtra/seleciona whitelist fixa; filesystem server-side lê somente paths autorizados, incluídos no tracing. Markdown bruto, somente leitura; sem GitHub API em runtime, editor, publicação ou banco.
 
 12.2.5 Leituras e integrações de conta
-- Contas, resoluções de nicho e taxonomia usam adapters server-only com paginação, filtros e projeções próprias para o Admin.
-- A listagem de resoluções e seu detalhe são read-only.
-- O detalhe da conta integra a liberação manual de entitlement definida em E9.2; essa mutação não pertence ao contrato base da E12.
-- A taxonomia evoluiu para operação controlada e diagnóstico contextual, consolidada em 12.5.
+- Adapters server-only com paginação/filtros/projeções administrativas. Resoluções são read-only; conta integra entitlement manual E9.2; taxonomia operacional em 12.5.
 
 12.3 Integração administrativa de `commercial_activation`
 
 12.3.1 Objetivo e status
-- Objetivo: integrar ao shell administrativo a geração, revisão e publicação de páginas comerciais definida pela E10.7.
-- Status: implementado; a autoridade funcional e os registros materiais residem em E10.7.
+- Objetivo: integrar commercial_activation E10.7 ao shell.
+- Status: implementado; contrato e registros em E10.7.
 
 12.3.2 Registros do recorte
 - Referências:
   - Registros materiais e contrato funcional: E10.7.2–E10.7.5.
 
 12.3.3 Superfície integrada
-- `/admin/templates` lista taxons e estados comerciais; `/admin/templates/commercial-activation/[taxonSlug]` concentra geração ou regeneração, preview, publicação, diagnóstico e histórico.
-- O layout protege a superfície e cada Server Action reexecuta `requirePlatformAdmin`.
-- Publicação, composição, elegibilidade, renderer e fallback permanecem definidos pela E10.7; a E12 não introduz editor visual nem LP Builder.
+- Superfície E10.7.4 protegida pelo layout; cada Server Action reexecuta requirePlatformAdmin. Geração/publicação/consumo seguem E10.7, sem editor visual ou LP Builder.
 
 12.4 Perfil de orientação — retirado
 
 12.4.1 Objetivo e status
-- Objetivo: registrar o encerramento da antiga operação administrativa de perfis de orientação.
-- Status: retirado pela E22.1.4; não existe rota, navegação ou boundary vigente para esse domínio.
+- Objetivo: delimitar a retirada de perfis de orientação.
+- Status: retirado pela E22.1.4.
 
 12.4.3 Estado e destino
-- `/admin/perfis-de-orientacao`, `generation-profile`, seus adapters, exports, validator e workload de proposta foram removidos.
-- As tabelas, RPCs e objetos próprios do perfil também foram removidos por migration forward-only.
-- Não há editor, lifecycle, proposta ou refinamento por IA de perfil no produto atual.
-- O inventário material da retirada reside em E22.1.2 e o contrato vigente de geração de landing pages não depende desse domínio.
+- Rotas, navegação, boundary, workload, tabelas/RPCs e operação IA próprios removidos; sem dependência na geração atual. Registros em E22.1.2.
 
 12.5 Taxonomia e diagnóstico contextual
 
 12.5.1 Objetivo e status
-- Objetivo: consultar e gerir a taxonomia, acompanhar resoluções de nicho e conectar o diagnóstico comercial vigente.
-- Status: implementado; seleção, cobertura, liberação e avaliação factual E20 foram retiradas pela E22.7.
+- Objetivo: gerir taxonomia e consultar resoluções/diagnóstico comercial.
+- Status: implementado; factual E20 retirado pela E22.7.
 
 12.5.2 Registros do recorte
 - Repositório:
@@ -1378,20 +1177,14 @@
 
 12.5.3 Taxonomia
 - Status: implementado.
-- Conteúdo:
-  - Lista com busca e filtros por nível e status; detalhe com identidade, hierarquia, uso operacional, aliases e diagnóstico comercial.
-  - platform_admin cria, edita, ativa/inativa, administra aliases e exclui com segurança, preservando vínculos, pai ativo e concorrência otimista.
-  - Taxons novos nascem inativos. Não há seleção de pesquisa ou avaliação factual E20.
+- Conteúdo: busca/filtros de nível/status; detalhe com identidade, hierarquia, uso, aliases e diagnóstico comercial. platform_admin cria, edita, ativa/inativa, gerencia aliases e exclui com segurança, preservando vínculos, pai ativo e concorrência otimista. Novos taxons inativos; sem seleção/avaliação factual E20.
 
 12.5.4 Resoluções de nicho e navegação
-- A lista e o detalhe de resoluções permanecem read-only, com entrada, confiança, decisão determinística, estado IA e necessidade de revisão.
-- A navegação para Taxonomia e Página comercial usa somente o taxon confirmado; sugestão IA isolada não é tratada como vínculo oficial.
-- Falha de um diagnóstico não inventa prontidão nem escolhe resultado silenciosamente.
-- Perfis de orientação, pesquisas da E10.8 e seus estados órfãos não aparecem nas superfícies atuais.
+- Resoluções read-only: entrada, confiança, decisão determinística, estado IA e revisão. Navegação usa taxon confirmado, nunca sugestão IA isolada. Falha diagnóstica não inventa prontidão nem escolhe resultado; sem estados órfãos de perfil/E10.8.
 
 12.5.5 Evolução da revisão factual por taxon
 - Status: retirado pela E22.7.
-- Conteúdo: cobertura, fields herdados, liberação e assistência factual não integram o detalhe. A taxonomia administrativa preservada segue 12.5.3.
+- Conteúdo: sem cobertura, fields herdados, liberação ou assistência factual; taxonomia segue 12.5.3.
 
 12.6 Estrutura da LP no Admin Dashboard
 
@@ -1422,20 +1215,17 @@
 
 12.6.3 Consulta vigente
 - Status: implementado.
-- Conteúdo:
-  - Um item Estrutura da LP e uma rota /admin/estrutura-lp, protegidos por autoridade de plataforma.
-  - Parâmetros consulta a API pública E18.4 por versão raiz e preset; queries antigas ou visões desconhecidas retornam a Parâmetros.
-  - Leitura server-only, sem N+1, registry privado ou regra de domínio em React; não há gestão factual, IA ou publicação de catálogo.
+- Conteúdo: /admin/estrutura-lp, autorizado por plataforma, consulta API E18.4 por versão raiz/preset; query antiga/desconhecida retorna a Parâmetros. Leitura server-only sem N+1, registry privado ou regra de domínio em React; sem gestão factual, IA ou publicação.
 
 12.6.4 Evolução do catálogo factual
 - Status: retirado pela E22.7.
-- Conteúdo: a visão Entradas e a gestão factual E20.8 não integram a superfície vigente; sem cutover ou QA factual pendentes.
+- Conteúdo: Entradas/gestão E20.8 sem consumidor ou cutover/QA pendentes.
 
 12.7 Contrato de apresentação para páginas operacionais de dashboard
 
 12.7.1 Objetivo e status
-- Objetivo: manter canônico o contrato de UX/UI para novas páginas e recortes operacionais do Admin e Account Dashboard, com herança pelo Partner Dashboard quando funcional.
-- Status: contrato e enforcement transversal vigentes, sem alteração automática de superfícies existentes.
+- Objetivo: aplicar apresentação operacional canônica a novos recortes de dashboard.
+- Status: vigente, sem alteração automática de superfícies existentes.
 
 12.7.2 Registros do recorte
 - Updates:
@@ -1448,21 +1238,21 @@
 
 12.7.3 Materialização canônica do contrato mínimo
 - Status: vigente.
-- Conteúdo: baseline de novas páginas operacionais no Design System; preserva autoridade funcional de domínio e tecnologia de listas em aberto. Não modifica superfícies existentes automaticamente.
+- Conteúdo: contrato mínimo na referência visual 12.7.2; autoridade funcional permanece no domínio, tecnologia de listas em aberto.
 
 12.7.4 Refinamento canônico de composição e responsividade
 - Status: vigente.
-- Conteúdo: lista tabular compacta, controles por atributo nos cabeçalhos, abas irmãs e adaptação mobile; cards como exceção funcional. Cobre Admin e Account Dashboard, e Partner quando funcional; páginas públicas e LPs comerciais ficam fora.
+- Conteúdo: composição/responsividade na mesma fonte canônica. Cobre Admin/Account e Partner quando funcional; exclui páginas públicas e LPs comerciais.
 
 12.7.5 Enforcement do contrato de apresentação
 - Status: vigente.
-- Conteúdo: decisão humana registra somente eventual exceção funcional. Implementação, revisão e QA demonstram aderência ao Design System ou exceção autorizada; o contrato detalhado permanece na fonte visual canônica.
+- Conteúdo: implementação, review e QA verificam contrato visual; só exceção funcional exige decisão humana.
 
 12.8 Piloto do padrão transversal no fluxo Taxonomia e cobertura factual
 
 12.8.1 Objetivo e status
-- Objetivo: aplicar o padrão visual da E12.7 à taxonomia com linguagem humana e continuidade entre tarefas.
-- Status: piloto de Taxonomia implementado; piloto factual retirado pela E22.7. Demais áreas fora do recorte.
+- Objetivo: pilotar apresentação E12.7 na Taxonomia.
+- Status: implementado; factual retirado pela E22.7, demais áreas fora do recorte.
 
 12.8.2 Registros do recorte
 - Repositório:
@@ -1474,62 +1264,50 @@
 
 12.8.3 Taxonomia como piloto de coleção e detalhe
 - Status: implementado.
-- Conteúdo:
-  - Linhas compactas com identidade humana, nível, estado, diagnóstico e ação Abrir; busca global e filtros de nível/estado preservados.
-  - Desktop com filtros junto aos cabeçalhos; mobile com controles compactos e rolagem horizontal indicada.
-  - Detalhe prioriza identidade, estado e ações humanas; detalhes técnicos em segundo nível. Sem cobertura ou IA factual E20.
+- Conteúdo: coleção com identidade, nível, estado, diagnóstico e Abrir; busca global/filtros de nível/estado. Desktop com filtros nos cabeçalhos; mobile compacto com rolagem horizontal indicada. Detalhe prioriza identidade/estado/ações humanas e revela técnica em segundo nível; sem factual E20.
 
 12.8.4 Cobertura factual e subtarefas como piloto de interação
 - Status: retirado pela E22.7.
-- Conteúdo: cobertura, gestão de fields e retorno factual ao taxon não integram o produto; o padrão de interação geral permanece no Design System, sem consumidor factual ativo.
+- Conteúdo: sem cobertura/fields/retorno factual; interação geral permanece no Design System.
 
 13. E13 — Partner Dashboard
-
-- Objetivo: reservar a jornada administrativa de parceiros sem antecipar produto, API ou arquitetura antes de um recorte funcional aprovado.
-- Status: não iniciado; não existe dashboard, rota, boundary de aplicação ou API de parceiros no repositório atual.
+- Objetivo: reservar jornada de parceiros até aprovação funcional.
+- Status: não iniciado; sem dashboard, rota, boundary ou API.
 
 13.1 Recorte futuro de parceiros
 
 13.1.1 Objetivo e status
-- Objetivo: definir uma superfície de parceiros somente quando houver jornada, atores, permissões e resultado operacional aprovados.
-- Status: futuro sem escopo funcional aprovado.
+- Objetivo: definir atores, permissões e resultado operacional antes da superfície.
+- Status: futuro sem escopo aprovado.
 
 13.1.2 Registros do recorte
 - Referências:
   - Contrato de banco: `docs/schema.md` — seções 1.6–1.7.
 
 13.1.3 Estado atual e limite
-- `partners` e `partner_accounts` existem como fundação de banco e permanecem registrados em E1.
-- Não há implementação atual de branding de agência, gestão de clientes, relatórios ou Partner API.
-- Uma boundary própria só deve ser criada junto do primeiro recorte funcional aprovado e de consumidores reais.
+- Fundação partners/partner_accounts em E1 e schema 1.6–1.7. Sem branding de agência, gestão de clientes ou relatórios. Boundary própria somente com primeiro recorte aprovado e consumidores reais.
 
 14. E14 — Área pessoal do usuário — não iniciada
-
-- Objetivo: registrar uma eventual área pessoal de perfil e preferências sem confundi-la com o Account Dashboard ou com o antigo workspace de Landing Pages.
-- Status: não iniciado; não existe rota, página, persistência de preferências ou boundary própria para esse domínio.
+- Objetivo: reservar perfil/preferências pessoais, distintos da conta e do workspace LP retirado.
+- Status: não iniciado; sem rota, persistência ou boundary.
 
 14.1 Perfil e preferências pessoais
 
 14.1.1 Objetivo e status
-- Objetivo: permitir gestão de dados pessoais somente após definição aprovada de campos, autoridade e resultado para o usuário.
-- Status: futuro sem recorte funcional aprovado.
+- Objetivo: definir campos, autoridade e resultado antes da implementação.
+- Status: futuro sem recorte aprovado.
 
 14.1.3 Estado atual e residência das responsabilidades
-- `components/layout/UserMenu.tsx` ainda expõe um link para `/workspace/profile`, mas a rota `app/workspace/` não existe; o link não entrega uma jornada funcional.
-- Seleção e persistência da conta atual residem em E10.3.
-- Decisão de acesso por conta reside em E8.
-- O antigo onboarding e workspace operacional de Landing Pages foram retirados na E19/E22.4.
-- Nenhuma nova estrutura de Workspace Dashboard deve ser criada até existir um recorte pessoal aprovado.
+- UserMenu ainda aponta a /workspace/profile inexistente; não entrega jornada. Seleção da conta em E10.3; acesso em E8; workspace/onboarding LP retirados em E19/E22.4. Sem nova estrutura antes de recorte pessoal aprovado.
 
 15. E15 — Usuário e membership por conta
-
-- Objetivo: distinguir identidade autenticada de vínculo por conta e definir o comportamento seguro dos estados de membership.
-- Status: implementado; contrato de banco, Access Context, redirects por status e ciclo de convite estão ativos.
+- Objetivo: decidir por membership da conta, distinto da identidade global.
+- Status: implementado em banco, Access Context, redirects e convites.
 
 15.1 Contrato de membership
 
 15.1.1 Objetivo e status
-- Objetivo: garantir que papéis e estados sejam avaliados por vínculo e nunca inferidos apenas da identidade global do usuário.
+- Objetivo: avaliar papel/status por vínculo do tenant solicitado.
 - Status: concluído.
 
 15.1.2 Registros do recorte
@@ -1539,32 +1317,24 @@
   - Ciclo de convite: E11.1.
 
 15.1.3 Identidade e vínculo
-- O usuário do Supabase Auth é uma identidade global; `account_users` representa seu membership em uma conta específica.
-- O mesmo usuário pode ter papel e status diferentes em contas diferentes.
-- Os estados vigentes do vínculo são `pending`, `active`, `inactive` e `revoked`.
-- Decisões de conta exigem membership do tenant solicitado e não reutilizam papel ou estado de outro vínculo.
+- Auth é identidade global; account_users vincula à conta. Papel/status podem variar entre contas, nunca são reaproveitados de outro vínculo. Estados: pending, active, inactive e revoked.
 
 15.1.4 Ativação e bloqueios
-- Membership não-owner em `pending` torna-se `active` somente pelo aceite autenticado no produto ou pela confirmação validada do convite por e-mail da E11.1.
-- O Auth Hook amplo e as funções legadas de convite não participam do caminho operacional.
-- `pending`, `inactive` e `revoked` recebem destinos públicos específicos; conta bloqueada também recebe destino compatível com seu status.
-- A decisão final e os redirects seguros residem em E8 e no guard SSR da E4.
+- Não-owner pending só ativa por aceite autenticado ou confirmação validada E11.1; sem hook amplo/funções legadas no runtime.
+- Pending/inactive/revoked e conta bloqueada recebem destinos públicos específicos; decisão/redirects em E8 e guard SSR E4.
 
 15.1.5 Usuário sem membership
-- Usuário autenticado sem vínculo não recebe conta automática no gateway.
-- `/a/home` tenta a última conta válida e o fallback determinístico; sem membership disponível, retorna a `/auth/confirm/info`.
-- A primeira conta só pode nascer pelo fluxo server-side aprovado; a existência de qualquer membership impede auto-criação adicional.
+- Sem membership: /a/home tenta última conta válida/fallback determinístico e retorna a /auth/confirm/info se indisponível; gateway não cria conta. Primeira conta somente pelo fluxo server-side aprovado, bloqueado pela existência de qualquer membership.
 
 16. E16 — Lifecycle operacional de contas
-
-- Objetivo: definir os estados operacionais de `accounts.status`, sua única transição de produto implementada e a experiência segura de cada bloqueio, sem misturar billing ou entitlement ao lifecycle da conta.
-- Status: contrato e consumo implementados; `pending_setup → active` é a mutação de produto vigente, enquanto suspensão, inativação e reativação administrativas não possuem operação própria no Admin atual.
+- Objetivo: lifecycle de accounts.status independente de billing/entitlement.
+- Status: consumo e pending_setup → active implementados; sem gestão administrativa de suspensão, inativação ou reativação.
 
 16.1 Estados e transições da conta
 
 16.1.1 Objetivo e status
-- Objetivo: manter uma interpretação única de `pending_setup`, `active`, `inactive` e `suspended` em adapters, guards e UX.
-- Status: implementado, com um drift de copy ainda presente na tela de conta inativa.
+- Objetivo: unificar estados em adapters, guards e UX.
+- Status: implementado; drift de copy da conta inativa em 16.1.6.
 
 16.1.2 Registros do recorte
 - Repositório:
@@ -1582,39 +1352,30 @@
   - Entitlement comercial: E9.1.
 
 16.1.3 Estados vigentes
-- `pending_setup`: conversa de setup incompleta; atendimento E10.12 ou conversa legada E10.9.
-- `active`: setup concluído; entitlement vigente leva à Base, ausência mantém comercial ou espera conforme papel; erro de leitura falha fechado. Sem produto LP legado.
-- `inactive`: bloqueio operacional reversível; o guard impede a seção privada e envia para a tela pública de conta inativa.
-- `suspended`: bloqueio administrativo; o guard impede a seção privada e envia para a tela pública de conta suspensa.
-- O status da conta é independente do status de cada membership: ambos precisam permitir a operação solicitada.
+- pending_setup: conversa E10.12 incompleta ou legada E10.9.
+- active: com entitlement vai à Base; sem ele, comercial/espera por papel; erro de leitura falha fechado. Sem produto LP legado.
+- inactive: bloqueio reversível com destino público de conta inativa; suspended: bloqueio administrativo com destino público de conta suspensa.
+- Conta e membership devem ambos permitir a operação.
 
 16.1.4 Transição implementada
-- `pending_setup → active` ocorre pela conclusão válida e transacional da conversa vigente E10.9/E10.12 com requisitos E10.11.
-- A mutação usa update condicional por estado e é idempotente.
-- Não existe no Admin atual ação geral de `active → inactive`, `inactive → active`, suspensão ou retirada de suspensão.
-- Billing, trial, plano, pagamento e entitlement não alteram `accounts.status`; sua autoridade reside em E9.
+- Única transição de produto: conclusão válida/transacional E10.9/E10.12, com requisitos E10.11, faz pending_setup → active por update condicional/idempotente.
+- Admin não inativa, reativa, suspende ou retira suspensão. Billing/trial/plano/pagamento/entitlement E9 não mudam accounts.status.
 
 16.1.5 UX dos bloqueios
-- Ao bloquear uma conta, o guard remove a última conta persistida em best effort antes do redirect.
-- A tela de conta inativa oferece contato por e-mail, troca de conta e retorno ao login.
-- A tela de conta suspensa oferece suporte, troca de conta e retorno ao login.
-- O Account Dashboard não escolhe silenciosamente outra conta quando a URL solicitada está bloqueada.
+- Bloqueio remove última conta persistida em best effort antes do redirect, sem escolher outra silenciosamente. Inativa oferece e-mail; suspensa oferece suporte; ambas permitem troca de conta/login.
 
 16.1.6 Limite e drift atual
-- A copy da tela `/auth/confirm/account/inactive` ainda associa a inatividade a pendência de pagamento e usa o CTA “Reativar / pagar”.
-- Essa copy não representa uma integração de billing nem uma transição automática e conflita com a separação canônica definida em E9.
-- Até existir recorte operacional aprovado para mudança de status, `inactive` e `suspended` devem ser tratados apenas como estados consumidos e bloqueados com segurança.
+- /auth/confirm/account/inactive ainda associa inatividade a pagamento e mostra “Reativar / pagar”, em conflito com E9. Não há integração billing ou transição automática. Até recorte aprovado, inactive/suspended são apenas consumidos/bloqueados.
 
 17. E17 — Automações e infraestrutura de validação
-
-- Objetivo: fornecer automações operacionais e facilitadores de teste com execução controlada, permissões mínimas, rastreabilidade e revisão humana, sem transferir a autoridade funcional dos casos de produto.
-- Status: infraestrutura implementada e em evolução; raiz canônica `automations/`, workflows de orquestração e pipelines operacionais estão ativos.
+- Objetivo: automações operacionais e validação controlada, sem assumir autoridade dos casos de produto.
+- Status: fluxos ativos catalogados em docs/automations.md.
 
 17.1 Automações operacionais e validação
 
 17.1.1 Objetivo e status
-- Objetivo: padronizar inspeção, aplicação controlada, validações reais e manutenção documental por GitHub Actions.
-- Status: implementado para os fluxos catalogados em `docs/automations.md`.
+- Objetivo: inspeção, aplicação controlada, validação e manutenção documental por Actions.
+- Status: implementado conforme catálogo operacional 17.1.2.
 
 17.1.2 Registros do recorte
 - Repositório:
@@ -1634,80 +1395,64 @@
   - Validação local: `docs/base-tecnica.md` — seção 3.4.2.
 
 17.1.3 Estrutura canônica
-- `.github/workflows/` é a camada de entrada e orquestração.
-- Novas automações operacionais devem nascer como subprojetos isolados em `automations/<nome>/`.
-- `pipelines/` permanece em revisão e não é a raiz oficial dos fluxos já migrados.
-- Cada automação mantém runtime e README locais; configuração de plataforma e nomes de secrets residem em `docs/platform-config.md`.
+- Workflows orquestram; automações isoladas em automations/<nome>/ com runtime/README próprios. pipelines/ não é raiz oficial dos fluxos migrados. Configuração/secrets por nome em docs/platform-config.md.
 
 17.1.4 Checks e segurança
-- Mudanças de código usam `npm ci` e `npm run check` como rotina local; build, quando aplicável, fica para CI ou Vercel.
-- Mudanças somente em `docs/**` seguem a exceção documental definida em `AGENTS.md`.
-- `security.yml` mantém os checks de segurança do repositório.
-- Inspeção de banco por automação é read-only, salvo mutação expressamente aprovada em contrato próprio.
+- Checks locais e exceção documental em AGENTS.md; security.yml verifica segurança. Inspeção SQL é read-only; mutação só por contrato próprio autorizado.
 
 17.1.5 Facilitadores de teste retirados
-- Status: Validador Final e Niche Runtime Tests retirados pela E22.6, sem substituto neste recorte.
-- A retirada não altera a autoridade funcional de E5 ou E10.5.6 e não apaga contas nem evidências existentes.
+- Status: Validador Final e Niche Runtime Tests retirados pela E22.6, sem substituto.
+- Conteúdo: E5/E10.5.6 preservam autoridade; contas/evidências existentes não são apagadas.
 
 17.1.6 Pipelines operacionais
-- `pipeline-supabase-inspect` executa SQL read-only com saída em logs e Job Summary.
-- `pipeline-docs-apply-report` aplica report JSON em Markdown, cria branch e Pull Request e mantém revisão humana antes do merge.
-- `pipeline-supabase-apply-migrations` mantém o apply automático integral suspenso durante o backlog E10.10. A exceção manual E25.1 aplicou somente as duas migrations autorizadas; o gate `SUPABASE_APPLY_MIGRATIONS_ENABLED` voltou a `false`. Novos applies exigem decisão operacional própria, conforme `docs/platform-config.md`.
-- Migration aplicada não é reescrita; correção ou reversão exige nova migration incremental.
-- SQL Editor não faz parte do fluxo normal de alteração de schema.
+- Inspect executa SQL read-only e gera logs/Summary. Ingestão opcional de custos via HMAC registra eventos E21 pelo Core, conforme docs/automations.md — 3.1.
+- Docs Apply transforma report JSON em Markdown/branch/PR com revisão humana. Apply integral de migrations permanece suspenso; exceções seletivas e gates vigentes em docs/platform-config.md — 2.3. Novo apply exige decisão própria.
+- Migration aplicada só é corrigida/revertida por nova incremental; SQL Editor fora do fluxo normal.
 
 17.1.7 Limites
-- Automações de IA incorporadas ao produto continuam documentadas no caso funcional correspondente e no catálogo operacional, não na infraestrutura genérica da E17.
-- E21 é a autoridade para catálogo, configuração, prova, ativação, rollback e custos dos workloads OpenAI.
-- Não há agente autônomo, Agents SDK ou substituto ativo para o antigo fluxo Agent Builder removido.
+- IA de produto pertence ao caso funcional e catálogo; workloads/prova/ativação/rollback/custos pertencem à E21. Sem agente autônomo, Agents SDK ou substituto do Agent Builder retirado.
 
 17.2 Fundação operacional da OpenAI Platform
 
 17.2.1 Objetivo e status
-- Objetivo: manter ambientes de projeto separados para desenvolvimento e produção sem expor credenciais.
-- Status: configurado na plataforma; não representa implementação de agente.
+- Objetivo: separar projetos de desenvolvimento/produção sem expor credenciais.
+- Status: configurado; não implementa agente.
 
 17.2.2 Registros do recorte
 - Referências:
   - Configuração canônica: `docs/platform-config.md` — seção 6.1.
 
 17.2.3 Estado atual
-- Os projetos `LPF10-DEV` e `LPF10-PROD` existem na OpenAI Platform.
-- O sharing conhecido está restrito aos projetos selecionados, com `LPF10-DEV` compartilhado e `LPF10-PROD` isolado.
-- A Service Account de desenvolvimento pertence a `LPF10-DEV`; chaves são referenciadas somente por localização e finalidade, nunca por valor.
-- Modelos e revisões efetivas dos workloads de produto são governados pela E21, não por este recorte.
+- Projetos, sharing, isolamento e Service Account em docs/platform-config.md — 6.1. Credenciais somente por localização/finalidade, nunca valor. Modelo/revisão de produto em E21.
 
 17.6 Supabase STAGING — descontinuado
 
 17.6.1 Objetivo e status
-- Objetivo: registrar o encerramento do antigo espelho operacional de validação.
-- Status: descontinuado; não existe projeto Supabase STAGING ativo.
+- Objetivo: delimitar encerramento do espelho STAGING.
+- Status: descontinuado; sem projeto STAGING ativo.
 
 17.6.2 Registros do recorte
 - Referências:
   - Estado da plataforma: `docs/platform-config.md` — seção 4.2.
 
 17.6.3 Estado atual
-- O projeto `LP-Factory-10-staging` foi removido.
-- Previews do app continuam usando o projeto principal conforme a configuração vigente.
-- Um novo staging exigiria recorte aprovado e controles mínimos de segurança; nenhum ambiente substituto está implícito.
+- LP-Factory-10-staging removido; Previews usam projeto principal conforme plataforma 4.2. Novo staging exige recorte aprovado/controles, sem substituto implícito.
 
 17.9 Autonomia institucional de QA
 
 17.9.1 Objetivo e status
-- Objetivo: estabelecer uma identidade institucional exclusiva do LP Factory, operada autonomamente por IA, capaz de agir como usuário humano em jornadas variáveis de QA sem depender da presença de Alcino.
-- Status: planejado; objetivo ainda não atingido.
+- Objetivo: identidade institucional exclusiva para IA executar jornadas variáveis de QA sem presença de Alcino.
+- Status: planejado, ainda não atingido.
 
 17.9.3 Consulta autônoma ao catálogo institucional de QA
-- Objetivo: disponibilizar e comprovar a consulta autônoma pelo Executor ao catálogo institucional de contas e usuários QA.
-- Status: concluída pelo piloto do PR #912.
-- O piloto comprovou a localização e a consulta da identidade QA autorizada no catálogo vigente; convite, autenticação e demais fases operacionais posteriores permanecem fora deste recorte.
+- Objetivo: localizar/consultar autonomamente contas e usuários QA autorizados.
+- Status: piloto PR #912 concluído somente para consulta; convite, Auth e fases operacionais posteriores fora deste recorte.
 
 17.11 Uso do Catálogo de QA
 
 17.11.1 Objetivo e status
-- Objetivo: explicitar no contrato do Executor a consulta ao Catálogo de QA durante testes já autorizados e a atualização estritamente correspondente quando o próprio teste alterar valor catalogado.
-- Status: concluído no contrato do Executor, sem QA de produto, ampliação de autoridade ou mutação funcional do catálogo.
+- Objetivo: consulta ao Catálogo de QA em testes autorizados e atualização pontual de valor alterado pelo próprio teste.
+- Status: concluído no contrato do Executor; sem QA de produto ou autoridade ampliada.
 
 17.11.2 Registros do recorte
 - Repositório:
@@ -1715,19 +1460,18 @@
     - `.agents/skills/lp-factory-executar-plano/SKILL.md`
 
 17.11.3 Contrato de consulta e atualização pontual
-- O Executor pode consultar o Catálogo de QA quando um teste já autorizado pelo recorte competente precisar de valor catalogado; a consulta não amplia o escopo nem a autoridade do teste consumidor.
-- Se o próprio teste alterar valor já catalogado, somente o registro correspondente é atualizado; sem alteração de valor catalogado, o catálogo não é mutado.
-- A E17.11 não autoriza jornada de produto, mailbox, browser, Preview, convite, autenticação, recuperação, automação ou infraestrutura.
+- Consulta somente quando teste já autorizado precisar de valor catalogado. Atualiza só registro cujo valor o próprio teste alterou; sem alteração, sem mutação.
+- Não autoriza jornada de produto, mailbox, browser, Preview, convite, Auth, recuperação, automação ou infraestrutura.
 
 18. E18 — Base transversal de templates, composições e artefatos
-- Objetivo: manter os contratos compartilhados de conteúdo versionado usados pela ativação comercial e a parametrização raiz da família `landing_page`, sem absorver geração, publicação ou execução da LP Builder.
-- Status: base `commercial_activation` e parametrização raiz `landing_page` implementadas; consumo comercial ativo na E10.7; catálogo repo-only de módulos `landing_page` retirado pela E22.1.5.
+- Objetivo: conteúdo versionado comercial e parâmetros raiz landing_page, sem geração/publicação de LP.
+- Status: commercial_activation ativo em E10.7; raiz landing_page repo-only; módulos retirados pela E22.1.5.
 
 18.1 Contrato transversal de conteúdo versionado
 
 18.1.1 Objetivo e status
-- Objetivo: separar template, composição, conteúdo validado e artefato publicado, com responsabilidades explícitas entre código e banco.
-- Status: Implementado para `commercial_activation`; a família `landing_page` mantém somente o contrato raiz repo-only descrito em 18.4.
+- Objetivo: separar template, composição, conteúdo validado e artefato publicado.
+- Status: commercial_activation implementado; landing_page restrita à raiz 18.4.
 
 18.1.2 Registros do recorte
 - Referências:
@@ -1735,28 +1479,16 @@
   - Base técnica: `docs/base-tecnica.md` — limites de runtime server-side e acesso ao Supabase.
 
 18.1.3 Separação de responsabilidades
-- Código:
-  - define tipos, schemas, registry, resolução e componentes visuais;
-  - rejeita versões, variantes e payloads fora do contrato;
-  - exige implementação explícita para cada nova estrutura visual.
-- Persistência:
-  - mantém identidade e versão de templates, elegibilidade por taxon, composição ordenada e artefatos;
-  - preserva a proveniência entre artefato, template, composição, taxon e pesquisas utilizadas.
-- Regra: registros no banco não criam componentes ou variantes automaticamente.
+- Código define/valida estruturas e componentes; banco mantém identidade/versão, elegibilidade, composição, artefatos e proveniência. Registro no banco não cria variante ou componente. Contratos técnicos em docs/base-tecnica.md — 3.15.
 
 18.1.4 Modelo materializado
-- `content_templates` representa templates de página e módulos/seções versionados.
-- `content_template_taxons` controla elegibilidade e prioridade por taxon.
-- `content_template_compositions` e `content_template_composition_items` definem composição, ordem, obrigatoriedade e variante.
-- `content_artifacts` separa o conteúdo final do template e da composição.
-- `content_artifact_research_sources` registra as fontes estruturadas compatíveis com o artefato.
-- O contrato reconhece `commercial_activation` e `landing_page`; somente `commercial_activation` possui templates, composição e renderer ativos no banco/runtime, enquanto `landing_page` mantém apenas a raiz repo-only de 18.4.
+- Modelo físico em docs/schema.md — 1.14–1.15 e 1.20–1.23. Só commercial_activation tem templates/composição/renderer ativos; landing_page mantém raiz repo-only, sem runtime de LP.
 
 18.2 Base `commercial_activation`
 
 18.2.1 Objetivo e status
-- Objetivo: fornecer a composição versionada, o contrato de conteúdo v1, a validação server-side e o renderer usados pela ativação comercial.
-- Status: Implementado e consumido pela E10.7.
+- Objetivo: composição v1, validação e renderer de commercial_activation.
+- Status: implementado e consumido pela E10.7.
 
 18.2.2 Registros do recorte
 - Banco:
@@ -1787,36 +1519,19 @@
   - Contrato de banco e RLS: `docs/schema.md`.
 
 18.2.3 Contrato e resolução
-- O contrato v1 aceita uma lista de seções ligada aos itens UUID da composição.
-- O resolver valida o envelope, a correspondência entre item, módulo e variante e a obrigatoriedade de cada seção.
-- Itens obrigatórios ausentes ou inválidos invalidam o modelo; item opcional inválido é omitido com aviso seguro.
-- A saída pronta é ordenada por `sortOrder` e entregue ao `CommercialActivationRenderer`.
-- Hrefs aceitam somente caminho interno iniciado por uma barra ou URL HTTPS válida.
+- Validação/ordenação por composição em docs/base-tecnica.md — 3.15 e schemas/resolver canônicos. Href somente caminho interno com uma barra inicial ou HTTPS válido.
 
 18.2.4 Catálogo ativo
-- O registry fechado contém oito variantes transversais:
-  - `hero.default`
-  - `benefits.cards`
-  - `services.list`
-  - `plans.cards`
-  - `differentials.cards`
-  - `how_it_works.steps`
-  - `faq.accordion`
-  - `final_cta.simple`
-- A base do banco contém um template de página e os oito módulos de seção, todos na versão 1.
-- Variantes representam comportamento estrutural ou visual; especialização de nicho pertence ao conteúdo e à composição, não à chave da variante.
+- Oito seções comerciais fixas E10.7.3, um template e oito módulos v1; variantes registradas no código. Variante determina estrutura/visual; nicho especializa conteúdo/composição, sem nova chave visual automática.
 
 18.2.5 Segurança e limites
-- A leitura e validação do bundle ocorrem no servidor.
-- `service_role` possui a leitura necessária; `anon` e `authenticated` não recebem leitura direta das tabelas de conteúdo.
-- O vínculo com taxon, a geração de draft, a publicação transacional, a resolução hierárquica e o tracking pertencem à E10.7.
-- Não há criação dinâmica de componentes pelo banco, editor visual, teste A/B ou infraestrutura multicanal neste recorte.
+- Bundle lido/validado no servidor; service_role com leitura necessária, sem leitura direta anon/authenticated. Operação/proveniência/tracking em E10.7; sem editor visual, A/B, multicanal ou componentes criados pelo banco.
 
 18.3 Consumo pela E10.7
 
 18.3.1 Objetivo e status
-- Objetivo: delimitar a integração entre a infraestrutura `commercial_activation` e a página comercial personalizada.
-- Status: Integração ativa; a E18 fornece contratos, composição e renderer, enquanto a E10.7 governa conteúdo e operação por taxon.
+- Objetivo: delimitar integração com E10.7.
+- Status: ativa; E18 fornece contratos/composição/renderer, E10.7 conteúdo/operação por taxon.
 
 18.3.2 Registros do recorte
 - Referências:
@@ -1824,18 +1539,13 @@
   - Contrato de banco: `docs/schema.md` — artefatos de conteúdo e fontes de pesquisa.
 
 18.3.3 Limite de responsabilidade
-- A E10.7 seleciona o taxon, resolve a composição e o artefato publicados, aplica a hierarquia de fallback e renderiza o bundle validado.
-- Geração assistida, revisão administrativa, publicação, proveniência e tracking permanecem na E10.7.
-- `research_version = 1` e `audience_scope = business_buyer` compõem o contrato atual do artefato comercial.
-- `content_artifact_research_sources` recebe fontes compatíveis com `business_buyer`; contexto adicional de pesquisa é preservado em `provenance_json`.
-- A E10.6 continua como fallback comercial genérico.
-- A antiga infraestrutura da LP Builder foi retirada; E19 permanece apenas como registro do legado físico inerte.
+- Seleção, publicação, fallback, renderização e tracking em E10.7; genérica E10.6 como fallback. Artefato comercial: research_version=1, audience_scope=business_buyer; fontes relacionais compatíveis, contexto adicional em provenance_json. Produto LP retirado; resíduo E19 inerte.
 
 18.4 Parametrização raiz da família `landing_page`
 
 18.4.1 Objetivo e status
-- Objetivo: manter um contrato raiz versionado para parâmetros editoriais, visuais e responsivos comuns da família `landing_page`.
-- Status: Implementado no repositório como versão 1 com ciclo de vida `hypothesis`; ainda não validado por uma LP real.
+- Objetivo: parâmetros editoriais, visuais e responsivos comuns a landing_page.
+- Status: raiz v1 hypothesis repo-only; sem validação por LP real.
 
 18.4.2 Registros do recorte
 - Repositório:
@@ -1854,30 +1564,20 @@
   - Retirada das entradas factuais: `docs/roadmap.md` — seção 22.7.
 
 18.4.3 Registry, resolução e validação
-- O registry imutável é a fonte canônica da versão 1 e mantém `balanced` como preset padrão, além de `compact`.
-- A resolução exige uma versão registrada, valida o contrato com schema estrito e não aplica fallback implícito.
-- Versão desconhecida, preset desconhecido ou contrato inválido retornam erro fechado.
-- A saída resolvida inclui o preset efetivo e é congelada para impedir mutação acidental.
-- Casos executáveis próprios cobrem o contrato raiz.
+- Registry canônico imutável: balanced padrão ou compact. Resolução/validação estrita, sem fallback, saída congelada e API pública conforme docs/base-tecnica.md — 3.15.2; casos executáveis no código.
 
 18.4.4 Parâmetros mantidos
-- Papéis semânticos possuem faixas recomendadas e limites absolutos de texto.
-- As opções de espaçamento são `compact`, `default` e `spacious`.
-- Papéis visuais são abstratos e não carregam markup, classes ou instruções de renderer.
-- Critérios v1 incluem abordagem mobile-first, viewports de evidência, ausência de truncamento e scroll horizontal por texto, alvos mínimos de interação, hierarquia semântica e foco visível.
-- Alteração incompatível ou ampliação de limite absoluto exige nova versão raiz.
+- Faixas recomendadas/limites absolutos por papel semântico; espaçamento compact/default/spacious; papéis visuais abstratos sem markup/classes/instruções de renderer.
+- Critérios v1: mobile-first, viewports de evidência, sem truncamento/scroll horizontal por texto, alvos mínimos, hierarquia semântica e foco visível. Incompatibilidade ou ampliação de limite absoluto exige nova versão raiz.
 
 18.4.5 Limites do recorte
-- A raiz não define catálogo de módulos, composição, renderização, persistência ou lifecycle da LP.
-- Autoridade factual E20 e produto E19 foram retirados; a raiz não cria consumidor ou persistência substitutos.
-- O Admin expõe somente parâmetros raiz; a consulta não promove o ciclo de vida hypothesis.
-- A implementação anterior de composição/renderização `landing_page` e o catálogo histórico de módulos não fazem parte do boundary atual.
+- Sem catálogo de módulos, composição, renderer, persistência ou lifecycle de LP. E19/E20 retirados; Admin só consulta parâmetros, sem promover hypothesis ou criar substitutos.
 
 18.5 Catálogo de módulos e variantes `landing_page` — retirado
 
 18.5.1 Objetivo e status
-- Objetivo: registrar o destino do antigo catálogo repo-only de módulos e variantes da família `landing_page`.
-- Status: retirado pela E22.1.5; não há substituto nem consumidor no caminho canônico.
+- Objetivo: delimitar retirada dos módulos/variantes landing_page.
+- Status: retirado pela E22.1.5, sem substituto/consumidor.
 
 18.5.2 Registros do recorte
 - Repositório:
@@ -1890,33 +1590,25 @@
   - Retirada controlada e consumidores podados: `docs/roadmap.md` — seção 22.1.5.
 
 18.5.3 Estado vigente
-- O boundary, seus exports e seu validator foram removidos.
-- Parametrização raiz E18.4 preservada; autoridade factual E20 encerrada pela E22.7.
-- O antigo caminho E19.3 → E19.4 foi retirado e não dependia deste catálogo.
+- Boundary/exports/validator removidos; raiz 18.4 preservada, factual E20 encerrado E22.7. Antigo fluxo E19.3 → E19.4 retirado, sem dependência deste catálogo.
 
 19. E19 — legado operacional de Landing Pages retirado
-- Objetivo vigente: registrar o estado físico residual do antigo produto de Landing Pages sem reintroduzir consumidor ou compatibilidade de runtime.
-- Status: produto, geração, `lib/lp-builder/`, apresentação, compatibilidade com E20.2 e escrita prospectiva de custos foram retirados. Nenhuma nova arquitetura greenfield é antecipada.
+- Objetivo vigente: delimitar resíduos físicos inertes do produto LP retirado.
+- Status: produto/geração/apresentação, compatibilidade E20.2 e escrita prospectiva de custos retirados; sem arquitetura substituta antecipada.
 
 19.1 Fronteiras retiradas
-- `lib/lp-builder/` e `lib/conversion-content/landing-page/presentation/` não existem mais no boundary vigente.
-- Os workloads `landing_page_draft_generation` e `landing_page_draft_image_generation`, suas provas administrativas e branches exclusivas de image workload foram removidos.
-- O catálogo independente de modelos de imagem permanece disponível para governança de modelos, sem implicar workload de imagem ativo.
-- A autoridade factual E20.8, a pesquisa E20.5 e a liberação humana preservada permanecem independentes da E19; E20.7 foi retirada terminalmente depois deste fechamento histórico.
+- Boundaries lib/lp-builder/ e landing-page/presentation/, workloads de draft/imagem e provas exclusivas removidos. Catálogo independente de modelos de imagem preservado, sem workload ativo. Retiradas E20 encerradas em E22.7.
 
 19.2 Account Dashboard
-- Contas ativas seguem a experiência comercial preservada, sem desvio por estado de configuração, LP ou revisão.
-- Owner sem entitlement mantém as ações financeiras aplicáveis; demais papéis sem entitlement mantêm o estado de espera.
-- Não existem rotas substitutas para detail, configuração, histórico, Preview ou aprovação do produto retirado.
+- Conta active segue E10.11/E11.2, sem desvios por configuração/LP/revisão. Sem rotas de detalhe, configuração, histórico, Preview ou aprovação do produto retirado.
 
 19.3 Estado físico residual
-- Tabelas, RPCs, migrations, ponteiro de aprovação, dados históricos e o bucket `landing-page-revision-assets` permanecem no estado físico descrito em `docs/schema.md`, sem limpeza destrutiva.
-- As residências antigas de conta, configuração, revisão e materialização não participam da autoridade factual E20.8 nem do runtime do produto.
-- Os objetos físicos e registros históricos não possuem consumidor no runtime do produto e são resíduos inertes; sua eventual remoção exige recorte próprio.
-- `E19_5_WORKSPACE_ENABLED` não possui consumidor no código e permanece apenas como variável hospedada inativa, sem alteração de plataforma neste recorte.
+- Tabelas/RPCs, migrations, ponteiro de aprovação, histórico e bucket landing-page-revision-assets permanecem inertes, sem consumidor runtime; estado físico em docs/schema.md. Remoção destrutiva exige recorte próprio.
+- E19_5_WORKSPACE_ENABLED só permanece como variável hospedada inativa, sem consumidor ou alteração de plataforma neste recorte.
 
 19.4 Histórico
-- O detalhe da arquitetura abandonada permanece recuperável pelos PRs e pelo histórico Git; a documentação canônica não a mantém como obrigação vigente.
+- Arquitetura e evidências recuperáveis no Git/PRs, sem obrigação vigente.
+
 20. E20 — Catálogo factual, pesquisa opcional e revisão de taxons
 - Objetivo: registrar o encerramento da autoridade factual, seleção e revisão E20.
 - Status: domínio retirado pela E22.7, sem consumidor, gate ou pendência vigente. Capacidades independentes E10, E21 e E25 preservadas.
@@ -1976,7 +1668,7 @@
 
 20.6.3 Contrato vigente
 - Status: retirado.
-- Conteúdo: cobertura, liberação factual, avaliação assistida e workload exclusivos foram encerrados. O CRUD de taxonomia exige guard de plataforma, pai ativo e concorrência otimista; novos taxons nascem inativos, conforme E22.7.
+- Conteúdo: cobertura/liberação/avaliação assistida e workload encerrados. CRUD de taxonomia independente em E12.5.3.
 
 20.7 Resolução de conhecimento para geração
 
@@ -1997,7 +1689,7 @@
 
 20.8.3 Demolição controlada da E20 vigente
 - Status: concluída.
-- Conteúdo: boundaries e consumidores exclusivos foram retirados; bibliotecas e dados compartilhados só permanecem quando houver consumidor independente.
+- Conteúdo: boundaries/consumidores exclusivos removidos; compartilhados preservados só com consumidor independente.
 
 20.8.4 Autoridade factual única
 - Status: encerrada.
@@ -2017,17 +1709,17 @@
 
 20.8.8 Cutover e limpeza terminal
 - Status: encerrado pela E22.7.
-- Conteúdo: apply seletivo, retirada dos gates e validação hospedada concluídos. Não reativar a sequência histórica de cutover; migrations históricas permanecem imutáveis e dados preservados.
+- Conteúdo: apply seletivo, retirada dos gates e validação hospedada concluídos; sem retomada do cutover. Migrations imutáveis/dados preservados.
 
 21. E21 — Gestão e governança dos workloads OpenAI
-- Objetivo: manter autoridade única de identidade, configuração, observabilidade e custo dos workloads OpenAI, com operação administrativa segura.
-- Status: configuração operacional e controle ativo de custos vigentes; E21.5.6 concluída em Production. Avaliação comparativa E21.3 pausada; E21.4 somente leitura histórica.
+- Objetivo: governar identidade, configuração, observabilidade e custos dos workloads OpenAI.
+- Status: configuração/custos ativos; E21.5.6 em Production. Comparação E21.3 pausada; E21.4 histórica/read-only.
 
 21.1 Fundação, normalização e leitura dos workloads OpenAI
 
 21.1.1 Objetivo e status
-- Objetivo: centralizar identidades, modalidades, baselines locais, resolução e telemetria segura dos workloads OpenAI, mantendo prompts, schemas e regras funcionais nos domínios consumidores.
-- Status: implementada e vigente. O catálogo estrutural contém cinco workloads textuais de produto mais a referência operacional read-only do Supabase Inspect; não há workload de imagem ativo.
+- Objetivo: catálogo, resolução e telemetria comuns; prompts/schemas/regras permanecem no consumidor.
+- Status: implementado; cinco workloads textuais e referência externa Supabase Inspect, sem workload de imagem.
 
 21.1.2 Registros do recorte
 - Repositório:
@@ -2050,24 +1742,21 @@
 
 21.1.3 Catálogo estrutural e resolução explícita
 - Status: vigente.
-- Conteúdo:
-  - Registry repo-only imutável define identidades, modalidades, consumidores e baseline local; inventário exato em lib/openai-workloads/registry.ts. Produto aceita somente responses_text e rejeita identidade, modalidade ou ambiente desconhecidos; supabase_inspect é referência operacional externa.
-  - Development usa baseline versionado. Preview e Production resolvem a revisão ativa pelo gate E21.2, sem fallback silencioso quando ligado.
-  - Configuração governa modelo, effort e política permitida; prompts, schemas, limites, persistência e fallbacks pertencem ao domínio consumidor.
+- Conteúdo: registry code-owned define identidade/modalidade/consumidor/baseline, rejeitando desconhecidos. Development usa repo_catalog; Preview/Production ativos usam supabase_operational sem fallback silencioso. Configuração governa unidade permitida, não prompts/regras do consumidor; contrato em docs/base-tecnica.md — 3.16.
 
 21.1.4 Integração e observabilidade comum
 - Status: vigente.
-- Conteúdo: consumidores resolvem pela API pública antes do transporte e preservam origem/revisão. Telemetria somente de metadados técnicos seguros, resultado, falha, latência e usage disponível; ausentes ficam null. Sem prompt, resposta integral, negócio, PII, secrets ou estimativa monetária comum. Workloads retirados só permanecem no histórico financeiro; variáveis legadas de modelo não governam execução.
+- Conteúdo: consumidores usam API pública antes do transporte e preservam origem/revisão. Telemetria técnica segura/nullable em docs/base-tecnica.md — 3.16; sem conteúdo protegido ou dinheiro no evento comum. Variáveis legadas não governam execução; workloads retirados só no histórico financeiro.
 
 21.1.5 Inventário administrativo
 - Status: implementado.
-- Conteúdo: /admin/workloads-openai projeta o registry para platform_admin com modalidade, configuração, origem, revisão, consumidor e fallback. Supabase Inspect é referência não verificada pelo Core; não há consulta OpenAI/GitHub/Vercel para montar inventário nem exposição de conteúdo protegido.
+- Conteúdo: /admin/workloads-openai mostra configuração/origem/revisão, modalidade, consumidor e fallback a platform_admin. Inspect é referência externa não verificada pelo Core; inventário sem consultas OpenAI/GitHub/Vercel ou conteúdo protegido.
 
 21.2 Configuração operacional dinâmica dos workloads OpenAI
 
 21.2.1 Objetivo e status
-- Objetivo: administrar configuração por ambiente/workload com candidata, prova, promoção, ativação e rollback humano sem novo deploy ordinário.
-- Status: ativo em Preview e Production via supabase_operational; Development usa repo_catalog. Allowlist limita unidades correntes; configurações de workloads retirados permanecem inertes.
+- Objetivo: candidata → prova → promoção → ativação/rollback humano por ambiente/workload, sem deploy ordinário.
+- Status: Preview/Production supabase_operational; Development repo_catalog. Allowlist corrente exclui workloads retirados.
 
 21.2.2 Registros do recorte
 - Banco:
@@ -2138,38 +1827,25 @@
 
 21.2.3 Fonte operacional e resolução por ambiente
 - Status: vigente.
-- Conteúdo:
-  - Configuração ativa, candidata, revisões validadas e ativações append-only separadas por ambiente/workload.
-  - Gate ligado em Preview/Production exige Supabase íntegro, sem fallback local; Development usa registry. Sem cache, Realtime ou segunda residência.
-  - Unidade administrável: modelo/effort textual e modelo/quality de imagem quando houver consumidor. Demais parâmetros, prompts, schemas e timeouts permanecem code-owned quando fora dessa unidade.
+- Conteúdo: candidata/revisões/ativações separadas por ambiente/workload; resolução e gates em docs/base-tecnica.md — 3.16. Unidade administrável: modelo/effort textual ou modelo/quality de imagem com consumidor; restante permanece code-owned. Sem cache, Realtime ou segunda residência.
 
 21.2.4 Lifecycle administrativo e estado operacional
 - Status: implementado.
-- Conteúdo:
-  - Cada action reautoriza platform_admin, deriva ator server-side e valida ambiente, workload, versão, revisão e shape antes de mutar.
-  - Salvar/descartar candidata, provar e promover são explícitos; falha conserva candidata e revisão ativa. Ativação e rollback exigem ação humana e preservam histórico; conflito não dispara retry autônomo.
-  - Workload retirado não origina nova candidata, prova, promoção, ativação ou tracking. Configuração física antiga não comprova consumidor vigente.
+- Conteúdo: actions reautorizam platform_admin, derivam ator server-side e validam contexto/versões. Salvar/descartar/provar/promover são explícitos; falha conserva candidata/ativa. Ativação/rollback humanos preservam histórico; conflito sem retry autônomo. Workload retirado não gera nova operação/tracking.
 
 21.2.5 Catálogo administrável e UX
 - Status: implementado.
-- Conteúdo:
-  - Catálogo global controla novas candidatas; save, prova e promoção revalidam elegibilidade. Indisponibilidade bloqueia novas escolhas, preservando ativas e rollback histórico válido.
-  - Abas Modelos/Workloads mostram somente o assunto selecionado. Modelos em linhas compactas com parâmetros e Configurar; identidades históricas e indisponíveis em segundo nível.
-  - Workloads expõe função, configuração e Abrir, seletor Preview/Production e lifecycle expansível. Catálogo de imagem é independente de workload ativo.
-  - Leituras completas, ordenadas e fail-closed; papel sem platform_admin não recebe catálogo, configuração, provas ou mutações.
+- Conteúdo: catálogo global rege novas candidatas/prova/promoção, preservando ativas e rollback válido. Modelos/Workloads exibem só aba selecionada, linhas compactas e detalhes progressivos; imagem independe de workload ativo. Workloads tem função/configuração/Abrir, ambiente e lifecycle expansível. Leituras completas/fail-closed e acesso exclusivo de platform_admin.
 
 21.2.6 Correção e proteção do catálogo de modelos OpenAI
 - Status: concluído e operacional.
-- Conteúdo:
-  - Novo modelo exige confirmação ao vivo do ID técnico exato pela OpenAI; erro ou divergência bloqueia persistência. Nasce indisponível; efforts são informados pelo administrador, sem inferência externa.
-  - Lock por identidade/modalidade impede variantes de caixa. Effort textual novo nasce indisponível e usa versão otimista; variantes históricas retiradas não são redisponibilizadas e preservam histórico/rollback.
-  - Nenhuma revisão, ativação, configuração ou prova muda automaticamente; sem descoberta de efforts, sincronização periódica ou infraestrutura adicional.
+- Conteúdo: novo ID confirmado ao vivo na OpenAI, sem inferir efforts; modelo/effort novos nascem indisponíveis. Identidade/modalidade sem duplicação por caixa, concorrência otimista e histórico preservados conforme docs/base-tecnica.md — 3.16. Variantes históricas retiradas não são redisponibilizadas; sem alteração automática de revisão/prova/ativação, descoberta de efforts ou sincronização periódica.
 
 21.3 Evidências e avaliação de custo-benefício
 
 21.3.1 Objetivo e status
-- Objetivo: comparar configurações por workload com evidência reproduzível de qualidade, validade, correção humana, usage, latência, custo e estabilidade.
-- Status: pausada e sem implementação incorporada ao produto. Não existe laboratório, banco, rota ou decisão automática de baseline em operação; qualquer retomada depende de nova decisão humana e de revalidação contra o estado vigente.
+- Objetivo: comparar configurações com evidência de qualidade, validade, correção humana, usage, latência, custo e estabilidade.
+- Status: pausada, sem laboratório/banco/rota ou baseline automático. Retomada exige decisão humana/revalidação vigente.
 
 21.3.2 Registros do recorte
 - Referências:
@@ -2178,16 +1854,13 @@
   - Contratos de telemetria e configuração: `docs/base-tecnica.md` — seção 3.16.
 
 21.3.3 Condições de retomada
-- A unidade textual de comparação deve ser `workload + modelo + reasoning effort`; imagem mantém configuração e métricas próprias.
-- A avaliação deve reutilizar a observabilidade segura da E21.1 e considerar, quando disponíveis, resultado válido, qualidade, correção humana, tokens, latência, custo e estabilidade.
-- Não definir vencedor ou baseline universal sem amostra representativa e aceite humano.
-- Não criar banco, dashboard, job, agente, engine de otimização ou troca automática enquanto o recorte permanecer pausado.
+- Comparar workload + modelo + reasoning effort; imagem tem configuração/métricas próprias. Reutilizar telemetria segura e critérios 21.3.1 disponíveis. Sem vencedor universal antes de amostra representativa/aceite humano; sem banco, dashboard, job, agente ou troca automática enquanto pausada.
 
 21.4 Visibilidade financeira e histórico de custos OpenAI
 
 21.4.1 Objetivo e status
-- Objetivo: apresentar ao platform_admin o total oficial OpenAI e a série LP congelada, com diferença explícita em Outros gastos / reconciliação.
-- Status: operacional em Production; Costs API governa o total, E21.5 governa o controle ativo e E21.4 permanece somente leitura.
+- Objetivo: total oficial e série LP congelada, com diferença em Outros gastos / reconciliação.
+- Status: operacional em Production, somente leitura; controle ativo em E21.5.
 
 21.4.2 Registros do recorte
 - Banco:
@@ -2232,25 +1905,15 @@
   - Contrato de banco: `docs/schema.md` — eventos e cobertura de custos OpenAI.
 
 21.4.3 Autoridade oficial de custos
-- A consulta sob demanda usa somente a Costs API da organização com `OPENAI_ADMIN_KEY` read-only e server-side.
-- O total oficial do período UTC é a autoridade organizacional e não é reconstruído por usage, tabela interna ou preço local.
-- A chave administrativa permanece separada de `OPENAI_API_KEY` e não atravessa client, banco, log ou resposta sanitizada.
-- Não há cache, polling, cron, leitura de saldo/créditos ou atribuição heurística do total oficial.
+- Costs API organizacional governa total do período UTC, sem reconstrução por usage/preço local. Consulta sob demanda; OPENAI_ADMIN_KEY read-only/server-only, separada da chave de execução conforme docs/platform-config.md — 6.3.1. Sem cache, polling, cron, saldo/créditos ou atribuição heurística.
 
 21.4.4 Série histórica congelada de Landing Pages
-- O write-side, gate, budget, pricing e adapter prospectivos foram removidos junto dos únicos produtores elegíveis.
-- Eventos e cobertura já persistidos permanecem append-only e somente leitura; não há backfill, reconstrução ou novo produtor.
-- Custos oficiais posteriores continuam no total da Costs API e aparecem na reconciliação quando não pertencem à série interna histórica.
-- `OPENAI_LP_COST_TRACKING_ENABLED` não possui consumidor vigente e não foi alterada na plataforma por este recorte.
+- Escrita/gate/budget/pricing prospectivos retirados; eventos/cobertura append-only congelados, sem novo produtor/backfill/reconstrução. Gasto oficial não atribuível permanece na reconciliação. OPENAI_LP_COST_TRACKING_ENABLED sem consumidor, sem alteração hospedada neste recorte.
 
 21.4.5 Read model e reconciliação administrativa
 - Status: implementado.
-- Conteúdo:
-  - /admin/custos-openai consulta sob demanda total oficial e histórico do mesmo período UTC; apenas platform_admin.
-  - Paginação ordenada e agregação incremental decimal exata, sem reter todas as linhas. Resposta inválida, repetida, regressiva ou interrompida falha fechado; término PostgREST é explícito.
-  - Detalhe conta → LP → workload com tentativas, pendências, sem preço e cobertura completa/parcial/degradada/indisponível. Falhas anteriores ao início persistido não são individualizadas. Diferença oficial menos atribuível sem clamp.
-  - RPC ainda materializa, ordena e usa offset; sem snapshot transacional entre páginas ou prova de volume arbitrário/ganho SQL.
-  - Fora: classificação financeira ampla, câmbio, cobrança, créditos, outros workloads nesse histórico e reconstrução retroativa.
+- Conteúdo: consulta sob demanda por platform_admin, mesmo período UTC; agregação decimal/paginação integral/fail-closed em docs/base-tecnica.md — 3.16. Detalhe conta → LP → workload, tentativas/pendências/sem preço/cobertura; falha anterior ao início persistido não é individualizada. Diferença sem clamp.
+- Limite: RPC materializa/ordena/usa offset, sem snapshot entre páginas ou prova de volume arbitrário/ganho SQL. Sem classificação ampla, câmbio, cobrança, créditos, novos workloads ou reconstrução histórica.
 
 21.4.6 Transição para histórico legado
 
@@ -2286,20 +1949,17 @@
 
 21.4.6.3 Implementação e limites
 - Status: vigente.
-- Conteúdo:
-  - service_role mantém SELECT e RPC de leitura; INSERT/UPDATE/DELETE/TRUNCATE das tabelas e EXECUTE das RPCs de escrita/corte revogados. Sem acesso público/client.
-  - Validators impedem reintroduzir gate, produtor ou escrita E21.4. Testes e snippet vigentes substituem provas antigas.
-  - Sem backfill, reprecificação, reclassificação, exclusão de linha, alteração do corte, novo produtor/UI ou edição de migration aplicada.
+- Conteúdo: ACLs somente leitura em docs/schema.md — 1.36/3.10; validators impedem reintrodução de escrita/gate/produtor. Sem backfill, reprecificação/reclassificação, exclusão, alteração do corte, novo produtor/UI ou reescrita de migration aplicada.
 
 21.4.6.4 Gates externos
 - Status: concluídos.
-- Conteúdo: baseline e corte preservados; RLS sem policies e ACLs de leitura mantidos. Admin financeiro único combina total oficial, controle ativo, histórico e reconciliação; acesso comum permanece bloqueado.
+- Conteúdo: baseline/corte e ACLs de leitura preservados, RLS sem policies. Admin financeiro único reúne oficial/ativo/histórico/reconciliação; acesso comum bloqueado.
 
 21.5 Controle ativo de custos OpenAI por workload e conta
 
 21.5.1 Objetivo e status
-- Objetivo: atribuir e reconciliar custo programático por universo, conta comprovável, workload, evento, execução, operação, modelo e effort, preservando total oficial e histórico congelado.
-- Status: controle ativo e dimensão econômica E21.5.6 concluídos e operacionais em Production. Correlação factual E21.5.7 foi concluída e posteriormente retirada com seu consumidor E20.
+- Objetivo: custo por universo, conta comprovável, workload, evento, execução/operação, modelo/effort, sem alterar oficial/histórico.
+- Status: controle ativo e E21.5.6 operacionais em Production; E21.5.7 retirada com E20.
 
 21.5.2 Registros do recorte
 - Banco:
@@ -2357,53 +2017,38 @@
     - `vercel#32`
 - Referências:
   - Contrato financeiro durável: `docs/base-tecnica.md` — seção 3.16.
-  - Ledger e RPCs: `docs/schema.md` — seção 1.37.
+  - Ledger e RPCs: `docs/schema.md` — seção 3.11.
 
 21.5.3 Atribuição e evidência por execução
-- Status: concluída e ativa nos ambientes comprovados pelo fluxo pós-merge.
-- Conteúdo:
-  - criar ledger ativo separado de `openai_lp_*`, com execução funcional, operação cobrável, retry e replay idempotente;
-  - exigir universo e contexto econômico explícitos, mantendo Cliente sem conta comprovável como não atribuído e sem heurística;
-  - instrumentar os cinco workloads atuais por contrato financeiro comum, com recorder fail-open e ingresso assinado para `supabase_inspect` sem credencial mutável de banco;
-  - preservar RLS, grants mínimos, RPCs versionadas e transições terminais, com gates ativos somente nos ambientes comprovados pelo fluxo pós-merge.
+- Status: concluída e ativa nos ambientes comprovados.
+- Conteúdo: ledger separado do histórico, execução/operação/retry/replay idempotentes, atribuição explícita e Cliente sem conta comprovada não atribuído. Cinco workloads pelo recorder fail-open; Inspect por ingresso assinado sem credencial mutável de banco. RLS, grants/RPCs/transições e gates em docs/schema.md — 3.11 e docs/platform-config.md — 3.5.
 
 21.5.4 Cálculo e reconciliação de custos
-- Status: concluída e vigente, com leitura ativa final válida.
-- Conteúdo:
-  - calcula cada operação somente com usage e unidades cobradas confirmadas, inclusive faixas curta/longa e Web Search, usando pricing temporal versionado e snapshot imutável;
-  - mantém custo indisponível distinto de zero e impede subtotal parcial enganoso;
-  - agrega por universo, conta, workload, execução e operação e compõe `total oficial - subtotal ativo calculável - histórico legado`, sem clamp;
-  - pagina por keyset e mantém filtros internos sem alterar semanticamente o total oficial ou a reconciliação global.
+- Status: concluída e vigente.
+- Conteúdo: usage/unidades confirmadas, pricing temporal/snapshot, faixas curta/longa e Web Search conforme docs/base-tecnica.md — 3.16. Custo indisponível distinto de zero, sem subtotal parcial enganoso. Keyset e agregação por universo/conta/workload/execução/operação; reconciliação global = oficial − ativo calculável − histórico, sem clamp. Filtro interno não altera oficial/reconciliação.
 
 21.5.5 Visão administrativa de custos
-- Status: concluída e vigente; QA autenticado positivo e negativo aprovado no fluxo pós-merge.
-- Conteúdo:
-  - evolui somente `/admin/custos-openai` para exibir total oficial, subtotal ativo calculável, histórico congelado, reconciliação, cobertura, não atribuídos, indisponibilidade, retries, modelo, effort e baseline opcional;
-  - preserva consulta sob demanda e acesso exclusivo de `platform_admin`, com as três fontes lidas em paralelo e sem payload de negócio, prompt, resposta integral, PII ou secrets;
-  - filtros de universo, conta e workload alteram somente o subtotal e os detalhes ativos, enquanto o total oficial e a reconciliação permanecem globais;
-  - componentes e validações focais cobrem teclado nativo, foco gerenciado e visível, nomes acessíveis, estados textuais e leiaute responsivo, sem alegar conformidade WCAG integral; a inspeção visual hospedada integra o aceite concluído.
+- Status: concluída; QA autenticado positivo/negativo aprovado.
+- Conteúdo: superfície única /admin/custos-openai, sob demanda e exclusiva de platform_admin, apresenta fontes/reconciliação E21.5.4, cobertura, não atribuídos, indisponibilidade, retries, modelo/effort e baseline opcional. Leituras paralelas/DTO seguro em docs/base-tecnica.md — 3.16; filtros só alteram projeção ativa. Teclado/foco, nomes acessíveis, estados textuais e responsividade validados, sem alegar WCAG integral.
 
 21.5.6 Visão econômica hierárquica de custos por evento
 - Status: concluída e aplicada em Production.
-- Conteúdo:
-  - Hierarquia universo → responsável econômico → evento → workload → execução/operação na superfície financeira única; gasto oficial, reconciliação, cobertura, pricing, filtros e histórico preservados.
-  - Identidade econômica explícita nasce no produtor autorizado; execução sem vínculo comprovado permanece sem correlação. LP histórica vem da E21.4, sem inferência por ID técnico ou heurística.
-  - Composição decimal lossless agrega ativo e legado, preserva indisponibilidade e prioriza nomes humanos.
-  - RPCs v2 são canônicas; v1 é ponte estrita somente por ausência exata das RPCs novas, com estado v2_active ou v1_fallback explícito. Sem backfill.
+- Conteúdo: universo → responsável econômico → evento → workload → execução/operação; nomes humanos e agregação decimal lossless ativo/legado com indisponibilidade preservada. Identidade só nasce no produtor autorizado; sem vínculo comprovado fica sem correlação, sem inferência por ID técnico/heurística. LP histórica vem da E21.4.
+- RPCs v2 canônicas; v1 só por ausência exata das novas, com v2_active/v1_fallback explícito. Sem backfill ou alteração de oficial, reconciliação, cobertura, pricing, filtros e histórico.
 
 21.5.7 Correlação econômica da avaliação de suficiência do catálogo
-- Status: retirado com a avaliação factual E20 pela E22.7; PR #950 mergeado, sem consumidor vigente.
-- Conteúdo: correlação e custos anteriores permanecem históricos; identidade econômica explícita continua no contrato E21.5.6 para produtores autorizados, sem reativar avaliação de suficiência.
+- Status: retirado com E20 pela E22.7; PR #950 mergeado, sem consumidor.
+- Conteúdo: correlação/custos históricos preservados; E21.5.6 governa produtores autorizados, sem reativar avaliação factual.
 
 22. E22 — Retirada controlada de ativos históricos
-- Objetivo: retirar ativos sem consumidor após auditoria de dependências, preservando capacidades independentes e sem substituto antecipado.
-- Status: E22.1–E22.7 concluídas. Core, taxonomia, pesquisas compartilhadas, capacidades independentes, automações vigentes, mailbox e resíduos físicos inertes preservados. Política de Previews de branches não documentais aguarda decisão na E22.3.6.
+- Objetivo: retirar ativos sem consumidor, preservando capacidades independentes e sem substituto antecipado.
+- Status: E22.1–E22.7 concluídas; política de Previews ainda depende da decisão 22.3.6.
 
 22.1 Retirada de ativos históricos do domínio de Landing Page
 
 22.1.1 Objetivo e status
-- Objetivo: retirar ativos de Landing Page sem consumidor, preservando capacidades independentes.
-- Status: concluído; perfil de geração, módulos e resolução histórica retirados. A retirada posterior de E19 e E20 está nas E22.4–E22.7.
+- Objetivo: retirar perfil, módulos e resolução histórica de LP sem consumidor.
+- Status: concluído; retirada de E19/E20 em 22.4–22.7.
 
 22.1.2 Registros do recorte
 - Banco:
@@ -2449,29 +2094,29 @@
 
 22.1.3 Classificação de consumidores
 - Status: vigente.
-- Conteúdo: retirada por consumo real, classificando preservado, desacoplado ou removível. Migrations históricas imutáveis; remoções de schema forward-only e sem CASCADE. Pesquisas compartilhadas e parametrização raiz permanecem independentes.
+- Conteúdo: consumo real determina preservação/desacoplamento/remoção; migrations imutáveis, remoções forward-only sem CASCADE. Pesquisas compartilhadas/raiz independentes preservadas.
 
 22.1.4 Perfil de geração retirado
 - Status: retirado.
-- Conteúdo: perfil, adapters, UI, actions, exports, workload e validators removidos; duas tabelas e quatro RPCs próprias excluídas sem persistência substituta. Pesquisas taxonômicas e audit_logs preservados.
+- Conteúdo: perfil e consumidores removidos; duas tabelas/quatro RPCs excluídas, sem substituto. Pesquisas/audit_logs preservados; objetos em 22.1.2.
 
 22.1.5 Catálogo de módulos retirado
 - Status: retirado.
-- Conteúdo: module-catalog, API, exports, validator e UI removidos, sem DDL ou catálogo substituto. Parametrização raiz preservada; superfície atual na E12.6.
+- Conteúdo: catálogo/API/validator/UI removidos, sem DDL/substituto; raiz preservada em E18.4/E12.6.
 
 22.1.6 Resolução histórica de pesquisas retirada
 - Status: retirado.
-- Conteúdo: research-resolution, adapter, exports, validators e diagnósticos exclusivos removidos. Queries antigas retornam a visão válida; pesquisas estruturadas compartilhadas preservadas.
+- Conteúdo: resolução/adapters/exports/validators/diagnósticos exclusivos removidos; queries antigas retornam à visão válida. Pesquisas compartilhadas preservadas.
 
 22.1.7 Estado consolidado
 - Status: concluído.
-- Conteúdo: sem imports, rotas ou scripts ativos dos boundaries retirados. Admin e inventário OpenAI seguem somente consumidores vigentes; evidências antigas não autorizam reativação.
+- Conteúdo: sem imports/rotas/scripts dos boundaries retirados; Admin/OpenAI só consumidores vigentes. Evidência antiga não autoriza reativação.
 
 22.2 Retirada de documentação histórica redundante
 
 22.2.1 Objetivo e status
-- Objetivo: remover fontes documentais que duplicavam autoridades vigentes, sem reescrever referências históricas preservadas como proveniência.
-- Status: concluída. Os dois documentos redundantes foram excluídos e o catálogo administrativo foi reconciliado.
+- Objetivo: remover fontes redundantes, mantendo proveniência recuperável.
+- Status: dois documentos excluídos; catálogo Admin reconciliado.
 
 22.2.2 Registros do recorte
 - Repositório:
@@ -2483,16 +2128,13 @@
   - `docs/roadmap.md` — autoridade para estado, dependências e evolução dos casos E*.
 
 22.2.3 Resultado e limites
-- `/admin/documentacao` não lista nem tenta ler os documentos removidos.
-- O roadmap mantém estado e direção; contratos de execução seguem o fluxo vigente, com legados recuperáveis no Git.
-- Referências históricas aos paths removidos podem permanecer em documentos de proveniência e não constituem fonte operacional.
-- A retirada não alterou banco, runtime de produto, rota, infraestrutura ou arquitetura.
+- Documentos removidos fora do leitor Admin; referências históricas só como proveniência. Roadmap mantém estado/direção, execução segue fluxo vigente; legado no Git. Sem alteração funcional, banco ou infraestrutura.
 
 22.3 Retirada do Supabase Inspect MCP e infraestrutura associada
 
 22.3.1 Objetivo e status
-- Objetivo: remover o service/MCP Supabase Inspect e sua infraestrutura exclusiva depois de confirmar ausência de consumidor necessário, preservando a automação GitHub read-only e recursos compartilhados.
-- Status: concluída. O service, o workflow histórico do Agent Builder e o projeto Vercel exclusivo foram removidos; nenhum service/MCP implantável permanece catalogado.
+- Objetivo: retirar service/MCP Inspect e infraestrutura exclusiva, preservando Actions e compartilhados.
+- Status: concluído; sem service/MCP implantável.
 
 22.3.2 Registros do recorte
 - Repositório:
@@ -2510,25 +2152,25 @@
 
 22.3.3 Auditoria de consumidores
 - Status: concluída.
-- Conteúdo: sem dependência ativa do MCP no Core; automations/supabase-inspect e seu workflow GitHub read-only preservados, assim como SUPABASE_DB_URL_READONLY no GitHub. Sem service, SDK, job ou integração substituta.
+- Conteúdo: Core sem dependência MCP; automação Inspect/SQL read-only e SUPABASE_DB_URL_READONLY GitHub preservados. Ingestão financeira independente em E17.1.6; sem substituto MCP/SDK/job.
 
 22.3.4 Retirada do MCP
 - Status: retirado.
-- Conteúdo: service e workflow histórico do Agent Builder removidos. supabase_inspect na E21 é referência da automação GitHub, sem MCP ou configuração verificada pelo Core.
+- Conteúdo: service/workflow Agent Builder removidos. supabase_inspect E21 refere-se à automação GitHub, sem MCP ou verificação de configuração pelo Core.
 
 22.3.5 Retirada da infraestrutura Vercel
 - Status: concluída.
-- Conteúdo: projeto exclusivo lpf-10-services removido; Core lp-factory-10 e domínio preservados. Não resta configuração externa do service.
+- Conteúdo: lpf-10-services e configuração exclusiva removidos; Core lp-factory-10/domínio preservados.
 
 22.3.6 Limite operacional remanescente
 - Status: pendente de decisão.
-- Conteúdo: vercel.json desabilita deploy automático somente para docs/**. Branches de implementação ainda geram Preview a cada push; retirada do service não reduz Previews do Core. Mudança de política exige recorte próprio que preserve Production automática da main e Previews necessários.
+- Conteúdo: vercel.json só desliga deploy automático de docs/**; implementação ainda gera Preview por push. Nova política exige recorte próprio, preservando Production automática da main e Previews necessários.
 
 22.4 Retirada da geração e do produto operacional legado de Landing Page
 
 22.4.1 Objetivo e status
-- Objetivo: retirar geração e produto operacional legado de Landing Page, preservando consumidores independentes.
-- Status: concluído, sem alteração de banco, migrations, dados ou Storage.
+- Objetivo: retirar geração/produto LP legado, preservando independentes.
+- Status: concluído; banco, migrations, dados e Storage preservados.
 
 22.4.2 Registros do recorte
 - Repositório:
@@ -2557,35 +2199,35 @@
 
 22.4.3 Cadeia removida
 - Status: retirado.
-- Conteúdo: sem entrada de geração, compilação de contexto, E20.7 integrada, candidata textual/imagem, binding, revisão, upload ou append do antigo produto. Exports, validators, adapters e wrappers exclusivos removidos.
+- Conteúdo: geração/contexto/conhecimento, candidata textual/imagem, binding, revisão, upload/append e consumidores exclusivos removidos.
 
 22.4.4 Capacidades preservadas
 - Status: vigente.
-- Conteúdo: parametrização raiz e pesquisas compartilhadas independentes permanecem. RPCs, tabelas, bucket, migrations e dados legados ficam inertes; nova escrita, leitura de produto ou limpeza exige decisão própria. Residuais E19 foram retirados na E22.5; domínio factual E20 na E22.7.
+- Conteúdo: raiz/pesquisas compartilhadas independentes preservadas; resíduo físico E19.3 inerte. Nova escrita/leitura de produto/limpeza exige decisão própria; retiradas posteriores em 22.5/22.7.
 
 22.4.5 Produto operacional retirado no SV-PR03
 - Status: retirado.
-- Conteúdo: Account Dashboard não carrega configuração, drafts, workspace, revisão ou materialização LP. Rotas antigas de detalhe, configuração, histórico e Preview e seus consumidores exclusivos foram removidos sem substitutos ou redirects. Jornada atual na E10.11; resíduos físicos em docs/schema.md.
+- Conteúdo: configuração/drafts/workspace/revisão/materialização e rotas LP removidos, sem substitutos/redirects. Jornada E10.11 e resíduo E19.3.
 
 22.5 Retirada do residual E19 e da compatibilidade com E20.2
 
 22.5.1 Objetivo e status
-- Objetivo: eliminar as últimas fronteiras exclusivas do produto legado E19.
-- Status: concluído, sem migration, DDL, limpeza de dados, Storage ou configuração hospedada.
+- Objetivo: eliminar fronteiras exclusivas E19 remanescentes.
+- Status: concluído; sem banco, dados, Storage ou plataforma alterados.
 
 22.5.2 Resultado
 - Status: concluído.
-- Conteúdo: lp-builder, presentation, workloads de draft, provas e branches exclusivas de imagem retirados. Sem write-side prospectivo E21.4; Costs API e histórico financeiro congelado preservados. Configurações, revisões e ativações antigas permanecem inertes.
+- Conteúdo: resultado E19.1; escrita prospectiva E21.4 retirada, Costs API/histórico congelado preservados. Configurações/revisões/ativações antigas inertes.
 
 22.5.3 Capacidades preservadas
 - Status: vigente.
-- Conteúdo: framework OpenAI comum, supabase_inspect e catálogo independente de modelos de imagem preservados; inventário vigente na E21.1. Contratos factuais E20 foram encerrados pela E22.7. Resíduos físicos E19 permanecem inertes; limpeza exige recorte próprio.
+- Conteúdo: framework OpenAI, Inspect e catálogo independente de imagem E21 preservados. Factual encerrado em 22.7; resíduo E19.3 sem autorização de limpeza.
 
 22.6 Remoção do Validador Final e automações adjacentes
 
 22.6.1 Objetivo e status
-- Objetivo: retirar conjuntamente o Validador Final e o Niche Runtime Tests, incluindo seus componentes exclusivos, sem alterar produto, CI preservado, mailbox institucional ou dados existentes.
-- Status: concluída no repositório, sem automação substituta, migration, SQL, limpeza de dados ou configuração externa.
+- Objetivo: retirar Validador Final/Niche Runtime Tests e exclusivos, preservando produto, CI, mailbox e dados.
+- Status: concluído só no repositório, sem substituto ou alteração de banco/plataforma.
 
 22.6.2 Registros do recorte
 - Repositório:
@@ -2601,16 +2243,14 @@
   - Consulta autônoma ao catálogo institucional de QA: `docs/roadmap.md` — E17.9.3.
 
 22.6.3 Resultado e limites
-- A busca de consumidores confirmou que o Niche Runtime Tests dependia do runtime do Validador Final e que os ativos retirados não eram gate automático, script raiz nem dependência do Core.
-- Os dois workflows, os dois subprojetos e o verificador Supabase exclusivo foram removidos conjuntamente; o restante de `automations/supabase-inspect/`, seus consumidores e os demais workflows permanecem preservados.
-- Usuários, contas, memberships, sessões, dados Supabase e evidências existentes não foram alterados nem excluídos.
-- Runs, checks, statuses, logs e artifacts do GitHub Actions são evidência suplementar e expirável; o diff/PR e os documentos canônicos preservam a prova durável da retirada.
+- Dois workflows/subprojetos e verificador exclusivo removidos; não eram gate/script raiz/dependência Core. Inspect e demais consumidores/workflows preservados.
+- Usuários, contas, memberships, sessões, dados e evidências preservados. Runs/logs/artifacts são suplementares e expiram; diff/PR e fontes canônicas mantêm prova durável.
 
 22.7 Retirada terminal da E20 e E10.10
 
 22.7.1 Objetivo e status
-- Objetivo: retirar E20 e E10.10 sem segunda autoridade factual nem dano às capacidades independentes E10, E9, E11, taxonomia, pesquisas compartilhadas e comercial.
-- Status: concluído; retirada funcional, apply seletivo e remoção dos gates externos validados em Preview e Production. Dependência E10.11 concluída.
+- Objetivo: retirar E20/E10.10 sem segunda autoridade factual nem dano aos domínios independentes.
+- Status: retirada funcional, apply seletivo e gates validados em Preview/Production; dependência E10.11 concluída.
 
 22.7.2 Registros do recorte
 - Banco:
@@ -2657,35 +2297,28 @@
 
 22.7.3 Auditoria de consumidores e fronteiras preservadas
 - Status: concluída.
-- Conteúdo: consumidores exclusivos removidos; Pending Setup, conclusão E10.11, taxonomia, pesquisas estruturadas e comercial independentes preservados.
+- Conteúdo: exclusivos removidos; Pending Setup, E10.11, taxonomia, pesquisas estruturadas e comercial independentes preservados.
 
 22.7.4 Retirada dos caminhos funcionais
-- Status: implementação mergeada; QA autenticado pós-apply/redeploy concluído com sucesso.
+- Status: mergeado e validado após apply/redeploy.
 - Conteúdo:
-  - E10.10 foi retirado como caminho funcional e a E20 factual foi encerrada como domínio de produto, incluindo catálogo, cobertura, seleção, avaliação assistida, liberação e workload exclusivos.
-  - A conta `active` resolve entitlement antes da taxonomia: erro de entitlement falha fechado; conta autorizada segue para a Base sem exigir taxon; conta não autorizada segue para comercial ou `waiting`.
-  - Preservar `business_taxons`, aliases, resolução de nicho, `account_taxonomy`, E10.3, E10.5, E10.9, E10.6/E10.7, E9, E11 e pesquisas, objetos e insumos compartilhados enquanto houver consumidor independente real, especialmente E10.7.
-  - A taxonomia preservada permite ativação pelo CRUD administrativo com guard de plataforma, pai ativo e concorrência otimista; novos taxons permanecem inativos por padrão.
-  - A preservação de recursos compartilhados não mantém catálogo factual, cobertura, herança, liberação ou autoridade da E20 nem transfere pesquisas para a Base.
-  - Não redesenhar E10, comercial, taxonomia, Base, billing, trial ou LP; não criar domínio substituto, compatibilidade paralela, archive funcional, snapshot vivo ou nova infraestrutura; não remover capacidade, dado ou objeto apenas por associação à E20/E10.10 nem refatorar, modernizar ou reorganizar domínios preservados.
+  - E10.10 e factual E20 encerrados: catálogo, cobertura, seleção, avaliação/liberação e workload exclusivos. Jornada vigente E10.11, CRUD E12.5.3.
+  - Taxonomia/aliases/resolução/vínculos, pesquisas/objetos/insumos compartilhados e domínios E9/E10/E11 preservados por consumo real, especialmente E10.7; sem autoridade factual, herança ou transferência de pesquisas à Base.
+  - Sem redesenho/refatoração dos preservados, substituto, compatibilidade paralela, archive funcional, snapshot vivo ou nova infraestrutura. Associação à E20/E10.10 não autoriza remover capacidade/dado/objeto.
 
 22.7.5 Retirada material residual de banco e configuração
 - Status: aplicado e validado.
-- Conteúdo:
-  - Dados factuais, revisões e ativações históricos preservados; FK factual, acessos exclusivos e unidades mutáveis do workload factual retirados. UPDATE da coluna de seleção revogado.
-  - Gates E20 retirados da Vercel em Preview e Production; estado externo em docs/platform-config.md.
-  - Duas migrations E10.10 não aplicadas permanecem excluídas do apply e não serão aplicadas; migrations históricas imutáveis.
-  - Dados inertes e objetos compartilhados permanecem quando a limpeza não for indispensável; exclusão destrutiva exige decisão própria.
+- Conteúdo: dados/revisões/ativações históricos preservados; FK/acessos exclusivos/unidades mutáveis factuais retirados, UPDATE da seleção revogado. Gates E20 retirados de Preview/Production conforme plataforma. Duas migrations E10.10 não aplicadas permanecem excluídas do apply; históricas imutáveis. Resíduos/compartilhados preservados, exclusão destrutiva exige decisão própria.
 
 23. E23 — Segurança e governança transversal da plataforma
-- Objetivo: reduzir riscos de segurança e governança por recortes controlados.
-- Status: E23.1–E23.5 concluídas. Levantamento E23.6 concluído em 14/10/2026, com aplicabilidade Next.js e cobertura TLS global inconclusivas, sem remediação presumida.
+- Objetivo: segurança/governança por recortes controlados.
+- Status: E23.1–E23.5 concluídas; levantamento E23.6 encerrado em 14/10/2026 com Next.js/TLS global inconclusivos, sem remediação presumida.
 
 23.1 Atualização de segurança do Next.js
 
 23.1.1 Objetivo e status
-- Objetivo: retirar do Core a versão Next.js afetada por vulnerabilidades críticas, preservando as jornadas e os comportamentos existentes.
-- Status: concluída no repositório e validada no Preview, sem mudança funcional intencional.
+- Objetivo: atualizar Next.js vulnerável preservando jornadas.
+- Status: concluído; sem mudança funcional intencional.
 
 23.1.2 Registros do recorte
 - Repositório:
@@ -2697,14 +2330,14 @@
     - `vercel#31`
 
 23.1.3 Atualização segura e validação do Core
-- Status: concluído; versão atual evoluída pela E23.4.
-- Conteúdo: atualização de segurança sem adoção de recursos opcionais ou alteração de jornadas. Não há validação de Production pendente neste registro histórico; estado vigente e limites nas E23.4 e E23.6.
+- Status: concluído; versão sucedida pela E23.4.
+- Conteúdo: atualização sem recursos opcionais/mudança de jornada; sem QA Production pendente neste registro. Estado/limites em E23.4/E23.6.
 
 23.2 Classificação segura das variáveis Vercel
 
 23.2.1 Objetivo e status
-- Objetivo: manter as variáveis Core coerentes com Config/Secret sem exposição de valores nem mudança indevida de consumidores ou ambientes.
-- Status: classificação e retirada de ocorrências sem consumidor concluídas; sobreclassificações preservadas por decisão funcional conservadora.
+- Objetivo: classificar Config/Secret sem exposição ou mudança de consumidores/ambientes.
+- Status: concluído; sobreclassificações conservadoras aceitas.
 
 23.2.2 Registros do recorte
 - Updates:
@@ -2715,18 +2348,13 @@
 
 23.2.3 Inspeção e reconciliação segura das classificações
 - Status: concluída.
-- Conteúdo:
-  - Inspeção somente de nomes, tipos, ambientes e branch scopes, sem revelar, recuperar, copiar ou registrar valores.
-  - Credenciais confirmadas como Secret; configurações públicas ou não sensíveis como Config. Sobreclassificações e scopes legados permanecem quando não houver risco ou impacto material comprovado.
-  - Estado efetivo e ocorrências retiradas em docs/platform-config.md, seção 3.6. SUPABASE_DB_URL_READONLY do GitHub e o consumidor read-only permanecem preservados.
-  - Jornada e origem segura dos convites pertencem à E11.1.4.
+- Conteúdo: inspeção de nomes/tipos/ambientes/scopes, sem valores. Credenciais Secret, não sensíveis Config; sobreclassificações/scopes legados preservados sem risco/impacto material demonstrado. Estado em plataforma 3.6; Inspect/GitHub read-only preservados, callback de convite em E11.1.4.
 
 23.3 Retenção proporcional das evidências GitHub Actions
 
 23.3.1 Objetivo e status
-
-- Objetivo: manter o fechamento dos recortes verificável por fontes duráveis mesmo após a expiração de runs, checks, commit statuses, logs, Job Summaries e artefatos do GitHub Actions.
-- Status: concluída documentalmente, sem alteração de workflow, setting, secret, runtime, banco ou infraestrutura.
+- Objetivo: fechamento verificável após expiração de evidências Actions.
+- Status: concluído documentalmente; sem configuração/runtime alterados.
 
 23.3.2 Registros do recorte
 
@@ -2740,16 +2368,13 @@
 
 23.3.3 Contrato de evidência durável e expiração
 - Status: vigente.
-- Conteúdo:
-  - Runs, checks, statuses, logs, Job Summaries e artefatos são evidências suplementares expiráveis, sem prova exclusiva de encerramento.
-  - PR, commit, roadmap e fontes canônicas preservam conclusão durável; retenção efetiva em docs/platform-config.md, seção 2.2.
-  - Sem exportação recorrente, armazenamento paralelo, job ou automação. Preservação bruta além da janela exige decisão do Gestor de Automações e do humano.
+- Conteúdo: política durável/expiração em docs/base-tecnica.md — 3.4; retenção em plataforma 2.2. Sem exportação recorrente/storage paralelo/job. Preservação bruta além da janela exige decisão do Gestor de Automações e humano.
 
 23.4 Atualização de segurança do Next.js — setembro de 2026
 
 23.4.1 Objetivo e status
-- Objetivo: aplicar a release de segurança Next.js 16.3.8 com next, eslint-config-next e lockfile alinhados, preservando jornadas e comportamentos.
-- Status: concluído em Production.
+- Objetivo: alinhar next/eslint-config-next/lockfile na release de segurança 16.3.8.
+- Status: concluído em Production, jornadas preservadas.
 
 23.4.2 Registros do recorte
 - Repositório:
@@ -2764,13 +2389,13 @@
 
 23.4.3 Atualização e validação do Core
 - Status: concluído.
-- Conteúdo: next e eslint-config-next em 16.3.8; React, demais dependências e código de produto preservados. A release incorpora sete correções; duas vulnerabilidades adicionais, crítica e alta, permanecem sob acompanhamento upstream em vercel#34. Não representa remediação total; diagnóstico e limites vigentes na E23.6.
+- Conteúdo: next/eslint-config-next 16.3.8; React, demais dependências e produto preservados. Sete correções incorporadas, duas vulnerabilidades adicionais crítica/alta sob acompanhamento vercel#34; sem remediação total demonstrada. Diagnóstico vigente E23.6.
 
 23.5 Retirada da capacidade GraphQL não utilizada
 
 23.5.1 Objetivo e status
-- Objetivo: retirar GraphQL não utilizado, preservando REST/Data API, Auth, banco, RLS/policies e jornadas.
-- Status: concluído; apply seletivo e operação em Production validados.
+- Objetivo: retirar GraphQL sem uso, preservando REST/Auth/banco/RLS/jornadas.
+- Status: apply seletivo/Production validados.
 
 23.5.2 Registros do recorte
 - Banco:
@@ -2800,14 +2425,14 @@
 
 23.5.3 Retirar e validar a capacidade GraphQL não utilizada
 - Status: concluído.
-- Conteúdo: retirada transacional e idempotente, com bloqueio atômico de dependente inesperado. Papéis públicos recebem somente stub desabilitado, sem dados GraphQL; owners/grants gerenciados e metadados, policies e ACLs fora do GraphQL preservados. Sem automação ou infraestrutura nova.
+- Conteúdo: retirada transacional/idempotente bloqueia dependente inesperado atomicamente. Stub público desabilitado, sem dados GraphQL; owners/grants gerenciados e demais metadados/policies/ACLs preservados, conforme schema 6.2. Sem infraestrutura nova.
 
 23.6 Diagnóstico de segurança Next.js e compatibilidade TLS Supabase
 
 23.6.1 Objetivo e status
-- Objetivo: entregar diagnóstico delimitado dos avisos Next.js e da mudança TLS Supabase, distinguindo evidência comprovada, incerteza e eventual correção demonstrada.
-- Status: levantamento delimitado do PB 18D.1 concluído conforme revisão humana aprovada em 14/10/2026, sob Supervisão Autônomo; aplicabilidade Next.js e cobertura TLS global permanecem inconclusivas. A conclusão do levantamento não comprova ausência de impacto nem remediação.
-- Limites: investigação somente leitura, sem alteração de dependências, código funcional, configuração, banco, credenciais, workflows, plataformas ou comportamento; sem teste exploratório, redução de segurança ou recurso pago adicional. Não permanece solicitação de coleta, inventário ou consulta ao suporte como ação desta rodada. Eventual correção exige recorte e autorização próprios.
+- Objetivo: diagnóstico delimitado dos avisos Next.js/TLS, separando prova e incerteza.
+- Status: levantamento PB 18D.1 aprovado em 14/10/2026 sob Supervisão Autônomo; aplicabilidade Next.js/TLS global inconclusivos, sem prova de ausência de impacto/remediação.
+- Limites: somente leitura, sem mudanças operacionais, exploração, redução de segurança ou custo adicional. Sem coleta/inventário/suporte pendentes nesta rodada; correção exige recorte/autorização próprios.
 
 23.6.2 Registros do recorte
 - Referências:
@@ -2816,30 +2441,26 @@
   - Diagnóstico delimitado final e evidências: [PR #1067 — resultado final](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6173085395); [provas técnicas TLS](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6170466774).
 
 23.6.3 Diagnóstico delimitado dos avisos Next.js
-- Status: levantamento concluído em 14/10/2026; aplicabilidade inconclusiva.
-- Conteúdo:
-  - a conferência focal final das fontes oficiais acessíveis não recuperou advisories completos com impacto e faixas afetadas/corrigidas; isso não comprova inexistência global de publicação;
-  - o baseline `next`/`eslint-config-next` `16.3.8` e React/React DOM `19.2.1` foi confrontado com App Router, SSR/RSC e Server Actions existentes; nenhum consumidor OG foi identificado, sem excluir vulnerabilidades ainda não descritas. Exploração não foi investigada;
-  - necessidade e versão de correção não determinadas; o saldo permanece no catálogo para retomada de E23.6.3 diante dos advisories oficiais completos, sem espera indefinida nem autorização de upgrade.
+- Status: levantamento encerrado em 14/10/2026, aplicabilidade inconclusiva.
+- Conteúdo: fontes oficiais acessíveis não forneceram advisories completos/faixas afetadas/corrigidas, sem provar inexistência global. Baseline next/eslint-config-next 16.3.8 e React/DOM 19.2.1 confrontado com App Router/SSR/RSC/Actions; nenhum consumidor OG identificado, sem excluir falhas ainda não descritas. Sem investigação de exploração ou versão de correção determinada. Retomada por advisories completos em vercel#34, sem upgrade autorizado ou espera indefinida.
 
 23.6.4 Diagnóstico delimitado da mudança TLS Supabase
-- Status: levantamento concluído em 14/10/2026; capacidade compatível comprovada somente no processo Node local inspecionado, sem conclusão global.
+- Status: levantamento encerrado em 14/10/2026; compatibilidade provada só no processo Node local inspecionado.
 - Conteúdo:
-  - alcance e prazo oficiais foram confrontados com os consumidores existentes de Auth, Data API e Storage; a retirada anunciada de quatro cifras CBC nas APIs HTTP não abrange Postgres direto, pooler ou Management API;
-  - Vercel: configuração Node `22.x` e ausência de customização TLS no código consultado comprovadas; capacidade/configuração efetiva das Functions/middleware em Production/Preview não demonstrada. A prova local não representa esses ambientes;
-  - browsers: nenhuma combinação concreta browser/SO disponível para conclusão. Integrações HTTP externas: nenhuma identificada nas fontes técnicas consultadas, com existência fora delas não confirmada;
-  - nenhuma incompatibilidade ou correção necessária foi comprovada. As incertezas e os gatilhos de retomada permanecem no catálogo, sem exigir novas provas para encerrar esta rodada e sem inferir compatibilidade global.
-
+  - Retirada anunciada de quatro cifras CBC nas APIs HTTP Auth/Data API/Storage; não abrange Postgres direto, pooler ou Management API.
+  - Vercel Node 22.x e ausência de customização TLS no código confirmados; capacidade/configuração efetiva Functions/middleware Preview/Production não demonstrada pela prova local.
+  - Browser/SO sem combinação concreta para conclusão; integrações HTTP externas não identificadas nas fontes consultadas, existência fora delas não confirmada.
+  - Nenhuma incompatibilidade/correção comprovada. Gatilhos no supa#73; sem novas provas exigidas para encerrar rodada ou inferência de compatibilidade global.
 
 24. E24 — Governança e compatibilidade transversal de updates
-- Objetivo: tornar o ciclo semanal de updates rastreável, economicamente delimitado e coerente entre fornecedores, preservando ações operacionais em recortes independentes.
-- Status: E24.1 concluída; E24.2 implementada e validada no repositório, com entrega técnica sob supervisão Autônoma.
+- Objetivo: updates rastreáveis e sem custo incremental, com operação em recortes próprios.
+- Status: E24.1/E24.2 implementadas/validadas no repositório sob supervisão Autônoma.
 
 24.1 Governança e cobertura do workflow de updates
 
 24.1.1 Objetivo e status
-- Objetivo: aplicar de forma uniforme ciclo de vida, gate de zero custo incremental, identificação de rodadas e cobertura técnica OpenAI ao workflow semanal existente.
-- Status: implementada e validada no repositório, sem novo catálogo, agente, job, automação, infraestrutura ou alteração do runtime do produto.
+- Objetivo: governança uniforme, identificação de rodadas e cobertura OpenAI no workflow semanal.
+- Status: implementado, sem novo catálogo/agente/infraestrutura ou runtime de produto.
 
 24.1.2 Registros do recorte
 - Repositório:
@@ -2852,30 +2473,24 @@
   - Governança do Gestor de Automações: `docs/gestor-automations.md` — seção 3.1.
 
 24.1.3 Ciclo de vida, gate econômico, campos e identificador
-- Cada execução usa um identificador único `updates-AAAA-MM-DD-rNN`, compartilhado pelas branches e pelos títulos dos draft PRs da rodada.
-- Drafts anteriores e do mesmo identificador são detectados antes da publicação; o mesmo alvo e rodada não recebem segundo draft. O estado `open` ou `completed` fica persistido nos corpos dos drafts; uma rodada concluída sem drafts reserva o identificador por tag anotado remoto `<identificador>-completed` no SHA inicial, sem criar mudança artificial.
-- Todo transversal ativo registra estado, ação pendente, prioridade, motivo da permanência, gatilho e critério de encerramento. Implementação integral validada permanece somente no histórico compacto; implementação parcial permanece ativa apenas pelo saldo.
-- Toda recomendação de implementação, dependente de recorte ou transversal, exige zero custo incremental comprovado nos planos vigentes. Upgrade, cobrança adicional ou gratuidade não validada mantêm o recurso no radar sem autorização de implementação.
+- Identidade updates-AAAA-MM-DD-rNN, deduplicação de drafts, estado open/completed e reserva remota sem mudança artificial conforme docs/workflow-atualizacao-updates.md — 1–6.
+- Ativo mantém saldo, prioridade, motivo, gatilho/encerramento; integralmente validado vai ao histórico compacto. Recomendação exige zero custo incremental comprovado nos planos vigentes; upgrade/cobrança/gratuidade não validada fica no radar, sem implementação autorizada.
 
 24.1.4 Cobertura semanal OpenAI e responsabilidades
-- Os quatro catálogos obrigatórios preservam sua ordem, seguidos pela cobertura técnica OpenAI no snapshot existente; não foi criado quinto catálogo.
-- O workflow faz a descoberta oficial ampla. O Gestor de Updates consulta o snapshot quando o recorte envolver capacidade OpenAI, sem mantê-lo; o Gestor de Automações consome as capacidades identificadas e limita a consulta oficial à validação factual focal do caso.
-- `supa#60` permanece apenas como referência da consulta manual ao changelog oficial, sem consumidor RSS ou feed Markdown.
+- Quatro catálogos na ordem vigente, depois snapshot técnico OpenAI, sem quinto catálogo. Workflow descobre fontes oficiais amplamente; Gestor de Updates consulta snapshot quando pertinente, sem mantê-lo; Gestor de Automações consome capacidades e valida fatos focais. supa#60 só consulta manual ao changelog, sem feed consumidor.
 
 24.1.5 Snapshot técnico OpenAI
-- O snapshot mantém registros itemizados e rastreáveis de workloads, modelos, reasoning efforts, limites técnicos, APIs, tools, recursos agentic, aplicabilidade, maturidade, fontes e data da fotografia.
-- Valores, fórmulas, gráfico, protocolo e laboratório financeiros foram retirados sem documento ou mecanismo substituto; o asset exclusivo do gráfico também foi removido.
-- A configuração efetiva permanece em `docs/platform-config.md`, e nenhuma capacidade registrada autoriza adoção ou mudança operacional.
+- Snapshot técnico itemizado/rastreável conforme fonte 24.1.2, sem valores/fórmulas/gráfico/protocolo/laboratório financeiros ou substituto. Configuração efetiva em plataforma; registro de capacidade não autoriza adoção.
 
 24.1.6 Validação do workflow atualizado
 - Status: validado.
-- Conteúdo: contratos TOML preservam modelo, effort e sandbox. O snapshot permanece técnico, sem conteúdo financeiro; governança e execução semanal seguem as fontes canônicas referenciadas.
+- Conteúdo: TOML preserva modelo/effort/sandbox; snapshot técnico e workflow seguem fontes 24.1.2.
 
 24.2 Compatibilidade operacional e evidências temporárias
 
 24.2.1 Objetivo e status
-- Objetivo: validar a compatibilidade operacional com Ubuntu 26.04, incorporar a retenção reduzida dos deployments Hobby à política de evidências e estabelecer a leitura manual dos Health Check Advisors, sempre sem custo incremental.
-- Status: implementada e validada no repositório, sem alteração permanente de workflow, runner, runtime, banco, dependência, deployment, plano, configuração ou infraestrutura.
+- Objetivo: compatibilidade Ubuntu 26.04, evidências Hobby expiráveis e leitura manual de Health Advisors, sem custo incremental.
+- Status: validado no repositório; sem mudança permanente de runner/workflow/runtime/banco/dependência/deployment/plano/infraestrutura.
 
 24.2.2 Registros do recorte
 - Updates:
@@ -2888,30 +2503,29 @@
   - Retenção Vercel Hobby e procedimento Supabase: `docs/platform-config.md` — seções 3.1 e 4.9.
 
 24.2.3 Compatibilidade representativa no Ubuntu 26.04
-- Status: compatibilidade representativa validada em Ubuntu 26.04.
-- Conteúdo: Bash/grep, checkout, Node 20 das automações, Node 22 e build/checks do Core e Supabase CLI 2.106.0. Prova sem secrets, chamadas externas ou mutações; harness efêmero removido e ubuntu-latest preservado, sem pin preventivo.
+- Status: compatibilidade representativa validada.
+- Conteúdo: Ubuntu 26.04 com Bash/grep, checkout, Node 20 das automações, Node 22/build/checks Core e Supabase CLI 2.106.0; prova sem secrets/chamadas externas/mutações. Harness removido, ubuntu-latest preservado sem pin preventivo.
 
 24.2.4 Evidências temporárias da Vercel
-- Preview e deployment histórico são evidências operacionais suplementares e expiráveis; nenhum encerramento depende exclusivamente de sua disponibilidade.
-- A prova durável permanece no PR, no commit, no roadmap e nos documentos canônicos competentes, sem storage paralelo, proteção rotineira de deployment ou upgrade de plano.
+- Preview/deployment histórico são provas suplementares expiráveis; encerramento durável segue docs/base-tecnica.md — 3.4. Sem storage paralelo, proteção rotineira ou upgrade.
 
 24.2.5 Leitura manual dos Health Check Advisors
 - Status: procedimento vigente.
-- Conteúdo: Studio → Advisors → Health, refresh manual e leitura de Data API/PostgREST, Auth, Storage e Edge Functions. Resultado vazio válido difere de advisor_check_unavailable; achado exige investigação, sem correção automática. Baseline e procedimento operacional em docs/platform-config.md, seção 4.9.
+- Conteúdo: refresh/leitura manual Studio → Advisors → Health em plataforma 4.9. Resultado vazio válido difere de advisor_check_unavailable; achado exige investigação, sem correção automática.
 
 24.2.6 Ciclo de vida dos itens da rodada
 - Status: rodada encerrada.
-- Conteúdo: itens aplicados estão nos registros. vercel#21 excluído por criar storage paralelo; supa#70 futuro e condicionado a recorrência e superioridade comprovadas. Sem contratação ou ativação de recurso com custo incremental.
+- Conteúdo: aplicados em 24.2.2; vercel#21 excluído por storage paralelo, supa#70 futuro condicionado a recorrência/superioridade comprovadas. Sem ativação/contratação com custo incremental.
 
 25. E25 — Base de Comunicação
-- Objetivo: manter Base persistente da conta com verdade da empresa e inteligência de comunicação, independente de LP ou integração de canal.
-- Status: E25.1 e E25.3 operacionais em Preview e Production; E25.2 implementada. PB2 e PB3 permanecem em definição, sem execução autorizada.
+- Objetivo: Base persistente da conta, com verdade da empresa e inteligência de comunicação, independente de LP/canal.
+- Status: E25.1/E25.3 em Preview/Production; E25.2 implementada. PB2/PB3 em definição, sem execução autorizada.
 
 25.1 Base de Comunicação inicial
 
 25.1.1 Objetivo e status
-- Objetivo: entregar uma única Base atual por conta, consultável, editável e progressiva após autorização comercial válida, sem depender de E10.10, E20, taxon oficial, PB-B ou PB-C.
-- Status: encerrado e operacional em Preview e Production sob gate independente por ambiente; QA provider-backed concluído com cobertura e telemetria E21. Fontes Web pouco pertinentes são uma limitação de qualidade observada e aceita, sujeita a revisão humana.
+- Objetivo: Base única atual/editável/progressiva por conta com autorização comercial, sem depender de E10.10/E20, taxon ou PB-B/PB-C.
+- Status: operacional em Preview/Production com gate por ambiente; QA provider-backed/telemetria E21 concluídos. Baixa pertinência de fontes Web é limite aceito, sujeito a revisão humana.
 
 25.1.2 Registros do recorte
 - Banco:
@@ -2927,23 +2541,26 @@
 
 25.1.3 Estrutura, governança e extensibilidade
 - Status: implementado.
-- Conteúdo: a Base pertence somente à conta; owner, admin e editor preenchem e editam, enquanto viewer consulta. Access Context, membership e entitlement comercial vigente governam o acesso. Seções com formatos suportados podem ser acrescentadas a Bases existentes sem perda do conteúdo anterior. Pesquisa, conversa, taxon, LP, produto, Tarefa, campanha e canal não se tornam proprietários, vínculos persistentes ou dependências de leitura e edição. Não criar segunda autoridade factual, Base por insumo ou consumidor, versionamento funcional selecionável ou framework arbitrário de seções.
+- Conteúdo: conta é única proprietária; owner/admin/editor editam, viewer consulta, sob Access Context/membership/entitlement vigente. Novas seções de formatos suportados preservam conteúdo existente. Insumos/consumidores não criam proprietários, vínculos persistentes ou dependências de leitura/edição. Sem segunda autoridade factual, Base por insumo/consumidor, versão funcional selecionável ou framework arbitrário.
 
 25.1.4 Etapa 1 e aproveitamento inicial
-- Status: implementado e validado com assistência provider-backed sem Web Search.
-- Conteúdo: a verdade da empresa começa com nome público do negócio ou profissional e entendimento operacional da atuação e evolui por Negócio, Ofertas, Atendimento, Provas/credenciais/resultados, Materiais/identidade e Preferências/limites, sem bloqueio global por seção incompleta. Contexto confirmado do Pending Setup pode ser copiado uma vez quando inequívoco, sem sincronização reversa. Orientações, exemplos, placeholders e validações previsíveis permanecem determinísticos quando suficientes. A IA assistente só atua por ação explícita e ganho real para explicar, exemplificar, organizar, resumir ou reformular conteúdo fornecido; não usa Web Search, não propõe valor factual ausente, não confirma em nome do cliente nem dispara na edição manual. Sugestões orientam o que informar; valores reais são fornecidos ou confirmados pelo cliente, e informação ausente gera pergunta localizada ou seção pendente. Falha da IA preserva a edição manual.
+- Status: implementado, assistência provider-backed sem Web Search validada.
+- Conteúdo:
+  - Verdade começa por nome público/atuação e evolui por Negócio, Ofertas, Atendimento, Provas/credenciais/resultados, Materiais/identidade e Preferências/limites; incompletude não bloqueia globalmente. Cópia inicial consentida/inequívoca E10.11, sem sincronização reversa.
+  - Orientação/exemplos/placeholders/validações previsíveis são determinísticos quando suficientes. Assistência explícita e com ganho real explica, exemplifica, organiza, resume/reformula conteúdo fornecido; não usa Web Search, não propõe valor factual ausente, não confirma em nome do cliente e não dispara na edição manual. Cliente fornece/confirma valores; ausência vira pergunta localizada/pendência. Falha IA preserva edição manual.
 
 25.1.5 Etapa 2 e inteligência de comunicação
-- Status: implementado com `gpt-6-luna`/`max` como par operacional único após comparação isolada com `gpt-6-sol`/`medium`.
-- Conteúdo: a IA é o motor central da interpretação de sinais de mercado e da produção de conteúdo comunicacional editável usando somente os insumos confirmados pertinentes da Etapa 1. Usa pesquisa atual via Web Search quando atualidade ou localidade forem materiais para elaborar Quem somos, Público/contexto, Dores/desejos/crenças/objeções, Proposta de valor, Benefícios, Diferenciais e FAQ. Distinguir fato particular confirmado de hipótese estratégica; revisão e edição humanas permanecem disponíveis sem aprovação por chamada. Falha de pesquisa material não é substituída silenciosamente por conhecimento paramétrico; a Base não depende de vínculo persistente com a pesquisa. Este recorte não gera LP ou outro produto, não integra canais nem altera Pending Setup, jornada E10, comercial ou trial, e não introduz Agents SDK, multiagente, job, fila ou infraestrutura antecipada.
-- E25.1 não cria carteira, saldo, franquia ou bloqueio comercial de IA; o contrato transversal de créditos pertence ao Debate 10B.
-- A ação geral gera as sete seções quando vazias e atualiza o conjunto pertinente quando há conteúdo; cada seção tem revisão localizada. O conteúdo salvo da Etapa 2 entra somente no alvo da operação como contexto de revisão, sem autoridade factual. Sugestões não são salvas automaticamente, e a edição manual não dispara IA.
+- Status: implementado; par operacional gpt-6-luna/max, comparado isoladamente com gpt-6-sol/medium.
+- Conteúdo:
+  - IA interpreta mercado/produz comunicação editável com insumos confirmados pertinentes da Etapa 1. Web Search atual quando atualidade/localidade material; falha de pesquisa material não vira conhecimento paramétrico silenciosamente. Distingue fato particular de hipótese estratégica; revisão/edição humanas sem aprovação por chamada, sem vínculo persistente com pesquisa.
+  - Sete seções: Quem somos, Público/contexto, Dores/desejos/crenças/objeções, Proposta de valor, Benefícios, Diferenciais e FAQ. Ação geral gera todas quando vazias/atualiza conjunto pertinente quando preenchidas; revisão localizada por seção. Salvo da Etapa 2 só contextualiza alvo, sem autoridade factual; sugestão não salva automaticamente, edição manual não dispara IA.
+  - Sem LP/outro produto, canal, mudança de Pending Setup/jornada/comercial/trial, Agents SDK/multiagente/job/fila ou infraestrutura antecipada. Sem carteira/saldo/franquia/bloqueio comercial IA; créditos transversais pertencem ao Debate 10B.
 
 25.2 Experiência de cliente da Base de Comunicação
 
 25.2.1 Objetivo e status
-- Objetivo: tornar consulta e edição da Base claras e progressivas, preservando contratos funcionais.
-- Status: implementado; sem alteração de acesso, persistência ou metodologia da Base.
+- Objetivo: consulta/edição claras e progressivas.
+- Status: implementado; acesso/persistência/metodologia preservados.
 
 25.2.2 Registros do recorte
 - Repositório:
@@ -2955,21 +2572,18 @@
 
 25.2.3 Coleção tabular, abertura de detalhe e edição da Base
 - Status: implementado.
-- Conteúdo: as abas superiores mostram somente a coleção da categoria selecionada, com identidade, estado e Abrir. As três categorias vigentes seguem E25.3; gate desligado mantém as duas abas anteriores. O dialog apresenta uma seção por vez e já abre editável para Owner/Admin/Editor, com Salvar e Cancelar; Viewer recebe leitura. Comparação pelo parser protege alterações materiais e rascunhos inválidos; saída com perda possível exige confirmação. Salvamento mantém locks e versões, sucesso permanece no detalhe e conflito preserva o rascunho. Cancelar, Fechar, Escape, backdrop e Voltar preservam o contexto da coleção e devolvem o foco.
+- Conteúdo: aba mostra coleção selecionada com identidade/estado/Abrir; três categorias E25.3, gate desligado conserva duas anteriores. Dialog abre uma seção editável para owner/admin/editor com Salvar/Cancelar; viewer lê. Parser detecta alterações materiais/rascunho inválido, saída com perda exige confirmação. Salva com locks/versões, mantém detalhe no sucesso/rascunho no conflito. Cancelar/Fechar/Escape/backdrop/Voltar mantêm coleção e devolvem foco.
 
 25.2.4 Estados, assistência por IA, responsividade e validação da experiência
 - Status: implementado.
-- Conteúdo:
-  - Feedback junto da ação, sugestões separadas do salvo, instalação somente no rascunho e fontes sob revelação progressiva.
-  - Assistências e exclusão mútua preservadas; revisão/versão impede reinstalar resposta superada por descarte ou salvamento.
-  - Teclado, foco, ações alcançáveis em altura reduzida, alvos de 44 px e reflow desde 320 px. Não há comprovação de teclado virtual real ou conformidade WCAG integral; permissões e entitlement não são ampliados para QA.
+- Conteúdo: feedback junto à ação; fontes progressivas/sugestões separadas do salvo, instaladas só no rascunho. Exclusão mútua e revisão/versão impedem reinstalar resposta superada por descarte/save. Teclado/foco, altura reduzida, alvos 44 px e reflow desde 320 px; sem prova de teclado virtual real/WCAG integral ou ampliação de acesso para QA.
 
 25.3 Recursos das três categorias da Base de Comunicação
 
 25.3.1 Objetivo e status
-- Objetivo: entregar os recursos manuais de Dados do negócio, Materiais de comunicação e Inteligência e copy em uma única Base por conta, preservando conteúdo legado, acesso comercial, papéis, concorrência, revisão humana e assistências de IA existentes.
-- Status: PB1/D14D concluído e operacional em Preview e Production.
-- Limites: PB2 e PB3 permanecem em definição. Este recorte não entrega novos agentes, rotinas de IA, pesquisa, processamento de mídia, transcrição, publicação automática ou integração com canais; não reabre E25.1/PB-A nem E25.2.
+- Objetivo: recursos manuais de Dados do negócio, Materiais de comunicação e Inteligência e copy na Base única, preservando legado/acesso/papéis/concorrência/revisão/assistências.
+- Status: PB1/D14D operacional em Preview/Production.
+- Limites: PB2/PB3 em definição; sem novos agentes/rotinas IA, pesquisa, processamento/transcrição de mídia, publicação automática ou canais. E25.1/PB-A e E25.2 não reabertos.
 
 25.3.2 Registros do recorte
 
@@ -3021,25 +2635,21 @@
   - Catálogo, segurança, RPC e Storage aplicados: `docs/schema.md` — seção 1.39.
 
 25.3.3 Dados do negócio e Inteligência e copy
-- Status: implementado e operacional em Preview e Production.
+- Status: operacional em Preview/Production.
 - Conteúdo:
-  - Dados do negócio admitem rótulo e valor opcionais, sem bloquear campos vazios; o nome público canônico permanece no cabeçalho. Apresentação inicial: Identificação e dados do negócio.
-  - As sete seções de Inteligência e copy preservam formatos, conteúdo, parágrafos, quebras e delimitadores internos em itens e FAQ. Novas seções são manuais.
-  - Assistências existentes mantêm seleção, revisão e versionamento; sugestões ficam separadas do salvo, com instalação explícita no editor e sem salvamento automático.
-  - Bases antigas e novas mantêm consulta, edição por owner/admin/editor, viewer somente leitura, isolamento, descarte e retomada. Conflitos preservam o rascunho; descarte preserva o salvo e devolve foco. UI mantém teclado, foco, mobile e FAQ com alvo de 44 px.
+  - Dados: rótulo/valor opcionais, vazios permitidos; nome público canônico no cabeçalho. Inicial: Identificação e dados do negócio.
+  - Sete seções de Inteligência e copy preservam formatos/conteúdo/parágrafos/quebras/delimitadores de itens/FAQ; novas seções manuais. Assistências mantêm seleção/revisão/versão e instalação explícita no editor, sem salvar sugestão automaticamente.
+  - Bases antigas/novas preservam permissões E25.1.3, isolamento, descarte/retomada; conflito mantém rascunho, descarte mantém salvo/devolve foco. Teclado/foco/mobile e FAQ com alvo 44 px.
 
 25.3.4 Materiais de comunicação
-- Status: implementado e operacional em Preview e Production.
+- Status: operacional em Preview/Production.
 - Conteúdo:
-  - Acervo: Identidade visual, Fotos, vídeos e áudios e Depoimentos e provas sociais. Cadastro admite identificação, contexto, autoria e autorização quando pertinentes.
-  - Imagens/logotipos usam upload ou link; vídeos/áudios somente link; depoimentos escritos usam texto. Consulta, edição, substituição e retirada preservam conteúdo legado e produtos publicados.
-  - Storage privado separado do bucket legado, validação de imagens no servidor e acesso temporário após autorização vigente. Arquivos inválidos ou acima do limite são rejeitados sem escrita; erros preservam formulário e arquivo para retry.
-  - Links indisponíveis recebem tratamento seguro, sem alterar a Base; descarte preserva os dados salvos.
+  - Acervo: Identidade visual; Fotos, vídeos e áudios; Depoimentos e provas sociais. Identificação/contexto/autoria/autorização quando pertinentes. Imagem/logo por upload/link; vídeo/áudio só link; depoimento escrito em texto. Consulta/edição/substituição/retirada preservam legado/produtos publicados.
+  - Storage privado distinto do legado, imagem validada no servidor e acesso temporário após autorização vigente. Inválido/acima do limite rejeitado sem escrita; erro mantém formulário/arquivo para retry. Link indisponível tratado sem alterar Base; descarte preserva salvo. Contrato físico/limites em docs/schema.md — 1.39.
 
 25.3.5 Gestão administrativa de seções
-- Status: implementado e operacional em Preview e Production.
+- Status: operacional em Preview/Production.
 - Conteúdo:
-  - Admin adiciona, renomeia e reordena seções nas três categorias com autorização administrativa central; ações sem autorização são recusadas.
-  - Identidades, categorias, formatos e conteúdos salvos permanecem preservados. Novas seções são vazias e opcionais em Bases antigas e futuras, sem retroescrita nem exclusão de seção.
-  - Inclusão global aceita mediante prova isolada com rollback e projeção em Base antiga/vazia, sem prova autenticada persistente de inclusão. Prova SQL não substitui validação de Auth, Storage e UI.
-  - Gate independente mantém o runtime anterior quando desabilitado. Progressão entre ambientes segue autorização operacional vigente; o apply seletivo não reativa o fluxo integral suspenso.
+  - Admin autorizado adiciona/renomeia/reordena nas três categorias; sem autoridade, ação recusada. Identidades/categorias/formatos/salvos preservados; novas seções vazias/opcionais para Bases antigas/futuras, sem retroescrita/exclusão de seção.
+  - Inclusão global aceita por prova isolada com rollback/projeção em Base antiga/vazia; sem prova autenticada persistente de inclusão. SQL não substitui Auth/Storage/UI.
+  - Gate independente desligado mantém runtime anterior; progressão exige autorização vigente. Apply seletivo não reativa fluxo integral suspenso.
