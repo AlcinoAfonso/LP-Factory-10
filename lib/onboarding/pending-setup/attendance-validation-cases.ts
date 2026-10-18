@@ -17,7 +17,7 @@ const context: AttendanceContext = {
   ],
 };
 const base: AttendanceOutput = {
-  reply: "Jardinagem corresponde ao seu negócio?", preferredName: "Ana", preferredNameDeclined: false, whatsappReference: null, whatsappDeclined: false,
+  reply: "Jardinagem corresponde ao seu negócio?", preferredName: "Ana", preferredNameDeclined: false, requestWhatsapp: false, whatsappReference: null, whatsappDeclined: false,
   businessUnderstanding: "Manutenção de jardins para condomínios.", confirmedUnderstanding: null,
   suggestions: ["Pode ser útil explicar a frequência do serviço."], sufficientUnderstanding: true,
   readyToComplete: false, closureReason: null, action: "existing", existingTaxonId: nicheId,
@@ -272,6 +272,12 @@ async function main() {
     summary: acceptedContactSummary, updatedAt: conversation.updatedAt,
   } }, context.catalog);
   assert.ok(validateAttendanceOutput({ ...later, confirmedUnderstanding: context.displayedUnderstanding }, acceptedContactContext));
+  const requestingWhatsapp = { ...finishing, requestWhatsapp: true, readyToComplete: false };
+  assert.ok(validateAttendanceOutput(requestingWhatsapp, { ...context, confirmedOperationalUnderstanding: true }));
+  assert.equal(validateAttendanceOutput({ ...requestingWhatsapp, readyToComplete: true }, { ...context, confirmedOperationalUnderstanding: true }), null);
+  assert.equal(validateAttendanceOutput(requestingWhatsapp, { ...context, whatsappProvided: true }), null);
+  assert.equal(validateAttendanceOutput({ ...contactOutput, requestWhatsapp: true }, phoneContext), null);
+  assert.equal(validateAttendanceOutput(requestingWhatsapp, { ...context, summary: JSON.stringify({ ...draft, whatsappDeclined: true }) }), null);
   const declined = { ...finishing, whatsappDeclined: true };
   assert.ok(validateAttendanceOutput(declined, { ...context, confirmedOperationalUnderstanding: true }));
   const declinedSummary = attendanceSummary(declined, null, null);
@@ -285,6 +291,12 @@ async function main() {
   assert.equal(JSON.parse(correctedSummary).whatsapp, "+5511977772222");
   const hiddenContact = attendanceContactProjection([{ role: "user", content: "https://example.com/5521999990000" }]);
   assert.equal(hiddenContact.contacts.size, 0);
+  for (const invalidPhone of ["5511999990000123", "+55 (11) 99999-0000-123"]) {
+    const rejected = attendanceContactProjection([{ role: "user", content: `Meu WhatsApp é ${invalidPhone}.` }]);
+    assert.equal(rejected.contacts.size, 0);
+    assert.equal(/\d/.test(rejected.recent[0].content), false);
+    assert.equal(rejected.recent[0].content.includes("phone_"), false);
+  }
   const emailContact = attendanceContactProjection([{ role: "user", content: "Meu e-mail é joao5511999990000@gmail.com e meu site é https://example.com/5521999990000" }]);
   assert.equal(emailContact.contacts.size, 0);
   assert.equal(JSON.stringify(emailContact.recent).includes("gmail"), false);
