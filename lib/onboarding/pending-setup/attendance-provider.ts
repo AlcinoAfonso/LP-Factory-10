@@ -68,6 +68,7 @@ export function parseAttendanceResponse(payload: unknown, context: AttendanceCon
       nameChanged: parsed.success && parsed.data.preferredName !== null && parsed.data.preferredName !== context.preferredName,
       nameDeclined: parsed.success && parsed.data.preferredNameDeclined,
       requestWhatsapp: parsed.success && parsed.data.requestWhatsapp,
+      hasOutputUnderstanding: parsed.success && Boolean(parsed.data.businessUnderstanding),
       contactProvided: Boolean(context.whatsappProvided),
       contactDeclined: parsed.success && parsed.data.whatsappDeclined,
       hasContactReference: parsed.success && parsed.data.whatsappReference !== null,

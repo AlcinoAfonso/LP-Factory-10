@@ -4,7 +4,7 @@ import { redactPotentialContactDetails, validatePreferredName } from "./policy";
 import type { PendingSetupConversation } from "./contracts";
 
 export const ATTENDANCE_PROMPT_VERSION = "e10_12_basic_setup_v18";
-export const ATTENDANCE_CONTRACT_VERSION = 10;
+export const ATTENDANCE_CONTRACT_VERSION = 11;
 export const ATTENDANCE_LEASE_SECONDS = 360;
 const PREFERRED_NAME_QUESTION = "Olá! Como prefere ser chamado?";
 
@@ -131,7 +131,7 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
   if (value.action !== "confirm" && value.confirmedUnderstanding !== null && !prior?.confirmedUnderstanding) return null;
   if (!value.businessUnderstanding) value.confirmedUnderstanding = prior?.confirmedUnderstanding ?? null;
   if (value.closureReason !== null && (value.action !== "ask" || value.readyToComplete)) return null;
-  if (!value.businessUnderstanding && (value.action !== "ask" || value.readyToComplete))
+  if (!value.businessUnderstanding && (value.action !== "ask" || value.readyToComplete || value.requestWhatsapp))
     value.businessUnderstanding = context.displayedUnderstanding ?? "";
   if (value.preferredName !== null && (!validatePreferredName(value.preferredName, null).ok || value.preferredNameDeclined)) return null;
   if (context.preferredNameDeclined && !value.preferredNameDeclined && value.preferredName === null) return null;

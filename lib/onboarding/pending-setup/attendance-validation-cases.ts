@@ -277,6 +277,13 @@ async function main() {
   assert.equal(validateAttendanceOutput({ ...requestingWhatsapp, sufficientUnderstanding: false }, context), null);
   assert.equal(validateAttendanceOutput(requestingWhatsapp, context), null);
   assert.ok(validateAttendanceOutput(requestingWhatsapp, { ...context, currentPrimaryTaxonId: nicheId }));
+  const contactWithoutNews = validateAttendanceOutput({ ...requestingWhatsapp, businessUnderstanding: "" },
+    { ...context, currentPrimaryTaxonId: nicheId });
+  assert.equal(contactWithoutNews?.businessUnderstanding, context.displayedUnderstanding);
+  assert.equal(contactWithoutNews?.requestWhatsapp, true);
+  assert.equal(contactWithoutNews?.readyToComplete, false);
+  assert.equal(validateAttendanceOutput({ ...requestingWhatsapp, businessUnderstanding: "" },
+    { ...context, currentPrimaryTaxonId: nicheId, displayedUnderstanding: null }), null);
   assert.equal(validateAttendanceOutput(requestingWhatsapp, { ...context, currentPrimaryTaxonId: nicheId,
     catalog: context.catalog.map(taxon => ({ ...taxon, active: false })) }), null);
   assert.equal(validateAttendanceOutput({ ...base, requestWhatsapp: true }, context), null);
