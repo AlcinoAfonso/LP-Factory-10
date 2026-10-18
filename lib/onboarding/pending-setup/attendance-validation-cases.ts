@@ -274,6 +274,9 @@ async function main() {
   assert.ok(validateAttendanceOutput({ ...later, confirmedUnderstanding: context.displayedUnderstanding }, acceptedContactContext));
   const requestingWhatsapp = { ...finishing, requestWhatsapp: true, readyToComplete: false };
   assert.ok(validateAttendanceOutput(requestingWhatsapp, { ...context, confirmedOperationalUnderstanding: true }));
+  assert.equal(validateAttendanceOutput({ ...base, requestWhatsapp: true }, context), null);
+  assert.equal(validateAttendanceOutput({ ...base, action: "pending", existingTaxonId: null, requestWhatsapp: true }, context), null);
+  assert.ok(validateAttendanceOutput({ ...requestingWhatsapp, action: "confirm" }, { ...context, confirmedProposal: { kind: "operational_fallback", taxonId: null, taxonName: null } }));
   assert.equal(validateAttendanceOutput({ ...requestingWhatsapp, readyToComplete: true }, { ...context, confirmedOperationalUnderstanding: true }), null);
   assert.equal(validateAttendanceOutput(requestingWhatsapp, { ...context, whatsappProvided: true }), null);
   assert.equal(validateAttendanceOutput({ ...contactOutput, requestWhatsapp: true }, phoneContext), null);
