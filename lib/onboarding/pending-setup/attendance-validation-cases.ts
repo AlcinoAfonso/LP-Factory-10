@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import nodeModule from "node:module";
+import { redactPotentialContactDetails } from "../text-redaction";
 import { attendanceContactProjection, attendanceProjection, attendancePrompt, attendanceProposal, attendanceSummary, validateAttendanceOutput,
   validateStoredAttendanceProposal, type AttendanceContext, type AttendanceOutput } from "./attendance-core";
 import type { AttendanceDependencies } from "./attendance-coordinator";
@@ -363,9 +364,20 @@ async function main() {
   assert.equal(projectSummary(legacyAtLimit + " ").summary, null);
   assert.equal(projectSummary(JSON.stringify({ ...JSON.parse(compactContact), unexpected: true })).summary, null);
 
+  for (const separator of ["–", "—", "‑", "−", "/", "\\", "／", "⁄", "∕"]) {
+    const text = "+55 (21) 99999" + separator + "0000";
+    const contact = attendanceContactProjection([{ role: "user", content: "Meu WhatsApp é " + text }]);
+    assert.equal(contact.contacts.get("phone_0_0"), phone);
+    assert.equal(contact.recent[0].content.includes("99999"), false);
+    assert.equal(contact.recent[0].content.includes("+55"), false);
+    const assistant = attendanceContactProjection([{ role: "assistant", content: "Exemplo: " + text }]);
+    assert.equal(assistant.contacts.size, 0);
+    assert.equal(/\d/.test(assistant.recent[0].content), false);
+    assert.equal(/\d/.test(redactPotentialContactDetails(text)), false);
+  }
   const hiddenContact = attendanceContactProjection([{ role: "user", content: "https://example.com/5521999990000" }]);
   assert.equal(hiddenContact.contacts.size, 0);
-  for (const invalidPhone of ["5511999990000123", "+55 (11) 99999-0000-123"]) {
+  for (const invalidPhone of ["5511999990000123", "+55 (11) 99999-0000-123", "+55 (11) 99999–0000/123"]) {
     const rejected = attendanceContactProjection([{ role: "user", content: `Meu WhatsApp é ${invalidPhone}.` }]);
     assert.equal(rejected.contacts.size, 0);
     assert.equal(/\d/.test(rejected.recent[0].content), false);
