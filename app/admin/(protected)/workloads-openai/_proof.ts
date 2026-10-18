@@ -378,10 +378,15 @@ async function proveAttendance(
           recent: [...context.recent, { role: "assistant", content: output.reply },
             { role: "user", content: "Correção: não fazemos mais canal. Continuamos com clareamento e implantes, atendemos adultos e queremos comunicar essas ofertas. Ainda tenho dúvidas sobre como apresentá-las." }] };
       } else if (turn === 2) {
-        if (output.action !== "ask" || output.closureReason || output.readyToComplete
-          || !/clareamento/i.test(memory.contextualUnderstanding ?? "") || !/implant/i.test(memory.contextualUnderstanding ?? "")
-          || !/adult/i.test(memory.contextualUnderstanding ?? "") || /canal/i.test(memory.confirmedUnderstanding ?? "")
-          || /adult/i.test(memory.confirmedUnderstanding ?? "")) return contractFailure("correction");
+        const correctionChecks = {
+          action: output.action === "ask", open: !output.closureReason && !output.readyToComplete,
+          currentOffers: /clareamento/i.test(memory.contextualUnderstanding ?? "") && /implant/i.test(memory.contextualUnderstanding ?? ""),
+          newAudience: /adult/i.test(memory.contextualUnderstanding ?? ""),
+          removedOffer: !/canal/i.test(memory.confirmedUnderstanding ?? ""),
+          acceptedOnly: !/adult/i.test(memory.confirmedUnderstanding ?? ""),
+        };
+        const failedCorrection = Object.entries(correctionChecks).find(([, passed]) => !passed);
+        if (failedCorrection) return contractFailure("correction_" + failedCorrection[0]);
         // Resume from the consolidated memory with the original messages outside the recent window.
         context = { ...context, summary, displayedUnderstanding: output.businessUnderstanding,
           recent: [{ role: "assistant", content: output.reply },
