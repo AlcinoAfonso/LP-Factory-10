@@ -459,7 +459,7 @@ async function proveAttendance(
     return { ok: true, providerRequestId, latencyMs };
   };
   const runOptionalWhatsapp = async (): Promise<ProofAttempt> => {
-    const understanding = "Manutenção de jardins para condomínios; precisa apresentar o serviço.";
+    const understanding = "Clínica Movimento: fisioterapia para adultos; precisa apresentar o serviço.";
     let latencyMs = 0;
     let providerRequestId: string | null = null;
     for (const declined of [false, true]) {

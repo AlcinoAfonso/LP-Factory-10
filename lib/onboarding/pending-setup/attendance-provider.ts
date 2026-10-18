@@ -67,6 +67,11 @@ export function parseAttendanceResponse(payload: unknown, context: AttendanceCon
       sufficientUnderstanding: parsed.success && parsed.data.sufficientUnderstanding,
       nameChanged: parsed.success && parsed.data.preferredName !== null && parsed.data.preferredName !== context.preferredName,
       nameDeclined: parsed.success && parsed.data.preferredNameDeclined,
+      requestWhatsapp: parsed.success && parsed.data.requestWhatsapp,
+      contactProvided: Boolean(context.whatsappProvided),
+      contactDeclined: parsed.success && parsed.data.whatsappDeclined,
+      hasContactReference: parsed.success && parsed.data.whatsappReference !== null,
+      hasConfirmedUnderstanding: parsed.success && parsed.data.confirmedUnderstanding !== null,
     });
   }
   return validated ? { ok: true as const, value: { output: validated },

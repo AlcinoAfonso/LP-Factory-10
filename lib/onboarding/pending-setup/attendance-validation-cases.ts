@@ -290,6 +290,14 @@ async function main() {
   assert.ok(validateAttendanceOutput(declined, { ...context, confirmedOperationalUnderstanding: true }));
   const declinedSummary = attendanceSummary(declined, null, null);
   assert.equal(JSON.parse(declinedSummary).whatsappDeclined, true);
+  const withdrawnSummary = attendanceSummary({ ...noBusinessNews, whatsappDeclined: true }, null, null, contactSummary);
+  assert.equal(JSON.parse(withdrawnSummary).whatsapp, undefined);
+  assert.equal(JSON.parse(withdrawnSummary).whatsappDeclined, true);
+  assert.equal(JSON.parse(withdrawnSummary).contextualUnderstanding, JSON.parse(contactSummary).contextualUnderstanding);
+  const withdrawnProjection = attendanceProjection({ ...conversation, accountContext: {
+    summary: withdrawnSummary, updatedAt: conversation.updatedAt,
+  } }, context.catalog);
+  assert.equal(withdrawnProjection.whatsappProvided, false);
   assert.equal(JSON.parse(attendanceSummary(noBusinessNews, null, null, declinedSummary)).whatsappDeclined, true);
   assert.equal(JSON.parse(attendanceProjection({ ...conversation, accountContext: {
     summary: declinedSummary, updatedAt: conversation.updatedAt,
@@ -297,6 +305,57 @@ async function main() {
   const correctedContacts = attendanceContactProjection([{ role: "user", content: "Correção: meu WhatsApp é +55 11 97777-2222." }]);
   const correctedSummary = attendanceSummary({ ...base, whatsappReference: "phone_0_0" }, null, null, contactSummary, correctedContacts.contacts);
   assert.equal(JSON.parse(correctedSummary).whatsapp, "+5511977772222");
+  // A full legacy Summary can gain a contact without losing distinct commercial meanings.
+  const legacyFields = { contextualUnderstanding: "", confirmedUnderstanding: "", classification: "Jardinagem", suggestions: [], pendingReason: null };
+  const legacyContext = "Contexto comercial atual: ".padEnd(3000, "a");
+  const legacyConfirmed = "Entendimento anteriormente aceito: ".padEnd(6000 - JSON.stringify(legacyFields).length - legacyContext.length, "b");
+  const legacyAtLimit = JSON.stringify({ ...legacyFields, contextualUnderstanding: legacyContext, confirmedUnderstanding: legacyConfirmed });
+  assert.equal(legacyAtLimit.length, 6000);
+  const maxPhone = "+123456789012345";
+  const addAtLimit = { ...noBusinessNews, whatsappReference: "max_phone" };
+  const limitContacts = new Map([["max_phone", maxPhone]]);
+  const compactContact = attendanceSummary(addAtLimit, "Jardinagem", null, legacyAtLimit, limitContacts);
+  assert.ok(compactContact.length <= 6000);
+  assert.equal(JSON.parse(compactContact).w, maxPhone);
+  const projectSummary = (summary: string) => attendanceProjection({ ...conversation, accountContext: {
+    summary, updatedAt: conversation.updatedAt,
+  } }, context.catalog);
+  const contactAtLimit = projectSummary(compactContact);
+  assert.equal(contactAtLimit.whatsappProvided, true);
+  assert.equal(contactAtLimit.summary?.includes(maxPhone), false);
+  assert.equal(JSON.parse(contactAtLimit.summary!).contextualUnderstanding, legacyContext);
+  assert.equal(JSON.parse(contactAtLimit.summary!).confirmedUnderstanding, legacyConfirmed);
+  assert.equal(JSON.parse(contactAtLimit.summary!).classification, "Jardinagem");
+  const retainedAtLimit = attendanceSummary(noBusinessNews, "Jardinagem", null, compactContact);
+  assert.equal(JSON.parse(retainedAtLimit).w, maxPhone);
+  assert.equal(JSON.parse(projectSummary(retainedAtLimit).summary!).contextualUnderstanding, legacyContext);
+  const withdrawnAtLimit = attendanceSummary({ ...noBusinessNews, whatsappDeclined: true }, "Jardinagem", null, compactContact);
+  const declinedAtLimit = projectSummary(withdrawnAtLimit);
+  assert.equal(declinedAtLimit.whatsappProvided, false);
+  assert.equal(JSON.parse(declinedAtLimit.summary!).whatsappDeclined, true);
+  assert.equal(JSON.parse(declinedAtLimit.summary!).confirmedUnderstanding, legacyConfirmed);
+  assert.ok(validateAttendanceOutput({ ...later, confirmedUnderstanding: legacyConfirmed }, declinedAtLimit));
+  assert.equal(validateAttendanceOutput(requestingWhatsapp, declinedAtLimit), null);
+  const resuppliedAtLimit = attendanceSummary(addAtLimit, "Jardinagem", null, withdrawnAtLimit, limitContacts);
+  assert.equal(projectSummary(resuppliedAtLimit).whatsappProvided, true);
+  assert.equal(Boolean(JSON.parse(projectSummary(resuppliedAtLimit).summary!).whatsappDeclined), false);
+  // Expanded projection keys can exceed storage capacity without invalidating confirmed memory.
+  const largerContext = legacyContext + " Oferta nova.";
+  const expandedContact = attendanceSummary({ ...addAtLimit, businessUnderstanding: largerContext,
+    confirmedUnderstanding: legacyConfirmed }, "Jardinagem", null, legacyAtLimit, limitContacts);
+  const expandedProjection = projectSummary(expandedContact);
+  assert.ok(expandedContact.length <= 6000);
+  assert.ok(expandedProjection.summary!.length > 6000);
+  assert.ok(validateAttendanceOutput({ ...later, confirmedUnderstanding: legacyConfirmed }, expandedProjection));
+  assert.equal(expandedProjection.summary?.includes(maxPhone), false);
+  const expandedWithdrawal = attendanceSummary({ ...noBusinessNews, whatsappDeclined: true }, "Jardinagem", null, expandedContact);
+  const expandedDecline = projectSummary(expandedWithdrawal);
+  assert.ok(expandedDecline.summary!.length > 6000);
+  assert.equal(validateAttendanceOutput(requestingWhatsapp, expandedDecline), null);
+  assert.ok(validateAttendanceOutput({ ...later, confirmedUnderstanding: legacyConfirmed }, expandedDecline));
+  assert.equal(projectSummary(legacyAtLimit + " ").summary, null);
+  assert.equal(projectSummary(JSON.stringify({ ...JSON.parse(compactContact), unexpected: true })).summary, null);
+
   const hiddenContact = attendanceContactProjection([{ role: "user", content: "https://example.com/5521999990000" }]);
   assert.equal(hiddenContact.contacts.size, 0);
   for (const invalidPhone of ["5511999990000123", "+55 (11) 99999-0000-123"]) {

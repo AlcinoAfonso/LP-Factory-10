@@ -3,8 +3,8 @@ import { redactEmailAndUrl } from "../text-redaction";
 import { redactPotentialContactDetails, validatePreferredName } from "./policy";
 import type { PendingSetupConversation } from "./contracts";
 
-export const ATTENDANCE_PROMPT_VERSION = "e10_12_basic_setup_v17";
-export const ATTENDANCE_CONTRACT_VERSION = 9;
+export const ATTENDANCE_PROMPT_VERSION = "e10_12_basic_setup_v18";
+export const ATTENDANCE_CONTRACT_VERSION = 10;
 export const ATTENDANCE_LEASE_SECONDS = 360;
 const PREFERRED_NAME_QUESTION = "Olá! Como prefere ser chamado?";
 
@@ -62,7 +62,7 @@ existingTaxonId deve conter o ID proposto somente em action=existing. Em ask, pe
 confirmedProposal só existe no turno de confirmação explícita do entendimento/categoria persistidos. Nesse turno devolva confirm e mantenha exatamente displayedUnderstanding, sem mudar a proposta, pesquisar ou pedir novo Sim. O mesmo aceite confirma o entendimento exibido e a categoria quando houver, ou somente o entendimento no fallback. Fora desse turno, confirm é proibido: aceites antigos em recent ou summary não autorizam confirm. Quando confirmedProposal estiver ausente ou null, uma correção comercial com categoria oficial já definida usa ask, preservando apenas a parte ainda vigente do entendimento aceito; não peça nova confirmação de categoria. confirmedOperationalUnderstanding indica descrição operacional já confirmada: não peça nova confirmação apenas porque não há taxon.
 sufficientUnderstanding indica que o negócio está suficientemente compreendido para propor ou confirmar o entendimento/classificação, não que a orientação comercial já terminou. Em existing, pending e confirm, sufficientUnderstanding é true; readyToComplete decide separadamente se o atendimento está pronto para concluir.
 Após confirmar, aprofunde somente lacuna material ao próximo passo, sem exigir diagnóstico completo ou esgotar a venda. readyToComplete só é true quando há entendimento suficiente, classificação oficial válida ou entendimento operacional confirmado (inclusive neste turno), orientação pertinente e próximo passo claros. Não encerre automaticamente só porque encontrou/confirmou categoria; não continue artificialmente quando já basta. Use ask para conversa útil sem nova proposta. pending/existing aguardam confirmação, logo nunca estão prontos.
-Perto do fim, quando entendimento, orientação e próximo passo já bastarem, solicite WhatsApp de forma opcional se ainda não fornecido ou recusado. Não o peça no acolhimento nem prolongue por esse dado. Se o lead quiser avançar imediatamente ou não responder, respeite e siga ao comercial. No turno em que solicitar o contato, devolva requestWhatsapp=true, readyToComplete=false e action=ask ou confirm para manter o campo de resposta aberto; preserve action=confirm quando estiver confirmando uma proposta. Nunca solicite WhatsApp em existing ou pending, pois a proposta aguarda confirmação pelos botões. Fora do pedido, requestWhatsapp=false. Se o lead recusar ou preferir seguir, conclua sem novo pedido. Recusa não bloqueia readyToComplete, não exige justificativa e não deve ser repetida. whatsappProvided=true significa número já preservado; summary.whatsappDeclined registra recusa anterior. Telefones nas falas do próprio lead aparecem como referências opacas de contactReferences: devolva whatsappReference somente quando o lead identificar inequivocamente essa referência como seu WhatsApp, inclusive se informado antecipadamente ou corrigido depois. Número citado como exemplo, de terceiro ou negado não é WhatsApp do lead. Fora disso, whatsappReference=null; whatsappDeclined=true apenas para recusa inequívoca. Não invente número/referência nem copie referências para businessUnderstanding, confirmedUnderstanding ou reply. O servidor guarda o número original no Resumo; o Diálogo preserva a fala integral. Fornecimento não autoriza contato posterior. Ao terminar, indique a página comercial e encerre cordialmente, sem nova pergunta acessória, mesmo sem nicho identificado.
+Perto do fim, quando entendimento, orientação e próximo passo já bastarem, solicite WhatsApp de forma opcional se ainda não fornecido ou recusado. Não o peça no acolhimento nem prolongue por esse dado. Se o lead quiser avançar imediatamente ou não responder, respeite e siga ao comercial. No turno em que solicitar o contato, devolva requestWhatsapp=true, readyToComplete=false e action=ask ou confirm para manter o campo de resposta aberto; preserve action=confirm quando estiver confirmando uma proposta. Nunca solicite WhatsApp em existing ou pending, pois a proposta aguarda confirmação pelos botões. Fora do pedido, requestWhatsapp=false. Se o lead recusar ou preferir seguir, conclua sem novo pedido. Recusa não bloqueia readyToComplete, não exige justificativa e não deve ser repetida. whatsappProvided=true significa número já preservado; summary.whatsappDeclined registra recusa anterior. Telefones nas falas do próprio lead aparecem como referências opacas de contactReferences: devolva whatsappReference somente quando o lead identificar inequivocamente essa referência como seu WhatsApp, inclusive se informado antecipadamente ou corrigido depois. Número citado como exemplo, de terceiro ou negado não é WhatsApp do lead. Fora disso, whatsappReference=null; whatsappDeclined=true apenas para recusa inequívoca ou retratação explícita do número anterior (não é do lead ou não deseja mantê-lo); nesse caso o servidor retira o número do Resumo e preserva o Diálogo. Uma correção com novo WhatsApp usa a nova referência e whatsappDeclined=false. Não invente número/referência nem copie referências para businessUnderstanding, confirmedUnderstanding ou reply. O servidor guarda o número original no Resumo; o Diálogo preserva a fala integral. Fornecimento não autoriza contato posterior. Ao terminar, indique a página comercial e encerre cordialmente, sem nova pergunta acessória, mesmo sem nicho identificado.
 Diante de assunto lateral ocasional, responda brevemente e com naturalidade quando útil, depois redirecione ao negócio e às necessidades comerciais. Se o histórico mostrar que já tentou redirecionar e o lead insistir no desvio sem avanço útil, explicite cordialmente seu papel e encerre sem nova pergunta. Reconheça também repetição, dúvidas circulares ou falta de perspectiva de conclusão: quando não houver avanço útil, encerre cordialmente, sem exigir quantidade de mensagens, chamadas ou tempo. Não encerre prematuramente uma conversa útil ou por dúvida pontual. No encerramento inconclusivo, closureReason resume em uma frase curta a pendência comercial ou a ausência de avanço que impediu a conclusão; businessUnderstanding mantém somente contexto comercial relevante e suggestions continua separada. Use action=ask, existingTaxonId=null e readyToComplete=false: encerramento inconclusivo não confirma entendimento/categoria, não concede acesso e não é conclusão bem-sucedida. No turno de confirmação explícita, preserve o contrato confirm vigente. Não prometa análise posterior, prazo, retorno automático ou novo contato. Fora de encerramento inconclusivo, closureReason é null. Uma nova mensagem útil pode retomar normalmente o atendimento a partir do contexto e da pendência no Resumo.
 Use marketContext somente como repertório contextual do nicho. Respeite proveniência, período, limitações e disponibilidade; registros históricos não são pesquisa atual. Expresse padrões como possibilidades condicionais a validar com o lead, não características da empresa, recomendações obrigatórias ou promessas. Ausência de pesquisa específica não bloqueia nem autoriza invenção.
 A fonte comercial competente disponível neste recorte confirma somente a proposta de valor geral: organizar conhecimento do negócio e apoiar sua comunicação. Não há oferta específica de serviço, preço, prazo, disponibilidade ou condição comercial comprovada no contexto. Diga explicitamente que esses detalhes precisam de confirmação e encaminhe a continuidade competente, sem inventá-los. Exemplos, telas e serviços ilustrativos não são oferta disponível. D17 conserva objeções, comparações, recomendação e contratação aprofundadas.
@@ -123,7 +123,7 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
   const parsed = attendanceOutputSchema.safeParse(raw);
   if (!parsed.success) return null;
   const value = parsed.data;
-  const prior = readAccountSummary(context.summary);
+  const prior = readProjectedAccountSummary(context.summary);
   if (value.requestWhatsapp && (!["ask", "confirm"].includes(value.action) || value.readyToComplete || value.whatsappDeclined || value.whatsappReference !== null
     || context.whatsappProvided || prior?.whatsappDeclined)) return null;
   if (value.whatsappReference !== null && (value.whatsappDeclined ||
@@ -181,20 +181,42 @@ const fullAccountSummarySchema = z.object({
   whatsapp: z.string().regex(/^\+?\d{10,15}$/).nullable().optional(),
   whatsappDeclined: z.boolean().optional(),
 }).strict();
-const accountSummarySchema = z.union([fullAccountSummarySchema,
+const compactAccountSummarySchema = z.object({
+  contextualUnderstanding: fullAccountSummarySchema.shape.contextualUnderstanding,
+  confirmedUnderstanding: fullAccountSummarySchema.shape.confirmedUnderstanding,
+  c: fullAccountSummarySchema.shape.classification,
+  s: fullAccountSummarySchema.shape.suggestions.optional(),
+  p: fullAccountSummarySchema.shape.pendingReason,
+  w: fullAccountSummarySchema.shape.whatsapp,
+  d: fullAccountSummarySchema.shape.whatsappDeclined,
+}).strict().transform(value => ({
+  contextualUnderstanding: value.contextualUnderstanding, confirmedUnderstanding: value.confirmedUnderstanding,
+  classification: value.c, suggestions: value.s ?? [], pendingReason: value.p ?? null,
+  ...(value.w ? { whatsapp: value.w } : {}), ...(value.d ? { whatsappDeclined: true } : {}),
+}));
+const projectedAccountSummarySchema = fullAccountSummarySchema.omit({ whatsapp: true });
+function readProjectedAccountSummary(raw: string | null | undefined) {
+  try {
+    // Expanded key names can exceed the storage limit; field bounds and strict shape still apply.
+    const parsed = projectedAccountSummarySchema.safeParse(JSON.parse(raw ?? "null"));
+    return parsed.success ? parsed.data : null;
+  } catch { return null; }
+}
+const accountSummarySchema = z.union([fullAccountSummarySchema, compactAccountSummarySchema,
   fullAccountSummarySchema.omit({ contextualUnderstanding: true, suggestions: true })
     .extend({ pendingReason: z.literal("Sem avanço útil.").nullable() }).strict(),
 ]);
 function readAccountSummary(raw: string | null | undefined) {
   try {
-    const parsed = accountSummarySchema.safeParse(JSON.parse(raw ?? "null"));
-    return parsed.success && raw && raw.length <= 6000 ? { contextualUnderstanding: null, suggestions: [], ...parsed.data } : null;
+    if (!raw || raw.length > 6000) return null;
+    const parsed = accountSummarySchema.safeParse(JSON.parse(raw));
+    return parsed.success ? { contextualUnderstanding: null, suggestions: [], ...parsed.data } : null;
   } catch { return null; } // Invalid memory never promotes an interpretation to confirmed.
 }
 export function attendanceSummary(output: AttendanceOutput, primary: string | null, proposal: AttendanceProposal | null | undefined,
   priorSummary?: string | null, contacts: ReadonlyMap<string, string> = new Map()): string {
   const prior = readAccountSummary(priorSummary);
-  const whatsapp = output.whatsappReference ? contacts.get(output.whatsappReference) : prior?.whatsapp;
+  const whatsapp = output.whatsappDeclined ? null : output.whatsappReference ? contacts.get(output.whatsappReference) : prior?.whatsapp;
   if (output.whatsappReference && !whatsapp) throw new Error("attendance_contact_reference_invalid");
   const missingNiche = "Nicho sem correspondência segura no catálogo.";
   const unresolved = !primary && (output.action === "pending"
@@ -209,15 +231,29 @@ export function attendanceSummary(output: AttendanceOutput, primary: string | nu
     suggestions: output.suggestions.length ? output.suggestions : prior?.suggestions ?? [],
     pendingReason: output.closureReason ?? (unresolved ? missingNiche : null),
     ...(whatsapp ? { whatsapp } : {}),
-    ...(output.whatsappDeclined || prior?.whatsappDeclined
-      ? { whatsappDeclined: output.whatsappReference ? false : true } : {}),
+    ...(output.whatsappDeclined || (!output.whatsappReference && prior?.whatsappDeclined)
+      ? { whatsappDeclined: true } : {}),
   };
-  // Current commercial meaning is never sacrificed to retain historical wording.
-  if (JSON.stringify(summary).length > 6000) summary.suggestions = [];
-  if (JSON.stringify(summary).length > 6000 && summary.contextualUnderstanding === summary.confirmedUnderstanding)
+  // Reserve the maximum compact contact field before a number is supplied.
+  const limit = whatsapp ? 6000 : summary.whatsappDeclined ? 5986 : 5977;
+  const serialize = () => {
+    const readable = JSON.stringify(summary);
+    if (readable.length <= limit) return readable;
+    return JSON.stringify({
+      contextualUnderstanding: summary.contextualUnderstanding, confirmedUnderstanding: summary.confirmedUnderstanding,
+      c: summary.classification, ...(summary.suggestions.length ? { s: summary.suggestions } : {}),
+      ...(summary.pendingReason ? { p: summary.pendingReason } : {}), ...(whatsapp ? { w: whatsapp } : {}),
+      ...(summary.whatsappDeclined ? { d: true } : {}),
+    });
+  };
+  let serialized = serialize();
+  if (serialized.length > limit) { summary.suggestions = []; serialized = serialize(); }
+  if (serialized.length > limit && summary.contextualUnderstanding === summary.confirmedUnderstanding) {
     summary.contextualUnderstanding = null; // Remove only an exact duplicate, not commercial information.
-  if (JSON.stringify(summary).length > 6000) throw new Error("attendance_summary_too_long");
-  return JSON.stringify(summary);
+    serialized = serialize();
+  }
+  if (serialized.length > limit) throw new Error("attendance_summary_too_long");
+  return serialized;
 }
 function preferredNameIsSourced(context: AttendanceContext, name: string): boolean {
   if (context.confirmedProposal) return false;
