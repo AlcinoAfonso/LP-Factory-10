@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-- Data: 17/10/2026
-- Versão: v1.5.258
+- Data: 18/10/2026
+- Versão: v1.5.259
 
 0.2 Contrato do documento (consulta)
 - Estado vigente dos casos; sem narrativa operacional.
@@ -878,7 +878,7 @@
 
 10.12.1 Objetivo e status
 - Objetivo: entender negócio/necessidade, orientar e definir próximo passo.
-- Status: operacional em Preview/Production; legadas E10.9 preservadas. Depende de E10.13, não de PB-B.
+- Status: base operacional em Preview/Production; refinamentos do Pending Setup básico implementados na branch, com validação visual autenticada pendente e sem liberação para merge. Legadas E10.9 preservadas. Depende de E10.13, não de PB-B.
 
 10.12.2 Registros do recorte
 - Banco:
@@ -896,7 +896,10 @@
     - `app/admin/(protected)/workloads-openai/_proof.ts`
     - `lib/onboarding/pending-setup/attendance-core.ts`
     - `lib/onboarding/pending-setup/attendance-coordinator.ts`
+    - `lib/onboarding/pending-setup/attendance-provider.ts`
     - `lib/onboarding/pending-setup/attendance-validation-cases.ts`
+    - `lib/onboarding/text-redaction.ts`
+    - `app/a/[account]/_components/PendingSetupConversation.tsx`
 - Referências:
   - Memória contextual e autoridades: `docs/base-tecnica.md` — seção 3.14.6.
   - Contrato de banco aplicado: `docs/schema.md` — seções 1.19D e 3.1.3.
