@@ -251,7 +251,15 @@ async function main() {
   assert.throws(() => attendanceSummary(contactOutput, null, null), /contact_reference_invalid/);
   const contactSummary = attendanceSummary(contactOutput, null, null, null, numbers);
   assert.equal(JSON.parse(contactSummary).whatsapp, phone);
-  assert.equal(JSON.parse(contactSummary).pendingReason, "Nicho sem correspondência segura no catálogo.");
+  assert.equal(JSON.parse(contactSummary).pendingReason, null);
+  const missingNiche = "Nicho sem correspondência segura no catálogo.";
+  assert.equal(JSON.parse(attendanceSummary({ ...noBusinessNews, preferredName: null }, null, null)).pendingReason, null);
+  const unresolvedSummary = attendanceSummary(pending, null, null);
+  assert.equal(JSON.parse(unresolvedSummary).pendingReason, missingNiche);
+  assert.equal(JSON.parse(attendanceSummary(noBusinessNews, null, null, unresolvedSummary)).pendingReason, missingNiche);
+  assert.equal(JSON.parse(attendanceSummary(base, null, null, unresolvedSummary)).pendingReason, null);
+  assert.equal(JSON.parse(attendanceSummary(accepted, null, fallback)).pendingReason, missingNiche);
+  assert.equal(JSON.parse(attendanceSummary(accepted, null, proposal)).pendingReason, null);
   assert.equal(JSON.parse(attendanceSummary(noBusinessNews, null, null, contactSummary)).whatsapp, phone);
   const retainedContact = attendanceProjection({ ...conversation, accountContext: {
     summary: contactSummary, updatedAt: conversation.updatedAt,
@@ -277,6 +285,10 @@ async function main() {
   assert.equal(JSON.parse(correctedSummary).whatsapp, "+5511977772222");
   const hiddenContact = attendanceContactProjection([{ role: "user", content: "https://example.com/5521999990000" }]);
   assert.equal(hiddenContact.contacts.size, 0);
+  const emailContact = attendanceContactProjection([{ role: "user", content: "Meu e-mail é joao5511999990000@gmail.com e meu site é https://example.com/5521999990000" }]);
+  assert.equal(emailContact.contacts.size, 0);
+  assert.equal(JSON.stringify(emailContact.recent).includes("gmail"), false);
+  assert.equal(JSON.stringify(emailContact.recent).includes("phone_"), false);
   assert.deepEqual(catalogAdapter.projectAttendanceMarketContext([], []), []);
   const market = catalogAdapter.projectAttendanceMarketContext([{ id: accountId, taxon_id: nicheId, updated_at: "2026-06-01" }],
     [{ research_id: accountId, item_key: "limitation", item_text: "Pesquisa histórica; validar aplicabilidade.", notes: "Período 2024." }]);

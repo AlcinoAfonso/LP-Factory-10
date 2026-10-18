@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { redactEmailAndUrl } from "../text-redaction";
 import { redactPotentialContactDetails, validatePreferredName } from "./policy";
 import type { PendingSetupConversation } from "./contracts";
 
@@ -77,7 +78,7 @@ export function attendanceContactProjection(messages: AttendanceContext["recent"
   const contacts = new Map<string, string>();
   const recent = messages.slice(-8).map(({ role, content }, index, bounded) => {
     let occurrence = 0;
-    const referenced = role === "user" ? content.replace(/(?:\+?\d[\s().-]*){10,15}/gu, raw => {
+    const referenced = role === "user" ? redactEmailAndUrl(content).replace(/(?:\+?\d[\s().-]*){10,15}/gu, raw => {
       const reference = `phone_${index}_${occurrence++}`;
       contacts.set(reference, (raw.startsWith("+") ? "+" : "") + raw.replace(/\D/g, ""));
       return `[${reference}]`;
@@ -191,14 +192,18 @@ export function attendanceSummary(output: AttendanceOutput, primary: string | nu
   const prior = readAccountSummary(priorSummary);
   const whatsapp = output.whatsappReference ? contacts.get(output.whatsappReference) : prior?.whatsapp;
   if (output.whatsappReference && !whatsapp) throw new Error("attendance_contact_reference_invalid");
+  const missingNiche = "Nicho sem correspondência segura no catálogo.";
+  const unresolved = !primary && (output.action === "pending"
+    || (output.action === "confirm" && proposal?.kind === "operational_fallback")
+    || (output.action === "ask" && prior?.classification === "Não identificada."
+      && Boolean(prior.confirmedUnderstanding || prior.pendingReason === missingNiche)));
   const summary = {
     contextualUnderstanding: output.businessUnderstanding || prior?.contextualUnderstanding || null,
     confirmedUnderstanding: output.action === "confirm" ? output.businessUnderstanding
       : output.businessUnderstanding ? output.confirmedUnderstanding : prior?.confirmedUnderstanding ?? null,
     classification: (output.action === "confirm" && proposal?.kind === "existing" ? proposal.taxonName : primary) || "Não identificada.",
     suggestions: output.suggestions.length ? output.suggestions : prior?.suggestions ?? [],
-    pendingReason: output.closureReason ?? (!primary && !(output.action === "confirm" && proposal?.kind === "existing")
-      ? "Nicho sem correspondência segura no catálogo." : null),
+    pendingReason: output.closureReason ?? (unresolved ? missingNiche : null),
     ...(whatsapp ? { whatsapp } : {}),
     ...(output.whatsappDeclined || prior?.whatsappDeclined
       ? { whatsappDeclined: output.whatsappReference ? false : true } : {}),
