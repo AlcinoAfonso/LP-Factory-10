@@ -285,7 +285,7 @@ async function proveAttendance(
           confirmedOperationalUnderstanding: !identified,
           summary: attendanceSummary(output, identified ? "Manutenção de jardins" : null, context.confirmedProposal ?? null, context.summary),
           recent: [...context.recent, { role: "assistant", content: output.reply },
-            { role: "user", content: "Minha necessidade é apresentar claramente meu serviço ao público informado. A orientação de organizar o conhecimento e apoiar a comunicação já me ajudou. Entendi que serviços, preços e prazos específicos precisam de confirmação. Não tenho mais dúvidas; quero seguir à etapa comercial." }] };
+            { role: "user", content: "Minha necessidade é apresentar claramente meu serviço ao público informado. A orientação de organizar o conhecimento e apoiar a comunicação já me ajudou. Entendi que serviços, preços e prazos específicos precisam de confirmação. Prefiro não informar WhatsApp. Não tenho mais dúvidas; quero seguir à etapa comercial." }] };
       } else if (output.action !== "ask" || !output.readyToComplete || !output.sufficientUnderstanding) {
         return { ok: false, code: "contract" };
       }
@@ -337,7 +337,7 @@ async function proveAttendance(
       id: dentistryId, name: "Odontologia", level: "niche", parentId: segmentId, active: true, aliases: [],
     }];
     let context: AttendanceContext = { preferredName: null, summary: null, catalog: dentalCatalog,
-      recent: [{ role: "assistant", content: "Como prefere ser chamado?" },
+      recent: [{ role: "assistant", content: "Olá! Como prefere ser chamado?" },
         { role: "user", content: "João. Tenho a Clínica Sorriso e fazemos clareamento, tratamento de canal e implantes. Sou flamenguista, mas futebol não tem relação com o negócio." }] };
     let latencyMs = 0;
     let providerRequestId: string | null = null;
@@ -350,7 +350,7 @@ async function proveAttendance(
       configurationOverride: workload, environment, apiKey,
       financialContext: lpFactoryOpenAiCostContext, executionOrigin: "administrative_proof" });
     if (!greeting.ok) return { ok: false, code: "provider" };
-    if (greeting.output.reply !== "Como prefere ser chamado?" || greeting.output.preferredName !== null
+    if (greeting.output.reply !== "Olá! Como prefere ser chamado?" || greeting.output.preferredName !== null
       || greeting.output.action !== "ask" || greeting.output.closureReason) return contractFailure("personal_question");
     latencyMs += greeting.latencyMs ?? 0;
     context = { ...context, recent: [{ role: "assistant", content: greeting.output.reply }, context.recent[1]] };
@@ -452,13 +452,40 @@ async function proveAttendance(
         latencyMs += result.latencyMs ?? 0; providerRequestId = result.responseId;
         context = { ...context, summary: attendanceSummary(output, test.name, null, context.summary),
           recent: [...context.recent, { role: "assistant", content: output.reply },
-            { role: "user", content: "A oportunidade de organizar o conhecimento e apoiar a comunicação fez sentido. Não tenho outras dúvidas; quero seguir ao próximo passo comercial. Entendi que serviços e condições específicos precisam de confirmação competente." }] };
+            { role: "user", content: "A oportunidade de organizar o conhecimento e apoiar a comunicação fez sentido. Prefiro não informar WhatsApp. Não tenho outras dúvidas; quero seguir ao próximo passo comercial. Entendi que serviços e condições específicos precisam de confirmação competente." }] };
       }
     }
     // Persuasion, relevance and value before accessory questions are reviewed in hosted QA, not a phrase parser.
     return { ok: true, providerRequestId, latencyMs };
   };
-  const results = await Promise.all([runConversation(true), runConversation(false), runSemanticClosure(), runWholeMessage(), runNameSemantics(), runCommercialAdvance()]);
+  const runOptionalWhatsapp = async (): Promise<ProofAttempt> => {
+    const understanding = "Manutenção de jardins para condomínios; precisa apresentar o serviço.";
+    let latencyMs = 0;
+    let providerRequestId: string | null = null;
+    for (const declined of [false, true]) {
+      const context: AttendanceContext = { preferredName: "Ana", catalog, currentPrimaryTaxonId: null,
+        confirmedOperationalUnderstanding: true, displayedUnderstanding: understanding,
+        contactReferences: declined ? [] : ["phone_0_0"],
+        summary: JSON.stringify({ contextualUnderstanding: understanding, confirmedUnderstanding: understanding,
+          classification: "Não identificada.", suggestions: [], pendingReason: "Nicho sem correspondência segura no catálogo." }),
+        recent: [{ role: "assistant", content: "Se quiser informar seu WhatsApp, é opcional e não autoriza contato posterior." },
+          { role: "user", content: declined
+            ? "Prefiro não informar WhatsApp. Entendi o valor de organizar as informações e apoiar a comunicação. Quero seguir à página comercial."
+            : "Meu WhatsApp é [phone_0_0]. Entendi o valor de organizar as informações e apoiar a comunicação. Quero seguir à página comercial." }] };
+      const result = await requestAttendance({ accountId, context, configurationOverride: workload, environment, apiKey,
+        financialContext: lpFactoryOpenAiCostContext, executionOrigin: "administrative_proof" });
+      if (!result.ok) return { ok: false, code: "provider" };
+      if (!result.output.readyToComplete || result.output.action !== "ask" || result.output.closureReason
+        || result.output.whatsappDeclined !== declined || result.output.whatsappReference !== (declined ? null : "phone_0_0"))
+        return { ok: false, code: "contract" };
+      const summary = JSON.parse(attendanceSummary(result.output, null, null, context.summary,
+        new Map([["phone_0_0", "+5521999990000"]])));
+      if (!summary.pendingReason || (!declined && summary.whatsapp !== "+5521999990000")) return { ok: false, code: "contract" };
+      latencyMs += result.latencyMs ?? 0; providerRequestId = result.responseId;
+    }
+    return { ok: true, providerRequestId, latencyMs };
+  };
+  const results = await Promise.all([runConversation(true), runConversation(false), runSemanticClosure(), runWholeMessage(), runNameSemantics(), runCommercialAdvance(), runOptionalWhatsapp()]);
   for (const [scenario, result] of results.entries()) if (!result.ok) {
     console.warn("pending_setup_attendance_proof_failed", { scenario, code: result.code });
   }

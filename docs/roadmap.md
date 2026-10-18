@@ -903,12 +903,14 @@
   - Apply, reversão e configuração operacional: `docs/platform-config.md` — seções 2.3 e 3.5.
 
 10.12.3 Atendimento, Diálogo da conta e Resumo da conta
-- Status: operacional.
+- Status: operacional; refinamentos do Pending Setup básico definidos.
 - Conteúdo: mensagem/nomes/Diálogo/Resumo, distinções de aceite/proposta, compactação/confirmação e falhas em docs/base-tecnica.md — 3.14.6; sem autoridade/versionamento funcional próprios. Resumo 6.000 caracteres sem meta, entendimento 4.000; demais limites mantidos. Sem teto de três chamadas/tabela/estado/memória/parser por frase/formulário/infraestrutura novos.
+- Definido: acolher, pedir nome e nome do negócio, colher só informações essenciais e apresentar brevemente o valor real da LP Factory, sem insistência. Solicitar WhatsApp opcional perto do fim, se ainda não informado; preservar número fornecido no Diálogo e no Resumo existentes. Recusa não bloqueia avanço; fornecimento não autoriza contato posterior.
 
 10.12.4 Identificação pelo catálogo
-- Status: operacional.
+- Status: operacional; refinamentos do Pending Setup básico definidos.
 - Conteúdo: classificação/ausência e vínculo em Base Técnica 3.14.6; catálogo/repertório D21, comparação semântica/pergunta focal. Sem Web classificatória/manutenção de taxons/aliases.
+- Definido: comparar atividade, ofertas e público com catálogo/aliases usando conhecimento paramétrico; explicar equivalências e confirmar só classificação segura, sem impor categoria incorreta. Sem correspondência, esclarecer oferta/público; persistindo a ausência, informá-la e preservar no Resumo apenas dados comerciais relevantes e pendência, além do Diálogo integral, para uso futuro autorizado pelo D17.
 
 10.12.5 Repertório do nicho e apoio à venda
 - Status: operacional.
@@ -917,8 +919,9 @@
 - Só leituras independentes paralelas; efeitos/provider/commit ordenados, sem duração ou ganho causal comprovados.
 
 10.12.6 Conclusão e experiência
-- Status: operacional.
-- Conteúdo: negócio/necessidades compreendidos, orientação/próximo passo claros, categoria confirmada ou ausência explícita; categoria sozinha não conclui. Identidade/WhatsApp/E10.11 obrigatórios. Sem taxon não bloqueia comercial/Base com entendimento suficiente, nem concede entitlement/trial/contratação.
+- Status: operacional; refinamentos do Pending Setup básico definidos.
+- Conteúdo: negócio/necessidades compreendidos, orientação/próximo passo claros, categoria confirmada ou ausência explícita; categoria sozinha não conclui. Identidade/E10.11 obrigatórios; WhatsApp opcional conforme 10.12.3. Sem taxon não bloqueia comercial/Base com entendimento suficiente, nem concede entitlement/trial/contratação.
+- Definido: conduzir à página comercial mesmo sem nicho identificado, preservando entendimento operacional confirmado e pendência de classificação no Resumo; encerrar sem prolongar a conversa. D15B preservado; sem consulta à Base de Comunicação, pesquisa ou contato posterior com leads, nem promessa de pesquisa/retorno sem capacidade e autorização do D17.
 - Redirecionar desvio ocasional; persistência/repetição/circularidade/sem avanço → encerramento cordial com contexto/pendência no Resumo e retomada possível. Sem promessa de análise/prazo/retorno/contato, contador/tempo fixo/failsafe econômico.
 - Conflitos/atomicidade/pós-conclusão/Base em Base Técnica 3.14.6; sem continuidade assíncrona. Objeções/comparação/recomendação/contratação aprofundadas no D17 até absorção aprovada.
 
