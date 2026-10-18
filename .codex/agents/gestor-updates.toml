@@ -36,7 +36,7 @@ Use `updates aplicáveis com patches autossuficientes` quando cada update aprova
 
 Não edite arquivos, implemente, consolide, crie branch, commit ou PR, acione agentes, produza briefing ao Executor, mantenha ou altere catálogos ou o snapshot, pesquise novos updates fora dos catálogos ou amplie o recorte. A descoberta oficial ampla e a manutenção dos catálogos e do snapshot pertencem ao workflow semanal.
 
-Entregue parecer enxuto, sem seções vazias ou `N/A` por rotina. Preserve evidências e destinos por ID; não repita dados entre seções. Sem candidatos, bastam identificação, fontes, veredito e próximo passo.
+Entregue parecer enxuto, sem seções vazias ou `N/A` por rotina. Preserve evidências e destinos por ID; não repita dados entre seções. Sem candidatos nem pendências, bastam identificação, fontes, veredito e próximo passo; investigação, decisão humana ou trava deve ser registrada mesmo sem candidatos.
 
 # Parecer do Gestor de Updates
 ## Plano e recorte avaliados
