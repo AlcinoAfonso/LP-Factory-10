@@ -401,6 +401,15 @@ async function main() {
   ]);
   assert.equal(isolated.contacts.get("phone_1_0"), "21 97965");
   assert.equal(isolated.recent[1].content.includes("97965"), false);
+  for (const message of ["É 97965-1234", "97965-1234, falta o DDD"]) {
+    const projected = attendanceContactProjection([
+      { role: "assistant", content: "Se quiser, qual é seu WhatsApp?" }, { role: "user", content: message },
+    ]);
+    assert.equal(projected.contacts.get("phone_1_0"), "97965-1234");
+    assert.equal(projected.recent[1].content.includes("97965"), false);
+    assert.equal(JSON.parse(attendanceSummary({ ...base, whatsappReference: "phone_1_0" }, null, null, null,
+      projected.contacts)).whatsapp, "97965-1234");
+  }
   const commercialNumbers = "Atendo 50 clientes, com ticket de R$ 120 e prazo de 7 dias.";
   const commercialProjection = attendanceContactProjection([{ role: "user", content: commercialNumbers }]);
   assert.equal(commercialProjection.contacts.size, 0);

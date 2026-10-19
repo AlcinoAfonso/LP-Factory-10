@@ -83,7 +83,7 @@ function projectAttendanceText(input: string, replaceContact: (raw: string) => s
   const source = escapeContactReferenceTokens(input
     .replace(/(?:"(?:\\[^\r\n]|[^"\\\r\n])*"|[^\s<>()\[\]{}";,:@]+)@(?:\[[^\]\r\n]*\]?|[^\s<>()\[\]{}";,:@]+)/gu, "[email removido]")
     .replace(/\bhttps?:\/\/\S+|\bwww\.\S+/giu, "[url removida]"));
-  if (contactReply && /^\s*\+?\(?\d(?:[\s().,\/-]*\d)*\)?\s*$/u.test(source)) return replaceContact(source.trim());
+  if (contactReply) return source.replace(/\+?\(?\d(?:[\s().,\/-]*\d)*\)?/gu, replaceContact).replace(/\s+/g, " ").trim();
   return source
     .replace(/(\b(?:whatsapp|zap|telefone|celular|contato)\b[^\d+(\r\n;.!?,]*)(\+?\(?\d(?:[\s().,\/-]*\d)*\)?)/giu,
       (_match, label: string, raw: string) => label + replaceContact(raw))
