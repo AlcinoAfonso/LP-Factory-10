@@ -23,7 +23,21 @@ export function isCalendarDate(input: string): boolean {
     && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
 }
 
+function normalizeNumericFormatMarks(input: string): string {
+  const normalized: string[] = [];
+  let beforeNumber = false;
+  for (const character of Array.from(input).reverse()) {
+    if (/\p{Nd}/u.test(character)) beforeNumber = true;
+    else if (/\p{Cf}/u.test(character)) {
+      if (beforeNumber) continue;
+    } else if (!/[\s()+.\/\\\p{Pd}\u2212\u2044\u2215\uFF0F]/u.test(character)) beforeNumber = false;
+    normalized.push(character);
+  }
+  return normalized.reverse().join("");
+}
+
 export function replacePotentialPhoneNumbers(input: string, replace: (raw: string) => string): string {
+  input = normalizeNumericFormatMarks(input);
   const spans = new RegExp(NUMERIC_SPAN_PATTERN.source, NUMERIC_SPAN_PATTERN.flags);
   let result = "";
   let cursor = 0;
