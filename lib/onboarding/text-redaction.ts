@@ -43,8 +43,9 @@ export function replacePotentialPhoneNumbers(input: string, replace: (raw: strin
     const quantitySuffix = /^\s*(?:de\s+)?(?:clientes?|pessoas?|pedidos?|vendas?|unidades?|atendimentos?|visitas?|acessos?|seguidores?|itens|produtos?|m[²³]|kg|km|%)(?=\s|[.,;:!?)]|$)/iu.exec(afterAmount)?.[0];
     const contactLabel = /\b(?:whats(?:app)?|telefone|tel|celular|contato|n[uú]mero)\s*(?:(?:é|:)\s*)*$/iu.test(before);
     const quantityValue = amount && quantitySuffix && !contactLabel ? amount + quantitySuffix : null;
-    const identifierLabel = [...before.matchAll(/\b(cpf|cnpj|whats(?:app)?|telefone|tel|celular)\b(?=[^\p{Nd}.;!?\r\n]*$)/giu)].at(-1)?.[1];
-    const personalIdentifier = identifierLabel?.toLowerCase() === "cpf"
+    const commercialValue = contactLabel ? null : date && isCalendarDate(date) ? date : monetaryValue ?? quantityValue;
+    const identifierLabel = [...before.matchAll(/\b(cpf|cnpj|whats(?:app)?|telefone|tel|celular)\b(?=[^\p{Nd};!?\r\n]*$)/giu)].at(-1)?.[1];
+    const personalIdentifier = identifierLabel?.toLowerCase() === "cpf" && !commercialValue
       ? /^(?:\p{Nd}{3}\.\p{Nd}{3}\.\p{Nd}{3}\s*-\s*\p{Nd}{2}|\p{Nd}{11})(?!\p{Nd})/u.exec(remaining)?.[0]
         ?? raw.replace(/[^\p{Nd}]+$/u, "") : null;
     if (personalIdentifier) {
@@ -55,8 +56,7 @@ export function replacePotentialPhoneNumbers(input: string, replace: (raw: strin
     }
     const companyIdentifier = identifierLabel?.toLowerCase() === "cnpj"
       ? /^(?:\p{Nd}{2}\.\p{Nd}{3}\.\p{Nd}{3}\s*\/\s*\p{Nd}{4}\s*-\s*\p{Nd}{2}|\p{Nd}{14})(?!\p{Nd})/u.exec(remaining)?.[0] : null;
-    const protectedValue = companyIdentifier
-      ?? (contactLabel ? null : date && isCalendarDate(date) ? date : monetaryValue ?? quantityValue);
+    const protectedValue = companyIdentifier ?? commercialValue;
     if (protectedValue) {
       result += protectedValue;
       cursor = start + protectedValue.length;
@@ -74,7 +74,7 @@ export function replacePotentialPhoneNumbers(input: string, replace: (raw: strin
 
 export function redactEmailAndUrl(input: string): string {
   return input
-    .replace(/(?:"(?:\\[^\r\n]|[^"\\\r\n])*"|[^\s<>()\[\]{}"';,:@]+)@(?:\[[^\]\r\n]*\]?|[^\s<>()\[\]{}"';,:@]+)/gu, "[email removido]")
+    .replace(/(?:"(?:\\[^\r\n]|[^"\\\r\n])*"|[^\s<>()\[\]{}";,:@]+)@(?:\[[^\]\r\n]*\]?|[^\s<>()\[\]{}";,:@]+)/gu, "[email removido]")
     .replace(/\bhttps?:\/\/\S+|\bwww\.\S+/giu, "[url removida]");
 }
 

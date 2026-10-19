@@ -432,7 +432,7 @@ async function main() {
     assert.equal(datedProjection.displayedUnderstanding, message);
     assert.equal(JSON.parse(datedProjection.summary!).contextualUnderstanding, message);
   }
-  for (const commercial of ["Lançamento em 18 / 10 / 2026", "CNPJ 12.345.678/0001-90", "CNPJ: 12345678000190", "CNPJ da empresa é 12.345.678/0001-90", "CNPJ do negócio: 12345678000190", "CNPJ número 12345678000190", "Nosso CNPJ para faturamento é 12345678000190"]) {
+  for (const commercial of ["Lançamento em 18 / 10 / 2026", "CNPJ 12.345.678/0001-90", "CNPJ: 12345678000190", "CNPJ da empresa é 12.345.678/0001-90", "CNPJ do negócio: 12345678000190", "CNPJ número 12345678000190", "CNPJ da Sra. Ana: 12.345.678/0001-90", "Nosso CNPJ para faturamento é 12345678000190"]) {
     assert.equal(redactPotentialContactDetails(commercial), commercial);
     for (const role of ["user", "assistant"] as const) {
       const projected = attendanceContactProjection([{ role, content: commercial }]);
@@ -615,7 +615,7 @@ async function main() {
     assert.equal(projected.contacts.get("phone_0_0"), "12999990000");
     assert.equal(projected.recent[0].content, commercial + "; WhatsApp [phone_0_0]");
   }
-  for (const email of ["用户@example.com", "ana@exemplo.рф", "joão@empresa.com.br", "用户１２９９９９９００００@例子.公司", '"用户 １２９９９９９００００"@example.com', "user@[192.0.2.1]", "user@[IPv6:2001:db8::1]", '"用户 １２９９９９９００００"@[192.0.2.1]', '"5511999999999\\"nome"@example.com']) {
+  for (const email of ["用户@example.com", "ana@exemplo.рф", "joão@empresa.com.br", "用户１２９９９９９００００@例子.公司", '"用户 １２９９９９９００００"@example.com', "user@[192.0.2.1]", "user@[IPv6:2001:db8::1]", '"用户 １２９９９９９００００"@[192.0.2.1]', '"5511999999999\\"nome"@example.com', "o'connor@example.com", "o'5511999999999@example.com", "d'ávila@empresa.com.br"]) {
     const message = "Contato " + email;
     assert.equal(redactPotentialContactDetails(message), "Contato [email removido]");
     for (const role of ["user", "assistant"] as const) {
@@ -628,7 +628,7 @@ async function main() {
     assert.equal(projectedMemory.displayedUnderstanding, "Contato [email removido]");
     assert.equal(JSON.parse(projectedMemory.summary!).contextualUnderstanding, "Contato [email removido]");
   }
-  for (const document of ["CPF 123.456.789-09", "Meu CPF é 12345678909", "CPF número 12345678909", "CPF para contato é 12345678909", "CPF do titular: １２３.４５６.７８９-０９", "CPF 1234567890"]) {
+  for (const document of ["CPF 123.456.789-09", "CPF da Sra. Ana: 123.456.789-09", "CPF do Sr. João: 12345678909", "Meu CPF é 12345678909", "CPF número 12345678909", "CPF para contato é 12345678909", "CPF do titular: １２３.４５６.７８９-０９", "CPF 1234567890"]) {
     const documentLabel = document.slice(0, document.search(/\p{Nd}/u));
     const redactedDocument = documentLabel + "[documento removido]";
     assert.equal(redactPotentialContactDetails(document), redactedDocument);
@@ -645,6 +645,21 @@ async function main() {
     assert.equal(mixed.contacts.size, 1);
     assert.equal(mixed.contacts.get("phone_0_0"), "11999990000");
     assert.equal(mixed.recent[0].content, redactedDocument + "; WhatsApp [phone_0_0]");
+  }
+  for (const commercial of ["CPF não informado e atendemos 10000000000 clientes", "CPF não informado e receita R$ 10000000000", "CPF não informado e lançamento em 18/10/2026"]) {
+    assert.equal(redactPotentialContactDetails(commercial), commercial);
+    for (const role of ["user", "assistant"] as const) {
+      const projected = attendanceContactProjection([{ role, content: commercial }]);
+      assert.equal(projected.contacts.size, 0);
+      assert.equal(projected.recent[0].content, commercial);
+    }
+    const projectedMemory = attendanceProjection({ ...conversation, businessContextText: commercial,
+      accountContext: { summary: JSON.stringify({ ...legacyFields, contextualUnderstanding: commercial }), updatedAt: conversation.updatedAt } }, context.catalog);
+    assert.equal(projectedMemory.displayedUnderstanding, commercial);
+    assert.equal(JSON.parse(projectedMemory.summary!).contextualUnderstanding, commercial);
+    const mixed = attendanceContactProjection([{ role: "user", content: commercial + "; WhatsApp 11 99999 0000" }]);
+    assert.equal(mixed.contacts.get("phone_0_0"), "11999990000");
+    assert.equal(mixed.recent[0].content, commercial + "; WhatsApp [phone_0_0]");
   }
   const hiddenContact = attendanceContactProjection([{ role: "user", content: "https://example.com/5521999990000" }]);
   assert.equal(hiddenContact.contacts.size, 0);
