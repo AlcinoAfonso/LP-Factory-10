@@ -878,7 +878,7 @@
 
 10.12.1 Objetivo e status
 - Objetivo: entender negócio/necessidade, orientar e definir próximo passo.
-- Status: base operacional em Preview/Production; refinamentos do Pending Setup básico validados em Preview; publicação em Production pendente. Legadas E10.9 preservadas. Depende de E10.13, não de PB-B.
+- Status: base operacional em Preview/Production; refinamentos do Pending Setup básico publicados em Production pelo PR #1079. Legadas E10.9 preservadas. Depende de E10.13, não de PB-B.
 
 10.12.2 Registros do recorte
 - Banco:
