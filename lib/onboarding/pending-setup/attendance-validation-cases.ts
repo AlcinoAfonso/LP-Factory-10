@@ -439,6 +439,23 @@ async function main() {
   for (const notDate of ["32/10/2026", "29/02/2026", "18/13/2026"]) {
     assert.equal(/\d/.test(redactPotentialContactDetails(notDate)), false);
   }
+  for (const amount of ["R$ 10.000.000", "BRL 10000000", "USD 10 000 000", "€ 10000000", "10000000 reais"]) {
+    const message = "Faturamento anual de " + amount + ".";
+    for (const role of ["user", "assistant"] as const) {
+      const commercial = attendanceContactProjection([{ role, content: message }]);
+      assert.equal(commercial.contacts.size, 0);
+      assert.equal(commercial.recent[0].content, message);
+    }
+    assert.equal(redactPotentialContactDetails(message), message);
+    const amountProjection = attendanceProjection({ ...conversation, businessContextText: message,
+      accountContext: { summary: JSON.stringify({ ...legacyFields, contextualUnderstanding: message }), updatedAt: conversation.updatedAt } }, context.catalog);
+    assert.equal(amountProjection.displayedUnderstanding, message);
+    assert.equal(JSON.parse(amountProjection.summary!).contextualUnderstanding, message);
+  }
+  const amountAndPhone = attendanceContactProjection([{ role: "user", content: "Faturamento R$ 10.000.000; WhatsApp +55 (21) 99999-0000." }]);
+  assert.equal(amountAndPhone.contacts.get("phone_0_0"), phone);
+  assert.equal(amountAndPhone.recent[0].content.includes("R$ 10.000.000"), true);
+  assert.equal(amountAndPhone.recent[0].content.includes("99999"), false);
   const hiddenContact = attendanceContactProjection([{ role: "user", content: "https://example.com/5521999990000" }]);
   assert.equal(hiddenContact.contacts.size, 0);
   for (const invalidPhone of ["5511999990000123", "+55 (11) 99999-0000-123", "+55 (11) 99999–0000/123"]) {
