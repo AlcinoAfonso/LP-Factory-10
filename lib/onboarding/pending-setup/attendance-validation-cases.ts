@@ -419,7 +419,7 @@ async function main() {
     }
     assert.equal(/\d/.test(redactPotentialContactDetails(localPhone)), false);
   }
-  for (const date of ["18/10/2026", "18-10-2026", "18.10.2026", "2026-10-18", "29/02/2024"]) {
+  for (const date of ["18/10/2026", "18-10-2026", "18.10.2026", "2026-10-18", "29/02/2024", "18 / 10 / 2026", "18 - 10 - 2026", "18 . 10 . 2026", "2026 - 10 - 18"]) {
     const message = "Lançamento em " + date + ".";
     for (const role of ["user", "assistant"] as const) {
       const dated = attendanceContactProjection([{ role, content: message }]);
@@ -431,6 +431,33 @@ async function main() {
       accountContext: { summary: JSON.stringify({ ...legacyFields, contextualUnderstanding: message }), updatedAt: conversation.updatedAt } }, context.catalog);
     assert.equal(datedProjection.displayedUnderstanding, message);
     assert.equal(JSON.parse(datedProjection.summary!).contextualUnderstanding, message);
+  }
+  for (const commercial of ["Lançamento em 18 / 10 / 2026", "CNPJ 12.345.678/0001-90", "CNPJ: 12345678000190"]) {
+    assert.equal(redactPotentialContactDetails(commercial), commercial);
+    for (const role of ["user", "assistant"] as const) {
+      const projected = attendanceContactProjection([{ role, content: commercial }]);
+      assert.equal(projected.contacts.size, 0);
+      assert.equal(projected.recent[0].content, commercial);
+    }
+    const projectedMemory = attendanceProjection({ ...conversation, businessContextText: commercial,
+      accountContext: { summary: JSON.stringify({ ...legacyFields, contextualUnderstanding: commercial }), updatedAt: conversation.updatedAt } }, context.catalog);
+    assert.equal(projectedMemory.displayedUnderstanding, commercial);
+    assert.equal(JSON.parse(projectedMemory.summary!).contextualUnderstanding, commercial);
+    const mixed = attendanceContactProjection([{ role: "user", content: commercial + " 11 99999 0000" }]);
+    assert.equal(mixed.contacts.size, 1);
+    assert.equal(mixed.contacts.get("phone_0_0"), "11999990000");
+    assert.equal(mixed.recent[0].content, commercial + " [phone_0_0]");
+  }
+  for (const disguisedContact of ["18/10/2026", "18 / 10 / 2026", "2026-10-18", "11999990000 €", "11999990000 de clientes"]) {
+    for (const label of ["WhatsApp:", "Telefone:", "Meu celular é:"]) {
+      const message = label + " " + disguisedContact;
+      assert.equal(redactPotentialContactDetails(message).includes(disguisedContact), false);
+      for (const role of ["user", "assistant"] as const) {
+        const projected = attendanceContactProjection([{ role, content: message }]);
+        assert.equal(projected.recent[0].content.includes(disguisedContact), false);
+        assert.equal(/\d/.test(projected.recent[0].content.replace(/phone_\d+_\d+/gu, "")), false);
+      }
+    }
   }
   const datedContact = attendanceContactProjection([{ role: "user", content: "Lançamento em 18/10/2026; WhatsApp +55 (21) 99999-0000." }]);
   assert.equal(datedContact.contacts.get("phone_0_0"), phone);

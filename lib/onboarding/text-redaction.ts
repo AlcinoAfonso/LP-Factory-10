@@ -2,7 +2,7 @@ const NUMERIC_SPAN_PATTERN = /(?:\+?\d[\s().\/\\\p{Pd}\u2212\u2044\u2215\uFF0F]*
 
 // Calendar dates are commercial context, even though they contain eight digits.
 export function isCalendarDate(input: string): boolean {
-  const text = input.trim().replace(/[.)]+$/, "");
+  const text = input.trim().replace(/[.)]+$/, "").replace(/\s*([/.\-])\s*/gu, "$1");
   const local = /^(\d{1,2})([/.\-])(\d{1,2})\2(\d{4})$/.exec(text);
   const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(text);
   if (!local && !iso) return false;
@@ -24,7 +24,7 @@ export function replacePotentialPhoneNumbers(input: string, replace: (raw: strin
     const raw = match[0];
     const remaining = input.slice(start);
     result += input.slice(cursor, start);
-    const date = /^(?:\d{1,2}([/.\-])\d{1,2}\1\d{4}|\d{4}-\d{1,2}-\d{1,2})(?=\D|$)/u.exec(remaining)?.[0];
+    const date = /^(?:\d{1,2}\s*([/.\-])\s*\d{1,2}\s*\1\s*\d{4}|\d{4}\s*-\s*\d{1,2}\s*-\s*\d{1,2})(?=\D|$)/u.exec(remaining)?.[0];
     const amount = /^(?:\d{1,3}(?:\.\d{3})+(?:[.,]\d{1,2})?|\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d{1,3}(?:[ \t\u00a0\u202f]\d{3})+(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)(?!\d|[.,]\d)/u.exec(remaining)?.[0];
     const before = input.slice(cursor, start);
     const afterAmount = amount ? input.slice(start + amount.length) : "";
@@ -34,7 +34,10 @@ export function replacePotentialPhoneNumbers(input: string, replace: (raw: strin
     const quantitySuffix = /^\s*(?:de\s+)?(?:clientes?|pessoas?|pedidos?|vendas?|unidades?|atendimentos?|visitas?|acessos?|seguidores?|itens|produtos?|m[²³]|kg|km|%)(?=\s|[.,;:!?)]|$)/iu.exec(afterAmount)?.[0];
     const contactLabel = /\b(?:whats(?:app)?|telefone|tel|celular|contato|n[uú]mero)\s*(?:(?:é|:)\s*)*$/iu.test(before);
     const quantityValue = amount && quantitySuffix && !contactLabel ? amount + quantitySuffix : null;
-    const protectedValue = date && isCalendarDate(date) ? date : monetaryValue ?? quantityValue;
+    const companyIdentifier = /\bcnpj\s*:?\s*$/iu.test(before)
+      ? /^(?:\d{2}\.\d{3}\.\d{3}\s*\/\s*\d{4}\s*-\s*\d{2}|\d{14})(?!\d)/u.exec(remaining)?.[0] : null;
+    const protectedValue = contactLabel ? null : companyIdentifier
+      ?? (date && isCalendarDate(date) ? date : monetaryValue ?? quantityValue);
     if (protectedValue) {
       result += protectedValue;
       cursor = start + protectedValue.length;
