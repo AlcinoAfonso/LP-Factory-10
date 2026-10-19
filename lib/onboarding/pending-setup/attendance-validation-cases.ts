@@ -422,6 +422,15 @@ async function main() {
     assert.equal(JSON.parse(attendanceSummary({ ...base, whatsappReference: "phone_0_0" }, null, null, null,
       projected.contacts)).whatsapp, literal);
   }
+  const proactiveNumber = attendanceContactProjection([{ role: "user", content: "Meu número é 97965-1234" }]);
+  assert.equal(proactiveNumber.contacts.get("phone_0_0"), "97965-1234");
+  assert.equal(proactiveNumber.recent[0].content.includes("97965"), false);
+  for (const [message, literal, fact] of [["WhatsApp: 11 99999-0000, 50 funcionários", "11 99999-0000", "50 funcionários"],
+    ["WhatsApp: 11999990000. 2026 será ótimo", "11999990000", "2026 será ótimo"]]) {
+    const projected = attendanceContactProjection([{ role: "user", content: message }]);
+    assert.deepEqual([...projected.contacts.values()], [literal]);
+    assert.equal(projected.recent[0].content.includes(fact), true);
+  }
   const commercialNumbers = "Atendo 50 clientes, com ticket de R$ 120 e prazo de 7 dias.";
   const commercialProjection = attendanceContactProjection([{ role: "user", content: commercialNumbers }]);
   assert.equal(commercialProjection.contacts.size, 0);
