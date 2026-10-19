@@ -470,6 +470,33 @@ async function main() {
     assert.equal(separatedPhone.contacts.get("phone_0_0"), phone);
     assert.equal(separatedPhone.recent[0].content, "WhatsApp [phone_0_0]" + separator + "meu contato");
   }
+  for (const message of ["18/10/2026 10:00", "18/10/2026 - 20 vagas", "1/10/2026 10:00",
+    "2026-10-18 10:00", "18/10/2026 19/10/2026"]) {
+    assert.equal(redactPotentialContactDetails(message), message);
+    for (const role of ["user", "assistant"] as const) {
+      const dated = attendanceContactProjection([{ role, content: message }]);
+      assert.equal(dated.contacts.size, 0);
+      assert.equal(dated.recent[0].content, message);
+    }
+  }
+  const dateThenContact = attendanceContactProjection([{ role: "user", content: "18/10/2026 +55 (21) 99999-0000" }]);
+  assert.equal(dateThenContact.contacts.get("phone_0_0"), phone);
+  assert.equal(dateThenContact.recent[0].content, "18/10/2026 [phone_0_0]");
+  const collisionText = "Meu WhatsApp é [phone_0_0]; +55 (21) 99999-0000 é de terceiro; phone_1_0 é literal.";
+  const collision = attendanceContactProjection([{ role: "user", content: collisionText }]);
+  assert.equal(collision.contacts.size, 1);
+  assert.equal(collision.contacts.get("phone_0_0"), phone);
+  assert.equal(collision.recent[0].content.match(/\bphone_\d+_\d+\b/gu)?.length, 1);
+  assert.match(collision.recent[0].content, /Meu WhatsApp é \[referência de contato literal removida\]/u);
+  assert.match(collision.recent[0].content, /\[phone_0_0\] é de terceiro/u);
+  const quotedToken = attendanceContactProjection([{ role: "assistant", content: "Exemplo [phone_0_0]" }]);
+  assert.equal(quotedToken.recent[0].content.includes("phone_"), false);
+  const oldTokenProjection = attendanceProjection({ ...conversation, preferredName: "phone_0_0", businessDisplayName: "[phone_0_0]",
+    businessContextText: "Negócio [phone_0_0]", accountContext: { updatedAt: conversation.updatedAt,
+      summary: JSON.stringify({ ...legacyFields, contextualUnderstanding: "Negócio [phone_0_0]", suggestions: ["phone_0_0"] }) } }, context.catalog);
+  for (const field of [oldTokenProjection.preferredName, oldTokenProjection.publicName, oldTokenProjection.displayedUnderstanding, oldTokenProjection.summary]) {
+    assert.equal(field?.includes("phone_"), false);
+  }
   const hiddenContact = attendanceContactProjection([{ role: "user", content: "https://example.com/5521999990000" }]);
   assert.equal(hiddenContact.contacts.size, 0);
   for (const invalidPhone of ["5511999990000123", "+55 (11) 99999-0000-123", "+55 (11) 99999–0000/123"]) {

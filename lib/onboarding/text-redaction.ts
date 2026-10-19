@@ -3,8 +3,8 @@ export const PHONE_LIKE_PATTERN = /(?:\+?\d[\s().\/\\\p{Pd}\u2212\u2044\u2215\uF
 // Calendar dates are commercial context, even though they contain eight digits.
 export function isCalendarDate(input: string): boolean {
   const text = input.trim().replace(/[.)]+$/, "");
-  const local = /^(\d{2})([/.\-])(\d{2})\2(\d{4})$/.exec(text);
-  const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text);
+  const local = /^(\d{1,2})([/.\-])(\d{1,2})\2(\d{4})$/.exec(text);
+  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(text);
   if (!local && !iso) return false;
   const year = Number(local ? local[4] : iso![1]);
   const month = Number(local ? local[3] : iso![2]);
@@ -16,6 +16,10 @@ export function isCalendarDate(input: string): boolean {
 
 export function replacePotentialPhoneNumbers(input: string, replace: (raw: string) => string): string {
   return input.replace(PHONE_LIKE_PATTERN, (raw: string, offset: number) => {
+    const datePrefix = /^(?:\d{1,2}([/.\-])\d{1,2}\1\d{4}|\d{4}-\d{1,2}-\d{1,2})(?=\D|$)/u.exec(raw)?.[0];
+    if (datePrefix && isCalendarDate(datePrefix)) {
+      return datePrefix + replacePotentialPhoneNumbers(raw.slice(datePrefix.length), replace);
+    }
     const candidate = raw.replace(/\D+$/u, "");
     const before = input.slice(Math.max(0, offset - 20), offset);
     const after = input.slice(offset + raw.length, offset + raw.length + 20);

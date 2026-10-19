@@ -75,18 +75,22 @@ export function attendancePrompt(context: AttendanceContext) {
   delete schema.$schema;
   return { instructions: ATTENDANCE_INSTRUCTIONS, input: JSON.stringify({ data: context }), schema };
 }
+function escapeContactReferenceTokens(text: string): string {
+  return text.replace(/\[?\bphone_\d+_\d+\b\]?/gu, "[referência de contato literal removida]");
+}
 // Contact references are scoped to this projection; the provider never receives the numbers.
 export function attendanceContactProjection(messages: AttendanceContext["recent"]) {
   const contacts = new Map<string, string>();
   const recent = messages.slice(-8).map(({ role, content }, index, bounded) => {
     let occurrence = 0;
-    const referenced = role === "user" ? replacePotentialPhoneNumbers(redactEmailAndUrl(content), raw => {
+    const source = escapeContactReferenceTokens(content);
+    const referenced = role === "user" ? replacePotentialPhoneNumbers(redactEmailAndUrl(source), raw => {
       const digitCount = raw.replace(/\D/g, "").length;
       if (digitCount < 10 || digitCount > 15) return "[telefone inválido removido]";
       const reference = `phone_${index}_${occurrence++}`;
       contacts.set(reference, (raw.startsWith("+") ? "+" : "") + raw.replace(/\D/g, ""));
       return `[${reference}]`;
-    }) : content;
+    }) : source;
     return { role, content: redactPotentialContactDetails(referenced)
       .slice(0, role === "user" && index === bounded.length - 1 ? 4000 : 1200) };
   });
@@ -97,15 +101,16 @@ export function attendanceContactProjection(messages: AttendanceContext["recent"
 }
 export function attendanceProjection(conversation: PendingSetupConversation, catalog: readonly AttendanceTaxon[]): AttendanceContext {
   const summary = readAccountSummary(conversation.accountContext?.summary);
+  const projectText = (text: string) => redactPotentialContactDetails(escapeContactReferenceTokens(text));
   const projectedSummary = summary ? Object.fromEntries(Object.entries(summary).filter(([key]) => key !== "whatsapp").map(([key, value]) =>
-    [key, Array.isArray(value) ? value.map(redactPotentialContactDetails)
-      : typeof value === "string" ? redactPotentialContactDetails(value) : value])) : null;
+    [key, Array.isArray(value) ? value.map(projectText)
+      : typeof value === "string" ? projectText(value) : value])) : null;
   const contactProjection = attendanceContactProjection(conversation.messages);
   return {
-    preferredName: conversation.preferredName, preferredNameDeclined: conversation.preferredNameDeclined ?? false,
+    preferredName: conversation.preferredName ? escapeContactReferenceTokens(conversation.preferredName) : null, preferredNameDeclined: conversation.preferredNameDeclined ?? false,
     summary: projectedSummary ? JSON.stringify(projectedSummary) : null,
-    publicName: conversation.businessDisplayName,
-    displayedUnderstanding: conversation.businessContextText ? redactPotentialContactDetails(conversation.businessContextText) : null,
+    publicName: conversation.businessDisplayName ? escapeContactReferenceTokens(conversation.businessDisplayName) : null,
+    displayedUnderstanding: conversation.businessContextText ? projectText(conversation.businessContextText) : null,
     recent: contactProjection.recent, contactReferences: [...contactProjection.contacts.keys()], whatsappProvided: Boolean(summary?.whatsapp),
     catalog,
   };
