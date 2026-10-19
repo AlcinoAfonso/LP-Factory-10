@@ -81,7 +81,8 @@ export function attendanceContactProjection(messages: AttendanceContext["recent"
   const recent = messages.slice(-8).map(({ role, content }, index, bounded) => {
     let occurrence = 0;
     const referenced = role === "user" ? redactEmailAndUrl(content).replace(PHONE_LIKE_PATTERN, raw => {
-      if (raw.replace(/\D/g, "").length > 15) return "[telefone inválido removido]";
+      const digitCount = raw.replace(/\D/g, "").length;
+      if (digitCount < 10 || digitCount > 15) return "[telefone inválido removido]";
       const reference = `phone_${index}_${occurrence++}`;
       contacts.set(reference, (raw.startsWith("+") ? "+" : "") + raw.replace(/\D/g, ""));
       return `[${reference}]`;

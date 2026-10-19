@@ -375,6 +375,16 @@ async function main() {
     assert.equal(/\d/.test(assistant.recent[0].content), false);
     assert.equal(/\d/.test(redactPotentialContactDetails(text)), false);
   }
+  // Local contacts are private even without enough digits to create a usable reference.
+  for (const localPhone of ["99999-0000", "9999-0000", "99999–0000", "9999/0000", "999990000", "99990000"]) {
+    for (const role of ["user", "assistant"] as const) {
+      const localContact = attendanceContactProjection([{ role, content: "WhatsApp: " + localPhone }]);
+      assert.equal(localContact.contacts.size, 0);
+      assert.equal(/\d/.test(localContact.recent[0].content), false);
+      assert.equal(localContact.recent[0].content.includes("phone_"), false);
+    }
+    assert.equal(/\d/.test(redactPotentialContactDetails(localPhone)), false);
+  }
   const hiddenContact = attendanceContactProjection([{ role: "user", content: "https://example.com/5521999990000" }]);
   assert.equal(hiddenContact.contacts.size, 0);
   for (const invalidPhone of ["5511999990000123", "+55 (11) 99999-0000-123", "+55 (11) 99999–0000/123"]) {

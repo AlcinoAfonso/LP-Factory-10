@@ -1,4 +1,4 @@
-export const PHONE_LIKE_PATTERN = /(?:\+?\d[\s().\/\\\p{Pd}\u2212\u2044\u2215\uFF0F]*){10,}/gu;
+export const PHONE_LIKE_PATTERN = /(?:\+?\d[\s().\/\\\p{Pd}\u2212\u2044\u2215\uFF0F]*){8,}/gu;
 
 export function redactEmailAndUrl(input: string): string {
   return input
