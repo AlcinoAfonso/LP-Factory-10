@@ -432,7 +432,7 @@ async function main() {
     assert.equal(datedProjection.displayedUnderstanding, message);
     assert.equal(JSON.parse(datedProjection.summary!).contextualUnderstanding, message);
   }
-  for (const commercial of ["Lançamento em 18 / 10 / 2026", "CNPJ 12.345.678/0001-90", "CNPJ: 12345678000190"]) {
+  for (const commercial of ["Lançamento em 18 / 10 / 2026", "CNPJ 12.345.678/0001-90", "CNPJ: 12345678000190", "CNPJ da empresa é 12.345.678/0001-90", "CNPJ do negócio: 12345678000190", "Nosso CNPJ para faturamento é 12345678000190"]) {
     assert.equal(redactPotentialContactDetails(commercial), commercial);
     for (const role of ["user", "assistant"] as const) {
       const projected = attendanceContactProjection([{ role, content: commercial }]);
@@ -591,7 +591,7 @@ async function main() {
     assert.equal(mixed.contacts.get("phone_0_0"), "11999990000");
     assert.equal(mixed.recent[0].content, message + "; WhatsApp [phone_0_0]");
   }
-  for (const label of ["WhatsApp", "Telefone:", "Meu celular é:"]) {
+  for (const label of ["WhatsApp", "Telefone:", "Meu celular é:", "CNPJ não informado; meu WhatsApp é:"]) {
     for (const unit of ["clientes", "de clientes"]) {
       const message = label + " 11999990000 " + unit + " podem falar comigo";
       const actualContact = attendanceContactProjection([{ role: "user", content: message }]);
@@ -615,7 +615,7 @@ async function main() {
     assert.equal(projected.contacts.get("phone_0_0"), "12999990000");
     assert.equal(projected.recent[0].content, commercial + "; WhatsApp [phone_0_0]");
   }
-  for (const email of ["用户@example.com", "ana@exemplo.рф", "joão@empresa.com.br", "用户１２９９９９９００００@例子.公司", '"用户 １２９９９９９００００"@example.com']) {
+  for (const email of ["用户@example.com", "ana@exemplo.рф", "joão@empresa.com.br", "用户１２９９９９９００００@例子.公司", '"用户 １２９９９９９００００"@example.com', "user@[192.0.2.1]", "user@[IPv6:2001:db8::1]", '"用户 １２９９９９９００００"@[192.0.2.1]']) {
     const message = "Contato " + email;
     assert.equal(redactPotentialContactDetails(message), "Contato [email removido]");
     for (const role of ["user", "assistant"] as const) {

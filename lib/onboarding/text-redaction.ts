@@ -43,7 +43,8 @@ export function replacePotentialPhoneNumbers(input: string, replace: (raw: strin
     const quantitySuffix = /^\s*(?:de\s+)?(?:clientes?|pessoas?|pedidos?|vendas?|unidades?|atendimentos?|visitas?|acessos?|seguidores?|itens|produtos?|m[²³]|kg|km|%)(?=\s|[.,;:!?)]|$)/iu.exec(afterAmount)?.[0];
     const contactLabel = /\b(?:whats(?:app)?|telefone|tel|celular|contato|n[uú]mero)\s*(?:(?:é|:)\s*)*$/iu.test(before);
     const quantityValue = amount && quantitySuffix && !contactLabel ? amount + quantitySuffix : null;
-    const companyIdentifier = /\bcnpj\s*:?\s*$/iu.test(before)
+    const companyLabel = [...before.matchAll(/\b(cnpj|whats(?:app)?|telefone|tel|celular|contato|n[uú]mero)\b(?=[^\p{Nd}.;!?\r\n]*$)/giu)].at(-1)?.[1];
+    const companyIdentifier = companyLabel?.toLowerCase() === "cnpj"
       ? /^(?:\p{Nd}{2}\.\p{Nd}{3}\.\p{Nd}{3}\s*\/\s*\p{Nd}{4}\s*-\s*\p{Nd}{2}|\p{Nd}{14})(?!\p{Nd})/u.exec(remaining)?.[0] : null;
     const protectedValue = contactLabel ? null : companyIdentifier
       ?? (date && isCalendarDate(date) ? date : monetaryValue ?? quantityValue);
@@ -64,7 +65,7 @@ export function replacePotentialPhoneNumbers(input: string, replace: (raw: strin
 
 export function redactEmailAndUrl(input: string): string {
   return input
-    .replace(/(?:"[^"\r\n]+"|[^\s<>()\[\]{}"';,:@]+)@[^\s<>()\[\]{}"';,:@]+/gu, "[email removido]")
+    .replace(/(?:"[^"\r\n]+"|[^\s<>()\[\]{}"';,:@]+)@(?:\[[^\]\r\n]*\]?|[^\s<>()\[\]{}"';,:@]+)/gu, "[email removido]")
     .replace(/\bhttps?:\/\/\S+|\bwww\.\S+/giu, "[url removida]");
 }
 
