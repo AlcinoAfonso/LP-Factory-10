@@ -85,7 +85,7 @@ function projectAttendanceText(input: string, replaceContact: (raw: string) => s
     .replace(/\bhttps?:\/\/\S+|\bwww\.\S+/giu, "[url removida]"));
   if (contactReply) return source.replace(/\+?\(?\d(?:[\s().,\/-]*\d)*\)?/gu, replaceContact).replace(/\s+/g, " ").trim();
   return source
-    .replace(/(\b(?:whatsapp|zap|telefone|celular|contato)\b[^\d+(\r\n;.!?,]*)(\+?\(?\d(?:[\s().,\/-]*\d)*\)?)/giu,
+    .replace(/((?:\b(?:whatsapp|zap|telefone|celular|contato|fone)\b|\btel\b\.?)[^\d+(\r\n;.!?,]*)(\+?\(?\d(?:[\s().,\/-]*\d)*\)?)/giu,
       (_match, label: string, raw: string) => label + replaceContact(raw))
     .replace(/\+?\(?\d(?:[\s().,\/-]*\d){9,}\)?/gu, replaceContact)
     .replace(/\s+/g, " ").trim();

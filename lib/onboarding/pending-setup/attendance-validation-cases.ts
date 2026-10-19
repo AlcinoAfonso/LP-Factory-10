@@ -410,6 +410,11 @@ async function main() {
     assert.equal(JSON.parse(attendanceSummary({ ...base, whatsappReference: "phone_1_0" }, null, null, null,
       projected.contacts)).whatsapp, "97965-1234");
   }
+  for (const message of ["Meu fone é 9999-0000", "Tel.: 9999-0000"]) {
+    const projected = attendanceContactProjection([{ role: "user", content: message }]);
+    assert.equal(projected.contacts.get("phone_0_0"), "9999-0000");
+    assert.equal(projected.recent[0].content.includes("9999"), false);
+  }
   const commercialNumbers = "Atendo 50 clientes, com ticket de R$ 120 e prazo de 7 dias.";
   const commercialProjection = attendanceContactProjection([{ role: "user", content: commercialNumbers }]);
   assert.equal(commercialProjection.contacts.size, 0);
