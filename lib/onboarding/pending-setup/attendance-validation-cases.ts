@@ -415,7 +415,7 @@ async function main() {
     assert.equal(projected.contacts.get("phone_0_0"), "9999-0000");
     assert.equal(projected.recent[0].content.includes("9999"), false);
   }
-  for (const literal of ["１１ ９９９９９-００００", "11\u200b99999\u200b0000"]) {
+  for (const literal of ["１１ ９９９９９-００００", "11\u200b99999\u200b0000", "11\u201199999\u20110000", "11\u201399999\u20130000"]) {
     const projected = attendanceContactProjection([{ role: "user", content: `WhatsApp: ${literal}` }]);
     assert.equal(projected.contacts.get("phone_0_0"), literal);
     assert.equal(/\p{Nd}/u.test(projected.recent[0].content.replace(/phone_\d+_\d+/g, "")), false);
