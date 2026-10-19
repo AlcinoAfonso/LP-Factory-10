@@ -83,11 +83,11 @@ function projectAttendanceText(input: string, replaceContact: (raw: string) => s
   const source = escapeContactReferenceTokens(input
     .replace(/(?:"(?:\\[^\r\n]|[^"\\\r\n])*"|[^\s<>()\[\]{}";,:@]+)@(?:\[[^\]\r\n]*\]?|[^\s<>()\[\]{}";,:@]+)/gu, "[email removido]")
     .replace(/\bhttps?:\/\/\S+|\bwww\.\S+/giu, "[url removida]"));
-  if (contactReply && /^\s*\+?\(?\d(?:[\s().,-]*\d)*\)?\s*$/u.test(source)) return replaceContact(source.trim());
+  if (contactReply && /^\s*\+?\(?\d(?:[\s().,\/-]*\d)*\)?\s*$/u.test(source)) return replaceContact(source.trim());
   return source
-    .replace(/(\b(?:whatsapp|zap|telefone|celular|contato)\b[^\d+(\r\n]*)(\+?\(?\d(?:[\s().,-]*\d)*\)?)/giu,
+    .replace(/(\b(?:whatsapp|zap|telefone|celular|contato)\b[^\d+(\r\n;.!?,]*)(\+?\(?\d(?:[\s().,\/-]*\d)*\)?)/giu,
       (_match, label: string, raw: string) => label + replaceContact(raw))
-    .replace(/\+?\(?\d(?:[\s().,-]*\d){9,}\)?/gu, replaceContact)
+    .replace(/\+?\(?\d(?:[\s().,\/-]*\d){9,}\)?/gu, replaceContact)
     .replace(/\s+/g, " ").trim();
 }
 // Contact references are scoped to this projection; the provider never receives the numbers.

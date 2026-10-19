@@ -382,7 +382,7 @@ async function main() {
     assert.equal(assistant.recent[0].content.includes("99999"), false);
   }
   // Contact content is stored verbatim; digit count and formatting never determine acceptance.
-  for (const literal of ["9", "21 97965", "9999-0000", "(21) 97965 84 83", "+55 (11) 99999-0000-123"]) {
+  for (const literal of ["9", "21 97965", "9999-0000", "(21) 97965 84 83", "+55 (11) 99999-0000-123", "+55 (11) 99999/0000"]) {
     const message = "Meu WhatsApp é " + literal;
     const projected = attendanceContactProjection([{ role: "user", content: message }]);
     assert.equal(projected.contacts.get("phone_0_0"), literal);
@@ -406,6 +406,12 @@ async function main() {
   assert.equal(commercialProjection.contacts.size, 0);
   assert.equal(commercialProjection.recent[0].content, commercialNumbers);
   assert.equal(projectSummary(JSON.stringify({ ...legacyFields, contextualUnderstanding: commercialNumbers })).summary?.includes(commercialNumbers), true);
+  for (const message of ["WhatsApp não informado; atendemos 50 clientes", "WhatsApp não informado. Ticket R$ 120",
+    "WhatsApp não informado, atendemos 50 clientes"]) {
+    const projected = attendanceContactProjection([{ role: "user", content: message }]);
+    assert.equal(projected.contacts.size, 0);
+    assert.equal(projected.recent[0].content, message);
+  }
   // References survive text bounds so a later clarification can still select the original contact.
   const longContact = attendanceContactProjection([
     { role: "user", content: "Contexto comercial. ".repeat(100) + "Meu WhatsApp é " + phone },
