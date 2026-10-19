@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PHONE_LIKE_PATTERN, redactEmailAndUrl } from "../text-redaction";
+import { isCalendarDate, PHONE_LIKE_PATTERN, redactEmailAndUrl } from "../text-redaction";
 import { redactPotentialContactDetails, validatePreferredName } from "./policy";
 import type { PendingSetupConversation } from "./contracts";
 
@@ -81,6 +81,7 @@ export function attendanceContactProjection(messages: AttendanceContext["recent"
   const recent = messages.slice(-8).map(({ role, content }, index, bounded) => {
     let occurrence = 0;
     const referenced = role === "user" ? redactEmailAndUrl(content).replace(PHONE_LIKE_PATTERN, raw => {
+      if (isCalendarDate(raw)) return raw;
       const digitCount = raw.replace(/\D/g, "").length;
       if (digitCount < 10 || digitCount > 15) return "[telefone inválido removido]";
       const reference = `phone_${index}_${occurrence++}`;
