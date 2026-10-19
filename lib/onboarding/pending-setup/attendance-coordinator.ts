@@ -1,5 +1,5 @@
 import "server-only";
-import { attendanceProjection, attendanceProposal, attendanceSummary } from "./attendance-core";
+import { attendanceContactProjection, attendanceProjection, attendanceProposal, attendanceSummary } from "./attendance-core";
 import { requestAttendance } from "./attendance-provider";
 import { loadPendingSetupConversation } from "./adapters/pendingSetupConversationAdapter";
 import { claimAttendanceTurn, commitAttendanceTurn, releaseAttendanceTurn,
@@ -65,7 +65,7 @@ export async function conductAttendanceTurn(input: Readonly<{
       ...fence, output, confirm: confirmation, observedPrimaryTaxonId: currentPrimaryTaxonId,
       proposal: confirmation ? null : attendanceProposal(output, catalog),
       summary: attendanceSummary(output, catalog.find(taxon => taxon.id === currentPrimaryTaxonId)?.name ?? null,
-        context.confirmedProposal, reserved.accountContext.summary),
+        context.confirmedProposal, reserved.accountContext.summary, attendanceContactProjection(reserved.messages).contacts),
     });
     if (!written.ok) {
       if (written.reason === "primary_conflict" || (confirmation && written.reason === "invalid")) {

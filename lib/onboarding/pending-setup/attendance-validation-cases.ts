@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import nodeModule from "node:module";
-import { attendanceProjection, attendancePrompt, attendanceProposal, attendanceSummary, validateAttendanceOutput,
+import { attendanceContactProjection, attendanceProjection, attendancePrompt, attendanceProposal, attendanceSummary, validateAttendanceOutput,
   validateStoredAttendanceProposal, type AttendanceContext, type AttendanceOutput } from "./attendance-core";
 import type { AttendanceDependencies } from "./attendance-coordinator";
 import type { PendingSetupConversation } from "./contracts";
@@ -17,7 +17,7 @@ const context: AttendanceContext = {
   ],
 };
 const base: AttendanceOutput = {
-  reply: "Jardinagem corresponde ao seu negócio?", preferredName: "Ana", preferredNameDeclined: false,
+  reply: "Jardinagem corresponde ao seu negócio?", preferredName: "Ana", preferredNameDeclined: false, requestWhatsapp: false, whatsappReference: null, whatsappDeclined: false,
   businessUnderstanding: "Manutenção de jardins para condomínios.", confirmedUnderstanding: null,
   suggestions: ["Pode ser útil explicar a frequência do serviço."], sufficientUnderstanding: true,
   readyToComplete: false, closureReason: null, action: "existing", existingTaxonId: nicheId,
@@ -168,7 +168,7 @@ async function main() {
   } }, context.catalog).summary!).contextualUnderstanding, corrected.businessUnderstanding);
   const compound = "João. Tenho a Clínica Sorriso e fazemos clareamento, tratamento de canal e implantes.";
   const nameContext: AttendanceContext = { ...context, preferredName: null, recent: [
-    { role: "assistant", content: "Como prefere ser chamado?" }, { role: "user", content: compound },
+    { role: "assistant", content: "Olá! Como prefere ser chamado?" }, { role: "user", content: compound },
   ] };
   const compoundOutput = { ...base, preferredName: "João", businessUnderstanding: "Clínica Sorriso oferece clareamento, tratamento de canal e implantes." };
   assert.equal(validateAttendanceOutput(compoundOutput, nameContext)?.preferredName, "João");
@@ -196,12 +196,12 @@ async function main() {
       { role: "assistant", content: question }, { role: "user", content: "Clínica Sorriso. Fazemos implantes." }] };
     const businessNameOutput = { ...compoundOutput, preferredName: "Clínica Sorriso", businessUnderstanding: "Clínica Sorriso oferece implantes." };
     const safeBusiness = validateAttendanceOutput({ ...businessNameOutput, preferredName: null,
-      reply: "Como prefere ser chamado?", action: "ask", existingTaxonId: null }, businessNameContext);
+      reply: "Olá! Como prefere ser chamado?", action: "ask", existingTaxonId: null }, businessNameContext);
     assert.equal(safeBusiness?.businessUnderstanding, businessNameOutput.businessUnderstanding);
   }
   assert.equal(validateAttendanceOutput(compoundOutput, { ...nameContext, recent: [
     { role: "assistant", content: "  Como prefere ser chamado?  " }, nameContext.recent[1]] })?.preferredName, "João");
-  const nameRequest = { ...base, preferredName: null, reply: "Como prefere ser chamado?", action: "ask", existingTaxonId: null };
+  const nameRequest = { ...base, preferredName: null, reply: "Olá! Como prefere ser chamado?", action: "ask", existingTaxonId: null };
   assert.ok(validateAttendanceOutput(nameRequest, nameContext));
   assert.equal(validateAttendanceOutput({ ...nameRequest, reply: "Como gostaria de ser chamado?" }, nameContext), null);
   assert.equal(validateAttendanceOutput({ ...nameRequest, action: "existing", existingTaxonId: base.existingTaxonId }, nameContext), null);
@@ -220,7 +220,7 @@ async function main() {
     { role: "user", content: "Pode me chamar de João. Também administro uma clínica." }] }), null);
   const longMessage = compound + " Temos atendimento presencial.".repeat(60) + " Atendemos adultos e queremos explicar implantes.";
   const integral = attendanceProjection({ ...conversation, preferredName: null, messages: [
-    { ...conversation.messages[0], role: "assistant", content: "Como prefere ser chamado?" },
+    { ...conversation.messages[0], role: "assistant", content: "Olá! Como prefere ser chamado?" },
     { ...conversation.messages[0], id: "2", role: "user", content: longMessage },
   ] }, context.catalog);
   assert.equal(integral.recent.at(-1)?.content, longMessage);
@@ -233,6 +233,248 @@ async function main() {
   assert.equal(JSON.parse(projected.summary!).classification, draft.classification);
   assert.equal(JSON.parse(projected.summary!).suggestions.length, 1);
   assert.equal(JSON.parse(attendanceSummary(noBusinessNews, null, null, urlSummary)).confirmedUnderstanding, JSON.parse(urlSummary).confirmedUnderstanding);
+  // Only literal user contacts can enter the existing Summary; raw PII stays out of provider context.
+  const phone = "+55 (21) 99999-0000";
+  const contactConversation = { ...conversation, messages: [
+    { ...conversation.messages[0], role: "assistant" as const, content: "Exemplo de terceiro: +55 21 98888-1111" },
+    { ...conversation.messages[0], id: "2", role: "user" as const, content: "Meu WhatsApp é +55 (21) 99999-0000. Faço jardins." },
+  ] };
+  const phoneContext = attendanceProjection(contactConversation, context.catalog);
+  const numbers = attendanceContactProjection(contactConversation.messages).contacts;
+  assert.deepEqual(phoneContext.contactReferences, ["phone_1_0"]);
+  assert.equal(JSON.stringify(phoneContext).includes("99999"), false);
+  assert.equal(JSON.stringify(phoneContext).includes("98888"), false);
+  const contactOutput = { ...base, whatsappReference: "phone_1_0" };
+  assert.ok(validateAttendanceOutput(contactOutput, phoneContext));
+  assert.equal(validateAttendanceOutput({ ...base, whatsappReference: "invented" }, phoneContext), null);
+  assert.equal(validateAttendanceOutput({ ...contactOutput, whatsappDeclined: true }, phoneContext), null);
+  assert.throws(() => attendanceSummary(contactOutput, null, null), /contact_reference_invalid/);
+  const contactSummary = attendanceSummary(contactOutput, null, null, null, numbers);
+  assert.equal(JSON.parse(contactSummary).whatsapp, phone);
+  assert.equal(JSON.parse(contactSummary).pendingReason, null);
+  const missingNiche = "Nicho sem correspondência segura no catálogo.";
+  assert.equal(JSON.parse(attendanceSummary({ ...noBusinessNews, preferredName: null }, null, null)).pendingReason, null);
+  const unresolvedSummary = attendanceSummary(pending, null, null);
+  assert.equal(JSON.parse(unresolvedSummary).pendingReason, missingNiche);
+  assert.equal(JSON.parse(attendanceSummary(noBusinessNews, null, null, unresolvedSummary)).pendingReason, missingNiche);
+  assert.equal(JSON.parse(attendanceSummary(base, null, null, unresolvedSummary)).pendingReason, null);
+  assert.equal(JSON.parse(attendanceSummary(accepted, null, fallback)).pendingReason, missingNiche);
+  assert.equal(JSON.parse(attendanceSummary(accepted, null, proposal)).pendingReason, null);
+  assert.equal(JSON.parse(attendanceSummary(noBusinessNews, null, null, contactSummary)).whatsapp, phone);
+  const retainedContact = attendanceProjection({ ...conversation, accountContext: {
+    summary: contactSummary, updatedAt: conversation.updatedAt,
+  } }, context.catalog);
+  assert.equal(retainedContact.summary?.includes(phone), false);
+  assert.equal(JSON.parse(retainedContact.summary!).whatsapp, undefined);
+  assert.equal(retainedContact.whatsappProvided, true);
+  const acceptedContactSummary = JSON.stringify({ ...JSON.parse(contactSummary), confirmedUnderstanding: context.displayedUnderstanding });
+  const acceptedContactContext = attendanceProjection({ ...conversation, accountContext: {
+    summary: acceptedContactSummary, updatedAt: conversation.updatedAt,
+  } }, context.catalog);
+  assert.ok(validateAttendanceOutput({ ...later, confirmedUnderstanding: context.displayedUnderstanding }, acceptedContactContext));
+  // Projection-scoped contact tokens must never escape into public or semantic output.
+  const semanticOutput = { ...base, confirmedUnderstanding: context.displayedUnderstanding };
+  assert.ok(validateAttendanceOutput(semanticOutput, acceptedContactContext));
+  for (const token of ["[phone_1_0]", "phone_1_0", "[phone_99_99]", "[PHONE_1_0]"]) {
+    for (const field of ["reply", "preferredName", "businessUnderstanding", "confirmedUnderstanding", "closureReason"]) {
+      assert.equal(validateAttendanceOutput({ ...semanticOutput, [field]: token }, acceptedContactContext), null);
+    }
+    assert.equal(validateAttendanceOutput({ ...semanticOutput, suggestions: ["Use " + token] }, acceptedContactContext), null);
+    for (const field of ["businessUnderstanding", "confirmedUnderstanding"]) {
+      assert.equal(validateAttendanceOutput({ ...confirm, [field]: token }, { ...context, confirmedProposal: proposal }), null);
+    }
+  }
+  const requestingWhatsapp = { ...finishing, requestWhatsapp: true, readyToComplete: false };
+  assert.ok(validateAttendanceOutput(requestingWhatsapp, { ...context, confirmedOperationalUnderstanding: true }));
+  assert.equal(validateAttendanceOutput({ ...requestingWhatsapp, sufficientUnderstanding: false }, context), null);
+  assert.equal(validateAttendanceOutput(requestingWhatsapp, context), null);
+  assert.ok(validateAttendanceOutput(requestingWhatsapp, { ...context, currentPrimaryTaxonId: nicheId }));
+  const contactWithoutNews = validateAttendanceOutput({ ...requestingWhatsapp, businessUnderstanding: "" },
+    { ...context, currentPrimaryTaxonId: nicheId });
+  assert.equal(contactWithoutNews?.businessUnderstanding, context.displayedUnderstanding);
+  assert.equal(contactWithoutNews?.requestWhatsapp, true);
+  assert.equal(contactWithoutNews?.readyToComplete, false);
+  assert.equal(validateAttendanceOutput({ ...requestingWhatsapp, businessUnderstanding: "" },
+    { ...context, currentPrimaryTaxonId: nicheId, displayedUnderstanding: null }), null);
+  assert.equal(validateAttendanceOutput(requestingWhatsapp, { ...context, currentPrimaryTaxonId: nicheId,
+    catalog: context.catalog.map(taxon => ({ ...taxon, active: false })) }), null);
+  assert.equal(validateAttendanceOutput({ ...base, requestWhatsapp: true }, context), null);
+  assert.equal(validateAttendanceOutput({ ...base, action: "pending", existingTaxonId: null, requestWhatsapp: true }, context), null);
+  assert.ok(validateAttendanceOutput({ ...requestingWhatsapp, action: "confirm" }, { ...context, confirmedProposal: { kind: "operational_fallback", taxonId: null, taxonName: null } }));
+  assert.equal(validateAttendanceOutput({ ...requestingWhatsapp, readyToComplete: true }, { ...context, confirmedOperationalUnderstanding: true }), null);
+  assert.equal(validateAttendanceOutput(requestingWhatsapp, { ...context, whatsappProvided: true }), null);
+  assert.equal(validateAttendanceOutput({ ...contactOutput, requestWhatsapp: true }, phoneContext), null);
+  assert.equal(validateAttendanceOutput(requestingWhatsapp, { ...context, summary: JSON.stringify({ ...draft, whatsappDeclined: true }) }), null);
+  const declined = { ...finishing, whatsappDeclined: true };
+  assert.ok(validateAttendanceOutput(declined, { ...context, confirmedOperationalUnderstanding: true }));
+  const declinedSummary = attendanceSummary(declined, null, null);
+  assert.equal(JSON.parse(declinedSummary).whatsappDeclined, true);
+  const withdrawnSummary = attendanceSummary({ ...noBusinessNews, whatsappDeclined: true }, null, null, contactSummary);
+  assert.equal(JSON.parse(withdrawnSummary).whatsapp, undefined);
+  assert.equal(JSON.parse(withdrawnSummary).whatsappDeclined, true);
+  assert.equal(JSON.parse(withdrawnSummary).contextualUnderstanding, JSON.parse(contactSummary).contextualUnderstanding);
+  const withdrawnProjection = attendanceProjection({ ...conversation, accountContext: {
+    summary: withdrawnSummary, updatedAt: conversation.updatedAt,
+  } }, context.catalog);
+  assert.equal(withdrawnProjection.whatsappProvided, false);
+  assert.equal(JSON.parse(attendanceSummary(noBusinessNews, null, null, declinedSummary)).whatsappDeclined, true);
+  assert.equal(JSON.parse(attendanceProjection({ ...conversation, accountContext: {
+    summary: declinedSummary, updatedAt: conversation.updatedAt,
+  } }, context.catalog).summary!).whatsappDeclined, true);
+  const correctedContacts = attendanceContactProjection([{ role: "user", content: "Correção: meu WhatsApp é +55 11 97777-2222." }]);
+  const correctedSummary = attendanceSummary({ ...base, whatsappReference: "phone_0_0" }, null, null, contactSummary, correctedContacts.contacts);
+  assert.equal(JSON.parse(correctedSummary).whatsapp, "+55 11 97777-2222");
+  // Canonical writes preserve distinct commercial meanings and the physical fail-closed limit.
+  const legacyFields = { contextualUnderstanding: "", confirmedUnderstanding: "", classification: "Jardinagem", suggestions: [], pendingReason: null };
+  const legacyContext = "Contexto comercial atual: ".padEnd(3000, "a");
+  const legacyConfirmed = "Entendimento anteriormente aceito: ".padEnd(6000 - JSON.stringify(legacyFields).length - legacyContext.length, "b");
+  const legacyAtLimit = JSON.stringify({ ...legacyFields, contextualUnderstanding: legacyContext, confirmedUnderstanding: legacyConfirmed });
+  assert.equal(legacyAtLimit.length, 6000);
+  assert.equal(attendanceSummary(noBusinessNews, "Jardinagem", null, legacyAtLimit), legacyAtLimit);
+  assert.throws(() => attendanceSummary({ ...noBusinessNews, whatsappReference: "max_phone" }, "Jardinagem", null,
+    legacyAtLimit, new Map([["max_phone", "+123456789012345"]])), /attendance_summary_too_long/);
+  // Read compact data from earlier Preview writes; every subsequent write uses canonical keys.
+  const oldCompact = JSON.stringify({ contextualUnderstanding: base.businessUnderstanding, confirmedUnderstanding: context.displayedUnderstanding,
+    c: "Jardinagem", w: phone });
+  const projectSummary = (summary: string) => attendanceProjection({ ...conversation, accountContext: {
+    summary, updatedAt: conversation.updatedAt,
+  } }, context.catalog);
+  const compactProjection = projectSummary(oldCompact);
+  assert.equal(compactProjection.whatsappProvided, true);
+  assert.equal(compactProjection.summary?.includes(phone), false);
+  assert.equal(JSON.parse(compactProjection.summary!).confirmedUnderstanding, context.displayedUnderstanding);
+  const canonical = JSON.parse(attendanceSummary(noBusinessNews, "Jardinagem", null, oldCompact));
+  assert.equal(canonical.classification, "Jardinagem");
+  assert.equal(canonical.whatsapp, phone);
+  assert.equal(canonical.confirmedUnderstanding, context.displayedUnderstanding);
+  for (const key of ["c", "s", "p", "w", "d"]) assert.equal(key in canonical, false);
+  assert.equal(projectSummary(legacyAtLimit + " ").summary, null);
+  assert.equal(projectSummary(JSON.stringify({ ...JSON.parse(oldCompact), unexpected: true })).summary, null);
+
+  // Reproduced D15C regressions: email digits are never contact candidates or provider data.
+  for (const email of ["joao5511999990000@gmail.com", "5511999999999@example.com", "joao.phone_1_2@empresa.com.br"]) {
+    const message = "Meu e-mail é " + email;
+    for (const role of ["user", "assistant"] as const) {
+      const projected = attendanceContactProjection([{ role, content: message }]);
+      assert.equal(projected.contacts.size, 0);
+      assert.equal(projected.recent[0].content, "Meu e-mail é [email removido]");
+    }
+    const projected = attendanceProjection({ ...conversation, preferredName: email, businessDisplayName: email,
+      businessContextText: message, accountContext: { updatedAt: conversation.updatedAt,
+        summary: JSON.stringify({ ...legacyFields, contextualUnderstanding: message }) } }, context.catalog);
+    for (const value of [projected.preferredName, projected.publicName, projected.displayedUnderstanding, projected.summary]) {
+      assert.equal(value?.includes(email), false);
+      assert.equal(value?.includes("551199999"), false);
+      assert.equal(value?.includes("phone_"), false);
+    }
+  }
+  const mixedEmail = attendanceContactProjection([{ role: "user",
+    content: "E-mail 5511999999999@example.com; meu WhatsApp é +55 (21) 99999-0000." }]);
+  assert.equal(mixedEmail.contacts.size, 1);
+  assert.equal(mixedEmail.contacts.get("phone_0_0"), phone);
+  for (const [message, literal] of [["CPF não informado, meu contato 11999990000", "11999990000"], ["WhatsApp: 11,99999,0000", "11,99999,0000"]]) {
+    const projected = attendanceContactProjection([{ role: "user", content: message }]);
+    assert.equal(projected.contacts.size, 1);
+    assert.equal(projected.contacts.get("phone_0_0"), literal);
+    assert.equal(projected.recent[0].content.includes("99999"), false);
+    const assistant = attendanceContactProjection([{ role: "assistant", content: message }]);
+    assert.equal(assistant.contacts.size, 0);
+    assert.equal(assistant.recent[0].content.includes("99999"), false);
+  }
+  // Contact content is stored verbatim; digit count and formatting never determine acceptance.
+  for (const literal of ["9", "21 97965", "9999-0000", "(21) 97965 84 83", "+55 (11) 99999-0000-123", "+55 (11) 99999/0000"]) {
+    const message = "Meu WhatsApp é " + literal;
+    const projected = attendanceContactProjection([{ role: "user", content: message }]);
+    assert.equal(projected.contacts.get("phone_0_0"), literal);
+    assert.equal(projected.recent[0].content.includes(literal), false);
+    assert.match(projected.recent[0].content, /formato informado:/u);
+    const saved = attendanceSummary({ ...base, whatsappReference: "phone_0_0" }, null, null, null, projected.contacts);
+    assert.equal(JSON.parse(saved).whatsapp, literal);
+    assert.equal(projectSummary(saved).whatsappProvided, true);
+    assert.equal(JSON.parse(attendanceSummary(noBusinessNews, null, null, saved)).whatsapp, literal);
+    const assistant = attendanceContactProjection([{ role: "assistant", content: message }]);
+    assert.equal(assistant.contacts.size, 0);
+    assert.equal(assistant.recent[0].content.includes(literal), false);
+  }
+  const isolated = attendanceContactProjection([
+    { role: "assistant", content: "Se quiser, qual é seu WhatsApp?" }, { role: "user", content: "21 97965" },
+  ]);
+  assert.equal(isolated.contacts.get("phone_1_0"), "21 97965");
+  assert.equal(isolated.recent[1].content.includes("97965"), false);
+  for (const message of ["É 97965-1234", "97965-1234, falta o DDD", "Meu número é 97965-1234", "O número é 97965-1234", "Pode anotar 97965-1234"]) {
+    const projected = attendanceContactProjection([
+      { role: "assistant", content: "Se quiser, qual é seu WhatsApp?" }, { role: "user", content: message },
+    ]);
+    assert.equal(projected.contacts.get("phone_1_0"), "97965-1234");
+    assert.equal(projected.recent[1].content.includes("97965"), false);
+    assert.equal(JSON.parse(attendanceSummary({ ...base, whatsappReference: "phone_1_0" }, null, null, null,
+      projected.contacts)).whatsapp, "97965-1234");
+  }
+  for (const message of ["Meu fone é 9999-0000", "Tel.: 9999-0000"]) {
+    const projected = attendanceContactProjection([{ role: "user", content: message }]);
+    assert.equal(projected.contacts.get("phone_0_0"), "9999-0000");
+    assert.equal(projected.recent[0].content.includes("9999"), false);
+  }
+  for (const literal of ["１１ ９９９９９-００００", "11\u200b99999\u200b0000", "11\u201199999\u20110000", "11\u201399999\u20130000"]) {
+    const projected = attendanceContactProjection([{ role: "user", content: `WhatsApp: ${literal}` }]);
+    assert.equal(projected.contacts.get("phone_0_0"), literal);
+    assert.equal(/\p{Nd}/u.test(projected.recent[0].content.replace(/phone_\d+_\d+/g, "")), false);
+    assert.equal(JSON.parse(attendanceSummary({ ...base, whatsappReference: "phone_0_0" }, null, null, null,
+      projected.contacts)).whatsapp, literal);
+  }
+  const proactiveNumber = attendanceContactProjection([{ role: "user", content: "Meu número é 97965-1234" }]);
+  assert.equal(proactiveNumber.contacts.get("phone_0_0"), "97965-1234");
+  assert.equal(proactiveNumber.recent[0].content.includes("97965"), false);
+  for (const [message, literal, fact] of [["WhatsApp: 11 99999-0000, 50 funcionários", "11 99999-0000", "50 funcionários"],
+    ["WhatsApp: 11999990000. 2026 será ótimo", "11999990000", "2026 será ótimo"]]) {
+    const projected = attendanceContactProjection([{ role: "user", content: message }]);
+    assert.deepEqual([...projected.contacts.values()], [literal]);
+    assert.equal(projected.recent[0].content.includes(fact), true);
+  }
+  const commercialNumbers = "Atendo 50 clientes, com ticket de R$ 120 e prazo de 7 dias.";
+  const commercialProjection = attendanceContactProjection([{ role: "user", content: commercialNumbers }]);
+  assert.equal(commercialProjection.contacts.size, 0);
+  assert.equal(commercialProjection.recent[0].content, commercialNumbers);
+  assert.equal(projectSummary(JSON.stringify({ ...legacyFields, contextualUnderstanding: commercialNumbers })).summary?.includes(commercialNumbers), true);
+  for (const message of ["WhatsApp não informado; atendemos 50 clientes", "WhatsApp não informado. Ticket R$ 120",
+    "WhatsApp não informado, atendemos 50 clientes"]) {
+    const projected = attendanceContactProjection([{ role: "user", content: message }]);
+    assert.equal(projected.contacts.size, 0);
+    assert.equal(projected.recent[0].content, message);
+  }
+  for (const message of ["Prefiro não informar; atendemos 50 clientes e faturamos R$ 120", "Temos contato com 50 fornecedores"]) {
+    const projected = attendanceContactProjection([
+      { role: "assistant", content: "Se quiser, qual é seu WhatsApp?" }, { role: "user", content: message },
+    ]);
+    assert.equal(projected.contacts.size, 0);
+    assert.equal(projected.recent[1].content, message);
+  }
+  // References survive text bounds so a later clarification can still select the original contact.
+  const longContact = attendanceContactProjection([
+    { role: "user", content: "Contexto comercial. ".repeat(100) + "Meu WhatsApp é " + phone },
+    { role: "assistant", content: "Esse contato é seu WhatsApp?" }, { role: "user", content: "Sim." },
+  ]);
+  assert.equal(longContact.contacts.get("phone_0_0"), phone);
+  const longContext = attendanceProjection({ ...conversation, messages: [
+    { ...conversation.messages[0], content: "Contexto comercial. ".repeat(100) + "Meu WhatsApp é " + phone },
+    { ...conversation.messages[0], id: "2", role: "assistant", content: "Esse contato é seu WhatsApp?" },
+    { ...conversation.messages[0], id: "3", role: "user", content: "Sim." },
+  ] }, context.catalog);
+  assert.deepEqual(longContext.contactReferences, ["phone_0_0"]);
+  assert.ok(validateAttendanceOutput({ ...base, whatsappReference: "phone_0_0" }, longContext));
+  const endContact = attendanceContactProjection([{ role: "user", content: "a".repeat(3988) + " 11999990000" }]);
+  assert.equal(endContact.contacts.get("phone_0_0"), "11999990000");
+  // Literal tokens cannot impersonate a phone reference generated for another cited number.
+  for (const literal of ["[phone_0_0]", "PHONE_0_0", "[Phone_0_0]"]) {
+    const collision = attendanceContactProjection([{ role: "user",
+      content: "Meu WhatsApp é " + literal + "; +55 (21) 99999-0000 é de terceiro." }]);
+    assert.equal(collision.contacts.size, 1);
+    assert.equal(collision.recent[0].content.match(/\bphone_\d+_\d+\b/giu)?.length, 1);
+    assert.match(collision.recent[0].content, /referência de contato literal removida/u);
+    assert.match(collision.recent[0].content, /\[phone_0_0\].*é de terceiro/u);
+  }
+  const hiddenContact = attendanceContactProjection([{ role: "user", content: "https://example.com/5521999990000" }]);
+  assert.equal(hiddenContact.contacts.size, 0);
   assert.deepEqual(catalogAdapter.projectAttendanceMarketContext([], []), []);
   const market = catalogAdapter.projectAttendanceMarketContext([{ id: accountId, taxon_id: nicheId, updated_at: "2026-06-01" }],
     [{ research_id: accountId, item_key: "limitation", item_text: "Pesquisa histórica; validar aplicabilidade.", notes: "Período 2024." }]);

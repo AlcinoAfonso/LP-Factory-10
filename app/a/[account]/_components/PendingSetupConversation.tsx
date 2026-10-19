@@ -256,7 +256,7 @@ export function PendingSetupConversation({
                 <FormFieldError id="business-context-error">{turnState.fieldError}</FormFieldError>
               ) : (
                 <FormFieldHint id="business-context-hint">
-                  {conversation.attendanceEnabled ? "Responda à pergunta acima. Não inclua telefone, e-mail ou endereço." : "Não inclua telefone, e-mail ou endereço. Uma frase costuma bastar."}
+                  {conversation.attendanceEnabled ? "Responda à pergunta acima. Informar WhatsApp é opcional e não autoriza contato posterior. Não inclua e-mail ou endereço." : "Não inclua telefone, e-mail ou endereço. Uma frase costuma bastar."}
                 </FormFieldHint>
               )}
             </FormField>
