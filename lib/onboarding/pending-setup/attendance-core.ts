@@ -84,7 +84,7 @@ function projectAttendanceText(input: string, replaceContact: (raw: string) => s
     .replace(/(?:"(?:\\[^\r\n]|[^"\\\r\n])*"|[^\s<>()\[\]{}";,:@]+)@(?:\[[^\]\r\n]*\]?|[^\s<>()\[\]{}";,:@]+)/gu, "[email removido]")
     .replace(/\bhttps?:\/\/\S+|\bwww\.\S+/giu, "[url removida]"));
   const contactSource = contactReply
-    ? source.replace(/^(\s*(?:é\s*)?)(\+?\(?\p{Nd}(?:(?:[\s\p{Cf}()\/\p{Pd}]|[.,](?=\p{Nd}))*\p{Nd})*\)?(?=\s*$)|\+?\(?\p{Nd}[\p{Nd}\s\p{Cf}().]*\p{Pd}\p{Nd}[\p{Nd}\s\p{Cf}().\p{Pd}]*\)?(?=\s*[,;.!?]|\s*$))/iu,
+    ? source.replace(/^(\s*(?:(?:é|o\s+número\s+é|pode\s+anotar)\s*)?)(\+?\(?\p{Nd}(?:(?:[\s\p{Cf}()\/\p{Pd}]|[.,](?=\p{Nd}))*\p{Nd})*\)?(?=\s*$)|\+?\(?\p{Nd}[\p{Nd}\s\p{Cf}().]*\p{Pd}\p{Nd}[\p{Nd}\s\p{Cf}().\p{Pd}]*\)?(?=\s*[,;.!?]|\s*$))/iu,
       (_match, prefix: string, raw: string) => prefix + replaceContact(raw))
     : source;
   return contactSource

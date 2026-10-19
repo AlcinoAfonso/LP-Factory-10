@@ -401,7 +401,7 @@ async function main() {
   ]);
   assert.equal(isolated.contacts.get("phone_1_0"), "21 97965");
   assert.equal(isolated.recent[1].content.includes("97965"), false);
-  for (const message of ["É 97965-1234", "97965-1234, falta o DDD", "Meu número é 97965-1234"]) {
+  for (const message of ["É 97965-1234", "97965-1234, falta o DDD", "Meu número é 97965-1234", "O número é 97965-1234", "Pode anotar 97965-1234"]) {
     const projected = attendanceContactProjection([
       { role: "assistant", content: "Se quiser, qual é seu WhatsApp?" }, { role: "user", content: message },
     ]);
