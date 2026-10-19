@@ -600,6 +600,34 @@ async function main() {
       assert.equal(redactPotentialContactDetails(message).includes("11999990000"), false);
     }
   }
+  for (const unicodePhone of ["１２ ９９９９９-００００", "١٢ ٩٩٩٩٩-٠٠٠٠", "۱۲ ۹۹۹۹۹-۰۰۰۰", "𝟙𝟚 𝟡𝟡𝟡𝟡𝟡-𝟘𝟘𝟘𝟘", "1２ ٩۹９99-0０٠۰"]) {
+    const message = "WhatsApp: " + unicodePhone;
+    const projected = attendanceContactProjection([{ role: "user", content: message }]);
+    assert.equal(projected.contacts.get("phone_0_0"), "12999990000");
+    assert.equal(projected.recent[0].content, "WhatsApp: [phone_0_0]");
+    assert.equal(redactPotentialContactDetails(message), "WhatsApp: [telefone removido]");
+    const assistant = attendanceContactProjection([{ role: "assistant", content: message }]);
+    assert.equal(assistant.recent[0].content, "WhatsApp: [telefone removido]");
+  }
+  for (const commercial of ["Lançamento １８ / １０ / ２０２６", "Receita ١٠.٠٠٠.٠٠٠ €", "Atendemos ۱۰.۰۰۰.۰۰۰ de clientes", "CNPJ １２.３４５.６７８/０００１-９０"]) {
+    assert.equal(redactPotentialContactDetails(commercial), commercial);
+    const projected = attendanceContactProjection([{ role: "user", content: commercial + "; WhatsApp １２ ９９９９９-００００" }]);
+    assert.equal(projected.contacts.get("phone_0_0"), "12999990000");
+    assert.equal(projected.recent[0].content, commercial + "; WhatsApp [phone_0_0]");
+  }
+  for (const email of ["用户@example.com", "ana@exemplo.рф", "joão@empresa.com.br", "用户１２９９９９９００００@例子.公司", '"用户 １２９９９９９００００"@example.com']) {
+    const message = "Contato " + email;
+    assert.equal(redactPotentialContactDetails(message), "Contato [email removido]");
+    for (const role of ["user", "assistant"] as const) {
+      const projected = attendanceContactProjection([{ role, content: message }]);
+      assert.equal(projected.contacts.size, 0);
+      assert.equal(projected.recent[0].content, "Contato [email removido]");
+    }
+    const projectedMemory = attendanceProjection({ ...conversation, businessContextText: message,
+      accountContext: { summary: JSON.stringify({ ...legacyFields, contextualUnderstanding: message }), updatedAt: conversation.updatedAt } }, context.catalog);
+    assert.equal(projectedMemory.displayedUnderstanding, "Contato [email removido]");
+    assert.equal(JSON.parse(projectedMemory.summary!).contextualUnderstanding, "Contato [email removido]");
+  }
   const hiddenContact = attendanceContactProjection([{ role: "user", content: "https://example.com/5521999990000" }]);
   assert.equal(hiddenContact.contacts.size, 0);
   for (const invalidPhone of ["5511999990000123", "+55 (11) 99999-0000-123", "+55 (11) 99999–0000/123"]) {

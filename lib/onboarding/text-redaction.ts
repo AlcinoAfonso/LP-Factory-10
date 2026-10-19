@@ -1,8 +1,17 @@
-const NUMERIC_SPAN_PATTERN = /(?:\+?\d[\s().\/\\\p{Pd}\u2212\u2044\u2215\uFF0F]*)+/gu;
+const NUMERIC_SPAN_PATTERN = /(?:\+?\p{Nd}[\s().\/\\\p{Pd}\u2212\u2044\u2215\uFF0F]*)+/gu;
+
+function asciiDecimalDigits(input: string): string {
+  return input.replace(/\p{Nd}/gu, digit => {
+    const code = digit.codePointAt(0)!;
+    let zero = code;
+    while (/^\p{Nd}$/u.test(String.fromCodePoint(zero - 1))) zero--;
+    return String((code - zero) % 10);
+  });
+}
 
 // Calendar dates are commercial context, even though they contain eight digits.
 export function isCalendarDate(input: string): boolean {
-  const text = input.trim().replace(/[.)]+$/, "").replace(/\s*([/.\-])\s*/gu, "$1");
+  const text = asciiDecimalDigits(input).trim().replace(/[.)]+$/, "").replace(/\s*([/.\-])\s*/gu, "$1");
   const local = /^(\d{1,2})([/.\-])(\d{1,2})\2(\d{4})$/.exec(text);
   const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(text);
   if (!local && !iso) return false;
@@ -24,8 +33,8 @@ export function replacePotentialPhoneNumbers(input: string, replace: (raw: strin
     const raw = match[0];
     const remaining = input.slice(start);
     result += input.slice(cursor, start);
-    const date = /^(?:\d{1,2}\s*([/.\-])\s*\d{1,2}\s*\1\s*\d{4}|\d{4}\s*-\s*\d{1,2}\s*-\s*\d{1,2})(?=\D|$)/u.exec(remaining)?.[0];
-    const amount = /^(?:\d{1,3}(?:\.\d{3})+(?:[.,]\d{1,2})?|\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d{1,3}(?:[ \t\u00a0\u202f]\d{3})+(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)(?!\d|[.,]\d)/u.exec(remaining)?.[0];
+    const date = /^(?:\p{Nd}{1,2}\s*([/.\-])\s*\p{Nd}{1,2}\s*\1\s*\p{Nd}{4}|\p{Nd}{4}\s*-\s*\p{Nd}{1,2}\s*-\s*\p{Nd}{1,2})(?=[^\p{Nd}]|$)/u.exec(remaining)?.[0];
+    const amount = /^(?:\p{Nd}{1,3}(?:\.\p{Nd}{3})+(?:[.,]\p{Nd}{1,2})?|\p{Nd}{1,3}(?:,\p{Nd}{3})+(?:\.\p{Nd}{1,2})?|\p{Nd}{1,3}(?:[ \t\u00a0\u202f]\p{Nd}{3})+(?:[.,]\p{Nd}{1,2})?|\p{Nd}+(?:[.,]\p{Nd}{1,2})?)(?!\p{Nd}|[.,]\p{Nd})/u.exec(remaining)?.[0];
     const before = input.slice(cursor, start);
     const afterAmount = amount ? input.slice(start + amount.length) : "";
     const monetaryBefore = /(?:\b(?:BRL|USD|EUR|GBP|JPY)|(?:R|US|CA|AU)?\$|[€£¥])\s*$/iu.test(before);
@@ -35,7 +44,7 @@ export function replacePotentialPhoneNumbers(input: string, replace: (raw: strin
     const contactLabel = /\b(?:whats(?:app)?|telefone|tel|celular|contato|n[uú]mero)\s*(?:(?:é|:)\s*)*$/iu.test(before);
     const quantityValue = amount && quantitySuffix && !contactLabel ? amount + quantitySuffix : null;
     const companyIdentifier = /\bcnpj\s*:?\s*$/iu.test(before)
-      ? /^(?:\d{2}\.\d{3}\.\d{3}\s*\/\s*\d{4}\s*-\s*\d{2}|\d{14})(?!\d)/u.exec(remaining)?.[0] : null;
+      ? /^(?:\p{Nd}{2}\.\p{Nd}{3}\.\p{Nd}{3}\s*\/\s*\p{Nd}{4}\s*-\s*\p{Nd}{2}|\p{Nd}{14})(?!\p{Nd})/u.exec(remaining)?.[0] : null;
     const protectedValue = contactLabel ? null : companyIdentifier
       ?? (date && isCalendarDate(date) ? date : monetaryValue ?? quantityValue);
     if (protectedValue) {
@@ -44,9 +53,10 @@ export function replacePotentialPhoneNumbers(input: string, replace: (raw: strin
       spans.lastIndex = cursor;
       continue;
     }
-    const candidate = raw.replace(/\D+$/u, "");
-    result += candidate.replace(/\D/g, "").length >= 8
-      ? replace(candidate) + raw.slice(candidate.length) : raw;
+    const candidate = raw.replace(/[^\p{Nd}]+$/u, "");
+    const normalizedCandidate = asciiDecimalDigits(candidate);
+    result += normalizedCandidate.replace(/\D/g, "").length >= 8
+      ? replace(normalizedCandidate) + raw.slice(candidate.length) : raw;
     cursor = start + raw.length;
   }
   return result + input.slice(cursor);
@@ -54,7 +64,7 @@ export function replacePotentialPhoneNumbers(input: string, replace: (raw: strin
 
 export function redactEmailAndUrl(input: string): string {
   return input
-    .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/giu, "[email removido]")
+    .replace(/(?:"[^"\r\n]+"|[^\s<>()\[\]{}"';,:@]+)@[^\s<>()\[\]{}"';,:@]+/gu, "[email removido]")
     .replace(/\bhttps?:\/\/\S+|\bwww\.\S+/giu, "[url removida]");
 }
 
