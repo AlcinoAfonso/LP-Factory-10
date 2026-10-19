@@ -273,6 +273,18 @@ async function main() {
     summary: acceptedContactSummary, updatedAt: conversation.updatedAt,
   } }, context.catalog);
   assert.ok(validateAttendanceOutput({ ...later, confirmedUnderstanding: context.displayedUnderstanding }, acceptedContactContext));
+  // Projection-scoped contact tokens must never escape into public or semantic output.
+  const semanticOutput = { ...base, confirmedUnderstanding: context.displayedUnderstanding };
+  assert.ok(validateAttendanceOutput(semanticOutput, acceptedContactContext));
+  for (const token of ["[phone_1_0]", "phone_1_0", "[phone_99_99]"]) {
+    for (const field of ["reply", "preferredName", "businessUnderstanding", "confirmedUnderstanding", "closureReason"]) {
+      assert.equal(validateAttendanceOutput({ ...semanticOutput, [field]: token }, acceptedContactContext), null);
+    }
+    assert.equal(validateAttendanceOutput({ ...semanticOutput, suggestions: ["Use " + token] }, acceptedContactContext), null);
+    for (const field of ["businessUnderstanding", "confirmedUnderstanding"]) {
+      assert.equal(validateAttendanceOutput({ ...confirm, [field]: token }, { ...context, confirmedProposal: proposal }), null);
+    }
+  }
   const requestingWhatsapp = { ...finishing, requestWhatsapp: true, readyToComplete: false };
   assert.ok(validateAttendanceOutput(requestingWhatsapp, { ...context, confirmedOperationalUnderstanding: true }));
   assert.equal(validateAttendanceOutput({ ...requestingWhatsapp, sufficientUnderstanding: false }, context), null);
@@ -347,6 +359,28 @@ async function main() {
   const resuppliedAtLimit = attendanceSummary(addAtLimit, "Jardinagem", null, withdrawnAtLimit, limitContacts);
   assert.equal(projectSummary(resuppliedAtLimit).whatsappProvided, true);
   assert.equal(Boolean(JSON.parse(projectSummary(resuppliedAtLimit).summary!).whatsappDeclined), false);
+  // A shorter stored contact reserves enough room for the longest valid correction.
+  const shortPhone = "1234567890";
+  const shortContacts = new Map([["short_phone", shortPhone]]);
+  const compactFields = { contextualUnderstanding: legacyContext, confirmedUnderstanding: "", c: "Jardinagem", w: shortPhone };
+  const replaceableContext = { ...compactFields, confirmedUnderstanding: "Entendimento distinto: ".padEnd(
+    6000 - JSON.stringify(compactFields).length, "b") };
+  assert.equal(JSON.stringify(replaceableContext).length, 6000);
+  // A write that consumes correction headroom must fail before creating uncorrectable memory.
+  assert.throws(() => attendanceSummary({ ...addAtLimit, whatsappReference: "short_phone",
+    businessUnderstanding: replaceableContext.contextualUnderstanding,
+    confirmedUnderstanding: replaceableContext.confirmedUnderstanding }, "Jardinagem", null, null, shortContacts), /attendance_summary_too_long/);
+  replaceableContext.confirmedUnderstanding = replaceableContext.confirmedUnderstanding.slice(0, -6);
+  // Incoming commercial understanding must obey the reserve even when a number is already stored.
+  const shortSummary = attendanceSummary({ ...addAtLimit, whatsappReference: "short_phone",
+    businessUnderstanding: replaceableContext.contextualUnderstanding,
+    confirmedUnderstanding: replaceableContext.confirmedUnderstanding }, "Jardinagem", null, null, shortContacts);
+  assert.ok(shortSummary.length <= 5994);
+  const longerSummary = attendanceSummary(addAtLimit, "Jardinagem", null, shortSummary, limitContacts);
+  assert.ok(longerSummary.length <= 6000);
+  assert.equal(JSON.parse(longerSummary).w, maxPhone);
+  assert.equal(JSON.parse(projectSummary(longerSummary).summary!).contextualUnderstanding, replaceableContext.contextualUnderstanding);
+  assert.equal(JSON.parse(projectSummary(longerSummary).summary!).confirmedUnderstanding, replaceableContext.confirmedUnderstanding);
   // Expanded projection keys can exceed storage capacity without invalidating confirmed memory.
   const largerContext = legacyContext + " Oferta nova.";
   const expandedContact = attendanceSummary({ ...addAtLimit, businessUnderstanding: largerContext,

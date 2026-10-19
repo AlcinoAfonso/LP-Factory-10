@@ -125,6 +125,9 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
   const parsed = attendanceOutputSchema.safeParse(raw);
   if (!parsed.success) return null;
   const value = parsed.data;
+  const semanticText = [value.reply, value.preferredName, value.businessUnderstanding,
+    value.confirmedUnderstanding, value.closureReason, ...value.suggestions];
+  if (semanticText.some(text => text !== null && /\bphone_\d+_\d+\b/.test(text))) return null;
   const prior = readProjectedAccountSummary(context.summary);
   if (value.requestWhatsapp && (!["ask", "confirm"].includes(value.action) || value.readyToComplete || value.whatsappDeclined || value.whatsappReference !== null
     || context.whatsappProvided || prior?.whatsappDeclined)) return null;
@@ -236,8 +239,8 @@ export function attendanceSummary(output: AttendanceOutput, primary: string | nu
     ...(output.whatsappDeclined || (!output.whatsappReference && prior?.whatsappDeclined)
       ? { whatsappDeclined: true } : {}),
   };
-  // Reserve the maximum compact contact field before a number is supplied.
-  const limit = whatsapp ? 6000 : summary.whatsappDeclined ? 5986 : 5977;
+  // Reserve both a new contact field and growth when a stored number is corrected.
+  const limit = whatsapp ? 6000 - Math.max(0, 16 - whatsapp.length) : summary.whatsappDeclined ? 5986 : 5977;
   const serialize = () => {
     const readable = JSON.stringify(summary);
     if (readable.length <= limit) return readable;
