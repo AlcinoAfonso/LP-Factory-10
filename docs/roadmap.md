@@ -898,7 +898,6 @@
     - `lib/onboarding/pending-setup/attendance-coordinator.ts`
     - `lib/onboarding/pending-setup/attendance-provider.ts`
     - `lib/onboarding/pending-setup/attendance-validation-cases.ts`
-    - `lib/onboarding/text-redaction.ts`
     - `app/a/[account]/_components/PendingSetupConversation.tsx`
 - Referências:
   - Memória contextual e autoridades: `docs/base-tecnica.md` — seção 3.14.6.

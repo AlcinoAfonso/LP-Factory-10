@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { redactEmailAndUrl, replacePotentialPhoneNumbers } from "../text-redaction";
-import { redactPotentialContactDetails, validatePreferredName } from "./policy";
+import { validatePreferredName } from "./policy";
 import type { PendingSetupConversation } from "./contracts";
 
 export const ATTENDANCE_PROMPT_VERSION = "e10_12_basic_setup_v19";
@@ -78,21 +77,29 @@ export function attendancePrompt(context: AttendanceContext) {
 function escapeContactReferenceTokens(text: string): string {
   return text.replace(/\[?\bphone_\d+_\d+\b\]?/giu, "[referência de contato literal removida]");
 }
+function projectAttendanceText(input: string, replaceContact: (raw: string) => string = () => "[telefone removido]"): string {
+  // D15C-only projection: remove addresses before creating any literal contact reference.
+  const source = input
+    .replace(/(?:"(?:\\[^\r\n]|[^"\\\r\n])*"|[^\s<>()\[\]{}";,:@]+)@(?:\[[^\]\r\n]*\]?|[^\s<>()\[\]{}";,:@]+)/gu, "[email removido]")
+    .replace(/\bhttps?:\/\/\S+|\bwww\.\S+/giu, "[url removida]");
+  return escapeContactReferenceTokens(source)
+    .replace(/\+?\d(?:[\s().,-]*\d){9,}/gu, replaceContact)
+    .replace(/(\b(?:whatsapp|telefone|celular|contato|n[úu]mero)\s*(?::|é)?\s*)\+?\d(?:[\s().,-]*\d){7,8}(?![\s().,-]*\d)/giu, "$1[telefone removido]")
+    .replace(/\s+/g, " ").trim();
+}
 // Contact references are scoped to this projection; the provider never receives the numbers.
 export function attendanceContactProjection(messages: AttendanceContext["recent"]) {
   const contacts = new Map<string, string>();
   const recent = messages.slice(-8).map(({ role, content }, index, bounded) => {
     let occurrence = 0;
-    const source = escapeContactReferenceTokens(redactEmailAndUrl(content));
-    const referenced = role === "user" ? replacePotentialPhoneNumbers(source, raw => {
-      const digitCount = raw.replace(/\D/g, "").length;
-      if (digitCount < 10 || digitCount > 15) return "[telefone inválido removido]";
+    const projected = projectAttendanceText(content, role === "user" ? raw => {
+      const digits = raw.replace(/\D/g, "");
+      if (digits.length > 15) return "[telefone inválido removido]";
       const reference = `phone_${index}_${occurrence++}`;
-      contacts.set(reference, (raw.startsWith("+") ? "+" : "") + raw.replace(/\D/g, ""));
+      contacts.set(reference, (raw.startsWith("+") ? "+" : "") + digits);
       return `[${reference}]`;
-    }) : source;
-    return { role, content: redactPotentialContactDetails(referenced)
-      .slice(0, role === "user" && index === bounded.length - 1 ? 4000 : 1200) };
+    } : undefined);
+    return { role, content: projected.slice(0, role === "user" && index === bounded.length - 1 ? 4000 : 1200) };
   });
   for (const reference of contacts.keys()) {
     if (!recent.some(message => message.role === "user" && message.content.includes(`[${reference}]`))) contacts.delete(reference);
@@ -101,7 +108,7 @@ export function attendanceContactProjection(messages: AttendanceContext["recent"
 }
 export function attendanceProjection(conversation: PendingSetupConversation, catalog: readonly AttendanceTaxon[]): AttendanceContext {
   const summary = readAccountSummary(conversation.accountContext?.summary);
-  const projectText = (text: string) => escapeContactReferenceTokens(redactPotentialContactDetails(text));
+  const projectText = (text: string) => projectAttendanceText(text);
   const projectedSummary = summary ? Object.fromEntries(Object.entries(summary).filter(([key]) => key !== "whatsapp").map(([key, value]) =>
     [key, Array.isArray(value) ? value.map(projectText)
       : typeof value === "string" ? projectText(value) : value])) : null;
@@ -207,7 +214,7 @@ const compactAccountSummarySchema = z.object({
 const projectedAccountSummarySchema = fullAccountSummarySchema.omit({ whatsapp: true });
 function readProjectedAccountSummary(raw: string | null | undefined) {
   try {
-    // Expanded key names can exceed the storage limit; field bounds and strict shape still apply.
+    // Accept readable projections of previously stored compact summaries.
     const parsed = projectedAccountSummarySchema.safeParse(JSON.parse(raw ?? "null"));
     return parsed.success ? parsed.data : null;
   } catch { return null; }
@@ -244,26 +251,12 @@ export function attendanceSummary(output: AttendanceOutput, primary: string | nu
     ...(output.whatsappDeclined || (!output.whatsappReference && prior?.whatsappDeclined)
       ? { whatsappDeclined: true } : {}),
   };
-  // Reserve both a new contact field and growth when a stored number is corrected.
-  const limit = whatsapp ? 6000 - Math.max(0, 16 - whatsapp.length) : summary.whatsappDeclined ? 5986 : 5977;
-  const serialize = () => {
-    const readable = JSON.stringify(summary);
-    if (readable.length <= limit) return readable;
-    return JSON.stringify({
-      contextualUnderstanding: summary.contextualUnderstanding, confirmedUnderstanding: summary.confirmedUnderstanding,
-      c: summary.classification, ...(summary.suggestions.length ? { s: summary.suggestions } : {}),
-      ...(summary.pendingReason ? { p: summary.pendingReason } : {}), ...(whatsapp ? { w: whatsapp } : {}),
-      ...(summary.whatsappDeclined ? { d: true } : {}),
-    });
-  };
-  let serialized = serialize();
-  if (serialized.length > limit) { summary.suggestions = []; serialized = serialize(); }
-  if (serialized.length > limit && summary.contextualUnderstanding === summary.confirmedUnderstanding) {
-    summary.contextualUnderstanding = null; // Remove only an exact duplicate, not commercial information.
-    serialized = serialize();
-  }
-  if (serialized.length > limit) throw new Error("attendance_summary_too_long");
-  return serialized;
+  // Preserve the canonical Summary format and the existing fail-closed capacity boundary.
+  if (JSON.stringify(summary).length > 6000) summary.suggestions = [];
+  if (JSON.stringify(summary).length > 6000 && summary.contextualUnderstanding === summary.confirmedUnderstanding)
+    summary.contextualUnderstanding = null;
+  if (JSON.stringify(summary).length > 6000) throw new Error("attendance_summary_too_long");
+  return JSON.stringify(summary);
 }
 function preferredNameIsSourced(context: AttendanceContext, name: string): boolean {
   if (context.confirmedProposal) return false;
