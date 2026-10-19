@@ -526,6 +526,28 @@ async function main() {
     const assistant = attendanceContactProjection([{ role: "assistant", content: message }]);
     assert.equal(assistant.recent[0].content, "Faturamento " + amount + " [telefone removido]");
   }
+  for (const commercial of ["18/10/2026 10000000 reais", "18/10/2026 - 10000000 BRL", "18/10/2026 10:00 e receita 10000000 reais"]) {
+    assert.equal(redactPotentialContactDetails(commercial), commercial);
+    for (const role of ["user", "assistant"] as const) {
+      const projected = attendanceContactProjection([{ role, content: commercial }]);
+      assert.equal(projected.contacts.size, 0);
+      assert.equal(projected.recent[0].content, commercial);
+    }
+    const withPhone = attendanceContactProjection([{ role: "user", content: commercial + "; WhatsApp +55 (21) 99999-0000" }]);
+    assert.equal(withPhone.contacts.get("phone_0_0"), phone);
+    assert.equal(withPhone.recent[0].content, commercial + "; WhatsApp [phone_0_0]");
+  }
+  for (const amount of ["10.000.000,00 reais", "10000000,00 BRL", "R$ 1000,00", "1000,00 reais",
+    "USD 10,000,000.00", "EUR 10\u202f000\u202f000,00"]) {
+    const normalizedAmount = amount.replace(/\s+/gu, " ");
+    const message = "Receita " + amount + " 11 99999 0000";
+    const projected = attendanceContactProjection([{ role: "user", content: message }]);
+    assert.equal(projected.contacts.get("phone_0_0"), "11999990000", message);
+    assert.equal(projected.recent[0].content, "Receita " + normalizedAmount + " [phone_0_0]");
+    assert.equal(redactPotentialContactDetails(message), "Receita " + normalizedAmount + " [telefone removido]");
+    const onlyAmount = "18/10/2026 - " + amount;
+    assert.equal(redactPotentialContactDetails(onlyAmount), "18/10/2026 - " + normalizedAmount);
+  }
   const hiddenContact = attendanceContactProjection([{ role: "user", content: "https://example.com/5521999990000" }]);
   assert.equal(hiddenContact.contacts.size, 0);
   for (const invalidPhone of ["5511999990000123", "+55 (11) 99999-0000-123", "+55 (11) 99999–0000/123"]) {

@@ -1,4 +1,4 @@
-export const PHONE_LIKE_PATTERN = /(?:\+?\d[\s().\/\\\p{Pd}\u2212\u2044\u2215\uFF0F]*){8,}/gu;
+const NUMERIC_SPAN_PATTERN = /(?:\+?\d[\s().\/\\\p{Pd}\u2212\u2044\u2215\uFF0F]*)+/gu;
 
 // Calendar dates are commercial context, even though they contain eight digits.
 export function isCalendarDate(input: string): boolean {
@@ -15,23 +15,35 @@ export function isCalendarDate(input: string): boolean {
 }
 
 export function replacePotentialPhoneNumbers(input: string, replace: (raw: string) => string): string {
-  return input.replace(PHONE_LIKE_PATTERN, (raw: string, offset: number) => {
-    const datePrefix = /^(?:\d{1,2}([/.\-])\d{1,2}\1\d{4}|\d{4}-\d{1,2}-\d{1,2})(?=\D|$)/u.exec(raw)?.[0];
-    if (datePrefix && isCalendarDate(datePrefix)) {
-      return datePrefix + replacePotentialPhoneNumbers(raw.slice(datePrefix.length), replace);
+  const spans = new RegExp(NUMERIC_SPAN_PATTERN.source, NUMERIC_SPAN_PATTERN.flags);
+  let result = "";
+  let cursor = 0;
+  let match: RegExpExecArray | null;
+  while ((match = spans.exec(input)) !== null) {
+    const start = match.index;
+    const raw = match[0];
+    const remaining = input.slice(start);
+    result += input.slice(cursor, start);
+    const date = /^(?:\d{1,2}([/.\-])\d{1,2}\1\d{4}|\d{4}-\d{1,2}-\d{1,2})(?=\D|$)/u.exec(remaining)?.[0];
+    const amount = /^(?:\d{1,3}(?:\.\d{3})+(?:[.,]\d{1,2})?|\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d{1,3}(?:[ \t\u00a0\u202f]\d{3})+(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)(?!\d|[.,]\d)/u.exec(remaining)?.[0];
+    const before = input.slice(cursor, start);
+    const afterAmount = amount ? input.slice(start + amount.length) : "";
+    const monetaryBefore = /(?:\b(?:BRL|USD|EUR|GBP|JPY)|(?:R|US|CA|AU)?\$|[€£¥])\s*$/iu.test(before);
+    const monetarySuffix = /^\s*(?:BRL|USD|EUR|GBP|JPY|reais|dólares|euros)\b/iu.exec(afterAmount)?.[0];
+    const monetaryValue = amount && (monetaryBefore || monetarySuffix) ? amount + (monetarySuffix ?? "") : null;
+    const protectedValue = date && isCalendarDate(date) ? date : monetaryValue;
+    if (protectedValue) {
+      result += protectedValue;
+      cursor = start + protectedValue.length;
+      spans.lastIndex = cursor;
+      continue;
     }
     const candidate = raw.replace(/\D+$/u, "");
-    const before = input.slice(Math.max(0, offset - 20), offset);
-    const after = input.slice(offset + raw.length, offset + raw.length + 20);
-    const monetaryPrefix = /^(?:\d{1,3}(?:\.\d{3})+(?:\.\d{1,2})?|\d{1,3}(?:[ \t]\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)(?![\d.])/u.exec(candidate)?.[0];
-    const monetaryBefore = /(?:\b(?:BRL|USD|EUR|GBP|JPY)|(?:R|US|CA|AU)?\$|[€£¥])\s*$/iu.test(before);
-    const monetaryAfter = /^\s*(?:BRL|USD|EUR|GBP|JPY|reais|dólares|euros)\b/iu.test(after);
-    if (monetaryBefore && monetaryPrefix) {
-      return monetaryPrefix + replacePotentialPhoneNumbers(raw.slice(monetaryPrefix.length), replace);
-    }
-    return isCalendarDate(candidate) || (monetaryAfter && monetaryPrefix === candidate)
-      ? raw : replace(candidate) + raw.slice(candidate.length);
-  });
+    result += candidate.replace(/\D/g, "").length >= 8
+      ? replace(candidate) + raw.slice(candidate.length) : raw;
+    cursor = start + raw.length;
+  }
+  return result + input.slice(cursor);
 }
 
 export function redactEmailAndUrl(input: string): string {
