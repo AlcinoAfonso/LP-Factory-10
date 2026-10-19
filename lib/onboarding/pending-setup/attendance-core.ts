@@ -83,11 +83,15 @@ function projectAttendanceText(input: string, replaceContact: (raw: string) => s
   const source = escapeContactReferenceTokens(input
     .replace(/(?:"(?:\\[^\r\n]|[^"\\\r\n])*"|[^\s<>()\[\]{}";,:@]+)@(?:\[[^\]\r\n]*\]?|[^\s<>()\[\]{}";,:@]+)/gu, "[email removido]")
     .replace(/\bhttps?:\/\/\S+|\bwww\.\S+/giu, "[url removida]"));
-  if (contactReply) return source.replace(/\+?\(?\d(?:[\s().,\/-]*\d)*\)?/gu, replaceContact).replace(/\s+/g, " ").trim();
-  return source
-    .replace(/((?:\b(?:whatsapp|zap|telefone|celular|contato|fone)\b|\btel\b\.?)[^\d+(\r\n;.!?,]*)(\+?\(?\d(?:[\s().,\/-]*\d)*\)?)/giu,
+  const contactSource = contactReply
+    ? source.replace(/^(\s*(?:é\s*)?)(\+?\(?\p{Nd}(?:[\s\p{Cf}().,\/-]*\p{Nd})*\)?)(?=\s*$)|^(\s*(?:é\s*)?)(\+?\(?\p{Nd}[\p{Nd}\s\p{Cf}().]*-\p{Nd}[\p{Nd}\s\p{Cf}().-]*\)?)(?=\s*[,;.!?]|\s*$)/iu,
+      (_match, prefix: string | undefined, raw: string | undefined, annotatedPrefix: string, annotatedRaw: string) =>
+        (prefix ?? annotatedPrefix) + replaceContact(raw ?? annotatedRaw))
+    : source;
+  return contactSource
+    .replace(/((?:\b(?:whatsapp|zap|telefone|celular|contato|fone)\b|\btel\b\.?)(?:\s*(?:é|:)\s*|\s+))(\+?\(?\p{Nd}(?:[\s\p{Cf}().,\/-]*\p{Nd})*\)?)/giu,
       (_match, label: string, raw: string) => label + replaceContact(raw))
-    .replace(/\+?\(?\d(?:[\s().,\/-]*\d){9,}\)?/gu, replaceContact)
+    .replace(/\+?\(?\p{Nd}(?:[\s\p{Cf}().,\/-]*\p{Nd}){9,}\)?/gu, replaceContact)
     .replace(/\s+/g, " ").trim();
 }
 // Contact references are scoped to this projection; the provider never receives the numbers.
@@ -98,7 +102,7 @@ export function attendanceContactProjection(messages: AttendanceContext["recent"
     const projected = projectAttendanceText(content, role === "user" ? raw => {
       const reference = `phone_${index}_${occurrence++}`;
       contacts.set(reference, raw);
-      return `[${reference}] (formato informado: ${raw.replace(/\d/g, "X")})`;
+      return `[${reference}] (formato informado: ${raw.replace(/\p{Nd}/gu, "X")})`;
     } : undefined, index > 0 && bounded[index - 1].role === "assistant"
       && /\bwhatsapp\b/iu.test(bounded[index - 1].content));
     return { role, content: projected.slice(0, role === "user" && index === bounded.length - 1 ? 4000 : 1200) };

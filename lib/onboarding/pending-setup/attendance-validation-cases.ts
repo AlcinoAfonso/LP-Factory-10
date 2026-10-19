@@ -415,6 +415,13 @@ async function main() {
     assert.equal(projected.contacts.get("phone_0_0"), "9999-0000");
     assert.equal(projected.recent[0].content.includes("9999"), false);
   }
+  for (const literal of ["１１ ９９９９９-００００", "11\u200b99999\u200b0000"]) {
+    const projected = attendanceContactProjection([{ role: "user", content: `WhatsApp: ${literal}` }]);
+    assert.equal(projected.contacts.get("phone_0_0"), literal);
+    assert.equal(/\p{Nd}/u.test(projected.recent[0].content.replace(/phone_\d+_\d+/g, "")), false);
+    assert.equal(JSON.parse(attendanceSummary({ ...base, whatsappReference: "phone_0_0" }, null, null, null,
+      projected.contacts)).whatsapp, literal);
+  }
   const commercialNumbers = "Atendo 50 clientes, com ticket de R$ 120 e prazo de 7 dias.";
   const commercialProjection = attendanceContactProjection([{ role: "user", content: commercialNumbers }]);
   assert.equal(commercialProjection.contacts.size, 0);
@@ -425,6 +432,13 @@ async function main() {
     const projected = attendanceContactProjection([{ role: "user", content: message }]);
     assert.equal(projected.contacts.size, 0);
     assert.equal(projected.recent[0].content, message);
+  }
+  for (const message of ["Prefiro não informar; atendemos 50 clientes e faturamos R$ 120", "Temos contato com 50 fornecedores"]) {
+    const projected = attendanceContactProjection([
+      { role: "assistant", content: "Se quiser, qual é seu WhatsApp?" }, { role: "user", content: message },
+    ]);
+    assert.equal(projected.contacts.size, 0);
+    assert.equal(projected.recent[1].content, message);
   }
   // References survive text bounds so a later clarification can still select the original contact.
   const longContact = attendanceContactProjection([
