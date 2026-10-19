@@ -29,9 +29,9 @@ export function replacePotentialPhoneNumbers(input: string, replace: (raw: strin
     const before = input.slice(cursor, start);
     const afterAmount = amount ? input.slice(start + amount.length) : "";
     const monetaryBefore = /(?:\b(?:BRL|USD|EUR|GBP|JPY)|(?:R|US|CA|AU)?\$|[€£¥])\s*$/iu.test(before);
-    const monetarySuffix = /^\s*(?:BRL|USD|EUR|GBP|JPY|reais|dólares|euros)\b/iu.exec(afterAmount)?.[0];
+    const monetarySuffix = /^\s*(?:(?:BRL|USD|EUR|GBP|JPY|reais|dólares|euros)\b|(?:R|US|CA|AU)?\$|[€£¥])/iu.exec(afterAmount)?.[0];
     const monetaryValue = amount && (monetaryBefore || monetarySuffix) ? amount + (monetarySuffix ?? "") : null;
-    const quantitySuffix = /^\s*(?:clientes?|pessoas?|pedidos?|vendas?|unidades?|atendimentos?|visitas?|acessos?|seguidores?|itens|produtos?|m[²³]|kg|km|%)(?=\s|[.,;:!?)]|$)/iu.exec(afterAmount)?.[0];
+    const quantitySuffix = /^\s*(?:de\s+)?(?:clientes?|pessoas?|pedidos?|vendas?|unidades?|atendimentos?|visitas?|acessos?|seguidores?|itens|produtos?|m[²³]|kg|km|%)(?=\s|[.,;:!?)]|$)/iu.exec(afterAmount)?.[0];
     const contactLabel = /\b(?:whats(?:app)?|telefone|tel|celular|contato|n[uú]mero)\s*(?:(?:é|:)\s*)*$/iu.test(before);
     const quantityValue = amount && quantitySuffix && !contactLabel ? amount + quantitySuffix : null;
     const protectedValue = date && isCalendarDate(date) ? date : monetaryValue ?? quantityValue;

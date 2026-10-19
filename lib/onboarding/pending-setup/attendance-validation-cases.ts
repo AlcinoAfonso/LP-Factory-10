@@ -439,7 +439,7 @@ async function main() {
   for (const notDate of ["32/10/2026", "29/02/2026", "18/13/2026"]) {
     assert.equal(/\d/.test(redactPotentialContactDetails(notDate)), false);
   }
-  for (const amount of ["R$ 10.000.000", "BRL 10000000", "USD 10 000 000", "€ 10000000", "10000000 reais"]) {
+  for (const amount of ["R$ 10.000.000", "BRL 10000000", "USD 10 000 000", "€ 10000000", "10000000 reais", "10.000.000 €", "10000000 £", "10,000,000 ¥", "10000000 R$"]) {
     const message = "Faturamento anual de " + amount + ".";
     for (const role of ["user", "assistant"] as const) {
       const commercial = attendanceContactProjection([{ role, content: message }]);
@@ -538,7 +538,7 @@ async function main() {
     assert.equal(withPhone.recent[0].content, commercial + "; WhatsApp [phone_0_0]");
   }
   for (const amount of ["10.000.000,00 reais", "10000000,00 BRL", "R$ 1000,00", "1000,00 reais",
-    "USD 10,000,000.00", "EUR 10\u202f000\u202f000,00"]) {
+    "USD 10,000,000.00", "EUR 10\u202f000\u202f000,00", "10.000.000,00 €", "10,000,000.00 US$", "10000000 £"]) {
     const normalizedAmount = amount.replace(/\s+/gu, " ");
     const message = "Receita " + amount + " 11 99999 0000";
     const projected = attendanceContactProjection([{ role: "user", content: message }]);
@@ -548,7 +548,7 @@ async function main() {
     const onlyAmount = "18/10/2026 - " + amount;
     assert.equal(redactPotentialContactDetails(onlyAmount), "18/10/2026 - " + normalizedAmount);
   }
-  for (const quantity of ["10.000.000 clientes", "10000000 pessoas", "10,000,000 pedidos", "10 000 000 unidades", "10000000 m²"]) {
+  for (const quantity of ["10.000.000 clientes", "10000000 pessoas", "10,000,000 pedidos", "10 000 000 unidades", "10000000 m²", "10.000.000 de clientes", "10000000 de pessoas", "10,000,000 de pedidos", "10 000 000 de unidades"]) {
     const message = "Atendemos " + quantity + " por ano";
     assert.equal(redactPotentialContactDetails(message), message);
     for (const role of ["user", "assistant"] as const) {
@@ -565,11 +565,13 @@ async function main() {
     assert.equal(mixed.recent[0].content, message + "; WhatsApp [phone_0_0]");
   }
   for (const label of ["WhatsApp", "Telefone:", "Meu celular é:"]) {
-    const message = label + " 11999990000 clientes podem falar comigo";
-    const actualContact = attendanceContactProjection([{ role: "user", content: message }]);
-    assert.equal(actualContact.contacts.get("phone_0_0"), "11999990000");
-    assert.equal(actualContact.recent[0].content.includes("11999990000"), false);
-    assert.equal(redactPotentialContactDetails(message).includes("11999990000"), false);
+    for (const unit of ["clientes", "de clientes"]) {
+      const message = label + " 11999990000 " + unit + " podem falar comigo";
+      const actualContact = attendanceContactProjection([{ role: "user", content: message }]);
+      assert.equal(actualContact.contacts.get("phone_0_0"), "11999990000");
+      assert.equal(actualContact.recent[0].content.includes("11999990000"), false);
+      assert.equal(redactPotentialContactDetails(message).includes("11999990000"), false);
+    }
   }
   const hiddenContact = attendanceContactProjection([{ role: "user", content: "https://example.com/5521999990000" }]);
   assert.equal(hiddenContact.contacts.size, 0);
