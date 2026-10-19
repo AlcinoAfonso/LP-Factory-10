@@ -234,7 +234,7 @@ async function main() {
   assert.equal(JSON.parse(projected.summary!).suggestions.length, 1);
   assert.equal(JSON.parse(attendanceSummary(noBusinessNews, null, null, urlSummary)).confirmedUnderstanding, JSON.parse(urlSummary).confirmedUnderstanding);
   // Only literal user contacts can enter the existing Summary; raw PII stays out of provider context.
-  const phone = "+5521999990000";
+  const phone = "+55 (21) 99999-0000";
   const contactConversation = { ...conversation, messages: [
     { ...conversation.messages[0], role: "assistant" as const, content: "Exemplo de terceiro: +55 21 98888-1111" },
     { ...conversation.messages[0], id: "2", role: "user" as const, content: "Meu WhatsApp é +55 (21) 99999-0000. Faço jardins." },
@@ -323,7 +323,7 @@ async function main() {
   } }, context.catalog).summary!).whatsappDeclined, true);
   const correctedContacts = attendanceContactProjection([{ role: "user", content: "Correção: meu WhatsApp é +55 11 97777-2222." }]);
   const correctedSummary = attendanceSummary({ ...base, whatsappReference: "phone_0_0" }, null, null, contactSummary, correctedContacts.contacts);
-  assert.equal(JSON.parse(correctedSummary).whatsapp, "+5511977772222");
+  assert.equal(JSON.parse(correctedSummary).whatsapp, "+55 11 97777-2222");
   // Canonical writes preserve distinct commercial meanings and the physical fail-closed limit.
   const legacyFields = { contextualUnderstanding: "", confirmedUnderstanding: "", classification: "Jardinagem", suggestions: [], pendingReason: null };
   const legacyContext = "Contexto comercial atual: ".padEnd(3000, "a");
@@ -372,27 +372,55 @@ async function main() {
     content: "E-mail 5511999999999@example.com; meu WhatsApp é +55 (21) 99999-0000." }]);
   assert.equal(mixedEmail.contacts.size, 1);
   assert.equal(mixedEmail.contacts.get("phone_0_0"), phone);
-  for (const message of ["CPF não informado, meu contato 11999990000", "WhatsApp: 11,99999,0000"]) {
+  for (const [message, literal] of [["CPF não informado, meu contato 11999990000", "11999990000"], ["WhatsApp: 11,99999,0000", "11,99999,0000"]]) {
     const projected = attendanceContactProjection([{ role: "user", content: message }]);
     assert.equal(projected.contacts.size, 1);
-    assert.equal(projected.contacts.get("phone_0_0"), "11999990000");
+    assert.equal(projected.contacts.get("phone_0_0"), literal);
     assert.equal(projected.recent[0].content.includes("99999"), false);
     const assistant = attendanceContactProjection([{ role: "assistant", content: message }]);
     assert.equal(assistant.contacts.size, 0);
     assert.equal(assistant.recent[0].content.includes("99999"), false);
   }
-  for (const invalidPhone of ["5511999990000123", "+55 (11) 99999-0000-123"]) {
-    const rejected = attendanceContactProjection([{ role: "user", content: "Meu WhatsApp é " + invalidPhone }]);
-    assert.equal(rejected.contacts.size, 0);
-    assert.equal(/\d/.test(rejected.recent[0].content), false);
+  // Contact content is stored verbatim; digit count and formatting never determine acceptance.
+  for (const literal of ["9", "21 97965", "9999-0000", "(21) 97965 84 83", "+55 (11) 99999-0000-123"]) {
+    const message = "Meu WhatsApp é " + literal;
+    const projected = attendanceContactProjection([{ role: "user", content: message }]);
+    assert.equal(projected.contacts.get("phone_0_0"), literal);
+    assert.equal(projected.recent[0].content.includes(literal), false);
+    assert.match(projected.recent[0].content, /formato informado:/u);
+    const saved = attendanceSummary({ ...base, whatsappReference: "phone_0_0" }, null, null, null, projected.contacts);
+    assert.equal(JSON.parse(saved).whatsapp, literal);
+    assert.equal(projectSummary(saved).whatsappProvided, true);
+    assert.equal(JSON.parse(attendanceSummary(noBusinessNews, null, null, saved)).whatsapp, literal);
+    const assistant = attendanceContactProjection([{ role: "assistant", content: message }]);
+    assert.equal(assistant.contacts.size, 0);
+    assert.equal(assistant.recent[0].content.includes(literal), false);
   }
-  for (const localPhone of ["9999-0000", "99999-0000"]) {
-    for (const role of ["user", "assistant"] as const) {
-      const projected = attendanceContactProjection([{ role, content: "WhatsApp: " + localPhone }]);
-      assert.equal(projected.contacts.size, 0);
-      assert.equal(/\d/.test(projected.recent[0].content), false);
-    }
-  }
+  const isolated = attendanceContactProjection([
+    { role: "assistant", content: "Se quiser, qual é seu WhatsApp?" }, { role: "user", content: "21 97965" },
+  ]);
+  assert.equal(isolated.contacts.get("phone_1_0"), "21 97965");
+  assert.equal(isolated.recent[1].content.includes("97965"), false);
+  const commercialNumbers = "Atendo 50 clientes, com ticket de R$ 120 e prazo de 7 dias.";
+  const commercialProjection = attendanceContactProjection([{ role: "user", content: commercialNumbers }]);
+  assert.equal(commercialProjection.contacts.size, 0);
+  assert.equal(commercialProjection.recent[0].content, commercialNumbers);
+  assert.equal(projectSummary(JSON.stringify({ ...legacyFields, contextualUnderstanding: commercialNumbers })).summary?.includes(commercialNumbers), true);
+  // References survive text bounds so a later clarification can still select the original contact.
+  const longContact = attendanceContactProjection([
+    { role: "user", content: "Contexto comercial. ".repeat(100) + "Meu WhatsApp é " + phone },
+    { role: "assistant", content: "Esse contato é seu WhatsApp?" }, { role: "user", content: "Sim." },
+  ]);
+  assert.equal(longContact.contacts.get("phone_0_0"), phone);
+  const longContext = attendanceProjection({ ...conversation, messages: [
+    { ...conversation.messages[0], content: "Contexto comercial. ".repeat(100) + "Meu WhatsApp é " + phone },
+    { ...conversation.messages[0], id: "2", role: "assistant", content: "Esse contato é seu WhatsApp?" },
+    { ...conversation.messages[0], id: "3", role: "user", content: "Sim." },
+  ] }, context.catalog);
+  assert.deepEqual(longContext.contactReferences, ["phone_0_0"]);
+  assert.ok(validateAttendanceOutput({ ...base, whatsappReference: "phone_0_0" }, longContext));
+  const endContact = attendanceContactProjection([{ role: "user", content: "a".repeat(3988) + " 11999990000" }]);
+  assert.equal(endContact.contacts.get("phone_0_0"), "11999990000");
   // Literal tokens cannot impersonate a phone reference generated for another cited number.
   for (const literal of ["[phone_0_0]", "PHONE_0_0", "[Phone_0_0]"]) {
     const collision = attendanceContactProjection([{ role: "user",
@@ -400,7 +428,7 @@ async function main() {
     assert.equal(collision.contacts.size, 1);
     assert.equal(collision.recent[0].content.match(/\bphone_\d+_\d+\b/giu)?.length, 1);
     assert.match(collision.recent[0].content, /referência de contato literal removida/u);
-    assert.match(collision.recent[0].content, /\[phone_0_0\] é de terceiro/u);
+    assert.match(collision.recent[0].content, /\[phone_0_0\].*é de terceiro/u);
   }
   const hiddenContact = attendanceContactProjection([{ role: "user", content: "https://example.com/5521999990000" }]);
   assert.equal(hiddenContact.contacts.size, 0);
