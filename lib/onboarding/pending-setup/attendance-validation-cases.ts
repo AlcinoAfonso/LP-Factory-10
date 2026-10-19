@@ -276,7 +276,7 @@ async function main() {
   // Projection-scoped contact tokens must never escape into public or semantic output.
   const semanticOutput = { ...base, confirmedUnderstanding: context.displayedUnderstanding };
   assert.ok(validateAttendanceOutput(semanticOutput, acceptedContactContext));
-  for (const token of ["[phone_1_0]", "phone_1_0", "[phone_99_99]"]) {
+  for (const token of ["[phone_1_0]", "phone_1_0", "[phone_99_99]", "[PHONE_1_0]"]) {
     for (const field of ["reply", "preferredName", "businessUnderstanding", "confirmedUnderstanding", "closureReason"]) {
       assert.equal(validateAttendanceOutput({ ...semanticOutput, [field]: token }, acceptedContactContext), null);
     }
@@ -496,6 +496,35 @@ async function main() {
       summary: JSON.stringify({ ...legacyFields, contextualUnderstanding: "Negócio [phone_0_0]", suggestions: ["phone_0_0"] }) } }, context.catalog);
   for (const field of [oldTokenProjection.preferredName, oldTokenProjection.publicName, oldTokenProjection.displayedUnderstanding, oldTokenProjection.summary]) {
     assert.equal(field?.includes("phone_"), false);
+  }
+  for (const contactText of ["joao.phone_1_2@empresa.com.br", "https://empresa.com.br/phone_1_2", "www.empresa.com.br/PHONE_1_2"]) {
+    for (const role of ["user", "assistant"] as const) {
+      const redacted = attendanceContactProjection([{ role, content: contactText }]);
+      assert.equal(redacted.contacts.size, 0);
+      assert.equal(redacted.recent[0].content.includes("empresa"), false);
+      assert.equal(redacted.recent[0].content.includes("joao"), false);
+      assert.equal(redacted.recent[0].content.includes("literal"), false);
+    }
+    const redactedProjection = attendanceProjection({ ...conversation, preferredName: contactText, businessDisplayName: contactText,
+      businessContextText: contactText, accountContext: { updatedAt: conversation.updatedAt,
+        summary: JSON.stringify({ ...legacyFields, contextualUnderstanding: contactText }) } }, context.catalog);
+    for (const field of [redactedProjection.preferredName, redactedProjection.publicName, redactedProjection.displayedUnderstanding, redactedProjection.summary]) {
+      assert.equal(field?.includes("empresa"), false);
+      assert.equal(field?.includes("literal"), false);
+    }
+  }
+  for (const literal of ["[phone_0_0]", "PHONE_0_0", "[Phone_0_0]"]) {
+    const escaped = attendanceContactProjection([{ role: "user", content: "Meu WhatsApp é " + literal + "; +55 (21) 99999-0000 é de terceiro." }]);
+    assert.equal(escaped.recent[0].content.match(/\bphone_\d+_\d+\b/giu)?.length, 1);
+  }
+  for (const amount of ["R$ 10.000.000", "BRL 10000000", "USD 10 000 000"]) {
+    const message = "Faturamento " + amount + " 11 99999 0000";
+    const separated = attendanceContactProjection([{ role: "user", content: message }]);
+    assert.equal(separated.contacts.get("phone_0_0"), "11999990000");
+    assert.equal(separated.recent[0].content, "Faturamento " + amount + " [phone_0_0]");
+    assert.equal(redactPotentialContactDetails(message), "Faturamento " + amount + " [telefone removido]");
+    const assistant = attendanceContactProjection([{ role: "assistant", content: message }]);
+    assert.equal(assistant.recent[0].content, "Faturamento " + amount + " [telefone removido]");
   }
   const hiddenContact = attendanceContactProjection([{ role: "user", content: "https://example.com/5521999990000" }]);
   assert.equal(hiddenContact.contacts.size, 0);

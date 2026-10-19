@@ -23,10 +23,14 @@ export function replacePotentialPhoneNumbers(input: string, replace: (raw: strin
     const candidate = raw.replace(/\D+$/u, "");
     const before = input.slice(Math.max(0, offset - 20), offset);
     const after = input.slice(offset + raw.length, offset + raw.length + 20);
-    const monetary = /^\d[\d.\s]*$/.test(candidate) && (
-      /(?:\b(?:BRL|USD|EUR|GBP|JPY)|(?:R|US|CA|AU)?\$|[€£¥])\s*$/iu.test(before)
-      || /^\s*(?:BRL|USD|EUR|GBP|JPY|reais|dólares|euros)\b/iu.test(after));
-    return isCalendarDate(candidate) || monetary ? raw : replace(candidate) + raw.slice(candidate.length);
+    const monetaryPrefix = /^(?:\d{1,3}(?:\.\d{3})+(?:\.\d{1,2})?|\d{1,3}(?:[ \t]\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)(?![\d.])/u.exec(candidate)?.[0];
+    const monetaryBefore = /(?:\b(?:BRL|USD|EUR|GBP|JPY)|(?:R|US|CA|AU)?\$|[€£¥])\s*$/iu.test(before);
+    const monetaryAfter = /^\s*(?:BRL|USD|EUR|GBP|JPY|reais|dólares|euros)\b/iu.test(after);
+    if (monetaryBefore && monetaryPrefix) {
+      return monetaryPrefix + replacePotentialPhoneNumbers(raw.slice(monetaryPrefix.length), replace);
+    }
+    return isCalendarDate(candidate) || (monetaryAfter && monetaryPrefix === candidate)
+      ? raw : replace(candidate) + raw.slice(candidate.length);
   });
 }
 

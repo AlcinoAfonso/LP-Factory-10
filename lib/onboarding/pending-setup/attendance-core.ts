@@ -76,15 +76,15 @@ export function attendancePrompt(context: AttendanceContext) {
   return { instructions: ATTENDANCE_INSTRUCTIONS, input: JSON.stringify({ data: context }), schema };
 }
 function escapeContactReferenceTokens(text: string): string {
-  return text.replace(/\[?\bphone_\d+_\d+\b\]?/gu, "[referência de contato literal removida]");
+  return text.replace(/\[?\bphone_\d+_\d+\b\]?/giu, "[referência de contato literal removida]");
 }
 // Contact references are scoped to this projection; the provider never receives the numbers.
 export function attendanceContactProjection(messages: AttendanceContext["recent"]) {
   const contacts = new Map<string, string>();
   const recent = messages.slice(-8).map(({ role, content }, index, bounded) => {
     let occurrence = 0;
-    const source = escapeContactReferenceTokens(content);
-    const referenced = role === "user" ? replacePotentialPhoneNumbers(redactEmailAndUrl(source), raw => {
+    const source = escapeContactReferenceTokens(redactEmailAndUrl(content));
+    const referenced = role === "user" ? replacePotentialPhoneNumbers(source, raw => {
       const digitCount = raw.replace(/\D/g, "").length;
       if (digitCount < 10 || digitCount > 15) return "[telefone inválido removido]";
       const reference = `phone_${index}_${occurrence++}`;
@@ -101,15 +101,15 @@ export function attendanceContactProjection(messages: AttendanceContext["recent"
 }
 export function attendanceProjection(conversation: PendingSetupConversation, catalog: readonly AttendanceTaxon[]): AttendanceContext {
   const summary = readAccountSummary(conversation.accountContext?.summary);
-  const projectText = (text: string) => redactPotentialContactDetails(escapeContactReferenceTokens(text));
+  const projectText = (text: string) => escapeContactReferenceTokens(redactPotentialContactDetails(text));
   const projectedSummary = summary ? Object.fromEntries(Object.entries(summary).filter(([key]) => key !== "whatsapp").map(([key, value]) =>
     [key, Array.isArray(value) ? value.map(projectText)
       : typeof value === "string" ? projectText(value) : value])) : null;
   const contactProjection = attendanceContactProjection(conversation.messages);
   return {
-    preferredName: conversation.preferredName ? escapeContactReferenceTokens(conversation.preferredName) : null, preferredNameDeclined: conversation.preferredNameDeclined ?? false,
+    preferredName: conversation.preferredName ? projectText(conversation.preferredName) : null, preferredNameDeclined: conversation.preferredNameDeclined ?? false,
     summary: projectedSummary ? JSON.stringify(projectedSummary) : null,
-    publicName: conversation.businessDisplayName ? escapeContactReferenceTokens(conversation.businessDisplayName) : null,
+    publicName: conversation.businessDisplayName ? projectText(conversation.businessDisplayName) : null,
     displayedUnderstanding: conversation.businessContextText ? projectText(conversation.businessContextText) : null,
     recent: contactProjection.recent, contactReferences: [...contactProjection.contacts.keys()], whatsappProvided: Boolean(summary?.whatsapp),
     catalog,
@@ -132,7 +132,7 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
   const value = parsed.data;
   const semanticText = [value.reply, value.preferredName, value.businessUnderstanding,
     value.confirmedUnderstanding, value.closureReason, ...value.suggestions];
-  if (semanticText.some(text => text !== null && /\bphone_\d+_\d+\b/.test(text))) return null;
+  if (semanticText.some(text => text !== null && /\bphone_\d+_\d+\b/i.test(text))) return null;
   const prior = readProjectedAccountSummary(context.summary);
   if (value.requestWhatsapp && (!["ask", "confirm"].includes(value.action) || value.readyToComplete || value.whatsappDeclined || value.whatsappReference !== null
     || context.whatsappProvided || prior?.whatsappDeclined)) return null;
