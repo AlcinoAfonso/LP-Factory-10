@@ -456,6 +456,20 @@ async function main() {
   assert.equal(amountAndPhone.contacts.get("phone_0_0"), phone);
   assert.equal(amountAndPhone.recent[0].content.includes("R$ 10.000.000"), true);
   assert.equal(amountAndPhone.recent[0].content.includes("99999"), false);
+  for (const separator of [" - ", " – ", " — ", " / "]) {
+    for (const commercial of ["Lançamento em 18/10/2026", "Faturamento R$ 10.000.000"]) {
+      const message = commercial + separator + "informação comercial";
+      assert.equal(redactPotentialContactDetails(message), message);
+      for (const role of ["user", "assistant"] as const) {
+        const projection = attendanceContactProjection([{ role, content: message }]);
+        assert.equal(projection.contacts.size, 0);
+        assert.equal(projection.recent[0].content, message);
+      }
+    }
+    const separatedPhone = attendanceContactProjection([{ role: "user", content: "WhatsApp +55 (21) 99999-0000" + separator + "meu contato" }]);
+    assert.equal(separatedPhone.contacts.get("phone_0_0"), phone);
+    assert.equal(separatedPhone.recent[0].content, "WhatsApp [phone_0_0]" + separator + "meu contato");
+  }
   const hiddenContact = attendanceContactProjection([{ role: "user", content: "https://example.com/5521999990000" }]);
   assert.equal(hiddenContact.contacts.size, 0);
   for (const invalidPhone of ["5511999990000123", "+55 (11) 99999-0000-123", "+55 (11) 99999–0000/123"]) {

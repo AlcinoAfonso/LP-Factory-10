@@ -16,12 +16,13 @@ export function isCalendarDate(input: string): boolean {
 
 export function replacePotentialPhoneNumbers(input: string, replace: (raw: string) => string): string {
   return input.replace(PHONE_LIKE_PATTERN, (raw: string, offset: number) => {
+    const candidate = raw.replace(/\D+$/u, "");
     const before = input.slice(Math.max(0, offset - 20), offset);
     const after = input.slice(offset + raw.length, offset + raw.length + 20);
-    const monetary = /^\d[\d.\s]*$/.test(raw.trim()) && (
+    const monetary = /^\d[\d.\s]*$/.test(candidate) && (
       /(?:\b(?:BRL|USD|EUR|GBP|JPY)|(?:R|US|CA|AU)?\$|[€£¥])\s*$/iu.test(before)
       || /^\s*(?:BRL|USD|EUR|GBP|JPY|reais|dólares|euros)\b/iu.test(after));
-    return isCalendarDate(raw) || monetary ? raw : replace(raw);
+    return isCalendarDate(candidate) || monetary ? raw : replace(candidate) + raw.slice(candidate.length);
   });
 }
 
