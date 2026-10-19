@@ -548,6 +548,29 @@ async function main() {
     const onlyAmount = "18/10/2026 - " + amount;
     assert.equal(redactPotentialContactDetails(onlyAmount), "18/10/2026 - " + normalizedAmount);
   }
+  for (const quantity of ["10.000.000 clientes", "10000000 pessoas", "10,000,000 pedidos", "10 000 000 unidades", "10000000 m²"]) {
+    const message = "Atendemos " + quantity + " por ano";
+    assert.equal(redactPotentialContactDetails(message), message);
+    for (const role of ["user", "assistant"] as const) {
+      const quantified = attendanceContactProjection([{ role, content: message }]);
+      assert.equal(quantified.contacts.size, 0);
+      assert.equal(quantified.recent[0].content, message);
+    }
+    const quantifiedMemory = attendanceProjection({ ...conversation, businessContextText: message,
+      accountContext: { summary: JSON.stringify({ ...legacyFields, contextualUnderstanding: message }), updatedAt: conversation.updatedAt } }, context.catalog);
+    assert.equal(quantifiedMemory.displayedUnderstanding, message);
+    assert.equal(JSON.parse(quantifiedMemory.summary!).contextualUnderstanding, message);
+    const mixed = attendanceContactProjection([{ role: "user", content: message + "; WhatsApp 11 99999 0000" }]);
+    assert.equal(mixed.contacts.get("phone_0_0"), "11999990000");
+    assert.equal(mixed.recent[0].content, message + "; WhatsApp [phone_0_0]");
+  }
+  for (const label of ["WhatsApp", "Telefone:", "Meu celular é:"]) {
+    const message = label + " 11999990000 clientes podem falar comigo";
+    const actualContact = attendanceContactProjection([{ role: "user", content: message }]);
+    assert.equal(actualContact.contacts.get("phone_0_0"), "11999990000");
+    assert.equal(actualContact.recent[0].content.includes("11999990000"), false);
+    assert.equal(redactPotentialContactDetails(message).includes("11999990000"), false);
+  }
   const hiddenContact = attendanceContactProjection([{ role: "user", content: "https://example.com/5521999990000" }]);
   assert.equal(hiddenContact.contacts.size, 0);
   for (const invalidPhone of ["5511999990000123", "+55 (11) 99999-0000-123", "+55 (11) 99999–0000/123"]) {
