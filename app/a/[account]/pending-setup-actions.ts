@@ -14,6 +14,7 @@ import {
 import { getActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import {
   appendBusinessContext,
+  attendanceButtonContent,
   buildPendingSetupAiProjection,
   hasPendingSetupTerminalFallback,
   PENDING_SETUP_OPENAI_RETRY_MESSAGE,
@@ -149,7 +150,7 @@ export async function continuePendingSetupConversationAction(
     return { ok: false, formError: GENERIC_ERROR };
   }
 
-  const conversation = await loadPendingSetupConversation({
+  let conversation = await loadPendingSetupConversation({
     accountId: actor.accountId,
     userId: actor.userId,
   });
@@ -165,18 +166,31 @@ export async function continuePendingSetupConversationAction(
     if (!["initialize", "message", "confirm", "clarify", "resume"].includes(intent))
       return { ok: false, formError: GENERIC_ERROR };
     const rawContent = formData.get("business_context");
-    const validated = intent === "message" ? validateBusinessContext(rawContent) : null;
+    const contactSubmission = intent === "message" && conversation.whatsappRequested === true;
     if (intent === "message" && (typeof rawContent !== "string" || rawContent.length > 4000))
       return { ok: false, fieldError: "Informe sua resposta com até 4.000 caracteres." };
+    const emptyContact = contactSubmission && !String(rawContent).trim();
+    const validated = intent === "message" && !emptyContact ? validateBusinessContext(rawContent) : null;
     if (validated && !validated.ok) return { ok: false, fieldError: "Informe sua resposta com até 4.000 caracteres." };
-    const content = validated?.ok ? String(rawContent).trim() : intent === "confirm"
-      ? conversation.attendanceProposal?.kind === "existing"
-        ? `Sim, confirmo o entendimento exibido e a categoria ${conversation.attendanceProposal.taxonName}.`
-        : "Sim, confirmo o entendimento exibido como referência operacional." : intent === "clarify"
-        ? conversation.stage === "niche_confirmation" && !conversation.attendanceProposal
-          ? "Vamos retomar o atendimento a partir do contexto já informado." : "Quero explicar melhor." : null;
+    const content = validated?.ok ? String(rawContent).trim() : emptyContact
+      ? conversation.whatsappValue ? "Prosseguir com o WhatsApp já informado." : "Prefiro continuar sem informar WhatsApp."
+      : (intent === "confirm" || intent === "clarify") && conversation.attendanceProposal
+        ? attendanceButtonContent(conversation.attendanceProposal, intent)
+        : intent === "clarify" ? "Vamos retomar o atendimento a partir do contexto já informado." : null;
+    // Persist the static question only after interaction, before appending the first answer.
+    if (intent === "message" && !conversation.messages.length) {
+      const initialized = await conductAttendanceTurn({ accountId: actor.accountId, userId: actor.userId,
+        conversationId, expectedVersion: conversation.version, content: null,
+        intent: conversation.attendanceTurnIntent ? "resume" : "initialize" });
+      if (!initialized.ok) {
+        revalidatePath(actor.route);
+        return { ok: false, formError: "Não consegui iniciar agora. Sua resposta está no campo; tente novamente." };
+      }
+      conversation = await loadPendingSetupConversation({ accountId: actor.accountId, userId: actor.userId });
+      if (!conversation) return { ok: false, formError: GENERIC_ERROR };
+    }
     const result = await conductAttendanceTurn({ accountId: actor.accountId, userId: actor.userId,
-      conversationId, expectedVersion, content,
+      conversationId, expectedVersion: conversation.version, content,
       intent: intent as "initialize" | "message" | "confirm" | "clarify" | "resume" });
     revalidatePath(actor.route);
     return result.ok ? { ok: true } : { ok: false, formError: result.reason === "conflict"

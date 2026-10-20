@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import nodeModule from "node:module";
 import { attendanceContactProjection, attendanceProjection, attendancePrompt, attendanceProposal, attendanceSummary, validateAttendanceOutput,
-  readAttendanceBusinessNameCandidate, validateStoredAttendanceProposal, type AttendanceContext, type AttendanceOutput } from "./attendance-core";
+  readAttendanceBusinessNameCandidate, readAttendanceContactInput, validateStoredAttendanceProposal, type AttendanceContext, type AttendanceOutput } from "./attendance-core";
 import type { AttendanceDependencies } from "./attendance-coordinator";
-import { ATTENDANCE_GREETING, attendanceMessageContent, type PendingSetupConversation } from "./contracts";
+import { ATTENDANCE_GREETING, attendanceMessageContent, attendanceConfirmationQuestion, attendanceButtonContent, type PendingSetupConversation } from "./contracts";
 const accountId = "10000000-0000-4000-8000-000000000001";
 const segmentId = "10000000-0000-4000-8000-000000000002";
 const nicheId = "10000000-0000-4000-8000-000000000003";
@@ -44,6 +44,19 @@ async function main() {
     assert.equal(attendanceMessageContent({ ...opening, ordinal: 2 }), content);
   }
   assert.equal(attendanceMessageContent({ ordinal: 1, role: "assistant", content: "Outro conteúdo preservado." }), "Outro conteúdo preservado.");
+  const formatted = { ordinal: 3, role: "assistant" as const, content: "A categoria **Padarias** corresponde à atividade." };
+  assert.equal(attendanceMessageContent(formatted), "A categoria Padarias corresponde à atividade.");
+  assert.equal(attendanceMessageContent({ ...formatted, role: "user" }), formatted.content);
+  const officialChoice = { kind: "existing" as const, taxonId: nicheId, taxonName: "Padarias" };
+  for (const choice of [officialChoice, { kind: "operational_fallback" as const, taxonId: null, taxonName: null }]) {
+    for (const intent of ["confirm", "clarify"] as const) {
+      const recorded = attendanceButtonContent(choice, intent);
+      assert.ok(recorded.includes(attendanceConfirmationQuestion(choice)));
+      assert.ok(recorded.includes(intent === "confirm" ? "Sim, está correto" : "Quero explicar melhor"));
+      assert.equal(recorded.includes("Categoria proposta:"), choice.kind === "existing");
+      assert.ok(recorded.length <= 4000);
+    }
+  }
   const loader = nodeModule as unknown as { _load: (name: string, parent: unknown, isMain: boolean) => unknown };
   const original = loader._load;
   loader._load = function(name, parent, isMain) { return name === "server-only" ? {} : original.call(this, name, parent, isMain); };
@@ -288,6 +301,20 @@ async function main() {
   const contactSummary = attendanceSummary(contactOutput, null, null, null, numbers);
   assert.equal(JSON.parse(contactSummary).whatsapp, phone);
   assert.equal(JSON.parse(contactSummary).pendingReason, null);
+  const enteringContact = { ...contactOutput, action: "ask" as const, existingTaxonId: null, requestWhatsapp: true };
+  const correctionContext = { ...phoneContext, currentPrimaryTaxonId: nicheId, whatsappProvided: true };
+  assert.ok(validateAttendanceOutput(enteringContact, correctionContext));
+  assert.equal(validateAttendanceOutput({ ...enteringContact, whatsappReference: null }, correctionContext), null);
+  assert.equal(validateAttendanceOutput({ ...enteringContact, readyToComplete: true }, correctionContext), null);
+  assert.equal(validateAttendanceOutput({ ...enteringContact, whatsappDeclined: true }, correctionContext), null);
+  const contactInputSummary = attendanceSummary(enteringContact, "Jardinagem", null, null, numbers);
+  assert.deepEqual(readAttendanceContactInput(contactInputSummary), { requested: true, value: phone });
+  const nextContactSummary = attendanceSummary({ ...enteringContact, requestWhatsapp: false, whatsappReference: null }, "Jardinagem", null, contactInputSummary);
+  assert.deepEqual(readAttendanceContactInput(nextContactSummary), { requested: false, value: phone });
+  assert.deepEqual(readAttendanceContactInput(remembered), { requested: false, value: null });
+  const declinedInput = attendanceSummary({ ...enteringContact, requestWhatsapp: false, whatsappReference: null, whatsappDeclined: true }, "Jardinagem", null, contactInputSummary);
+  assert.deepEqual(readAttendanceContactInput(declinedInput), { requested: false, value: null });
+  assert.equal(attendanceProjection({ ...conversation, accountContext: { summary: contactInputSummary, updatedAt: conversation.updatedAt } }, context.catalog).summary?.includes(phone), false);
   const missingNiche = "Nicho sem correspondência segura no catálogo.";
   assert.equal(JSON.parse(attendanceSummary({ ...noBusinessNews, preferredName: null }, null, null)).pendingReason, null);
   const unresolvedSummary = attendanceSummary(pending, null, null);
@@ -542,6 +569,22 @@ async function main() {
   const input = { accountId, userId: accountId, conversationId: accountId, expectedVersion: 1, content: "Jardins", intent: "message" as const };
   assert.equal((await conductAttendanceTurn(input, deps)).ok, true);
   assert.deepEqual(effects, ["claim", "commit"]); // old lifetime call counter is irrelevant.
+  for (const alreadyGreeted of [false, true]) {
+    current = { ...conversation, messages: alreadyGreeted ? [
+      { ...conversation.messages[0], role: "assistant", content: "Prazer, Ana! Como se chama o negócio?" },
+      ...Array.from({ length: 9 }, (_, index) => ({ ...conversation.messages[0], id: String(index + 2), ordinal: index + 2, content: "Mais contexto comercial." })),
+    ] : conversation.messages };
+    assert.equal((await conductAttendanceTurn(input, { ...deps,
+      request: async ({ context: shown }) => {
+        assert.equal(shown.greetedByName, alreadyGreeted);
+        return { ok: true, output: { ...base, reply: "Prazer, Ana! Vamos entender seu negócio." }, responseId: "greeting", latencyMs: 1 };
+      },
+      commit: async ({ output }) => {
+        assert.equal(output.reply, alreadyGreeted ? "Vamos entender seu negócio." : "Prazer, Ana! Vamos entender seu negócio.");
+        return { ok: true, version: 3 };
+      },
+    })).ok, true);
+  }
   for (const rejecting of [false, true]) {
     current = { ...conversation, attendanceProposal: rejecting ? { kind: "existing", taxonId: nicheId, taxonName: "Jardinagem" } : null };
     assert.equal((await conductAttendanceTurn({ ...input, intent: "clarify", content: "Quero explicar melhor." }, { ...deps,

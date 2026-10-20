@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   ATTENDANCE_GREETING,
   attendanceMessageContent,
+  attendanceConfirmationQuestion,
+  attendancePlainText,
   hasPendingSetupTerminalFallback,
   type PendingSetupConversation as PendingSetupConversationContract,
 } from "../../../../lib/onboarding/pending-setup";
@@ -53,7 +55,7 @@ export function PendingSetupConversation({
     (conversation.messages.length === 1 && attendanceMessageContent(conversation.messages[0]) === ATTENDANCE_GREETING)));
   const needsAttendanceProposal = conversation?.attendanceEnabled && conversation.stage === "niche_confirmation" && !conversation.attendanceProposal;
   const [clarificationText, setClarificationText] = useState("");
-  const initializedRef = useRef(false);
+  const [contactText, setContactText] = useState(conversation?.whatsappValue ?? "");
   const inputRef = useRef<HTMLInputElement | null>(null);
   const businessNameRef = useRef<HTMLInputElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -71,23 +73,17 @@ export function PendingSetupConversation({
   }, [state.fieldError]);
 
   useEffect(() => {
-    if (turnState.fieldError) textareaRef.current?.focus();
-  }, [turnState.fieldError]);
+    if (turnState.fieldError) {
+      if (conversation?.whatsappRequested) inputRef.current?.focus();
+      else textareaRef.current?.focus();
+    }
+  }, [turnState.fieldError, conversation?.whatsappRequested]);
 
   useEffect(() => {
     if (nameState.fieldError) businessNameRef.current?.focus();
   }, [nameState.fieldError]);
 
-  useEffect(() => {
-    if (!conversation?.attendanceEnabled || conversation.messages.length || initializedRef.current) return;
-    initializedRef.current = true;
-    const formData = new FormData();
-    formData.set("account_subdomain", accountSubdomain);
-    formData.set("conversation_id", conversation.id);
-    formData.set("expected_version", String(conversation.version));
-    formData.set("intent", conversation.attendanceTurnIntent ? "resume" : "initialize");
-    startTransition(() => turnAction(formData));
-  }, [accountSubdomain, conversation, turnAction]);
+  useEffect(() => { setContactText(conversation?.whatsappValue ?? ""); }, [conversation?.whatsappValue]);
 
   useEffect(() => {
     if (turnState.ok && !isTurnPending) setClarificationText("");
@@ -144,7 +140,7 @@ export function PendingSetupConversation({
           ))}
         </div>
 
-        {conversation.attendanceEnabled && ((startingAttendance && turnState.formError) || (conversation.messages.length > 0 && conversation.attendanceTurnIntent)) ? (
+        {conversation.attendanceEnabled && conversation.messages.length > 0 && conversation.attendanceTurnIntent ? (
           <form action={turnAction} className="border-t border-surface-border px-5 py-5 sm:px-8">
             <ConversationHiddenFields accountSubdomain={accountSubdomain} conversationId={conversation.id} version={conversation.version} />
             <input type="hidden" name="intent" value={conversation.attendanceTurnIntent ? "resume" : "initialize"} />
@@ -162,12 +158,12 @@ export function PendingSetupConversation({
           <div className="space-y-3 px-5 pb-5 sm:px-8">
             <div className="text-sm leading-6 text-ink-900">
               <p className="font-semibold">Entendimento proposto do negócio</p>
-              <p className="mt-1 whitespace-pre-wrap break-words">{conversation.businessContextText}</p>
+              <p className="mt-1 whitespace-pre-wrap break-words">{attendancePlainText(conversation.businessContextText ?? "")}</p>
             </div>
             {conversation.attendanceProposal.kind === "existing" ? (
               <div className="text-sm leading-6 text-ink-900">
                 <p className="font-semibold">Classificação proposta</p>
-                <p className="mt-1 break-words">{conversation.attendanceProposal.taxonName}</p>
+                <p className="mt-1 break-words">{attendancePlainText(conversation.attendanceProposal.taxonName ?? "")}</p>
               </div>
             ) : null}
             {conversation.attendanceProposal.kind === "operational_fallback" ? (
@@ -245,8 +241,23 @@ export function PendingSetupConversation({
             ) : null}
 
             <FormField>
-              <FormFieldLabel htmlFor="business_context">{askingPreferredName ? "Seu nome" : "Sua resposta"}</FormFieldLabel>
-              <Textarea
+              <FormFieldLabel htmlFor="business_context">{conversation.whatsappRequested ? "WhatsApp (opcional)" : askingPreferredName ? "Seu nome" : "Sua resposta"}</FormFieldLabel>
+              {conversation.whatsappRequested ? <Input
+                ref={inputRef}
+                id="business_context"
+                name="business_context"
+                type="tel"
+                inputMode="tel"
+                value={contactText}
+                onChange={event => setContactText(event.target.value)}
+                maxLength={4000}
+                autoComplete="tel"
+                placeholder="(99) 99999-9999"
+                disabled={isTurnPending}
+                aria-invalid={Boolean(turnState.fieldError)}
+                aria-describedby={turnState.fieldError ? "business-context-error" : "whatsapp-hint"}
+                className="h-11"
+              /> : <Textarea
                 value={conversation.attendanceEnabled ? clarificationText : undefined}
                 onChange={conversation.attendanceEnabled ? event => setClarificationText(event.target.value) : undefined}
                 ref={textareaRef}
@@ -254,14 +265,16 @@ export function PendingSetupConversation({
                 name="business_context"
                 maxLength={4000}
                 autoComplete={askingPreferredName ? "name" : undefined}
-                disabled={isTurnPending || startingAttendance}
+                disabled={isTurnPending}
                 aria-invalid={Boolean(turnState.fieldError)}
                 aria-describedby={turnState.fieldError ? "business-context-error" : !conversation.attendanceEnabled ? "business-context-hint" : undefined}
                 placeholder={conversation.attendanceEnabled ? askingPreferredName ? "Como posso te chamar?" : "Escreva sua resposta" : "Ex.: faço consultoria financeira para pequenos restaurantes"}
                 className={askingPreferredName ? "min-h-11 h-11" : "min-h-28"}
-              />
+              />}
               {turnState.fieldError ? (
                 <FormFieldError id="business-context-error">{turnState.fieldError}</FormFieldError>
+              ) : conversation.whatsappRequested ? (
+                <FormFieldHint id="whatsapp-hint">Você pode continuar sem informar. O número não autoriza contato posterior.</FormFieldHint>
               ) : !conversation.attendanceEnabled ? (
                 <FormFieldHint id="business-context-hint">
                   Não inclua telefone, e-mail ou endereço. Uma frase costuma bastar.
@@ -269,8 +282,8 @@ export function PendingSetupConversation({
               ) : null}
             </FormField>
 
-            <Button type="submit" disabled={isTurnPending || startingAttendance} className={cn("mt-5 min-h-11", attendanceButtonClass)}>
-              {isTurnPending ? conversation.attendanceEnabled ? "Preparando resposta…" : "Entendendo…" : conversation.attendanceEnabled ? "Enviar" : "Continuar"}
+            <Button type="submit" disabled={isTurnPending} className={cn("mt-5 min-h-11", attendanceButtonClass)}>
+              {isTurnPending ? conversation.attendanceEnabled ? "Preparando resposta…" : "Entendendo…" : conversation.whatsappRequested ? "Prosseguir" : conversation.attendanceEnabled ? "Enviar" : "Continuar"}
             </Button>
           </form>
         ) : null}
@@ -290,7 +303,7 @@ export function PendingSetupConversation({
             ) : null}
 
             {conversation.attendanceEnabled && conversation.attendanceProposal ? (
-              <p className="mb-3 text-sm text-ink-900">{conversation.attendanceProposal.kind === "existing" ? "Esse entendimento e essa categoria correspondem ao seu negócio?" : "Esse entendimento descreve seu negócio?"}</p>
+              <p className="mb-3 text-sm text-ink-900">{attendanceConfirmationQuestion(conversation.attendanceProposal)}</p>
             ) : null}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <Button

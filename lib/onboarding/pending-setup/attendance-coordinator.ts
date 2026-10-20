@@ -77,8 +77,12 @@ export async function conductAttendanceTurn(input: Readonly<{
       ? { ...answer.output, businessUnderstanding: reserved.businessContextText! }
       : answer.output.closureReason && !answer.output.businessUnderstanding
         ? { ...answer.output, businessUnderstanding: reserved.businessContextText ?? "" } : answer.output;
+    const body = output.reply.replace(/^\s*Prazer,\s*[^!\n]{1,100}!\s*/iu, "").trim();
+    const greeting = output.preferredName && !context.greetedByName ? `Prazer, ${output.preferredName}!` : "";
+    const reply = [greeting, body].filter(Boolean).join(" ");
+    if (!reply) throw new Error("empty_attendance_reply");
     const written = await dependencies.commit({
-      ...fence, output, confirm: confirmation, observedPrimaryTaxonId: currentPrimaryTaxonId,
+      ...fence, output: { ...output, reply }, confirm: confirmation, observedPrimaryTaxonId: currentPrimaryTaxonId,
       proposal: confirmation ? null : attendanceProposal(output, catalog),
       summary: attendanceSummary(output, catalog.find(taxon => taxon.id === currentPrimaryTaxonId)?.name ?? null,
         context.confirmedProposal, reserved.accountContext.summary, attendanceContactProjection(reserved.messages).contacts),

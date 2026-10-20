@@ -8,6 +8,8 @@ import { getClientAccountSectionContext } from "../_server/section-guard";
 import { getActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import { getConfirmedOperationalNicheResolutionLabel } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
 
+import { readCompletedPendingSetupName } from "../../../lib/onboarding/pending-setup/adapters/pendingSetupConversationAdapter";
+
 type LayoutProps = {
   children: React.ReactNode;
   params: Promise<{ account: string }>;
@@ -37,6 +39,8 @@ export default async function Layout({ children, params }: LayoutProps) {
     ? await getConfirmedOperationalNicheResolutionLabel({ accountId })
     : null;
   const resolvedNicheLabel = primaryTaxon?.name ?? operationalNicheLabel;
+  const publicName = accountId && !ctx?.blocked && ctx?.account?.status === "active" && ctx?.member?.status === "active"
+    ? await readCompletedPendingSetupName(accountId) : null;
   const enrichedCtx = resolvedNicheLabel
     ? {
         ...ctx,
@@ -51,6 +55,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     <AccessProvider value={enrichedCtx as any}>
       <Header
         userEmail={userEmail}
+        accountIdentity={publicName ? { publicName, officialTaxonName: primaryTaxon?.name ?? null, operationalNicheLabel } : undefined}
         accountMembersEnabled={isAccountMembersEnabled()}
         communicationBaseEnabled={communicationBaseEnabled}
       />
