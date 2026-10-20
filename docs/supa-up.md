@@ -575,7 +575,7 @@ Atualizado em 2026-08-04
 ## 32 — Stripe Sync Engine mantido pela Stripe *(🟦 Estável; adoção condicional)*
 
 2025-12-19  
-Atualizado em 2026-08-03
+Atualizado em 2026-10-20
 
 ### Status no Projeto
 
@@ -586,6 +586,8 @@ Atualizado em 2026-08-03
 ### Descrição
 
 O Stripe Sync Engine continua disponível pela integração do Dashboard Supabase e passou a ser mantido no repositório `stripe/sync-engine`. Ele replica objetos Stripe para um schema Postgres consultável por SQL.
+
+Desde 15/10/2026, Stripe Data Pipeline também oferece Supabase como destino gerenciado: faz backfill e sincronização contínua em schema dedicado `stripe_sdp`, com role restrita, SSL e credenciais temporárias via OAuth. É alternativa ao Sync Engine, não sua adoção nem prova de substituição no projeto. O webhook e o entitlement local continuam como autoridade. Comparar somente diante do gatilho de reconciliação abaixo; disponibilidade e custo incremental zero para a conta ainda não comprovados.
 
 ### Valor para o Projeto
 
@@ -611,6 +613,7 @@ Avaliar somente quando houver necessidade recorrente de reconciliação ou analy
 ### Fonte Oficial
 
 - [Supabase Blog — We’re Transferring the Stripe Sync Engine to Stripe](https://supabase.com/blog/stripe-sync-engine-transfer)
+- [Supabase Blog — Stripe Data Pipeline para Supabase (15/10/2026)](https://supabase.com/blog/stripe-data-pipeline-now-syncs-real-time-data-to-supabase)
 
 ---
 
@@ -2131,6 +2134,54 @@ Catalogado em 2026-10-14
 - [Supabase — retirada das cifras CBC](https://supabase.com/changelog/cbc-tls-ciphers-deprecated)
 - [Supabase — TLS das APIs de projeto](https://supabase.com/docs/guides/security/tls)
 
+
+---
+
+## 74 — Declarative Schemas 2.0 com pg-delta *(🧪 Experimental; dependente de recorte)*
+
+2026-10-13
+Catalogado em 2026-10-20
+
+### Estado, valor e horizonte
+
+- Não implementado: `supabase/config.toml` mantém `experimental.pgdelta` comentado e `schema_paths = []`; apply de migrations usa CLI 2.106.0.
+- CLI 2.119+ oferece diff com políticas RLS, grants e `security_invoker`, cobertura explícita e ordenação por dependências; gera migrations SQL revisáveis. Migrations escritas manualmente continuam válidas.
+- Horizonte: indefinido, condicionado a retrabalho ou erros recorrentes na geração de migrations; pode reduzir omissões sem mudar a stack.
+
+### Gatilho, comparação e limites
+
+- Comparar com migrations manuais no próximo recorte aprovado que demonstre esforço ou falhas recorrentes; exigir ganho medido, cobertura do schema real e custo incremental zero.
+- Não habilitar, atualizar CLI nem migrar a fonte canônica nesta rodada. O fluxo declarativo usa arquivos como fonte; alterações hospedadas exigem reconciliação.
+- Diff pode gerar operações destrutivas, inclusive drop/add para rename; avisos e SQL precisam de revisão humana/técnica antes de qualquer apply. Não é correção automática de banco.
+- Radar condicional; sem recomendação de implementação atual nem novo ambiente.
+
+### Fonte oficial
+
+- [Supabase — Declarative Schemas 2.0 (13/10/2026)](https://supabase.com/blog/declarative-schemas-2-0-pg-delta)
+
+---
+
+## 75 — Supabase Middleware para handlers Web Fetch *(🟦 1.0 estável; dependente de recorte)*
+
+2026-09-30
+Catalogado em 2026-10-20
+
+### Estado, valor e horizonte
+
+- Não implementado: dependências e código não usam `@supabase/middleware`; sessão atual permanece em `lib/supabase/middleware.ts`, com `@supabase/ssr`.
+- Engine TypeScript/MIT compõe funções por requisição em runtimes Web Fetch; pode reutilizar CORS, claims e contexto entre handlers sem novo serviço.
+- Horizonte: indefinido; útil somente com duplicação real entre handlers/runtimes. Não equivale ao middleware de sessão Next.js nem substitui guards e RLS.
+
+### Gatilho, comparação e limites
+
+- Comparar com helper local simples quando um recorte aprovado demonstrar duplicação e benefício mensurável. Licença gratuita não comprova custo operacional zero de toda a integração.
+- Radar condicional, sem migração de Auth, cookies ou autorização, nova dependência ou implementação nesta rodada.
+- Bridges e transporte Postgres têm limites por runtime; clients administrativos contornam RLS e exigem boundary próprio. Não introduzir cliente privilegiado por conveniência.
+
+### Fontes oficiais
+
+- [Supabase — Middleware 1.0](https://supabase.com/changelog/supabase-middleware-1-0)
+- [Supabase — middleware reutilizável (15/10/2026)](https://supabase.com/blog/supabase-middleware)
 
 ---
 
