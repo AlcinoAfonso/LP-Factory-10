@@ -2,7 +2,7 @@
 
 ## 1. Autoridade, validade e fontes
 
-- Data da fotografia técnica: 14/10/2026; baseline anterior de 14/09/2026, reorganizado em 22/09/2026.
+- Data da fotografia técnica: 20/10/2026; baseline anterior de 14/09/2026, reorganizado em 22/09/2026.
 - Objetivo: manter uma fotografia técnica itemizada e rastreável das capacidades OpenAI relevantes ao LP Factory 10.
 - Este documento não define sozinho modelo, `reasoning.effort`, tool, arquitetura ou configuração de produção e não autoriza adoção.
 - A configuração efetiva permanece em `docs/platform-config.md`; a governança das decisões por workload permanece em `docs/gestor-automations.md` e no caso competente do roadmap.
@@ -31,7 +31,7 @@
   - `https://openai.github.io/openai-agents-js/`
   - `https://openai.com/pt-BR/index/gpt-5-6/`
 
-- Fontes complementares desta rodada: `https://developers.openai.com/api/docs/guides/decisions` e `https://developers.openai.com/api/docs/models/gpt-6.1-sol`.
+- Fontes complementares: `https://developers.openai.com/api/docs/guides/decisions`, `https://developers.openai.com/api/docs/models/gpt-6.1-sol`, `https://developers.openai.com/api/docs/deprecations`, `https://developers.openai.com/api/docs/guides/decisions-voice` e `https://developers.openai.com/api/docs/guides/custom-voices`.
 
 ### 1.1. Maturidade usada nos registros
 
@@ -49,7 +49,7 @@
 | `OAI-W01` | `niche_resolution` | `gpt-5.4-mini + none` | operacional | `lib/openai-workloads/registry.ts` e `docs/platform-config.md` |
 | `OAI-W02` | `commercial_activation_draft_generation` | `gpt-5.4-mini + none` | operacional | `lib/openai-workloads/registry.ts` e `docs/platform-config.md` |
 | `OAI-W03` | `taxon_input_catalog_sufficiency_evaluation` | histórico: `gpt-5.6-terra + low` (retirado pela E22.7) | histórica | E20.8.7 (histórico), `docs/platform-config.md` e `docs/roadmap.md` 22.7.4 |
-| `OAI-W04` | `supabase_inspect` | `gpt-4.1-mini + not_applicable` | referência operacional externa | `lib/openai-workloads/registry.ts`, `docs/automations.md` e `docs/platform-config.md` |
+| `OAI-W04` | `supabase_inspect` | `gpt-4.1-mini + not_applicable` | referência operacional externa; modelo com retirada anunciada | `lib/openai-workloads/registry.ts`, `docs/automations.md` e `docs/platform-config.md` |
 | `OAI-W05` | `landing_page_dynamic_market_research` | configuração encerrada pela E20.8 | histórica | commits e migrations da E20.7 |
 | `OAI-W06` | `communication_base_stage1_assistance` | `gpt-5.4-mini + none` operacional em Preview e Production sob E21/E25.1 | operacional | `lib/openai-workloads/registry.ts`, `docs/platform-config.md`, `docs/roadmap.md` 25.1.4 e `docs/schema.md` 1.28.4 |
 | `OAI-W07` | `communication_base_stage2_intelligence` | `gpt-6-luna + max`, Web Search até duas chamadas, operacional em Preview e Production após E21/E25.1 | operacional | `lib/openai-workloads/registry.ts`, `docs/platform-config.md`, `docs/roadmap.md` 25.1.5 e `docs/schema.md` 1.28.4 |
@@ -76,7 +76,7 @@
 | `OAI-M02` | `gpt-5.6-luna` | tarefas de alto volume que justifiquem comparação própria | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo |
 | `OAI-M03` | `gpt-5.6-terra` | equilíbrio de capacidade para casos que justifiquem comparação própria | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo |
 | `OAI-M04` | `gpt-5.6-sol` | trabalho profissional complexo que justifique comparação própria | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo |
-| `OAI-M05` | `gpt-4.1-mini` | referência externa do workflow `OAI-W04`; não é baseline de produto | 1.047.576 | 32.768 | não aplicável; modelo sem etapa de reasoning | referência operacional externa | documentação específica do modelo e `lib/openai-workloads/registry.ts` |
+| `OAI-M05` | `gpt-4.1-mini` | referência externa do workflow `OAI-W04`; não é baseline de produto | 1.047.576 | 32.768 | não aplicável; modelo sem etapa de reasoning | referência operacional externa; depreciação anunciada | documentação específica do modelo e `lib/openai-workloads/registry.ts` |
 | `OAI-M06` | `gpt-6-luna` | configuração operacional de `OAI-W07` e `OAI-W08` em Preview e Production | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | operacional em `OAI-W07` e `OAI-W08` | documentação específica do modelo, registry e fontes operacionais do projeto |
 | `OAI-M07` | `gpt-6-sol` | alternativa técnica avaliada focalmente para `OAI-W07` | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo e PR #978 |
 | `OAI-M08` | `gpt-6-astra` | tarefas complexas somente mediante comparação própria | 1,05M | 128k | `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo |
@@ -86,6 +86,7 @@
 - Em GPT-5.6, o effort padrão documentado é `medium` quando omitido; comparações devem registrar o valor explicitamente.
 - Para `gpt-5.4-mini`, o padrão documentado é `none` quando o parâmetro é omitido.
 - `gpt-4.1-mini` é um modelo não reasoning; a referência operacional externa `OAI-W04` não deve receber `reasoning.effort`.
+- `OAI-M05`/`OAI-W04`: aviso oficial de 14/10/2026 agenda retirada de `gpt-4.1-mini-2025-04-14` para 14/01/2027 e indica `gpt-6-luna` como substituto. O workflow `pipeline-supabase-inspect.yml` ainda oferece somente `gpt-4.1-mini`; planejar migração antes do prazo, validando modelo resolvido, contrato, tools, qualidade e limites no recorte próprio. A configuração hospedada não foi inspecionada; não presumir troca automática nem equivalência. Fonte: página oficial de deprecações.
 - `gpt-6.1-sol` requer Responses API para tool calling; Chat Completions não oferece tools para esse modelo. Não suporta `none` nem `minimal`; preservar o effort atual e comparar somente em recorte autorizado.
 - Limites e capacidades são voláteis e devem ser reconfirmados na fonte oficial focal antes de uma decisão material.
 - A documentação da família GPT-6 indica entrada textual e visual, saída textual e limite máximo de entrada de 922k tokens; capacidade técnica não altera os gates de cada workload.
@@ -218,7 +219,8 @@
 - Aplicabilidade: hipótese futura de classificação ou avaliação delimitada; não substitui geração de conteúdo ou conversa dos workloads atuais.
 - Maturidade: beta público desde 06/10/2026, somente com `gpt-6-luna`; sem uso registrado no projeto.
 - Limites: exige comparação própria de qualidade, latência e probabilidades. A aceleração anunciada é referência do fornecedor, sem medição local; objetos JSON livres e tool calling continuam em Responses API. SDK mínimo documentado para JavaScript: 7.30.0.
-- Fonte: changelog e guia oficial Decisions.
+- Integração de voz: desde 15/10/2026, GPT-Live pode delegar decisões nativamente ou dispará-las a partir de deltas de transcrição de entrada/saída; capacidade condicional descrita em `OAI-C18`, sem alterar workloads textuais.
+- Fonte: changelog, guia oficial Decisions e Connect voice to Decisions.
 
 ### `OAI-C17` — Ultrafast para GPT-6.1 Sol
 
@@ -227,6 +229,14 @@
 - Maturidade: documentada desde 08/10/2026; disponível aos usuários API, sujeito a rate limits, com processamento global e residência US/EU.
 - Limite: nenhum workload vigente usa GPT-6.1 Sol ou esse tier; disponibilidade não altera configuração nem autoriza adoção. Reconfirmar elegibilidade e medir benefício no recorte competente.
 - Fontes: changelog e página oficial GPT-6.1 Sol.
+
+### `OAI-C18` — GPT-Live: decisões durante conversa e vozes por descrição
+
+- Natureza: GPT-Live integra decisões com `gpt-6-luna` durante a fala; desde 16/10/2026, criação de voz por descrição textual disponível aos clientes API para reutilização em sessões Live.
+- Aplicabilidade: serviço futuro aprovado de voz/atendimento; pode avaliar intenção ou critério durante conversa e adaptar identidade vocal. Não há consumidor Live no projeto.
+- Maturidade: capacidades documentadas no changelog de 15–16/10 e guias específicos; elegibilidade, idiomas, limites e versão do SDK exigem validação focal no caso real.
+- Limites: novo canal exige consentimento, handoff, interrupção e controle de ações; descrição de voz não autoriza imitação de pessoa. Não substitui Responses ou `OAI-W08`, nem justifica streaming, sessão persistente ou agente novo agora.
+- Fontes: changelog, Connect voice to Decisions e Custom voices oficiais. Sem adoção ou conteúdo financeiro.
 
 ## 5. Aplicabilidade e registro de decisões
 
