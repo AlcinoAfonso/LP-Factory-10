@@ -738,3 +738,28 @@ Catalogado em 2026-10-14
 ### Limite da rodada
 
 - Nenhum workflow, runner, setting, ruleset, cache, secret, permissão, app, dependência ou infraestrutura foi criado ou alterado; a catalogação não autoriza implementação nem merge.
+
+## github#18 — Lockfiles de dependências do GitHub Actions *(🧪 Public preview; transversal condicional)*
+
+2026-10-14
+Catalogado em 2026-10-20
+
+### Estado e valor
+
+- Não implementado: não há `.github/workflows/actions.lock`; workflows ainda usam referências como `actions/checkout@v4`, além de pins SHA existentes.
+- Preview disponível inclusive no Free. A extensão `gh actions-lock` registra commits de actions, dependências transitivas e workflows reutilizáveis; pode reduzir execução inesperada quando tags mudam.
+- Horizonte: Starter, condicionado a necessidade e compatibilidade. Complementa revisão de dependências; não comprova segurança do código bloqueado.
+
+### Pendência e limites
+
+- Estado: radar; prioridade condicional. Avaliar somente na próxima revisão aprovada de supply chain/Actions com referências móveis, comparando com pin SHA direto e menor manutenção.
+- Ação pendente: validar preview, cobertura e custo incremental zero no plano efetivo antes de adoção. Cada workflow integrado passa a exigir entradas completas.
+- Motivo da permanência: Actions real com referências móveis. Gatilho: recorte aprovado que demonstre vantagem sobre pin direto.
+- Encerramento: adoção validada/reconciliada ou rejeição fundamentada.
+- Não instalar extensão, criar lockfile, habilitar policy nem alterar workflow nesta rodada.
+
+### Fonte oficial
+
+- [GitHub — workflow lockfiles em public preview](https://github.blog/changelog/2026-10-14-github-actions-workflow-lockfiles-in-public-preview/)
+
+---
