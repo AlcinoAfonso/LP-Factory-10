@@ -164,9 +164,12 @@ export async function continuePendingSetupConversationAction(
     const intent = String(formData.get("intent") ?? "message");
     if (!["initialize", "message", "confirm", "clarify", "resume"].includes(intent))
       return { ok: false, formError: GENERIC_ERROR };
-    const validated = intent === "message" ? validateBusinessContext(formData.get("business_context")) : null;
+    const rawContent = formData.get("business_context");
+    const validated = intent === "message" ? validateBusinessContext(rawContent) : null;
+    if (intent === "message" && (typeof rawContent !== "string" || rawContent.length > 4000))
+      return { ok: false, fieldError: "Informe sua resposta com até 4.000 caracteres." };
     if (validated && !validated.ok) return { ok: false, fieldError: "Informe sua resposta com até 4.000 caracteres." };
-    const content = validated?.ok ? validated.value : intent === "confirm"
+    const content = validated?.ok ? String(rawContent).trim() : intent === "confirm"
       ? conversation.attendanceProposal?.kind === "existing"
         ? `Sim, confirmo o entendimento exibido e a categoria ${conversation.attendanceProposal.taxonName}.`
         : "Sim, confirmo o entendimento exibido como referência operacional." : intent === "clarify"

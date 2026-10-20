@@ -1,5 +1,6 @@
 import "server-only";
-import { attendanceContactProjection, attendanceProjection, attendanceProposal, attendanceSummary } from "./attendance-core";
+import { attendanceContactProjection, attendanceProjection, attendanceProposal, attendanceSummary, readAttendanceBusinessNameCandidate, type AttendanceOutput } from "./attendance-core";
+import { ATTENDANCE_GREETING } from "./contracts";
 import { requestAttendance } from "./attendance-provider";
 import { loadPendingSetupConversation } from "./adapters/pendingSetupConversationAdapter";
 import { claimAttendanceTurn, commitAttendanceTurn, releaseAttendanceTurn,
@@ -37,6 +38,20 @@ export async function conductAttendanceTurn(input: Readonly<{
     const reserved = await dependencies.load(input);
     if (!reserved || reserved.version !== claimed.version) throw new Error("reserved_turn_read_failed");
     if (!reserved.accountContext) throw new Error("account_context_read_failed");
+    if (intent === "initialize") {
+      const primary = await dependencies.primary(input.accountId);
+      if (primary === undefined) throw new Error("primary_read_failed");
+      const output: AttendanceOutput = { reply: ATTENDANCE_GREETING, preferredName: reserved.preferredName,
+        preferredNameDeclined: reserved.preferredNameDeclined ?? false,
+        businessNameCandidate: readAttendanceBusinessNameCandidate(reserved.accountContext.summary),
+        requestWhatsapp: false, whatsappReference: null, whatsappDeclined: false, businessUnderstanding: "",
+        confirmedUnderstanding: null, suggestions: [], sufficientUnderstanding: false, readyToComplete: false,
+        closureReason: null, action: "ask", existingTaxonId: null };
+      const written = await dependencies.commit({ ...fence, output, proposal: null, confirm: false,
+        observedPrimaryTaxonId: primary, summary: reserved.accountContext.summary ?? attendanceSummary(output, null, null) });
+      if (!written.ok) await dependencies.release(fence);
+      return written;
+    }
     // Independent SELECTs; the reserved conversation and commit fence remain ordered.
     const [catalog, currentPrimaryTaxonId, operational] = await Promise.all([
       dependencies.catalog(),

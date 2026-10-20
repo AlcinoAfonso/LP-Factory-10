@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import nodeModule from "node:module";
 import { attendanceContactProjection, attendanceProjection, attendancePrompt, attendanceProposal, attendanceSummary, validateAttendanceOutput,
-  validateStoredAttendanceProposal, type AttendanceContext, type AttendanceOutput } from "./attendance-core";
+  readAttendanceBusinessNameCandidate, validateStoredAttendanceProposal, type AttendanceContext, type AttendanceOutput } from "./attendance-core";
 import type { AttendanceDependencies } from "./attendance-coordinator";
-import type { PendingSetupConversation } from "./contracts";
+import { ATTENDANCE_GREETING, type PendingSetupConversation } from "./contracts";
 const accountId = "10000000-0000-4000-8000-000000000001";
 const segmentId = "10000000-0000-4000-8000-000000000002";
 const nicheId = "10000000-0000-4000-8000-000000000003";
@@ -17,7 +17,7 @@ const context: AttendanceContext = {
   ],
 };
 const base: AttendanceOutput = {
-  reply: "Jardinagem corresponde ao seu negócio?", preferredName: "Ana", preferredNameDeclined: false, requestWhatsapp: false, whatsappReference: null, whatsappDeclined: false,
+  reply: "Jardinagem corresponde ao seu negócio?", preferredName: "Ana", preferredNameDeclined: false, businessNameCandidate: null, requestWhatsapp: false, whatsappReference: null, whatsappDeclined: false,
   businessUnderstanding: "Manutenção de jardins para condomínios.", confirmedUnderstanding: null,
   suggestions: ["Pode ser útil explicar a frequência do serviço."], sufficientUnderstanding: true,
   readyToComplete: false, closureReason: null, action: "existing", existingTaxonId: nicheId,
@@ -168,9 +168,9 @@ async function main() {
   } }, context.catalog).summary!).contextualUnderstanding, corrected.businessUnderstanding);
   const compound = "João. Tenho a Clínica Sorriso e fazemos clareamento, tratamento de canal e implantes.";
   const nameContext: AttendanceContext = { ...context, preferredName: null, recent: [
-    { role: "assistant", content: "Olá! Como prefere ser chamado?" }, { role: "user", content: compound },
+    { role: "assistant", content: "Olá! Que prazer ter você aqui! Como posso te chamar?" }, { role: "user", content: compound },
   ] };
-  const compoundOutput = { ...base, preferredName: "João", businessUnderstanding: "Clínica Sorriso oferece clareamento, tratamento de canal e implantes." };
+  const compoundOutput = { ...base, preferredName: "João", businessNameCandidate: "Clínica Sorriso", businessUnderstanding: "Clínica Sorriso oferece clareamento, tratamento de canal e implantes." };
   assert.equal(validateAttendanceOutput(compoundOutput, nameContext)?.preferredName, "João");
   assert.equal(validateAttendanceOutput({ ...compoundOutput, preferredName: "Pedro" }, nameContext), null);
   assert.equal(validateAttendanceOutput({ ...compoundOutput, preferredName: "Jo" }, nameContext), null);
@@ -196,12 +196,12 @@ async function main() {
       { role: "assistant", content: question }, { role: "user", content: "Clínica Sorriso. Fazemos implantes." }] };
     const businessNameOutput = { ...compoundOutput, preferredName: "Clínica Sorriso", businessUnderstanding: "Clínica Sorriso oferece implantes." };
     const safeBusiness = validateAttendanceOutput({ ...businessNameOutput, preferredName: null,
-      reply: "Olá! Como prefere ser chamado?", action: "ask", existingTaxonId: null }, businessNameContext);
+      reply: "Olá! Que prazer ter você aqui! Como posso te chamar?", action: "ask", existingTaxonId: null }, businessNameContext);
     assert.equal(safeBusiness?.businessUnderstanding, businessNameOutput.businessUnderstanding);
   }
   assert.equal(validateAttendanceOutput(compoundOutput, { ...nameContext, recent: [
     { role: "assistant", content: "  Como prefere ser chamado?  " }, nameContext.recent[1]] })?.preferredName, "João");
-  const nameRequest = { ...base, preferredName: null, reply: "Olá! Como prefere ser chamado?", action: "ask", existingTaxonId: null };
+  const nameRequest = { ...base, preferredName: null, reply: "Olá! Que prazer ter você aqui! Como posso te chamar?", action: "ask", existingTaxonId: null };
   assert.ok(validateAttendanceOutput(nameRequest, nameContext));
   assert.equal(validateAttendanceOutput({ ...nameRequest, reply: "Como gostaria de ser chamado?" }, nameContext), null);
   assert.equal(validateAttendanceOutput({ ...nameRequest, action: "existing", existingTaxonId: base.existingTaxonId }, nameContext), null);
@@ -220,7 +220,7 @@ async function main() {
     { role: "user", content: "Pode me chamar de João. Também administro uma clínica." }] }), null);
   const longMessage = compound + " Temos atendimento presencial.".repeat(60) + " Atendemos adultos e queremos explicar implantes.";
   const integral = attendanceProjection({ ...conversation, preferredName: null, messages: [
-    { ...conversation.messages[0], role: "assistant", content: "Olá! Como prefere ser chamado?" },
+    { ...conversation.messages[0], role: "assistant", content: "Olá! Que prazer ter você aqui! Como posso te chamar?" },
     { ...conversation.messages[0], id: "2", role: "user", content: longMessage },
   ] }, context.catalog);
   assert.equal(integral.recent.at(-1)?.content, longMessage);
@@ -233,6 +233,21 @@ async function main() {
   assert.equal(JSON.parse(projected.summary!).classification, draft.classification);
   assert.equal(JSON.parse(projected.summary!).suggestions.length, 1);
   assert.equal(JSON.parse(attendanceSummary(noBusinessNews, null, null, urlSummary)).confirmedUnderstanding, JSON.parse(urlSummary).confirmedUnderstanding);
+  // The optional business-name prefill never writes the official name.
+  const candidateMemory = attendanceSummary(compoundOutput, null, null);
+  assert.equal(readAttendanceBusinessNameCandidate(candidateMemory), "Clínica Sorriso");
+  assert.equal(readAttendanceBusinessNameCandidate(remembered), null);
+  assert.equal(readAttendanceBusinessNameCandidate("invalid"), null);
+  assert.equal(validateAttendanceOutput({ ...base, businessNameCandidate: "Inventado" }, context)?.businessNameCandidate, null);
+  assert.equal(validateAttendanceOutput({ ...base, businessNameCandidate: "Clínica Sorriso" },
+    { ...context, summary: candidateMemory })?.businessNameCandidate, "Clínica Sorriso");
+  assert.equal(validateAttendanceOutput({ ...base, businessNameCandidate: "Jardins Ana" },
+    { ...context, recent: [{ role: "user", content: "O negócio agora se chama Jardins Ana." }] })?.businessNameCandidate, "Jardins Ana");
+  assert.equal(readAttendanceBusinessNameCandidate(attendanceSummary({ ...base, businessNameCandidate: null }, null, null, candidateMemory)), null);
+  const candidateProjection = attendanceProjection({ ...conversation, accountContext: { summary: candidateMemory, updatedAt: conversation.updatedAt } }, context.catalog);
+  assert.equal(JSON.parse(candidateProjection.summary!).businessNameCandidate, "Clínica Sorriso");
+  assert.equal(readAttendanceBusinessNameCandidate(JSON.stringify({ ...JSON.parse(candidateMemory), businessNameCandidate: "x".repeat(121) })), null);
+  assert.equal(conversation.businessDisplayName, null);
   // Only literal user contacts can enter the existing Summary; raw PII stays out of provider context.
   const phone = "+55 (21) 99999-0000";
   const contactConversation = { ...conversation, messages: [
@@ -506,6 +521,20 @@ async function main() {
   const input = { accountId, userId: accountId, conversationId: accountId, expectedVersion: 1, content: "Jardins", intent: "message" as const };
   assert.equal((await conductAttendanceTurn(input, deps)).ok, true);
   assert.deepEqual(effects, ["claim", "commit"]); // old lifetime call counter is irrelevant.
+  for (const resume of [false, true]) {
+    current = { ...conversation, messages: [], attendanceTurnIntent: resume ? "initialize" : null };
+    assert.equal((await conductAttendanceTurn({ ...input, content: null, intent: resume ? "resume" : "initialize" }, { ...deps,
+      primary: async () => nicheId,
+      catalog: async () => { throw new Error("Greeting must not read catalog"); },
+      request: async () => { throw new Error("Greeting must not call AI"); },
+      commit: async input => {
+        assert.equal(input.output.reply, ATTENDANCE_GREETING);
+        assert.equal(input.output.readyToComplete, false); assert.equal(input.confirm, false);
+        assert.equal(input.proposal, null);
+        return { ok: true, version: 3 };
+      },
+    })).ok, true);
+  }
   current = { ...conversation, accountContext: { summary: closedSummary, updatedAt: conversation.updatedAt } };
   assert.equal((await conductAttendanceTurn(input, { ...deps,
     request: async ({ context: resumed }) => {

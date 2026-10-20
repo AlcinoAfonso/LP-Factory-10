@@ -1,4 +1,5 @@
 import type { AttendanceProposal } from "./attendance-core";
+export const ATTENDANCE_GREETING = "Olá! Que prazer ter você aqui! Como posso te chamar?";
 export const PENDING_SETUP_STAGES = [
   "identity",
   "business_understanding",
@@ -30,6 +31,7 @@ export type PendingSetupConversation = Readonly<{
   userId: string;
   preferredName: string | null;
   businessDisplayName: string | null;
+  businessNameCandidate?: string | null;
   businessContextText: string | null;
   stage: PendingSetupStage;
   confirmationKind: PendingSetupConfirmationKind | null;

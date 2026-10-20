@@ -11,7 +11,7 @@ import type {
   PendingSetupStage,
   PendingSetupWriteResult,
 } from "../contracts";
-import { validateStoredAttendanceProposal } from "../attendance-core";
+import { readAttendanceBusinessNameCandidate, validateStoredAttendanceProposal } from "../attendance-core";
 import { readPendingSetupDialogueContext } from "./pendingSetupAccountContextAdapter";
 import { resolvePreferredNameFromAuth } from "../policy";
 import { isE1011PassageEnabled, isE1012AttendanceEnabled } from "../config";
@@ -166,7 +166,8 @@ export async function loadPendingSetupConversation(input: {
   const mapped = mapConversation(conversation as unknown as ConversationRow, ((messages ?? []) as MessageRow[]));
   if (!isE1012AttendanceEnabled()) return mapped;
   const dialogue = await readPendingSetupDialogueContext({ ...input, conversationId });
-  return dialogue ? { ...mapped, messages: dialogue.messages, accountContext: dialogue.context } : null;
+  return dialogue ? { ...mapped, messages: dialogue.messages, accountContext: dialogue.context,
+    businessNameCandidate: readAttendanceBusinessNameCandidate(dialogue.context.summary) } : null;
 }
 
 export async function setPendingSetupPreferredName(input: {

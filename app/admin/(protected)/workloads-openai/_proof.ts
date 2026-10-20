@@ -337,7 +337,7 @@ async function proveAttendance(
       id: dentistryId, name: "Odontologia", level: "niche", parentId: segmentId, active: true, aliases: [],
     }];
     let context: AttendanceContext = { preferredName: null, summary: null, catalog: dentalCatalog,
-      recent: [{ role: "assistant", content: "Olá! Como prefere ser chamado?" },
+      recent: [{ role: "assistant", content: "Olá! Que prazer ter você aqui! Como posso te chamar?" },
         { role: "user", content: "João. Tenho a Clínica Sorriso e fazemos clareamento, tratamento de canal e implantes. Sou flamenguista, mas futebol não tem relação com o negócio." }] };
     let latencyMs = 0;
     let providerRequestId: string | null = null;
@@ -350,7 +350,7 @@ async function proveAttendance(
       configurationOverride: workload, environment, apiKey,
       financialContext: lpFactoryOpenAiCostContext, executionOrigin: "administrative_proof" });
     if (!greeting.ok) return { ok: false, code: "provider" };
-    if (greeting.output.reply !== "Olá! Como prefere ser chamado?" || greeting.output.preferredName !== null
+    if (greeting.output.reply !== "Olá! Que prazer ter você aqui! Como posso te chamar?" || greeting.output.preferredName !== null
       || greeting.output.action !== "ask" || greeting.output.closureReason) return contractFailure("personal_question");
     latencyMs += greeting.latencyMs ?? 0;
     context = { ...context, recent: [{ role: "assistant", content: greeting.output.reply }, context.recent[1]] };
@@ -364,7 +364,7 @@ async function proveAttendance(
       const memory = JSON.parse(summary);
       if (/flamenguista|flamengo|futebol/i.test(JSON.stringify(memory))) return contractFailure("social");
       if (turn === 0) {
-        if (output.preferredName !== "João" || output.action !== "existing" || output.existingTaxonId !== dentistryId
+        if (output.preferredName !== "João" || output.businessNameCandidate !== "Clínica Sorriso" || output.action !== "existing" || output.existingTaxonId !== dentistryId
           || !/clínica sorriso/i.test(output.businessUnderstanding) || !/clareamento/i.test(output.businessUnderstanding)
           || !/canal/i.test(output.businessUnderstanding) || !/implant/i.test(output.businessUnderstanding)
           || memory.confirmedUnderstanding !== null) return contractFailure("initial");
