@@ -1,5 +1,11 @@
 import type { AttendanceProposal } from "./attendance-core";
 export const ATTENDANCE_GREETING = "Olá! Que prazer ter você aqui! Como posso te chamar?";
+// Present the current code-owned opening without rewriting the stored Dialogue.
+export function attendanceMessageContent(message: Pick<PendingSetupMessage, "ordinal" | "role" | "content">): string {
+  return message.ordinal === 1 && message.role === "assistant" &&
+    ["Olá! Como prefere ser chamado?", "Como prefere ser chamado?"].includes(message.content)
+    ? ATTENDANCE_GREETING : message.content;
+}
 export const PENDING_SETUP_STAGES = [
   "identity",
   "business_understanding",

@@ -3,7 +3,7 @@ import nodeModule from "node:module";
 import { attendanceContactProjection, attendanceProjection, attendancePrompt, attendanceProposal, attendanceSummary, validateAttendanceOutput,
   readAttendanceBusinessNameCandidate, validateStoredAttendanceProposal, type AttendanceContext, type AttendanceOutput } from "./attendance-core";
 import type { AttendanceDependencies } from "./attendance-coordinator";
-import { ATTENDANCE_GREETING, type PendingSetupConversation } from "./contracts";
+import { ATTENDANCE_GREETING, attendanceMessageContent, type PendingSetupConversation } from "./contracts";
 const accountId = "10000000-0000-4000-8000-000000000001";
 const segmentId = "10000000-0000-4000-8000-000000000002";
 const nicheId = "10000000-0000-4000-8000-000000000003";
@@ -36,6 +36,14 @@ function response(output: unknown, extra: unknown[] = []) {
     output: [...extra, { type: "message", content: [{ type: "output_text", text: JSON.stringify(output) }] }] };
 }
 async function main() {
+  for (const content of ["Olá! Como prefere ser chamado?", "Como prefere ser chamado?", ATTENDANCE_GREETING]) {
+    const opening = { ordinal: 1, role: "assistant" as const, content };
+    assert.equal(attendanceMessageContent(opening), ATTENDANCE_GREETING);
+    assert.equal(opening.content, content); // Stored Dialogue stays intact.
+    assert.equal(attendanceMessageContent({ ...opening, role: "user" }), content);
+    assert.equal(attendanceMessageContent({ ...opening, ordinal: 2 }), content);
+  }
+  assert.equal(attendanceMessageContent({ ordinal: 1, role: "assistant", content: "Outro conteúdo preservado." }), "Outro conteúdo preservado.");
   const loader = nodeModule as unknown as { _load: (name: string, parent: unknown, isMain: boolean) => unknown };
   const original = loader._load;
   loader._load = function(name, parent, isMain) { return name === "server-only" ? {} : original.call(this, name, parent, isMain); };
@@ -46,6 +54,10 @@ async function main() {
   const { conductAttendanceTurn } = coordinator;
   assert.equal("$schema" in attendancePrompt(context).schema, false);
   assert.equal(validateAttendanceOutput(base, context)?.action, "existing");
+  const explaining = { ...base, action: "ask" as const, existingTaxonId: null, reply: "O que precisa corrigir sobre sua atividade ou seu público?" };
+  assert.ok(validateAttendanceOutput(explaining, { ...context, clarificationRequested: true }));
+  assert.equal(validateAttendanceOutput(base, { ...context, clarificationRequested: true }), null);
+  assert.equal(validateAttendanceOutput({ ...explaining, readyToComplete: true }, { ...context, clarificationRequested: true }), null);
   assert.equal(validateAttendanceOutput({ ...base, readyToComplete: true }, context), null); // proposal never completes.
   assert.equal(validateAttendanceOutput({ ...base, existingTaxonId: accountId }, context), null);
   assert.equal(validateAttendanceOutput(base, { ...context, currentPrimaryTaxonId: segmentId }), null);
@@ -525,6 +537,20 @@ async function main() {
   const input = { accountId, userId: accountId, conversationId: accountId, expectedVersion: 1, content: "Jardins", intent: "message" as const };
   assert.equal((await conductAttendanceTurn(input, deps)).ok, true);
   assert.deepEqual(effects, ["claim", "commit"]); // old lifetime call counter is irrelevant.
+  for (const rejecting of [false, true]) {
+    current = { ...conversation, attendanceProposal: rejecting ? { kind: "existing", taxonId: nicheId, taxonName: "Jardinagem" } : null };
+    assert.equal((await conductAttendanceTurn({ ...input, intent: "clarify", content: "Quero explicar melhor." }, { ...deps,
+      request: async ({ context: shown }) => {
+        assert.equal(shown.clarificationRequested, rejecting);
+        return { ok: true, output: explaining, responseId: "clarified", latencyMs: 1 };
+      },
+      commit: async input => {
+        assert.equal(input.confirm, false); assert.equal(input.proposal, null);
+        assert.equal(input.output.readyToComplete, false);
+        return { ok: true, version: 3 };
+      },
+    })).ok, true);
+  }
   for (const resume of [false, true]) {
     current = { ...conversation, messages: [], attendanceTurnIntent: resume ? "initialize" : null };
     assert.equal((await conductAttendanceTurn({ ...input, content: null, intent: resume ? "resume" : "initialize" }, { ...deps,

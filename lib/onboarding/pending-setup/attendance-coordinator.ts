@@ -67,6 +67,7 @@ export async function conductAttendanceTurn(input: Readonly<{
       currentPrimaryTaxonId ?? reserved.attendanceProposal?.taxonId ?? null);
     if (marketContext === null) throw new Error("market_context_read_failed");
     const context = { ...attendanceProjection(reserved, catalog), marketContext,
+      clarificationRequested: intent === "clarify" && Boolean(conversation.attendanceProposal),
       confirmedOperationalUnderstanding: Boolean(operational),
       confirmedProposal: confirmation ? reserved.attendanceProposal ?? null : null, currentPrimaryTaxonId };
     if (confirmation && (!context.confirmedProposal || !reserved.businessContextText?.trim())) throw new Error("confirmation_proposal_missing");

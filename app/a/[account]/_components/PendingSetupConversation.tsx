@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   ATTENDANCE_GREETING,
+  attendanceMessageContent,
   hasPendingSetupTerminalFallback,
   type PendingSetupConversation as PendingSetupConversationContract,
 } from "../../../../lib/onboarding/pending-setup";
@@ -49,7 +50,7 @@ export function PendingSetupConversation({
   const startingAttendance = Boolean(conversation?.attendanceEnabled && !conversation.messages.length);
   const askingPreferredName = Boolean(conversation?.attendanceEnabled && (startingAttendance ||
     (!conversation.preferredName && !conversation.preferredNameDeclined) ||
-    (conversation.messages.length === 1 && conversation.messages[0].content === ATTENDANCE_GREETING)));
+    (conversation.messages.length === 1 && attendanceMessageContent(conversation.messages[0]) === ATTENDANCE_GREETING)));
   const needsAttendanceProposal = conversation?.attendanceEnabled && conversation.stage === "niche_confirmation" && !conversation.attendanceProposal;
   const [clarificationText, setClarificationText] = useState("");
   const initializedRef = useRef(false);
@@ -137,7 +138,7 @@ export function PendingSetupConversation({
                     : "max-w-[88%] rounded-2xl rounded-bl-md bg-surface-muted px-4 py-3 text-sm break-words whitespace-pre-wrap leading-6 text-ink-900 sm:max-w-[75%]"
                 }
               >
-                {message.content}
+                {conversation.attendanceEnabled ? attendanceMessageContent(message) : message.content}
               </div>
             </div>
           ))}
