@@ -203,7 +203,9 @@ async function main() {
     { role: "assistant", content: "  Como prefere ser chamado?  " }, nameContext.recent[1]] })?.preferredName, "João");
   const nameRequest = { ...base, preferredName: null, reply: "Olá! Que prazer ter você aqui! Como posso te chamar?", action: "ask", existingTaxonId: null };
   assert.ok(validateAttendanceOutput(nameRequest, nameContext));
-  assert.equal(validateAttendanceOutput({ ...nameRequest, reply: "Como gostaria de ser chamado?" }, nameContext), null);
+  assert.ok(validateAttendanceOutput({ ...nameRequest, reply: "Como gostaria de ser chamado?" }, nameContext));
+  assert.equal(validateAttendanceOutput({ ...nameRequest, readyToComplete: true }, { ...nameContext, currentPrimaryTaxonId: nicheId }), null);
+  assert.equal(validateAttendanceOutput({ ...nameRequest, requestWhatsapp: true }, { ...nameContext, currentPrimaryTaxonId: nicheId }), null);
   assert.equal(validateAttendanceOutput({ ...nameRequest, action: "existing", existingTaxonId: base.existingTaxonId }, nameContext), null);
   assert.ok(validateAttendanceOutput({ ...nameRequest, reply: "Encerramos por aqui; podemos retomar o objetivo comercial quando desejar.",
     closureReason: "Desvio persistente sem avanço útil." }, nameContext));
@@ -234,6 +236,8 @@ async function main() {
   assert.equal(JSON.parse(projected.summary!).suggestions.length, 1);
   assert.equal(JSON.parse(attendanceSummary(noBusinessNews, null, null, urlSummary)).confirmedUnderstanding, JSON.parse(urlSummary).confirmedUnderstanding);
   // The optional business-name prefill never writes the official name.
+  assert.equal(validateAttendanceOutput({ ...base, businessNameCandidate: "Clínica Sorriso" },
+    { ...context, recent: [{ role: "user", content: "Meu negócio se chama clínica sorriso." }] })?.businessNameCandidate, "Clínica Sorriso");
   const candidateMemory = attendanceSummary(compoundOutput, null, null);
   assert.equal(readAttendanceBusinessNameCandidate(candidateMemory), "Clínica Sorriso");
   assert.equal(readAttendanceBusinessNameCandidate(remembered), null);
@@ -529,6 +533,7 @@ async function main() {
       request: async () => { throw new Error("Greeting must not call AI"); },
       commit: async input => {
         assert.equal(input.output.reply, ATTENDANCE_GREETING);
+        assert.equal(input.observedPrimaryTaxonId, nicheId);
         assert.equal(input.output.readyToComplete, false); assert.equal(input.confirm, false);
         assert.equal(input.proposal, null);
         return { ok: true, version: 3 };

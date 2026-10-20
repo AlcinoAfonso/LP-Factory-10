@@ -345,15 +345,6 @@ async function proveAttendance(
       console.warn("pending_setup_attendance_proof_failed", { scenario: 3, check, code: "contract" });
       return { ok: false, code: "contract" };
     };
-    const greeting = await requestAttendance({ accountId, context: { ...context,
-      recent: [{ role: "user", content: "Olá, quero conhecer a LP Factory." }] },
-      configurationOverride: workload, environment, apiKey,
-      financialContext: lpFactoryOpenAiCostContext, executionOrigin: "administrative_proof" });
-    if (!greeting.ok) return { ok: false, code: "provider" };
-    if (greeting.output.reply !== "Olá! Que prazer ter você aqui! Como posso te chamar?" || greeting.output.preferredName !== null
-      || greeting.output.action !== "ask" || greeting.output.closureReason) return contractFailure("personal_question");
-    latencyMs += greeting.latencyMs ?? 0;
-    context = { ...context, recent: [{ role: "assistant", content: greeting.output.reply }, context.recent[1]] };
     for (let turn = 0; turn < 4; turn++) {
       const result = await requestAttendance({ accountId, context, configurationOverride: workload, environment, apiKey,
         financialContext: lpFactoryOpenAiCostContext, executionOrigin: "administrative_proof" });

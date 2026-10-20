@@ -878,7 +878,7 @@
 
 10.12.1 Objetivo e status
 - Objetivo: entender negócio/necessidade, orientar e definir próximo passo.
-- Status: base operacional em Preview/Production; refinamentos do Pending Setup básico publicados em Production pelo PR #1079. Legadas E10.9 preservadas. Depende de E10.13, não de PB-B.
+- Status: base operacional em Preview/Production; refinamentos do Pending Setup básico publicados em Production pelo PR #1079. Correção conversacional integrada #1086 candidata em Preview, com QA parcial e validação humana completa pendente. Legadas E10.9 preservadas. Depende de E10.13, não de PB-B.
 
 10.12.2 Registros do recorte
 - Banco:
@@ -899,6 +899,9 @@
     - `lib/onboarding/pending-setup/attendance-provider.ts`
     - `lib/onboarding/pending-setup/attendance-validation-cases.ts`
     - `app/a/[account]/_components/PendingSetupConversation.tsx`
+    - `app/a/[account]/pending-setup-actions.ts`
+    - `lib/onboarding/pending-setup/contracts.ts`
+    - `lib/onboarding/pending-setup/adapters/pendingSetupConversationAdapter.ts`
 - Referências:
   - Memória contextual e autoridades: `docs/base-tecnica.md` — seção 3.14.6.
   - Contrato de banco aplicado: `docs/schema.md` — seções 1.19D e 3.1.3.
@@ -907,7 +910,7 @@
 10.12.3 Atendimento, Diálogo da conta e Resumo da conta
 - Status: operacional; refinamentos do Pending Setup básico validados em Preview.
 - Conteúdo: mensagem/nomes/Diálogo/Resumo, distinções de aceite/proposta, compactação/confirmação e falhas em docs/base-tecnica.md — 3.14.6; sem autoridade/versionamento funcional próprios. Resumo 6.000 caracteres sem meta, entendimento 4.000; demais limites mantidos. Sem teto de três chamadas/tabela/estado/memória/parser por frase/formulário/infraestrutura novos.
-- Definido: acolher, pedir nome e nome do negócio, colher só informações essenciais e apresentar brevemente o valor real da LP Factory, sem insistência. Solicitar WhatsApp opcional perto do fim, se ainda não informado; preservar exatamente o número informado no Diálogo e no Resumo existentes, mesmo incompleto ou incorreto; correção posterior substitui o contato. O agente pode alertar brevemente e oferecer correção, sem insistência, formato obrigatório ou bloqueio de avanço. Recusa não bloqueia avanço; fornecimento não autoriza contato posterior.
+- Definido: abrir diretamente com “Olá! Que prazer ter você aqui! Como posso te chamar?”, acolher pelo nome, aproveitar nome/atividade do negócio já informados e colher só informações essenciais, sem insistência. A saudação inicial usa o commit existente sem chamada à IA. Solicitar WhatsApp opcional perto do fim, se ainda não informado; preservar exatamente o número informado no Diálogo e no Resumo existentes, mesmo incompleto ou incorreto; correção posterior substitui o contato. O agente pode alertar brevemente e oferecer correção, sem insistência, formato obrigatório ou bloqueio de avanço. Recusa não bloqueia avanço; fornecimento não autoriza contato posterior.
 
 10.12.4 Identificação pelo catálogo
 - Status: operacional; refinamentos do Pending Setup básico validados em Preview.
@@ -916,14 +919,14 @@
 
 10.12.5 Repertório do nicho e apoio à venda
 - Status: operacional.
-- Conteúdo: Entender → Impressionar → Conectar → Avançar sem roteiro/turnos fixos. Após atividade/oferta/necessidade mínimas, insight ligado à proposta real antes de nova pergunta comercial. Informação acessória só se material; identidade/confirmações mantidas.
+- Conteúdo: Acolher e entender → Persuadir → Solicitar WhatsApp → Encaminhar à página comercial, sem roteiro/turnos fixos; benefício contextual antes do contato opcional. Após atividade/oferta/necessidade mínimas, insight ligado à proposta real antes de nova pergunta comercial. Informação acessória só se material; identidade/confirmações mantidas.
 - D21 contextualiza, não impõe fala ou promessa; serviço/condição/prazo/disponibilidade efetivos exigem fonte comercial vigente. Avançar por 10.12.6, sem esgotar venda/diagnóstico ou interromper avanço útil. D21 governa catálogo/pesquisa/aliases; aprofundamento D17.
 - Só leituras independentes paralelas; efeitos/provider/commit ordenados, sem duração ou ganho causal comprovados.
 
 10.12.6 Conclusão e experiência
 - Status: operacional; refinamentos do Pending Setup básico validados em Preview.
 - Conteúdo: negócio/necessidades compreendidos, orientação/próximo passo claros, categoria confirmada ou ausência explícita; categoria sozinha não conclui. Identidade/E10.11 obrigatórios; WhatsApp opcional conforme 10.12.3. Sem taxon não bloqueia comercial/Base com entendimento suficiente, nem concede entitlement/trial/contratação.
-- Definido: conduzir à página comercial mesmo sem nicho identificado, preservando entendimento operacional confirmado e pendência de classificação no Resumo; encerrar sem prolongar a conversa. D15B preservado; sem consulta à Base de Comunicação, pesquisa ou contato posterior com leads, nem promessa de pesquisa/retorno sem capacidade e autorização do D17.
+- Definido: confirmação única pela interface; candidato contextual de nome no Resumo preenche o campo editável, sem nome oficial antes do submit E10.11. Conduzir à página comercial mesmo sem nicho identificado, preservando entendimento operacional confirmado e pendência de classificação no Resumo; encerrar sem prolongar a conversa. D15B preservado; sem consulta à Base de Comunicação, pesquisa ou contato posterior com leads, nem promessa de pesquisa/retorno sem capacidade e autorização do D17.
 - Redirecionar desvio ocasional; persistência/repetição/circularidade/sem avanço → encerramento cordial com contexto/pendência no Resumo e retomada possível. Sem promessa de análise/prazo/retorno/contato, contador/tempo fixo/failsafe econômico.
 - Conflitos/atomicidade/pós-conclusão/Base em Base Técnica 3.14.6; sem continuidade assíncrona. Objeções/comparação/recomendação/contratação aprofundadas no D17 até absorção aprovada.
 
