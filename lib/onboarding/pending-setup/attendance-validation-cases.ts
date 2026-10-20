@@ -252,6 +252,11 @@ async function main() {
     { ...context, recent: [{ role: "user", content: "Meu negócio se chama clínica sorriso." }] })?.businessNameCandidate, "Clínica Sorriso");
   const candidateMemory = attendanceSummary(compoundOutput, null, null);
   assert.equal(readAttendanceBusinessNameCandidate(candidateMemory), "Clínica Sorriso");
+  for (const replacement of ["Inventado", "Nome\u0000inválido"]) {
+    const preserved = validateAttendanceOutput({ ...base, businessNameCandidate: replacement }, { ...context, summary: candidateMemory });
+    assert.equal(preserved?.businessNameCandidate, "Clínica Sorriso");
+    assert.equal(readAttendanceBusinessNameCandidate(attendanceSummary(preserved!, null, null, candidateMemory)), "Clínica Sorriso");
+  }
   assert.equal(readAttendanceBusinessNameCandidate(remembered), null);
   assert.equal(readAttendanceBusinessNameCandidate("invalid"), null);
   assert.equal(validateAttendanceOutput({ ...base, businessNameCandidate: "Inventado" }, context)?.businessNameCandidate, null);

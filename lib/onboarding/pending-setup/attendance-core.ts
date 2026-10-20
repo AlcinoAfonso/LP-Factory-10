@@ -149,7 +149,7 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
     (!validateBusinessDisplayName(value.businessNameCandidate).ok ||
       (value.businessNameCandidate.toLocaleLowerCase("pt-BR") !== prior?.businessNameCandidate?.toLocaleLowerCase("pt-BR") &&
         !context.recent.filter(message => message.role === "user").at(-1)?.content.toLocaleLowerCase("pt-BR").includes(value.businessNameCandidate.toLocaleLowerCase("pt-BR")))))
-    value.businessNameCandidate = null; // An unsafe optional prefill never blocks the useful conversation.
+    value.businessNameCandidate = readAttendanceBusinessNameCandidate(context.summary); // Reject the replacement, not the previously sourced name.
   if (value.requestWhatsapp && (!["ask", "confirm"].includes(value.action) || value.readyToComplete || value.whatsappDeclined || value.whatsappReference !== null
     || context.whatsappProvided || prior?.whatsappDeclined)) return null;
   if (value.whatsappReference !== null && (value.whatsappDeclined ||
