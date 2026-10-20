@@ -772,62 +772,41 @@ No plano Hobby, a Vercel passou a preservar, além do deployment de produção a
 
 ---
 
-## 34 — Next.js setembro de 2026: sete correções e advisories upstream pendentes *(🟨 Patch aplicado; acompanhamento ativo)*
+## 34 — Next.js setembro/outubro de 2026: correções upstream publicadas *(🟨 Patch de outubro pendente)*
 
 2026-09-22
 Catalogado em 2026-09-29
-Atualizado em 2026-10-14
+Atualizado em 2026-10-20
 
 ### Status no Projeto
 
-- Status: patch `16.3.8` aplicado pelo PB 18B.1 / E23.4, PR [#1029](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1029), merge `bd3b8186501384945954be9fd255d9d6c5d42c8f`. `npm ci`, versões, `npm run check`, Security Checks, build/Preview, smoke autenticado e Code Reviews passaram no HEAD `bf03cc827160d04abac9843493f16843a47844b1`; Production `Ready` no merge e smoke pós-merge aprovados. A release corrige sete vulnerabilidades divulgadas em setembro. O anúncio de 08/10 prevê para 14/10 três correções upstream, duas críticas e uma alta, incluindo as duas adiadas de setembro; versão corrigida e advisories completos ainda não foram confirmados nesta leitura.
-- Evidência de uso: busca no código versionado não encontrou `ImageResponse`, `next/og`, `@vercel/og` ou Satori. Isso reduz a exposição observável ao caminho descrito, mas não equivale a confirmar segurança de toda a dependência ou de futuros usos.
-- Natureza de uso: segurança transversal da stack Next.js atual.
-- Relação com a stack: patch da dependência existente; não requer nova infraestrutura, plano, serviço ou recurso opt-in.
-- Horizonte: Starter, acompanhamento de segurança da dependência existente após conclusão dos gates do PB 18B.1.
-- Estado atual: levantamento delimitado PB 18D.1 / E23.6.3 concluído em 14/10/2026; aplicabilidade inconclusiva no baseline `16.3.8`, sem advisories completos ou versão-alvo recuperados nas fontes acessíveis. A pendência upstream permanece ativa.
-- Diagnóstico: manifesto e lockfile no baseline `54e0395462c6e736bec35c3075fd74c78b07541c` resolvem `next`/`eslint-config-next` em `16.3.8` e React/React DOM em `19.2.1`. `app/page.tsx` e `app/auth/update-password/page.tsx` comprovam App Router/SSR e Server Actions; presença da dependência e consumidores não comprovam exploração nem aplicabilidade de vulnerabilidade ainda não descrita.
-- Cobertura upstream: a única conferência focal final em 14/10/2026 recuperou o pré-aviso no blog; a API oficial de releases retornou `v16.4.0` (07/10) como última estável e a consulta de até 100 advisories publicados desde 08/10 não retornou registros. Isso delimita as fontes acessíveis, sem provar inexistência global de publicação. Faltam impacto, faixas afetadas/corrigidas e instruções finais; exploração não foi investigada. [Provas e limites no PR #1067](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6173085395).
-- Ação pendente: obter os advisories completos e as faixas afetadas/corrigidas; confrontá-los com `16.3.8` e os consumidores antes de recomendar versão de patch. Prioridade alta; nenhuma correção autorizada pelo PB 18D.1.
-- Prioridade: alta; avaliar prontamente a publicação completa quando recuperável.
-- Motivo da permanência: os advisories upstream não foram encerrados pela E23.4.
-- Gatilho: advisories oficiais completos recuperáveis, com identificadores, impacto e faixas afetadas/corrigidas; retomar o confronto individual em E23.6.3.
-- Critério de encerramento do saldo: avaliação sustentada dos advisories e, se necessária, correção aplicável validada em recorte próprio; anúncio ou conclusão do levantamento não comprovam remediação.
+- Histórico preservado: sete correções de setembro aplicadas em `16.3.8` pelo PB 18B.1 / E23.4, PR [#1029](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1029), merge `bd3b8186501384945954be9fd255d9d6c5d42c8f`; instalação, checks, review, Preview e Production aprovados no recorte. O levantamento PB 18D.1 / E23.6 encerrou-se em 14/10 com fontes incompletas, sem remediação: [provas](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6173085395).
+- Estado atual: em 20/10 os três advisories de 14/10 foram recuperados; `package.json` e lockfile na base da rodada ainda resolvem Next.js/eslint-config-next `16.3.8`, React/React DOM `19.2.1` e `sharp 0.35.4`.
+- Natureza: segurança transversal da dependência existente; horizonte Starter. Publicação completa removeu a trava informacional do 18D, sem reabrir seu contrato concluído.
+- Ação pendente: propor atualização corretiva para `next 16.4.1` e alinhamento de dependências/lockfile no recorte próprio, com validação de Auth, SSR, Server Actions e imagens. Não exige novo plano ou serviço; custo incremental de plataforma zero, testes devem caber nos limites vigentes.
+- Prioridade: alta, ação recomendada agora. Motivo da permanência: baseline na faixa afetada e Server Actions em uso.
+- Gatilho: atendido pela publicação recuperada. Critério de encerramento: correção aplicável mergeada, verificada em Preview/Production e reconciliada documentalmente; catalogação não autoriza upgrade.
 
-### Descrição
+### Aplicabilidade delimitada
 
-Em 30/09/2026, o Next.js publicou `16.3.8` para a linha 16.3, junto da `15.5.27` para a linha 15.5. A release lista sete correções de segurança: uma alta, cinco médias e uma baixa. O aviso oficial informa que duas vulnerabilidades adicionais — uma crítica e uma alta — ainda aguardam coordenação upstream; a atualização deste item não representa remediação total.
+- `GHSA-p3m5-59mp-jv5r` (alta): DoS em App Router com Server Actions; faixa 16.0.0–16.4.0, corrigida em 16.4.1. Há ações `use server` em `app/auth/update-password/page.tsx`; os requisitos observáveis se aplicam, sem teste de exploração.
+- `GHSA-673q-mjm6-r5xr` (crítica): RCE em Cache Components com funções `use cache` que retornam múltiplos typed arrays; faixa 16.0.0–16.4.0, corrigida em 16.4.1. `next.config.js` não habilita Cache Components; esse caminho não foi demonstrado no projeto. O fornecedor recomenda atualizar mesmo sem funções semelhantes.
+- `GHSA-2464-fhr4-w9xw` / CVE-2026-96889 (crítica): Image Optimization/SVG em Linux glibc; linha 16 até 16.4.0, corrigida em 16.4.1; mitigação upstream `sharp >=0.35.5`. Lockfile contém 0.35.4, mas exploração, processamento SVG e biblioteca efetiva no deploy não foram demonstrados. Ausência de `next/og` não exclui este caminho.
 
-### Valor para o Projeto
+### Valor e limites
 
-- Aplica à dependência existente as sete correções incluídas na release `16.3.8`.
-- Separa o patch de segurança de Instant Navigations e Cache Components, que permanecem condicionados em `vercel#29`.
-- Mantém explícito o acompanhamento upstream, agora com três correções anunciadas para outubro.
+- Corrigir a dependência atual sem vincular Cache Components, Instant Navigations, React 19.3 ou outras novidades opcionais de `vercel#29/#35`.
+- Validar versões efetivamente resolvidas, compatibilidade, checks, build hospedado e smoke do fluxo existente; sem pesquisa ampla ou prova ofensiva para decidir o patch já indicado.
+- Security Checks do repositório não comprovam, isoladamente, remediação de dependências. Não declarar incidente, exploração ou segurança global.
+- Aprovações históricas dos Debates 18B/18D não autorizam este novo delta; encaminhar proposta no fluxo competente da família 18.
 
-### Ações Recomendadas
+### Fontes oficiais
 
-1. Retomar quando os advisories completos forem recuperáveis e avaliar aplicabilidade e eventual patch em recorte próprio. A conferência focal final do PB 18D.1 está concluída; o anúncio não autoriza upgrade nem comprova remediação por `16.3.8`.
-2. Não ativar Cache Components, Instant Navigations ou outras capacidades opcionais como parte do patch.
-
-### Dependências, riscos e limite
-
-- O patch da dependência existente não exige custo incremental de plano ou serviço; o custo de execução técnica e teste precisa ser proporcional.
-- O anúncio de outubro cobre três vulnerabilidades upstream; versões afetadas e corrigidas dependem dos advisories finais. O PB 18B.1 não autoriza nova implementação por inferência.
-- `Security Checks` valida padrões de fluxo no código e não prova, isoladamente, a remediação de advisories de dependências.
-- O item orienta o acompanhamento; a autorização de implementação está registrada no Debate 18B, seção 3.2.
-
-### Critério de encerramento
-
-- Patch `16.3.8` mergeado e validado pelos gates do PB 18B.1, com Preview e deploy Production prontos; registro do merge e das evidências no Debate e no roadmap. Manter os advisories upstream pendentes até avaliação própria da publicação de outubro.
-
-### Fontes Oficiais
-
-- [Next.js — Upcoming Security Update for Upstream Vulnerabilities (08/10/2026)](https://nextjs.org/blog/upcoming-nextjs-security-update-october-2026)
-
-- [Next.js — Next.js Security Update for a Critical Upstream Issue (22/09/2026)](https://nextjs.org/blog/nextjs-security-update-september-22-2026)
-- [Next.js — Upcoming Next.js September Security Release (atualizado em 30/09/2026)](https://nextjs.org/blog/upcoming-nextjs-security-release-september-2026)
-- [Next.js — release 16.3.8](https://github.com/vercel/next.js/releases/tag/v16.3.8)
-
+- [Next.js — Security Update (14/10/2026)](https://nextjs.org/blog/nextjs-security-update-october-14-2026)
+- [Advisory — Server Actions DoS](https://github.com/vercel/next.js/security/advisories/GHSA-p3m5-59mp-jv5r)
+- [Advisory — Cache Components RCE](https://github.com/vercel/next.js/security/advisories/GHSA-673q-mjm6-r5xr)
+- [Advisory — Image Optimization RCE](https://github.com/vercel/next.js/security/advisories/GHSA-2464-fhr4-w9xw)
+- [Next.js — release 16.3.8 (histórico)](https://github.com/vercel/next.js/releases/tag/v16.3.8)
 
 ---
 
