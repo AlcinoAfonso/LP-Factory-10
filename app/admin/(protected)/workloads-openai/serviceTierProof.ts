@@ -4,16 +4,15 @@ import { openAiServiceTierWasApplied, type OpenAiManagedWorkloadEnvironment, typ
 import { parseCommercialProof } from "./commercialProof";
 import type { OpenAiCandidateProofMetadata } from "./proofCore";
 
-// Same safe technical fixture as the existing commercial transport proof.
-// Product prompts, Pending Setup scenarios and business persistence are untouched.
-export async function runOpenAiServiceTierProof(
+// Technical transport proof for model, effort and optional service tier.
+// Product prompts, scenarios and business persistence are untouched.
+export async function runOpenAiTechnicalConfigurationProof(
   workload: ResolvedOpenAiProductWorkload,
   environment: OpenAiManagedWorkloadEnvironment,
   apiKey: string,
   requestId: string,
   dependencies: OpenAiResponsesDependencies = {},
 ): Promise<{ ok: true; metadata: OpenAiCandidateProofMetadata } | { ok: false; code: "configuration" | "provider" | "contract" }> {
-  if (workload.serviceTier == null) return { ok: false, code: "configuration" };
   const result = await requestOpenAiResponses({
     apiKey, configuration: workload, environment, requestId,
     executionOrigin: "administrative_proof",
@@ -38,12 +37,17 @@ export async function runOpenAiServiceTierProof(
     },
   }, dependencies);
   if (!result.ok) return { ok: false, code: "provider" };
-  if (!openAiServiceTierWasApplied(workload.serviceTier, result.appliedServiceTier)) return { ok: false, code: "contract" };
+  if (workload.serviceTier != null &&
+    !openAiServiceTierWasApplied(workload.serviceTier, result.appliedServiceTier)) {
+    return { ok: false, code: "contract" };
+  }
   return { ok: true, metadata: {
     schema_version: 1, proof_kind: "operational", proof_result: "approved",
     request_id: requestId, provider_request_id: result.providerRequestId,
     latency_ms: Math.round(result.latencyMs), contract_version: 1, source: "openai_api",
-    requested_service_tier: workload.serviceTier,
-    applied_service_tier: result.appliedServiceTier,
+    ...(workload.serviceTier == null ? {} : {
+      requested_service_tier: workload.serviceTier,
+      applied_service_tier: result.appliedServiceTier,
+    }),
   } };
 }
