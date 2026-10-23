@@ -1,4 +1,4 @@
-import { runOpenAiServiceTierProof } from "./serviceTierProof";
+import { runOpenAiTechnicalConfigurationProof } from "./serviceTierProof";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
@@ -36,12 +36,13 @@ const cases: readonly Case[] = [
     },
   },
   {
-    name: "tier probe only approves completed responses with the requested applied service",
+    name: "technical proof validates model/effort and requested tier without product scenarios",
     run: async () => {
       const resolved = await resolveOpenAiProductWorkload("commercial_activation_draft_generation", "development");
       assert.equal(resolved.ok, true);
       if (!resolved.ok) return;
       for (const [model, requested, applied, status, expected] of [
+        ["gpt-6.1-sol", null, "default", "completed", true],
         ["gpt-6-luna", "default", "default", "completed", true],
         ["gpt-6-luna", "fast", "fast", "completed", true],
         ["gpt-6-luna", "fast", "priority", "completed", true],
@@ -50,11 +51,14 @@ const cases: readonly Case[] = [
         ["gpt-6-luna", "fast", null, "completed", false],
         ["gpt-6-luna", "default", "default", "incomplete", false],
       ] as const) {
-        const proof = await runOpenAiServiceTierProof(
-          { ...resolved.value, model, serviceTier: requested }, "preview", "fixture-key", "tier-request-1",
+        const proof = await runOpenAiTechnicalConfigurationProof(
+          { ...resolved.value, model, reasoningEffort: "medium", serviceTier: requested }, "preview", "fixture-key", "tier-request-1",
           { emitEvent: () => undefined, fetchImpl: async (_url, init) => {
             const body = JSON.parse(String(init?.body));
-            assert.equal(body.service_tier, requested);
+            assert.equal(body.model, model);
+            assert.equal(body.reasoning?.effort, "medium");
+            if (requested == null) assert.equal("service_tier" in body, false);
+            else assert.equal(body.service_tier, requested);
             assert.deepEqual(body.tools, []);
             assert.equal(body.store, false);
             return new Response(JSON.stringify({ id: "resp_tier", status, service_tier: applied,
@@ -64,8 +68,13 @@ const cases: readonly Case[] = [
         );
         assert.equal(proof.ok, expected);
         if (proof.ok) {
-          assert.equal(proof.metadata.requested_service_tier, requested);
-          assert.equal(proof.metadata.applied_service_tier, applied);
+          if (requested == null) {
+            assert.equal("requested_service_tier" in proof.metadata, false);
+            assert.equal("applied_service_tier" in proof.metadata, false);
+          } else {
+            assert.equal(proof.metadata.requested_service_tier, requested);
+            assert.equal(proof.metadata.applied_service_tier, applied);
+          }
           assert.equal(proof.metadata.provider_request_id, "provider-tier-1");
         }
       }
@@ -289,6 +298,8 @@ const cases: readonly Case[] = [
       const adapter = readFileSync(new URL("../../../../lib/openai-workloads/adapters/operationalConfigurationAdapter.ts", import.meta.url), "utf8");
       assert.equal(adapter.includes("p_actor_user_id: input.actorUserId"), true);
       assert.equal(actions.includes("process.env.OPENAI_API_KEY"), true);
+      assert.equal(actions.includes("runOpenAiTechnicalConfigurationProof"), true);
+      assert.equal(actions.includes("runOpenAiCandidateProof"), false);
       assert.equal(/formData\.get\(["']actor/i.test(actions), false);
       assert.equal(/OPENAI_API_KEY/.test(proof), false);
       for (const transport of [
