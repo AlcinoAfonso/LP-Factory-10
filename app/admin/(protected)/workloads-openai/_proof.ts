@@ -3,13 +3,13 @@ import "server-only";
 import { requestCommercialActivationOpenAi } from "@/conversion-content/adapters/commercialActivationOpenAiAdapter";
 import { resolveNicheWithOpenAi } from "@/onboarding/niche-resolution/adapters/openAiResolver";
 import type {
-  OpenAiOperationalConfigurationReader,
   OpenAiManagedWorkloadEnvironment,
   OpenAiWorkloadEvent,
   ResolvedOpenAiProductWorkload,
 } from "@/openai-workloads";
 import {
   runOpenAiCandidateProofCore,
+  proofResolver,
   isResearchedCommunicationStageTwoProof,
   type OpenAiCandidateProofAttempt as ProofAttempt,
   type OpenAiCandidateProofDependencies,
@@ -210,27 +210,6 @@ async function proveCommercialActivation(
     : { ok: false, code: result.ok ? "contract" : "provider" };
 }
 
-function proofResolver(
-  workload: ResolvedOpenAiProductWorkload,
-  environment: OpenAiManagedWorkloadEnvironment,
-) {
-  const readOperationalConfiguration: OpenAiOperationalConfigurationReader =
-    async () => ({
-      ok: true,
-      value: {
-        environment,
-        workload: workload.id,
-        apiKind: workload.apiKind,
-        model: workload.model,
-        reasoningEffort: workload.reasoningEffort,
-        revision: "1",
-      },
-    });
-  return {
-    operationalConfigurationEnabled: "true",
-    readOperationalConfiguration,
-  } as const;
-}
 
 async function proveAttendance(
   workload: ResolvedOpenAiProductWorkload,

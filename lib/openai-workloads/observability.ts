@@ -1,3 +1,4 @@
+import { normalizeOpenAiAppliedServiceTier } from "./service-tier";
 import type {
   OpenAiWorkloadEnvironment,
   OpenAiWorkloadEvent,
@@ -16,6 +17,8 @@ type EnvironmentInput = Readonly<{
 type EventInput = OpenAiWorkloadEventContext &
   Readonly<{
     environment?: OpenAiWorkloadEnvironment;
+    requestedServiceTier?: unknown;
+    appliedServiceTier?: unknown;
     responseId?: unknown;
     attemptId?: unknown;
     requestId?: unknown;
@@ -101,6 +104,8 @@ function createEvent(
     requestId: nonEmptyString(input.requestId),
     promptVersion: nonEmptyString(input.promptVersion),
     contractVersion: positiveIntegerMetric(input.contractVersion),
+    requestedServiceTier: normalizeOpenAiAppliedServiceTier(input.requestedServiceTier),
+    appliedServiceTier: normalizeOpenAiAppliedServiceTier(input.appliedServiceTier),
     responseId: nonEmptyString(input.responseId),
     httpStatus: httpStatusMetric(input.httpStatus),
     providerRequestId: nonEmptyString(input.providerRequestId),

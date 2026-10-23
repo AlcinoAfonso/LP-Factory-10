@@ -1,3 +1,4 @@
+import { isValidOpenAiServiceTierSnapshot } from "../service-tier";
 import "server-only";
 
 import { createServiceClient } from "../../supabase/service";
@@ -10,6 +11,7 @@ import type {
   OpenAiManagedWorkloadEnvironment,
   OpenAiProductWorkloadId,
   OpenAiReasoningEffort,
+  OpenAiServiceTier,
   OpenAiWorkloadId,
 } from "../contracts";
 import {
@@ -19,6 +21,7 @@ import {
 } from "../contracts";
 import { readCompleteOrderedPages } from "./modelCatalogAdapterCore";
 import {
+  readWithOpenAiTierCompatibility,
   translateOpenAiAdministrativeConfigurationRows,
   translateOperationalConfigurationRows,
   type OperationalConfigurationQueryResult,
@@ -30,27 +33,27 @@ export const readOpenAiAdministrativeConfigurations: OpenAiAdministrativeConfigu
       const supabase = createServiceClient();
       const [unitRead, revisionRead, activationRead] = await Promise.all([
         readCompleteOrderedPages(async (from, to) =>
-          supabase
+          readWithOpenAiTierCompatibility((includeTier) => supabase
             .from("openai_workload_operational_configurations")
             .select(
-              "environment,workload,modality,active_revision_id,pending_revision_id,candidate_model,candidate_reasoning_effort,candidate_quality,candidate_saved_by,candidate_saved_at,configuration_version",
+              "environment,workload,modality,active_revision_id,pending_revision_id,candidate_model,candidate_reasoning_effort,candidate_quality,candidate_saved_by,candidate_saved_at,configuration_version" + (includeTier ? ",candidate_service_tier" : ""),
             )
             .in("workload", [...openAiProductWorkloadIds])
             .order("environment", { ascending: true })
             .order("workload", { ascending: true })
-            .range(from, to),
+            .range(from, to)),
         ),
         readCompleteOrderedPages(async (from, to) =>
-          supabase
+          readWithOpenAiTierCompatibility((includeTier) => supabase
             .from("openai_workload_configuration_revisions")
             .select(
-              "id,environment,workload,modality,revision_number,model,reasoning_effort,quality,validated_by,validated_at",
+              "id,environment,workload,modality,revision_number,model,reasoning_effort,quality,validated_by,validated_at" + (includeTier ? ",service_tier" : ""),
             )
             .in("workload", [...openAiProductWorkloadIds])
             .order("environment", { ascending: true })
             .order("workload", { ascending: true })
             .order("revision_number", { ascending: true })
-            .range(from, to),
+            .range(from, to)),
         ),
         readCompleteOrderedPages(async (from, to) =>
           supabase
@@ -92,6 +95,7 @@ export type OpenAiCandidateConfigurationReadResult =
         model: string;
         reasoningEffort: OpenAiReasoningEffort | null;
         quality: OpenAiImageQuality | null;
+        serviceTier: OpenAiServiceTier | null;
       }>;
     }>
   | Readonly<{ ok: false; code: "READ_FAILED" | "NOT_FOUND" | "INVALID" }>;
@@ -102,14 +106,14 @@ export async function readOpenAiCandidateConfiguration(input: Readonly<{
 }>): Promise<OpenAiCandidateConfigurationReadResult> {
   try {
     const supabase = createServiceClient();
-    const { data, error } = await supabase
+    const { data, error } = await readWithOpenAiTierCompatibility((includeTier) => supabase
       .from("openai_workload_operational_configurations")
       .select(
-        "environment,workload,configuration_version,candidate_model,candidate_reasoning_effort,candidate_quality",
+        "environment,workload,configuration_version,candidate_model,candidate_reasoning_effort,candidate_quality" + (includeTier ? ",candidate_service_tier" : ""),
       )
       .eq("environment", input.environment)
       .eq("workload", input.workload)
-      .limit(2);
+      .limit(2));
     if (error) return { ok: false, code: "READ_FAILED" };
     if (!Array.isArray(data) || data.length !== 1 || !isRecord(data[0])) {
       return { ok: false, code: "NOT_FOUND" };
@@ -127,7 +131,8 @@ export async function readOpenAiCandidateConfiguration(input: Readonly<{
     )
       ? (row.candidate_quality as OpenAiImageQuality)
       : null;
-    const validShape = reasoningEffort !== null && row.candidate_quality === null;
+    const validShape = reasoningEffort !== null && row.candidate_quality === null &&
+      isValidOpenAiServiceTierSnapshot(model ?? "", row.candidate_service_tier);
     return model && version !== null && validShape
       ? {
           ok: true,
@@ -136,6 +141,7 @@ export async function readOpenAiCandidateConfiguration(input: Readonly<{
             model,
             reasoningEffort,
             quality,
+            serviceTier: (row.candidate_service_tier ?? null) as OpenAiServiceTier | null,
           },
         }
       : { ok: false, code: "INVALID" };
@@ -156,10 +162,12 @@ export async function saveOpenAiConfigurationCandidate(input: Readonly<{
   model: string;
   reasoningEffort: OpenAiReasoningEffort | null;
   quality: OpenAiImageQuality | null;
+  serviceTier?: OpenAiServiceTier | null;
   actorUserId: string;
   expectedVersion: number;
 }>): OpenAiOperationalMutationResult {
-  return await createServiceClient().rpc("save_openai_workload_configuration_candidate_v1", {
+  return await createServiceClient().rpc(input.serviceTier == null ? "save_openai_workload_configuration_candidate_v1" : "save_openai_workload_configuration_candidate_v2", {
+    ...(input.serviceTier == null ? {} : { p_service_tier: input.serviceTier }),
     p_environment: input.environment,
     p_workload: input.workload,
     p_model: input.model,
@@ -256,15 +264,15 @@ export const readOpenAiOperationalConfiguration: OpenAiOperationalConfigurationR
         isRecord(unit) && typeof unit.active_revision_id === "string"
           ? unit.active_revision_id
           : "";
-      const revisionRead = await supabase
+      const revisionRead = await readWithOpenAiTierCompatibility((includeTier) => supabase
         .from("openai_workload_configuration_revisions")
         .select(
-          "id,environment,workload,modality,revision_number,model,reasoning_effort,quality",
+          "id,environment,workload,modality,revision_number,model,reasoning_effort,quality" + (includeTier ? ",service_tier" : ""),
         )
         .eq("id", activeRevisionId)
         .eq("environment", input.environment)
         .eq("workload", input.workload)
-        .limit(2);
+        .limit(2));
 
       return translateOperationalConfigurationRows(
         input,

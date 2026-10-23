@@ -11,6 +11,7 @@ import {
   createOpenAiWorkloadSuccessEvent,
   emitOpenAiWorkloadEvent,
   normalizeOpenAiResponseUsage,
+  normalizeOpenAiAppliedServiceTier,
   resolveOpenAiProductWorkload,
   resolveOpenAiWorkloadEnvironment,
   type OpenAiWorkloadEnvironment,
@@ -67,6 +68,7 @@ export type ResolveAiNicheResolutionResult =
     };
 
 type ResponsesApiResponse = {
+  service_tier?: unknown;
   id?: unknown;
   usage?: unknown;
   output_text?: unknown;
@@ -208,6 +210,7 @@ export async function resolveNicheWithOpenAi(input: {
     configurationRevision: workload.revision,
     model: workload.model,
     reasoningEffort: workload.reasoningEffort,
+    requestedServiceTier: workload.serviceTier,
     environment,
   } as const;
   const emitEvent = dependencies.emitEvent ?? emitOpenAiWorkloadEvent;
@@ -291,6 +294,7 @@ export async function resolveNicheWithOpenAi(input: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        ...(workload.serviceTier == null ? {} : { service_tier: workload.serviceTier }),
         model: workload.model,
         reasoning: { effort: workload.reasoningEffort },
         input: [
@@ -374,6 +378,7 @@ export async function resolveNicheWithOpenAi(input: {
     if (data.error) {
       emitEvent(createOpenAiWorkloadFailureEvent({
         ...eventContext,
+        appliedServiceTier: normalizeOpenAiAppliedServiceTier(data.service_tier),
         responseId: data.id,
         latencyMs: now() - startedAt,
         usage: data.usage,
@@ -392,6 +397,7 @@ export async function resolveNicheWithOpenAi(input: {
     if (outputText.kind !== "text") {
       emitEvent(createOpenAiWorkloadFailureEvent({
         ...eventContext,
+        appliedServiceTier: normalizeOpenAiAppliedServiceTier(data.service_tier),
         responseId: data.id,
         latencyMs: now() - startedAt,
         usage: data.usage,
@@ -414,6 +420,7 @@ export async function resolveNicheWithOpenAi(input: {
     if (!parsed) {
       emitEvent(createOpenAiWorkloadFailureEvent({
         ...eventContext,
+        appliedServiceTier: normalizeOpenAiAppliedServiceTier(data.service_tier),
         responseId: data.id,
         latencyMs: now() - startedAt,
         usage: data.usage,
@@ -430,6 +437,7 @@ export async function resolveNicheWithOpenAi(input: {
 
     emitEvent(createOpenAiWorkloadSuccessEvent({
       ...eventContext,
+      appliedServiceTier: normalizeOpenAiAppliedServiceTier(data.service_tier),
       responseId: data.id,
       latencyMs: now() - startedAt,
       usage: data.usage,

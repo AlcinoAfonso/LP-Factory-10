@@ -1,3 +1,4 @@
+import { runOpenAiServiceTierProof } from "./serviceTierProof";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
@@ -7,6 +8,7 @@ import {
 } from "@/openai-workloads";
 import {
   runOpenAiCandidateProofCore,
+  proofResolver,
   isResearchedCommunicationStageTwoProof,
   type OpenAiCandidateProofDependencies,
 } from "./proofCore";
@@ -16,6 +18,60 @@ import { confirmOpenAiModelIdentity } from "./openAiModelIdentity";
 type Case = Readonly<{ name: string; run: () => void | Promise<void> }>;
 
 const cases: readonly Case[] = [
+  {
+    name: "niche functional proof resolves the exact candidate tier as well as model and effort",
+    run: async () => {
+      const base = await resolveOpenAiProductWorkload("niche_resolution", "development");
+      assert.equal(base.ok, true);
+      if (!base.ok) return;
+      for (const tier of [null, "default", "fast"] as const) {
+        const candidate: ResolvedOpenAiProductWorkload = { ...base.value, model: "gpt-6-luna", reasoningEffort: "medium", serviceTier: tier };
+        const resolved = await resolveOpenAiProductWorkload("niche_resolution", "preview", proofResolver(candidate, "preview"));
+        assert.equal(resolved.ok, true);
+        if (!resolved.ok) continue;
+        assert.equal(resolved.value.model, candidate.model);
+        assert.equal(resolved.value.reasoningEffort, candidate.reasoningEffort);
+        assert.equal(resolved.value.serviceTier, tier);
+      }
+    },
+  },
+  {
+    name: "tier probe only approves completed responses with the requested applied service",
+    run: async () => {
+      const resolved = await resolveOpenAiProductWorkload("commercial_activation_draft_generation", "development");
+      assert.equal(resolved.ok, true);
+      if (!resolved.ok) return;
+      for (const [model, requested, applied, status, expected] of [
+        ["gpt-6-luna", "default", "default", "completed", true],
+        ["gpt-6-luna", "fast", "fast", "completed", true],
+        ["gpt-6-luna", "fast", "priority", "completed", true],
+        ["gpt-6.1-sol", "ultrafast", "ultrafast", "completed", true],
+        ["gpt-6-luna", "fast", "default", "completed", false],
+        ["gpt-6-luna", "fast", null, "completed", false],
+        ["gpt-6-luna", "default", "default", "incomplete", false],
+      ] as const) {
+        const proof = await runOpenAiServiceTierProof(
+          { ...resolved.value, model, serviceTier: requested }, "preview", "fixture-key", "tier-request-1",
+          { emitEvent: () => undefined, fetchImpl: async (_url, init) => {
+            const body = JSON.parse(String(init?.body));
+            assert.equal(body.service_tier, requested);
+            assert.deepEqual(body.tools, []);
+            assert.equal(body.store, false);
+            return new Response(JSON.stringify({ id: "resp_tier", status, service_tier: applied,
+              output: [{ type: "message", content: [{ type: "output_text", text: '{"proof":"approved"}' }] }] }),
+              { headers: { "x-request-id": "provider-tier-1" } });
+          } },
+        );
+        assert.equal(proof.ok, expected);
+        if (proof.ok) {
+          assert.equal(proof.metadata.requested_service_tier, requested);
+          assert.equal(proof.metadata.applied_service_tier, applied);
+          assert.equal(proof.metadata.provider_request_id, "provider-tier-1");
+        }
+      }
+    },
+  },
+
   {
     name: "model identity requires exact live OpenAI model id before persistence",
     run: async () => {

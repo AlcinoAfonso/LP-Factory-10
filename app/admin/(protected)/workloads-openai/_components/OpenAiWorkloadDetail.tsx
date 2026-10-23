@@ -1,6 +1,10 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Select } from "@/components/ui/select";
+import { FormField, FormFieldLabel, FormFieldHint } from "@/components/ui/form-field";
+import { listOpenAiServiceTiers, isEligibleOpenAiServiceTier, isValidOpenAiServiceTierSnapshot, openAiServiceTierLabel } from "@/openai-workloads/service-tier";
 
 import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 import type {
@@ -8,6 +12,7 @@ import type {
   OpenAiAdministrativeConfigurationValue,
   OpenAiAdministrativeRevision,
   OpenAiReasoningEffort,
+  OpenAiServiceTier,
   OpenAiWorkloadConfigurationOptions,
 } from "@/openai-workloads";
 import {
@@ -59,11 +64,13 @@ export function OpenAiWorkloadDetail({
   label,
   options,
   catalogAvailable,
+  onDirtyChange,
 }: Readonly<{
   unit: OpenAiAdministrativeConfigurationUnit;
   label: string;
   options: OpenAiWorkloadConfigurationOptions | undefined;
   catalogAvailable: boolean;
+  onDirtyChange?: (dirty: boolean) => void;
 }>) {
   const candidateEligible = unit.candidate && options
     ? configurationIsEligible(options, unit.candidate)
@@ -106,7 +113,7 @@ export function OpenAiWorkloadDetail({
             Existe uma revisão validada aguardando decisão. Ative-a antes de preparar outra candidata.
           </p>
         ) : catalogAvailable && options && options.apiKind === unit.apiKind && options.options.length > 0 ? (
-          <CandidateForm unit={unit} options={options} />
+          <CandidateForm key={unit.configurationVersion} unit={unit} options={options} onDirtyChange={onDirtyChange} />
         ) : (
           <p className="mt-4 rounded-md border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-900" role="alert">
             {catalogAvailable
@@ -161,70 +168,115 @@ function ActiveRevision({ revision }: Readonly<{ revision: OpenAiAdministrativeR
 }
 
 function CandidateForm({
-  unit,
-  options,
+  unit, options, onDirtyChange,
 }: Readonly<{
   unit: OpenAiAdministrativeConfigurationUnit;
   options: OpenAiWorkloadConfigurationOptions;
+  onDirtyChange?: (dirty: boolean) => void;
 }>) {
   const [state, formAction, pending] = useActionState(saveOpenAiConfigurationCandidateAction, initialState);
   const initialValue = unit.candidate ?? unit.activeRevision;
+  const [draft, setDraft] = useState<OpenAiAdministrativeConfigurationValue>(initialValue);
+  const [discardTarget, setDiscardTarget] = useState<string | null>(null);
+  const router = useRouter();
+  const dirty = draft.model !== initialValue.model || draft.reasoningEffort !== initialValue.reasoningEffort ||
+    (draft.serviceTier ?? null) !== (initialValue.serviceTier ?? null);
+  const valid = configurationIsEligible(options, draft);
+  useEffect(() => { onDirtyChange?.(dirty); return () => onDirtyChange?.(false); }, [dirty, onDirtyChange]);
+  useEffect(() => {
+    if (!dirty) return;
+    const beforeUnload = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    const navigate = (event: MouseEvent) => {
+      const anchor = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[href]") : null;
+      if (anchor && anchor.href !== window.location.href) {
+        event.preventDefault(); event.stopPropagation(); setDiscardTarget(anchor.href);
+      }
+    };
+    window.addEventListener("beforeunload", beforeUnload);
+    document.addEventListener("click", navigate, true);
+    return () => { window.removeEventListener("beforeunload", beforeUnload); document.removeEventListener("click", navigate, true); };
+  }, [dirty]);
   return (
     <form action={formAction} className="mt-4 space-y-4">
       <UnitFields unit={unit} />
-      <TextFields
-        idPrefix={`${unit.environment}-${unit.workload}`}
-        options={options}
-        initialValue={initialValue}
-        disabled={pending}
-      />
-      <button type="submit" className={primaryButtonClassName} disabled={pending || options.options.length === 0}>
-        {pending ? "Salvando candidata…" : unit.candidate ? "Salvar edição da candidata" : "Salvar candidata"}
-      </button>
+      <TextFields idPrefix={unit.environment + "-" + unit.workload} options={options}
+        value={draft} onChange={setDraft} disabled={pending} tierSupported={unit.serviceTierSupported === true} />
+      <div className="flex flex-wrap gap-3">
+        <button type="submit" className={primaryButtonClassName} disabled={pending || !dirty || !valid}>
+          {pending ? "Salvando candidata…" : unit.candidate ? "Salvar edição da candidata" : "Salvar candidata"}
+        </button>
+        <button type="button" className={secondaryButtonClassName} disabled={pending || !dirty}
+          onClick={() => setDiscardTarget("cancel")}>
+          Cancelar
+        </button>
+      </div>
+      <ConfirmDraftDiscard open={discardTarget !== null} onKeep={() => setDiscardTarget(null)} onDiscard={() => {
+        const target = discardTarget; setDiscardTarget(null); setDraft(initialValue);
+        if (target && target !== "cancel") {
+          const url = new URL(target);
+          if (url.origin === window.location.origin) router.push(url.pathname + url.search + url.hash);
+          else window.location.assign(url.href);
+        }
+      }} />
       <ActionFeedback state={state} context="save" />
     </form>
   );
 }
 
 function TextFields({
-  idPrefix,
-  options,
-  initialValue,
-  disabled,
+  idPrefix, options, value, onChange, disabled, tierSupported,
 }: Readonly<{
   idPrefix: string;
-  options: Extract<OpenAiWorkloadConfigurationOptions, { apiKind: "responses_text" }>;
-  initialValue: OpenAiAdministrativeConfigurationValue;
+  options: OpenAiWorkloadConfigurationOptions;
+  value: OpenAiAdministrativeConfigurationValue;
+  onChange: (value: OpenAiAdministrativeConfigurationValue) => void;
   disabled: boolean;
+  tierSupported: boolean;
 }>) {
-  const selected = options.options.find(
-    (option) => initialValue.apiKind === "responses_text" && option.model === initialValue.model && option.reasoningEffort === initialValue.reasoningEffort,
-  ) ?? options.options[0];
-  const [model, setModel] = useState(selected?.model ?? "");
-  const [effort, setEffort] = useState<OpenAiReasoningEffort | "">(selected?.reasoningEffort ?? "");
   const models = useMemo(() => Array.from(new Set(options.options.map((option) => option.model))), [options]);
-  const efforts = useMemo(
-    () => Array.from(new Set(options.options.filter((option) => option.model === model).map((option) => option.reasoningEffort))),
-    [model, options],
-  );
+  const efforts = useMemo(() => Array.from(new Set(options.options.filter((option) => option.model === value.model)
+    .map((option) => option.reasoningEffort))), [options, value.model]);
+  const tiers = listOpenAiServiceTiers(value.model);
+  const tier = value.serviceTier ?? "";
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <div>
-        <label htmlFor={`${idPrefix}-model`} className="text-sm font-medium text-foreground">Modelo</label>
-        <select id={`${idPrefix}-model`} name="model" value={model} disabled={disabled} className={selectClassName} onChange={(event) => {
-          const next = event.target.value;
-          setModel(next);
-          setEffort(options.options.find((option) => option.model === next)?.reasoningEffort ?? "");
-        }}>
-          {models.map((value) => <option key={value} value={value}>{value}</option>)}
+        <label htmlFor={idPrefix + "-model"} className="text-sm font-medium text-foreground">Modelo</label>
+        <select id={idPrefix + "-model"} name="model" value={value.model} disabled={disabled} className={selectClassName}
+          onChange={(event) => {
+            const model = event.target.value;
+            onChange({ ...value, model, reasoningEffort: options.options.find((option) => option.model === model)?.reasoningEffort ?? value.reasoningEffort,
+              serviceTier: value.serviceTier });
+          }}>
+          {!models.includes(value.model) ? <option value={value.model}>{value.model} (indisponível)</option> : null}
+          {models.map((model) => <option key={model} value={model}>{model}</option>)}
         </select>
       </div>
       <div>
-        <label htmlFor={`${idPrefix}-effort`} className="text-sm font-medium text-foreground">Esforço de raciocínio</label>
-        <select id={`${idPrefix}-effort`} name="reasoningEffort" value={effort} disabled={disabled} className={selectClassName} onChange={(event) => setEffort(event.target.value as OpenAiReasoningEffort)}>
-          {efforts.map((value) => <option key={value} value={value}>{effortLabels[value] ?? value}</option>)}
+        <label htmlFor={idPrefix + "-effort"} className="text-sm font-medium text-foreground">Esforço de raciocínio</label>
+        <select id={idPrefix + "-effort"} name="reasoningEffort" value={value.reasoningEffort} disabled={disabled} className={selectClassName}
+          onChange={(event) => onChange({ ...value, reasoningEffort: event.target.value as OpenAiReasoningEffort })}>
+          {!efforts.includes(value.reasoningEffort) ? <option value={value.reasoningEffort}>{effortLabels[value.reasoningEffort]} (indisponível)</option> : null}
+          {efforts.map((effort) => <option key={effort} value={effort}>{effortLabels[effort] ?? effort}</option>)}
         </select>
       </div>
+      <FormField>
+        <FormFieldLabel htmlFor={idPrefix + "-tier"}>Nível de serviço</FormFieldLabel>
+        <Select id={idPrefix + "-tier"} name="serviceTier" value={tier}
+          disabled={disabled || !tierSupported || (tiers.length === 0 && tier === "")}
+          className="min-h-11" aria-describedby={idPrefix + "-tier-hint"}
+          onChange={(event) => onChange({ ...value, serviceTier: event.target.value === "" ? null : event.target.value as OpenAiServiceTier })}>
+          <option value="">Legado — sem nível explícito</option>
+          {tier && !isEligibleOpenAiServiceTier(value.model, tier) ? <option value={tier} disabled>{openAiServiceTierLabel(value.serviceTier)} (incompatível)</option> : null}
+          {tiers.map((choice) => <option key={choice} value={choice}>{openAiServiceTierLabel(choice)}</option>)}
+        </Select>
+        <FormFieldHint id={idPrefix + "-tier-hint"}>
+          {!tierSupported ? "Novos níveis de serviço estão temporariamente indisponíveis. A configuração ativa continua em uso." :
+            tier && !isEligibleOpenAiServiceTier(value.model, tier) ? "Selecione um nível compatível." :
+            tiers.length === 0 ? "Este modelo mantém o processamento atual." :
+            "A escolha será validada por prova e só entrará em uso após ativação humana."}
+        </FormFieldHint>
+      </FormField>
     </div>
   );
 }
@@ -360,6 +412,7 @@ function ConfigurationValue({ value }: Readonly<{ value: OpenAiAdministrativeCon
         <dt className="text-xs font-medium uppercase opacity-70">Esforço</dt>
         <dd className="mt-1">{effortLabels[value.reasoningEffort] ?? value.reasoningEffort}</dd>
       </div>
+      <div><dt className="text-xs font-medium uppercase opacity-70">Nível de serviço</dt><dd className="mt-1">{openAiServiceTierLabel(value.serviceTier)}</dd></div>
     </dl>
   );
 }
@@ -405,7 +458,7 @@ function configurationIsEligible(
   options: OpenAiWorkloadConfigurationOptions,
   value: OpenAiAdministrativeConfigurationValue,
 ) {
-  return options.options.some(
+  return isValidOpenAiServiceTierSnapshot(value.model, value.serviceTier) && options.options.some(
     (option) => option.model === value.model && option.reasoningEffort === value.reasoningEffort,
   );
 }
@@ -414,4 +467,24 @@ function formatDate(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "data não disponível";
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" }).format(date);
+}
+
+export function ConfirmDraftDiscard({ open, onDiscard, onKeep }: Readonly<{
+  open: boolean; onDiscard: () => void; onKeep: () => void;
+}>) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    if (open && !dialog.current?.open) dialog.current?.showModal();
+    if (!open && dialog.current?.open) dialog.current.close();
+  }, [open]);
+  return <dialog ref={dialog} aria-label="Descartar alterações locais?"
+    className="m-auto w-[calc(100%-2rem)] max-w-md rounded-lg border border-border bg-background p-5 text-foreground shadow-lg backdrop:bg-black/30"
+    onCancel={event => { event.preventDefault(); onKeep(); }}>
+    <h2 className="font-semibold">Descartar alterações locais?</h2>
+    <p className="mt-2 text-sm text-muted-foreground">A candidata salva e a configuração ativa serão preservadas.</p>
+    <div className="mt-4 flex flex-wrap gap-3">
+      <button type="button" className={secondaryButtonClassName} onClick={onKeep} autoFocus>Continuar editando</button>
+      <button type="button" className={primaryButtonClassName} onClick={onDiscard}>Descartar alterações locais</button>
+    </div>
+  </dialog>;
 }

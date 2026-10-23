@@ -1736,7 +1736,7 @@
 
 21.2.1 Objetivo e status
 - Objetivo: administrar configuração por ambiente/workload sem deploy ordinário.
-- Status: ativo Preview/Production via Supabase; Development via registry.
+- Status: ativo Preview/Production via Supabase; Development via registry. Extensão service_tier candidata, sem apply ou ativação.
 
 21.2.2 Registros do recorte
 - Banco:
@@ -1790,9 +1790,17 @@
     - `supabase/tests/e21_2_5_openai_model_catalog.test.sql`
     - `supabase/tests/e21_2_6_openai_model_catalog_identity.test.sql`
     - `supabase/tests/postgrest_safe_application_conflicts.test.sql`
+    - `lib/openai-workloads/service-tier.ts`
+    - `lib/openai-workloads/service-tier-validation-cases.ts`
+    - `app/admin/(protected)/workloads-openai/serviceTierProof.ts`
+    - `supabase/migrations/20261023124919_e21_2_service_tier.sql`
+    - `supabase/tests/e21_2_service_tier.proof.mjs`
+    - `supabase/tests/e21_2_service_tier.test.sql`
   - Ajustados:
     - `lib/openai-workloads/contracts.ts`
     - `lib/openai-workloads/index.ts`
+    - `lib/openai-workloads/observability.ts`
+    - `lib/openai-responses/openAiResponsesAdapter.ts`
     - `lib/openai-workloads/registry.ts`
     - `lib/openai-workloads/resolve.ts`
     - `lib/openai-workloads/validation-cases.ts`
@@ -1810,8 +1818,10 @@
 - Conteúdo: unidades/fontes/gates em Base Técnica 3.16 e contracts.ts (21.1.2).
 
 21.2.4 Lifecycle administrativo e estado operacional
-- Status: implementado.
-- Conteúdo: lifecycle/autorização em Base Técnica 3.16; conflito sem retry autônomo, retirado sem nova operação.
+- Status: lifecycle implementado; extensão service_tier candidata.
+- Conteúdo: lifecycle/autorização em Base Técnica 3.16; conflito sem retry autônomo, retirado sem nova operação. Terceira dimensão por ambiente/workload: Standard/Fast para gpt-6-luna; Standard/Fast/Ultrafast para gpt-6.1-sol, subordinados ao catálogo vigente e à prova real.
+- Pendências: apply seletivo E21.2 e prova real dos níveis após merge técnico, autorizados em 23/10/2026; ativação exclusivamente humana por unidade. gpt-6.1-sol e low/medium/high cadastrados e disponibilizados pelo titular; banco e Admin reconfirmados em 23/10/2026, sem divergência visual após recarga. Disponibilidade no catálogo não substitui prova operacional. Legado e revisões pendentes preservados.
+- Limites: sem alteração de modelo/effort, D18A, D10/E21.5, D10B ou PRs #1086/#1090; sem testes/prompts do Pending Setup, branches/previews de teste, comparações de qualidade/latência/custo, retomada da E21.3 ou nova infraestrutura/agentes/automações.
 
 21.2.5 Catálogo administrável e UX
 - Status: implementado.

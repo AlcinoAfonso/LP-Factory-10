@@ -1,3 +1,4 @@
+import { isValidOpenAiServiceTierSnapshot } from "./service-tier";
 import type {
   OpenAiOperationalConfiguration,
   OpenAiOperationalConfigurationReader,
@@ -64,7 +65,8 @@ export async function resolveOpenAiProductWorkload(
     operational.value.workload !== workload.id ||
     operational.value.environment !== environment ||
     !isDecimalRevision(operational.value.revision) ||
-    !isTechnicalModel(operational.value.model)
+    !isTechnicalModel(operational.value.model) ||
+    !isValidOpenAiServiceTierSnapshot(operational.value.model, operational.value.serviceTier)
   ) {
     return failure(
       "OPERATIONAL_CONFIGURATION_INVALID",
@@ -75,6 +77,7 @@ export async function resolveOpenAiProductWorkload(
   return success(
     toResolvedProductWorkload(workload, {
       model: operational.value.model,
+      serviceTier: operational.value.serviceTier ?? null,
       reasoningEffort: operational.value.reasoningEffort,
       source: "supabase_operational",
       revision: operational.value.revision,
@@ -182,6 +185,7 @@ function toResolvedProductWorkload(
     reasoningEffort: OpenAiProductWorkloadDefinition["configuration"]["reasoningEffort"];
     source: ResolvedOpenAiProductWorkload["source"];
     revision: string;
+    serviceTier?: ResolvedOpenAiProductWorkload["serviceTier"];
   }> = workload.configuration,
 ): ResolvedOpenAiProductWorkload {
   return deepFreeze({
@@ -193,6 +197,7 @@ function toResolvedProductWorkload(
     consumer: workload.consumer,
     fallback: workload.fallback,
     model: configuration.model,
+    serviceTier: configuration.serviceTier ?? null,
     reasoningEffort: configuration.reasoningEffort,
     source: configuration.source,
     revision: configuration.revision,
