@@ -38,7 +38,7 @@ Durante o Debate:
 
 ### 1.2 Completar os Definidos e o Escopo negativo
 
-Os Definidos descrevem os resultados funcionais completos e observáveis de uma entrega: comportamentos, condições, permissões, limites, riscos e critérios de aceite quando indispensáveis, sem campos ou status individuais. Num Debate liberado, todos são aprovados, autorizados e obrigatórios; resolva lacunas indispensáveis com o humano antes do handoff.
+Os Definidos descrevem os resultados funcionais completos e observáveis de uma entrega: comportamentos, condições, permissões, limites, riscos e critérios de aceite quando indispensáveis, sem campos ou status individuais. Num Debate liberado, todos os Definidos vigentes são obrigatórios; resolva lacunas indispensáveis antes do handoff.
 
 - Entregas funcionalmente independentes pertencem a Debates próprios da mesma família, com dependências reais; fases técnicas ficam na V2, sem recortes funcionais internos.
 - Decisão não implementada e revogada sai dos Definidos após decisão humana, com rastreabilidade existente. Remover comportamento já implementado exige novo Definido aprovado.
@@ -76,7 +76,7 @@ Toda execução aprovada neste fluxo segue com `Supervisão: Autônomo`, sem esc
 
 ### 1.9 Confirmar as decisões autorizadas
 
-Para Debates criados após a ativação deste modelo ou expressamente convertidos a ele, o contrato liberado reúne toda a seção 3 e o Escopo negativo da seção 4, encaminhados integralmente conforme §1.10. Nos anteriores não convertidos, o handoff preserva somente os Definidos efetivamente autorizados à execução e o Escopo negativo aplicável. O Objetivo contextualiza, sem ampliar a autorização.
+Nos Debates novos ou convertidos, o contrato reúne os Definidos vigentes das rodadas 3.1, 3.2 etc. e o Escopo negativo da seção 4. Prevalece a última redação aprovada de cada Definido; os demais continuam válidos e versões superadas não entram no handoff. Em legados não convertidos, use apenas Definidos autorizados e Escopo negativo aplicável. Objetivo contextualiza, sem ampliar autorização.
 
 - Propostas, hipóteses, histórico e decisões futuras, suspensas ou não autorizadas não integram a execução.
 - Novas decisões funcionais exigem aprovação humana; a V2 não pode ampliar o contrato.
@@ -84,14 +84,14 @@ Para Debates criados após a ativação deste modelo ou expressamente convertido
 
 ### 1.10 Entregar handoff funcional direto
 
-Após liberação humana, confira o texto aprovado e copie integralmente as seções 1, 3 e 4 no handoff, sem identificação da origem.
+Após liberação humana, envie Objetivo, Definidos canônicos (§1.9) e Escopo negativo, integralmente e sem origem ou rodadas.
 
 ```text
 Use $lp-factory-executar-plano para derivar a V2 e implementar integralmente os Definidos, respeitando o Escopo negativo e os contratos vigentes. Supervisão: Autônomo.
 Objetivo
 <texto integral, até seis linhas>
 Definidos
-<todos os Definidos, texto integral>
+<Definidos vigentes, texto integral>
 Escopo negativo
 <restrições expressas ou "Sem restrições adicionais">
 ```
