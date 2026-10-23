@@ -23,12 +23,10 @@ import {
   discardOpenAiConfigurationCandidate,
   promoteOpenAiConfigurationCandidate,
   readOpenAiCandidateConfiguration,
-  readOpenAiOperationalConfiguration,
   rollbackOpenAiConfigurationRevision,
   saveOpenAiConfigurationCandidate,
 } from "@/openai-workloads/adapters/operationalConfigurationAdapter";
-import { runOpenAiCandidateProof } from "./_proof";
-import { runOpenAiServiceTierProof } from "./serviceTierProof";
+import { runOpenAiTechnicalConfigurationProof } from "./serviceTierProof";
 
 const ADMIN_PATH = "/admin/workloads-openai";
 
@@ -141,20 +139,10 @@ export async function proveAndPromoteOpenAiConfigurationCandidateAction(
     );
   }
 
-  const requestId = crypto.randomUUID();
-  const active = candidate.serviceTier == null ? null : await readOpenAiOperationalConfiguration(authorized.unit);
-  if (active && !active.ok) return failure("read", "A configuração ativa não pôde ser confirmada para a prova.");
-  const sameModelAndEffort = active?.ok && active.value.model === candidate.model &&
-    active.value.reasoningEffort === candidate.reasoningEffort;
-  // Tier-only changes use the safe technical probe. Model/effort changes retain the existing product proof.
-  const productProof = candidate.serviceTier == null || !sameModelAndEffort
-    ? await runOpenAiCandidateProof(candidate.configuration, authorized.unit.environment,
-        process.env.OPENAI_API_KEY ?? "", requestId)
-    : null;
-  const proof = productProof && !productProof.ok ? productProof : candidate.serviceTier != null
-    ? await runOpenAiServiceTierProof(candidate.configuration, authorized.unit.environment,
-        process.env.OPENAI_API_KEY ?? "", requestId)
-    : productProof!;
+  const proof = await runOpenAiTechnicalConfigurationProof(
+    candidate.configuration, authorized.unit.environment,
+    process.env.OPENAI_API_KEY ?? "", crypto.randomUUID(),
+  );
   if (!proof.ok) {
     return failure(
       "proof",
