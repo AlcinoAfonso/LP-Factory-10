@@ -8,6 +8,7 @@ import {
 } from "@/openai-workloads";
 import {
   runOpenAiCandidateProofCore,
+  proofResolver,
   isResearchedCommunicationStageTwoProof,
   type OpenAiCandidateProofDependencies,
 } from "./proofCore";
@@ -17,6 +18,23 @@ import { confirmOpenAiModelIdentity } from "./openAiModelIdentity";
 type Case = Readonly<{ name: string; run: () => void | Promise<void> }>;
 
 const cases: readonly Case[] = [
+  {
+    name: "niche functional proof resolves the exact candidate tier as well as model and effort",
+    run: async () => {
+      const base = await resolveOpenAiProductWorkload("niche_resolution", "development");
+      assert.equal(base.ok, true);
+      if (!base.ok) return;
+      for (const tier of [null, "default", "fast"] as const) {
+        const candidate: ResolvedOpenAiProductWorkload = { ...base.value, model: "gpt-6-luna", reasoningEffort: "medium", serviceTier: tier };
+        const resolved = await resolveOpenAiProductWorkload("niche_resolution", "preview", proofResolver(candidate, "preview"));
+        assert.equal(resolved.ok, true);
+        if (!resolved.ok) continue;
+        assert.equal(resolved.value.model, candidate.model);
+        assert.equal(resolved.value.reasoningEffort, candidate.reasoningEffort);
+        assert.equal(resolved.value.serviceTier, tier);
+      }
+    },
+  },
   {
     name: "tier probe only approves completed responses with the requested applied service",
     run: async () => {
