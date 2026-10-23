@@ -355,10 +355,10 @@ async function proveAttendance(
         if (output.action !== "confirm" || memory.confirmedUnderstanding !== context.displayedUnderstanding) return contractFailure("confirmation");
         context = { ...context, summary, confirmedProposal: null, currentPrimaryTaxonId: dentistryId,
           recent: [...context.recent, { role: "assistant", content: output.reply },
-            { role: "user", content: "Correção: não fazemos mais canal. Continuamos com clareamento e implantes, atendemos adultos e queremos comunicar essas ofertas. Ainda tenho dúvidas sobre como apresentá-las." }] };
+            { role: "user", content: "Correção: não fazemos mais canal. Continuamos com clareamento e implantes, atendemos adultos e queremos comunicar essas ofertas. Ainda preciso de orientação concreta sobre como apresentá-las; não quero encerrar o atendimento nem avançar à etapa comercial agora." }] };
       } else if (turn === 2) {
         const correctionChecks = {
-          action: output.action === "ask", open: !output.closureReason && !output.readyToComplete,
+          action: output.action === "ask", noClosureReason: !output.closureReason, notReadyToComplete: !output.readyToComplete,
           currentOffers: /clareamento/i.test(memory.contextualUnderstanding ?? "") && /implant/i.test(memory.contextualUnderstanding ?? ""),
           newAudience: /adult/i.test(memory.contextualUnderstanding ?? ""),
           removedOffer: !/canal/i.test(memory.confirmedUnderstanding ?? ""),
