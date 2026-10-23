@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { requirePlatformAdmin } from "@/lib/access/guards";
 import {
   openAiReasoningEfforts,
+  isEligibleOpenAiServiceTier,
+  type OpenAiServiceTier,
   resolveOpenAiProductWorkload,
   type OpenAiManagedWorkloadEnvironment,
   type OpenAiProductWorkloadId,
@@ -21,10 +23,12 @@ import {
   discardOpenAiConfigurationCandidate,
   promoteOpenAiConfigurationCandidate,
   readOpenAiCandidateConfiguration,
+  readOpenAiOperationalConfiguration,
   rollbackOpenAiConfigurationRevision,
   saveOpenAiConfigurationCandidate,
 } from "@/openai-workloads/adapters/operationalConfigurationAdapter";
 import { runOpenAiCandidateProof } from "./_proof";
+import { runOpenAiServiceTierProof } from "./serviceTierProof";
 
 const ADMIN_PATH = "/admin/workloads-openai";
 
@@ -71,6 +75,7 @@ export async function saveOpenAiConfigurationCandidateAction(
     model: candidate.model,
     reasoningEffort: candidate.reasoningEffort,
     quality: candidate.quality,
+    serviceTier: candidate.serviceTier,
     actorUserId: authorized.actorUserId,
     expectedVersion: authorized.unit.expectedVersion,
   });
@@ -137,12 +142,19 @@ export async function proveAndPromoteOpenAiConfigurationCandidateAction(
   }
 
   const requestId = crypto.randomUUID();
-  const proof = await runOpenAiCandidateProof(
-    candidate.configuration,
-    authorized.unit.environment,
-    process.env.OPENAI_API_KEY ?? "",
-    requestId,
-  );
+  const active = candidate.serviceTier == null ? null : await readOpenAiOperationalConfiguration(authorized.unit);
+  if (active && !active.ok) return failure("read", "A configuração ativa não pôde ser confirmada para a prova.");
+  const sameModelAndEffort = active?.ok && active.value.model === candidate.model &&
+    active.value.reasoningEffort === candidate.reasoningEffort;
+  // Tier-only changes use the safe technical probe. Model/effort changes retain the existing product proof.
+  const productProof = candidate.serviceTier == null || !sameModelAndEffort
+    ? await runOpenAiCandidateProof(candidate.configuration, authorized.unit.environment,
+        process.env.OPENAI_API_KEY ?? "", requestId)
+    : null;
+  const proof = productProof && !productProof.ok ? productProof : candidate.serviceTier != null
+    ? await runOpenAiServiceTierProof(candidate.configuration, authorized.unit.environment,
+        process.env.OPENAI_API_KEY ?? "", requestId)
+    : productProof!;
   if (!proof.ok) {
     return failure(
       "proof",
@@ -250,6 +262,7 @@ type ParsedCandidate = Readonly<{
   model: string;
   reasoningEffort: OpenAiReasoningEffort | null;
   quality: null;
+  serviceTier: OpenAiServiceTier | null;
   configuration: ResolvedOpenAiProductWorkload;
 }>;
 
@@ -288,6 +301,7 @@ async function parseCandidate(
       model: string;
       reasoningEffort: OpenAiReasoningEffort | null;
       quality: null;
+      serviceTier: OpenAiServiceTier | null;
       configuration: ResolvedOpenAiProductWorkload;
     }>
   | Readonly<{ ok: false; state: OpenAiOperationalActionState }>
@@ -295,6 +309,11 @@ async function parseCandidate(
   const model = parseTechnicalValue(formData.get("model"), 128);
   if (!model) return { ok: false, state: validationFailure("Modelo inválido.") };
 
+  const rawTier = formData.get("serviceTier");
+  if (rawTier !== null && rawTier !== "" && !isEligibleOpenAiServiceTier(model, rawTier)) {
+    return { ok: false, state: validationFailure("Nível de serviço incompatível com o modelo.") };
+  }
+  const serviceTier = rawTier === null || rawTier === "" ? null : rawTier as OpenAiServiceTier;
   const reasoningEffort = parseReasoningEffort(formData.get("reasoningEffort"));
   if (!reasoningEffort || parseOptionalValue(formData.get("quality")) !== null) {
     return {
@@ -315,6 +334,7 @@ async function parseCandidate(
           apiKind: "responses_text",
           model,
           reasoningEffort,
+          serviceTier,
           revision: "1",
         },
       }),
@@ -331,6 +351,7 @@ async function parseCandidate(
     model,
     reasoningEffort,
     quality: null,
+    serviceTier,
     configuration: resolved.value,
   };
 }
@@ -338,9 +359,11 @@ async function parseCandidate(
 function candidateFormData(value: Readonly<{
   model: string;
   reasoningEffort: OpenAiReasoningEffort | null;
+  serviceTier: OpenAiServiceTier | null;
 }>) {
   const formData = new FormData();
   formData.set("model", value.model);
+  formData.set("serviceTier", value.serviceTier ?? "");
   if (value.reasoningEffort) {
     formData.set("reasoningEffort", value.reasoningEffort);
   }

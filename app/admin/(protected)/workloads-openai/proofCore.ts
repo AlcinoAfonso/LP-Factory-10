@@ -15,6 +15,8 @@ export type OpenAiCandidateProofMetadata = Readonly<{
   latency_ms: number | null;
   contract_version: 1;
   source: "openai_api";
+  requested_service_tier?: string;
+  applied_service_tier?: string | null;
 }>;
 
 export type OpenAiCandidateProofAttempt =

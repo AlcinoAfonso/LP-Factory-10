@@ -1,3 +1,4 @@
+import { isValidOpenAiServiceTierSnapshot } from "./service-tier";
 import {
   openAiReasoningEfforts,
   openAiWebSearchContextSizes,
@@ -179,6 +180,7 @@ export function isValidResolvedOpenAiProductWorkload(
     actual.effectiveConfigurationVerified === true &&
     validOrigin &&
     isTechnicalModel(actual.model) &&
+    isValidOpenAiServiceTierSnapshot(actual.model, actual.serviceTier) &&
     openAiReasoningEfforts.includes(actual.reasoningEffort)
   );
 }

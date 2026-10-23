@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { openAiServiceTierLabel } from "@/openai-workloads/service-tier";
 
 import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 import type {
@@ -9,7 +10,7 @@ import type {
   OpenAiWorkloadConfigurationOptions,
   OpenAiWorkloadPresentation,
 } from "@/openai-workloads";
-import { OpenAiWorkloadDetail } from "./OpenAiWorkloadDetail";
+import { ConfirmDraftDiscard, OpenAiWorkloadDetail } from "./OpenAiWorkloadDetail";
 
 type Props = Readonly<{
   units: readonly OpenAiAdministrativeConfigurationUnit[];
@@ -36,6 +37,27 @@ export function OpenAiConfigurationManager({
   const [environment, setEnvironment] =
     useState<OpenAiManagedWorkloadEnvironment>("preview");
   const [openGroupKey, setOpenGroupKey] = useState<string | null>(null);
+  const [draftDirty, setDraftDirty] = useState(false);
+  const onDirtyChange = useCallback((dirty: boolean) => setDraftDirty(dirty), []);
+  const [leaveAction, setLeaveAction] = useState<(() => void) | null>(null);
+  const requestLeave = (action: () => void) => { if (draftDirty) setLeaveAction(() => action); else action(); };
+  const historyEntry = useRef(false);
+  const backRequest = useRef<() => void>(() => undefined);
+  const closeGroup = () => {
+    setDraftDirty(false); setOpenGroupKey(null);
+    if (historyEntry.current) { historyEntry.current = false; window.history.back(); }
+  };
+  useLayoutEffect(() => { backRequest.current = () => requestLeave(closeGroup); });
+  useEffect(() => {
+    const onBack = () => {
+      if (!historyEntry.current) return;
+      // As in the communication editor, the preceding entry is this same view.
+      window.history.pushState({ ...window.history.state }, "", window.location.href);
+      backRequest.current();
+    };
+    window.addEventListener("popstate", onBack);
+    return () => window.removeEventListener("popstate", onBack);
+  }, []);
   const groups = useMemo(
     () => groupUnits(
       units.filter((unit) => unit.environment === environment),
@@ -78,8 +100,8 @@ export function OpenAiConfigurationManager({
                 }`}
                 aria-pressed={selected}
                 onClick={() => {
-                  setEnvironment(candidate);
-                  setOpenGroupKey(null);
+                  if (candidate === environment) return;
+                  requestLeave(() => { closeGroup(); setEnvironment(candidate); });
                 }}
               >
                 {candidate === "preview" ? "Preview" : "Production"}
@@ -128,7 +150,14 @@ export function OpenAiConfigurationManager({
                         className="col-start-2 row-start-1 row-span-2 inline-flex min-h-11 items-center justify-center self-center rounded-md border border-border bg-background px-3 py-2 text-sm font-medium text-foreground outline-none transition hover:bg-muted focus-visible:ring-4 focus-visible:ring-brand-600/30"
                         aria-expanded={open}
                         aria-controls={detailId}
-                        onClick={() => setOpenGroupKey(open ? null : group.key)}
+                        onClick={() => requestLeave(() => {
+                          if (open) { closeGroup(); return; }
+                          if (!historyEntry.current) {
+                            window.history.pushState({ ...window.history.state }, "", window.location.href);
+                            historyEntry.current = true;
+                          }
+                          setDraftDirty(false); setOpenGroupKey(group.key);
+                        })}
                       >
                         {open ? "Fechar" : "Abrir"}
                       </button>
@@ -139,6 +168,7 @@ export function OpenAiConfigurationManager({
                       <div id={detailId} className="border-t border-border bg-background p-4 sm:p-5">
                         <ExpandedGroup
                           group={group}
+                          onDirtyChange={onDirtyChange}
                           configurationOptions={configurationOptions}
                           catalogAvailable={catalogAvailable}
                         />
@@ -152,6 +182,9 @@ export function OpenAiConfigurationManager({
         </div>
       </div>
 
+      <ConfirmDraftDiscard open={leaveAction !== null} onKeep={() => setLeaveAction(null)} onDiscard={() => {
+        const action = leaveAction; setLeaveAction(null); action?.();
+      }} />
       <p className="text-xs leading-5 text-muted-foreground">
         Preview e Production mantêm candidatas, provas, revisões, ativações e rollback
         independentes. Trocar o seletor não mistura os estados.
@@ -162,10 +195,12 @@ export function OpenAiConfigurationManager({
 
 function ExpandedGroup({
   group,
+  onDirtyChange,
   configurationOptions,
   catalogAvailable,
 }: Readonly<{
   group: WorkloadGroup;
+  onDirtyChange: (dirty: boolean) => void;
   configurationOptions: readonly OpenAiWorkloadConfigurationOptions[];
   catalogAvailable: boolean;
 }>) {
@@ -189,6 +224,7 @@ function ExpandedGroup({
         {group.units.map((unit) => (
           <OpenAiWorkloadDetail
             key={`${unit.environment}-${unit.workload}-${unit.configurationVersion}`}
+            onDirtyChange={onDirtyChange}
             unit={unit}
             label={grouped ? (unit.apiKind === "responses_text" ? "Texto" : "Imagem") : "Lifecycle técnico"}
             options={configurationOptions.find((candidate) => candidate.workload === unit.workload)}
@@ -205,7 +241,7 @@ function ConfigurationSummary({ units }: Readonly<{ units: readonly OpenAiAdmini
     <div className="min-w-0 text-xs text-foreground">
       <span className="mr-1 text-muted-foreground">Atual:</span>
       {units.map((unit) => (
-        <span key={unit.workload} className="mr-2 inline-block max-w-full truncate align-bottom">
+        <span key={unit.workload} className="mr-2 inline-block max-w-full break-words align-bottom">
           {units.length > 1 ? `${unit.apiKind === "responses_text" ? "Texto" : "Imagem"}: ` : ""}
           {configurationLabel(unit)}
         </span>
@@ -245,7 +281,7 @@ function groupUnits(
 
 function configurationLabel(unit: OpenAiAdministrativeConfigurationUnit) {
   const revision = unit.activeRevision;
-  return `${revision.model} · ${revision.reasoningEffort}`;
+  return `${revision.model} · ${revision.reasoningEffort} · ${openAiServiceTierLabel(revision.serviceTier)}`;
 }
 
 function safeId(value: string) {

@@ -118,6 +118,8 @@ const cases = [
       assert.deepEqual(events[0], {
         workload: "niche_resolution",
         apiKind: "responses_text",
+        requestedServiceTier: null,
+        appliedServiceTier: null,
         attemptId: null,
         requestId: null,
         promptVersion: null,
@@ -1461,6 +1463,7 @@ function collectSourceFiles(directory: string): string[] {
 }
 
 async function runValidationCases() {
+  await (await import("./service-tier-validation-cases")).validateOpenAiServiceTiers();
   for (const validationCase of cases) {
     await validationCase.run();
     console.log(`ok - ${validationCase.name}`);
