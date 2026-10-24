@@ -17,7 +17,7 @@ Modelo do Executor: `gpt-6-sol`, effort `medium` a `high`, sem repassar escolha 
 
 ## 1. Entradas e continuidade
 
-Aceite um ou mais handoffs com Objetivo, Definidos novos ou pendentes integrais, Escopo negativo, referência recuperável ao contrato canônico quando houver rodadas anteriores, `Supervisão: Autônomo` e dependências existentes. Preserve todos os Definidos vigentes sem reexecutar resultados já comprovados; handoffs integrais anteriores continuam válidos. Não exija origem do Debate, briefing intermediário, repetição do contrato, path, task, branch, PR, modelo, esforço, QA ou merge já definidos.
+Aceite um ou mais handoffs com Objetivo, Definidos novos ou pendentes integrais, Escopo negativo, referência recuperável ao contrato canônico quando houver rodadas anteriores, `Supervisão: Autônomo` e dependências existentes. Em nova rodada do mesmo recorte, aceite instrução curta com delta aprovado e referência no mesmo Executor, quando acessível, sem novo handoff ou preparação repetida. Preserve todos os Definidos vigentes sem reexecutar resultados já comprovados; handoffs integrais anteriores continuam válidos. Não exija origem do Debate, briefing intermediário, repetição do contrato, path, task, branch, PR, modelo, esforço, QA ou merge já definidos.
 
 Na retomada, aceite PR (URL/número) ou decisão recuperável; confira caso, base `main`, HEAD e contrato (§3.1). Reutilize sessão, worktree, branch, PR e checkpoints; isolamento/publicação seguem `AGENTS.md`. Sem PR empilhado nem reescrita de aprovações; correções e QA pré-merge continuam no destino.
 

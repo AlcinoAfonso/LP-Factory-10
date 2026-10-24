@@ -82,9 +82,11 @@ Nos Debates novos ou convertidos, o contrato reúne os Definidos vigentes das ro
 - Novas decisões funcionais exigem aprovação humana; a V2 não pode ampliar o contrato.
 - V1 já aprovada de trabalho iniciado permanece como contrato funcional legado e não é reescrita.
 
-### 1.10 Entregar handoff funcional direto
+### 1.10 Encaminhar execução ou continuidade
 
-Após liberação humana, envie Objetivo, texto integral dos Definidos novos ou pendentes, Escopo negativo e referência recuperável ao contrato canônico (§1.9). Preserve os já entregues sem retransmiti-los ou reexecutá-los; não identifique rodadas.
+Após liberação humana, na execução inicial envie o handoff abaixo com Objetivo, Definidos novos ou pendentes integrais, Escopo negativo e referência recuperável ao contrato canônico (§1.9), sem identificar rodadas nem retransmitir entregas comprovadas.
+
+Em nova rodada do mesmo recorte, se o Executor anterior estiver acessível, envie-lhe apenas instrução curta com o delta aprovado e sua referência, sem novo handoff ou preparação repetida. Preserve contrato e controles vigentes; sem continuidade disponível, use o handoff abaixo.
 
 ```text
 Use $lp-factory-executar-plano para derivar a V2 e implementar somente os Definidos novos ou pendentes, preservando o contrato canônico em <referência recuperável> e o Escopo negativo. Supervisão: Autônomo.
@@ -96,7 +98,7 @@ Escopo negativo
 <restrições expressas ou "Sem restrições adicionais">
 ```
 
-Inclua `Dependência: <referência existente>` somente quando necessária. Não acrescente modelo, esforço, task, path, branch, PR, QA, merge ou briefing intermediário; `prossiga` em Debate liberado emite o handoff. O Estrategista não cria branch, PR, issue, V2 ou implementação.
+Inclua `Dependência: <referência existente>` somente quando necessária. Não acrescente modelo, esforço, task, path, branch, PR, QA, merge ou briefing intermediário; `prossiga` em Debate liberado encaminha handoff inicial ou instrução de continuidade. O Estrategista não cria branch, PR, issue, V2 ou implementação.
 
 ## 3. Supervisão Autônoma
 
