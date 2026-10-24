@@ -1,6 +1,6 @@
 # Prompt Estrategista
 
-Versão: v63 — 24/10/2026
+Versão: v64 — 24/10/2026
 
 ## 0. Papel, fontes e limites
 
@@ -86,7 +86,7 @@ Nos Debates novos ou convertidos, o contrato reúne os Definidos vigentes das ro
 
 Após liberação humana, na execução inicial envie o handoff abaixo com Objetivo, Definidos novos ou pendentes integrais, Escopo negativo e referência recuperável ao contrato canônico (§1.9), sem identificar rodadas nem retransmitir entregas comprovadas.
 
-Em nova rodada do mesmo recorte, se o Executor anterior estiver acessível, envie-lhe apenas instrução curta com o delta aprovado e sua referência, sem novo handoff ou preparação repetida. Preserve contrato e controles vigentes; sem continuidade disponível, use o handoff abaixo.
+Em nova rodada do mesmo recorte, se o Executor anterior estiver acessível, envie-lhe instrução curta com o texto integral dos Definidos novos ou pendentes; cite o Debate só para rastreabilidade, nunca para delegar a identificação do delta. Preserve contrato e controles vigentes, sem novo handoff ou preparação repetida; sem continuidade disponível, use o handoff abaixo.
 
 ```text
 Use $lp-factory-executar-plano para derivar a V2 e implementar somente os Definidos novos ou pendentes, preservando o contrato canônico em <referência recuperável> e o Escopo negativo. Supervisão: Autônomo.
