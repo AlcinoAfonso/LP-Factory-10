@@ -22,7 +22,7 @@ import {
 } from "../ai-core";
 import type { CommunicationBase } from "../contracts";
 
-type AiFailure = Readonly<{ ok: false; reason: "invalid_input" | "unavailable" }>;
+type AiFailure = Readonly<{ ok: false; reason: "invalid_input" | "unavailable" | "configuration_incompatible" }>;
 
 export async function assistCommunicationSection(input: Readonly<{
   accountId: string;
@@ -53,7 +53,7 @@ export async function assistCommunicationSection(input: Readonly<{
     parseResponse: (payload) => parseStageOneResponse(payload, input.key),
   });
   return result.ok ? { ok: true as const, value: result.value, responseId: result.responseId, latencyMs: result.latencyMs }
-    : { ok: false as const, reason: "unavailable" as const };
+    : { ok: false as const, reason: result.reason === "openai_configuration_incompatible" ? "configuration_incompatible" as const : "unavailable" as const };
 }
 
 export async function generateCommunicationIntelligence(input: Readonly<{
@@ -104,7 +104,7 @@ export async function generateCommunicationIntelligence(input: Readonly<{
   });
   return result.ok ? { ok: true as const, value: result.value, usage: result.usage, latencyMs: result.latencyMs,
     responseId: result.responseId }
-    : { ok: false as const, reason: "unavailable" as const };
+    : { ok: false as const, reason: result.reason === "openai_configuration_incompatible" ? "configuration_incompatible" as const : "unavailable" as const };
 }
 
 async function resolveConfiguration(workload: string) {

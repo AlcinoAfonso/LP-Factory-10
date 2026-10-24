@@ -1,3 +1,4 @@
+import { openAiResponseMatchesConfiguration } from "../../../openai-workloads/service-tier";
 import type {
   AiNicheResolutionOutput,
   AiNicheResolutionUxMode,
@@ -68,6 +69,8 @@ export type ResolveAiNicheResolutionResult =
     };
 
 type ResponsesApiResponse = {
+  model?: unknown;
+  reasoning?: unknown;
   service_tier?: unknown;
   id?: unknown;
   usage?: unknown;
@@ -391,6 +394,17 @@ export async function resolveNicheWithOpenAi(input: {
         schemaVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION,
         reason: data.error.type ?? "openai_response_error",
       };
+    }
+
+    if (!openAiResponseMatchesConfiguration(workload, data)) {
+      emitEvent(createOpenAiWorkloadFailureEvent({
+        ...eventContext, appliedServiceTier: normalizeOpenAiAppliedServiceTier(data.service_tier),
+        responseId: data.id, latencyMs: now() - startedAt, usage: data.usage,
+        providerErrorCode: "active_configuration_mismatch",
+      }, "provider_error"));
+      await finishFinancial("failure", "provider_error", data);
+      return { ok: false, status: "failed", model: workload.model,
+        schemaVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION, reason: "openai_configuration_incompatible" };
     }
 
     const outputText = extractOutputText(data);

@@ -175,6 +175,11 @@ function CandidateForm({
   onDirtyChange?: (dirty: boolean) => void;
 }>) {
   const [state, formAction, pending] = useActionState(saveOpenAiConfigurationCandidateAction, initialState);
+  const form = useRef<HTMLFormElement>(null);
+  const applyButton = useRef<HTMLButtonElement>(null);
+  const confirmed = useRef(false);
+  const [confirmApply, setConfirmApply] = useState(false);
+  const [intent, setIntent] = useState("save");
   const initialValue = unit.candidate ?? unit.activeRevision;
   const [draft, setDraft] = useState<OpenAiAdministrativeConfigurationValue>(initialValue);
   const [discardTarget, setDiscardTarget] = useState<string | null>(null);
@@ -197,12 +202,24 @@ function CandidateForm({
     return () => { window.removeEventListener("beforeunload", beforeUnload); document.removeEventListener("click", navigate, true); };
   }, [dirty]);
   return (
-    <form action={formAction} className="mt-4 space-y-4">
+    <form ref={form} action={formAction} className="mt-4 space-y-4" onSubmit={event => {
+      const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+      if (submitter?.value === "apply" && !confirmed.current) {
+        event.preventDefault(); setConfirmApply(true); return;
+      }
+      setIntent(submitter?.value ?? "save");
+      confirmed.current = false;
+    }}>
       <UnitFields unit={unit} />
+      <input type="hidden" name="confirmApply" value="true" />
       <TextFields idPrefix={unit.environment + "-" + unit.workload} options={options}
         value={draft} onChange={setDraft} disabled={pending} tierSupported={unit.serviceTierSupported === true} />
       <div className="flex flex-wrap gap-3">
-        <button type="submit" className={primaryButtonClassName} disabled={pending || !dirty || !valid}>
+        <button ref={applyButton} type="submit" name="intent" value="apply" className={primaryButtonClassName}
+          disabled={pending || (!dirty && !unit.candidate) || !valid}>
+          {pending && intent === "apply" ? "Validando e aplicando…" : "Salvar e aplicar"}
+        </button>
+        <button type="submit" name="intent" value="save" className={secondaryButtonClassName} disabled={pending || !dirty || !valid}>
           {pending ? "Salvando candidata…" : unit.candidate ? "Salvar edição da candidata" : "Salvar candidata"}
         </button>
         <button type="button" className={secondaryButtonClassName} disabled={pending || !dirty}
@@ -218,7 +235,11 @@ function CandidateForm({
           else window.location.assign(url.href);
         }
       }} />
-      <ActionFeedback state={state} context="save" />
+      <ConfirmApply open={confirmApply} environment={unit.environment} value={draft}
+        onCancel={() => setConfirmApply(false)} onConfirm={() => {
+          setConfirmApply(false); confirmed.current = true; form.current?.requestSubmit(applyButton.current ?? undefined);
+        }} />
+      <ActionFeedback state={state} context={intent === "apply" ? "activation" : "save"} />
     </form>
   );
 }
@@ -485,6 +506,28 @@ export function ConfirmDraftDiscard({ open, onDiscard, onKeep }: Readonly<{
     <div className="mt-4 flex flex-wrap gap-3">
       <button type="button" className={secondaryButtonClassName} onClick={onKeep} autoFocus>Continuar editando</button>
       <button type="button" className={primaryButtonClassName} onClick={onDiscard}>Descartar alterações locais</button>
+    </div>
+  </dialog>;
+}
+
+function ConfirmApply({ open, environment, value, onCancel, onConfirm }: Readonly<{
+  open: boolean; environment: string; value: OpenAiAdministrativeConfigurationValue;
+  onCancel: () => void; onConfirm: () => void;
+}>) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    if (open && !dialog.current?.open) dialog.current?.showModal();
+    if (!open && dialog.current?.open) dialog.current.close();
+  }, [open]);
+  return <dialog ref={dialog} aria-label="Salvar e aplicar configuração?"
+    className="m-auto w-[calc(100%-2rem)] max-w-md rounded-lg border border-border bg-background p-5 text-foreground shadow-lg backdrop:bg-black/30"
+    onCancel={event => { event.preventDefault(); onCancel(); }}>
+    <h2 className="font-semibold">Salvar e aplicar configuração?</h2>
+    <p className="mt-2 text-sm text-muted-foreground">Ambiente: {environment === "production" ? "Production" : "Preview"}. Após validação, esta escolha será ativada para a próxima execução. Se a validação falhar, a configuração ativa será preservada.</p>
+    <div className="mt-3"><ConfigurationValue value={value} /></div>
+    <div className="mt-4 flex flex-wrap gap-3">
+      <button type="button" className={secondaryButtonClassName} onClick={onCancel} autoFocus>Continuar editando</button>
+      <button type="button" className={primaryButtonClassName} onClick={onConfirm}>Confirmar e aplicar</button>
     </div>
   </dialog>;
 }

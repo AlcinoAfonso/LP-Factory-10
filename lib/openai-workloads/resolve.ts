@@ -48,10 +48,7 @@ export async function resolveOpenAiProductWorkload(
   }
 
   if (environment === "unknown") return unknownEnvironmentFailure();
-  if (
-    environment === "development" ||
-    !usesOperationalConfiguration(dependencies)
-  ) {
+  if (environment === "development") {
     return success(toResolvedProductWorkload(workload));
   }
 
@@ -101,18 +98,6 @@ function unknownEnvironmentFailure(): Extract<
     "UNKNOWN_ENVIRONMENT",
     "OpenAI workload environment could not be resolved",
   );
-}
-
-function usesOperationalConfiguration(
-  dependencies: OpenAiWorkloadResolverDependencies,
-) {
-  const gate = Object.prototype.hasOwnProperty.call(
-    dependencies,
-    "operationalConfigurationEnabled",
-  )
-    ? dependencies.operationalConfigurationEnabled
-    : process.env.OPENAI_OPERATIONAL_CONFIG_ENABLED;
-  return gate === "true";
 }
 
 async function readOperationalConfiguration(

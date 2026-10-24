@@ -1,3 +1,4 @@
+import { applyOpenAiConfigurationCore } from "./applyCore";
 import { runOpenAiTechnicalConfigurationProof } from "./serviceTierProof";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -18,6 +19,32 @@ import { confirmOpenAiModelIdentity } from "./openAiModelIdentity";
 type Case = Readonly<{ name: string; run: () => void | Promise<void> }>;
 
 const cases: readonly Case[] = [
+  {
+    name: "apply validates before writing, stops on every failure and confirms activation before success",
+    run: async () => {
+      for (const failure of [null, "proof", "save", "promote", "activate"] as const) {
+        const calls: string[] = [];
+        let active = "previous";
+        const error = { code: "40001", message: "stale_version" };
+        const result = await applyOpenAiConfigurationCore({
+          expectedVersion: 4,
+          prove: async () => { calls.push("proof"); return failure === "proof" ? { ok: false, code: "contract" } :
+            { ok: true, metadata: { schema_version: 1, proof_kind: "operational", proof_result: "approved",
+              request_id: "proof-1", provider_request_id: "req-1", latency_ms: 1, contract_version: 1, source: "openai_api" } }; },
+          save: async version => { calls.push("save"); assert.equal(version, 4); return { data: 5, error: failure === "save" ? error : null }; },
+          promote: async version => { calls.push("promote"); assert.equal(version, 5); return {
+            data: [{ candidate_revision_id: "revision-3", candidate_revision_number: 3, configuration_version: 6 }], error: failure === "promote" ? error : null }; },
+          activate: async (version, revision) => { calls.push("activate"); assert.equal(version, 6); assert.equal(revision, "revision-3");
+            if (failure !== "activate") active = revision;
+            return { data: 7, error: failure === "activate" ? error : null }; },
+        });
+        assert.equal(result.ok, failure === null);
+        const steps = ["proof", "save", "promote", "activate"];
+        assert.deepEqual(calls, failure === null ? steps : steps.slice(0, steps.indexOf(failure) + 1));
+        assert.equal(active, failure === null ? "revision-3" : "previous");
+      }
+    },
+  },
   {
     name: "niche functional proof resolves the exact candidate tier as well as model and effort",
     run: async () => {

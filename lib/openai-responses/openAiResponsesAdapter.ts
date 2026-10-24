@@ -1,3 +1,4 @@
+import { openAiResponseMatchesConfiguration } from "../openai-workloads/service-tier";
 import {
   createOpenAiWorkloadFailureEvent,
   createOpenAiWorkloadSuccessEvent,
@@ -297,6 +298,16 @@ export async function requestOpenAiResponses<T>(
           ? "openai_incomplete"
           : nonEmptyString(providerError?.type) ?? "openai_response_error",
       };
+    }
+
+    if (!openAiResponseMatchesConfiguration(input.configuration, responseRecord)) {
+      emitEvent(createOpenAiWorkloadFailureEvent({
+        ...eventContext, ...responseMetadata, providerErrorCode: "active_configuration_mismatch",
+      }, "provider_error"));
+      await finishFinancial({ result: "failure", failureCategory: "provider_error",
+        responseId: nonEmptyString(responseRecord?.id), providerRequestId, usage: responseRecord?.usage,
+        webSearchCallCount });
+      return { ok: false, kind: "provider_error", reason: "openai_configuration_incompatible" };
     }
 
     const parsed = input.parseResponse(payload);

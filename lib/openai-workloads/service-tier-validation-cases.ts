@@ -36,7 +36,7 @@ export async function validateOpenAiServiceTiers() {
       emitEvent: event => events.push(event),
       fetchImpl: async (_url, init) => {
         sent = JSON.parse(String(init?.body));
-        return new Response(JSON.stringify({ id: "resp_tier", status: "completed", service_tier: "default" }));
+        return new Response(JSON.stringify({ id: "resp_tier", status: "completed", service_tier: tier ?? "default" }));
       },
     });
     assert.equal(result.ok, true);
@@ -44,7 +44,28 @@ export async function validateOpenAiServiceTiers() {
     assert.equal(sent.model, model);
     assert.equal((sent.reasoning as { effort: string }).effort, resolved.value.reasoningEffort);
     assert.equal(events[0].requestedServiceTier, expected ?? null);
-    assert.equal(events[0].appliedServiceTier, "default");
+    assert.equal(events[0].appliedServiceTier, tier ?? "default");
+  }
+  for (const mismatch of [
+    { service_tier: "default" }, { service_tier: null },
+    { service_tier: "priority", model: "gpt-6.1-sol" },
+    { service_tier: "priority", reasoning: { effort: "high" } },
+  ]) {
+    let parsed = false;
+    const events: OpenAiWorkloadEvent[] = [];
+    const result: OpenAiResponsesResult<boolean> = await requestOpenAiResponses({
+      apiKey: "fixture-key", configuration: { ...resolved.value, model: "gpt-6-luna", reasoningEffort: "medium", serviceTier: "fast" },
+      environment: "production", executionOrigin: "runtime", request: {},
+      financialContext: { universe: "lp_factory", attributionStatus: "attributed", accountId: null },
+      parseResponse: () => { parsed = true; return { ok: true, value: true }; },
+    }, { emitEvent: event => events.push(event), fetchImpl: async () => new Response(JSON.stringify({
+      id: "resp_mismatch", status: "completed", ...mismatch,
+    })) });
+    assert.equal(result.ok, false);
+    assert.equal(!result.ok && result.reason, "openai_configuration_incompatible");
+    assert.equal(parsed, false);
+    assert.equal(events[0].providerErrorCode, "active_configuration_mismatch");
+    assert.equal(events[0].requestedServiceTier, "fast");
   }
   let called = false;
   const invalid = await requestOpenAiResponses({

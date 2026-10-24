@@ -133,7 +133,7 @@ export async function assistCommunicationSectionAction(input: Readonly<{
   });
   return result.ok
     ? { ok: true, suggestion: result.value.suggestion, missingQuestion: result.value.missingQuestion }
-    : { ok: false, message: "A assistência está indisponível agora. Você pode continuar a edição manual." };
+    : { ok: false, message: result.reason === "configuration_incompatible" ? "A configuração ativa da IA é incompatível com a resposta da OpenAI. Nenhuma configuração alternativa foi usada." : "A assistência está indisponível agora. Você pode continuar a edição manual." };
 }
 
 export async function generateCommunicationIntelligenceAction(input: Readonly<{
@@ -166,7 +166,7 @@ export async function generateCommunicationIntelligenceAction(input: Readonly<{
     requiresCurrentResearch: input.requiresCurrentResearch,
   });
   if (!result.ok) {
-    return { ok: false, message: "Não foi possível concluir a geração. Seus textos salvos continuam disponíveis." };
+    return { ok: false, message: result.reason === "configuration_incompatible" ? "A configuração ativa da IA é incompatível com a resposta da OpenAI. Nenhuma configuração alternativa foi usada." : "Não foi possível concluir a geração. Seus textos salvos continuam disponíveis." };
   }
   const latest = await readCommunicationBase(access.value.accountId);
   if (!latest.ok || !latest.value || !isCurrentGenerationVersion(input.version, latest.value.version)) {

@@ -568,29 +568,29 @@ const cases = [
     },
   },
   {
-    name: "development and managed gate-off use repo catalog without operational reads",
+    name: "development uses baseline; managed environments always read current active revision despite obsolete gate",
     run: async () => {
       let reads = 0;
-      const reader: OpenAiOperationalConfigurationReader = async () => {
-        reads += 1;
-        throw new Error("reader must not run");
+      let revision = 1;
+      const reader: OpenAiOperationalConfigurationReader = async input => {
+        reads++;
+        return { ok: true, value: { ...input, apiKind: "responses_text", model: "gpt-6-luna",
+          reasoningEffort: "medium", serviceTier: revision === 1 ? "default" : "fast", revision: String(revision) } };
       };
-
-      for (const environment of ["development", "production", "preview"] as const) {
-        const result = await resolveOpenAiProductWorkload(
-          "niche_resolution",
-          environment,
-          {
-            operationalConfigurationEnabled:
-              environment === "development" ? "true" : "TRUE",
-            readOperationalConfiguration: reader,
-          },
-        );
-        assert.equal(result.ok, true);
-        assert.equal(result.value.source, "repo_catalog");
-        assert.equal(result.value.revision, "v2");
-      }
+      const local = await resolveOpenAiProductWorkload("niche_resolution", "development", { readOperationalConfiguration: reader });
+      assert.equal(local.ok && local.value.source, "repo_catalog");
       assert.equal(reads, 0);
+      for (const environment of ["production", "preview"] as const) {
+        for (const gate of [undefined, "false", "TRUE", "true"]) {
+          const result = await resolveOpenAiProductWorkload("niche_resolution", environment,
+            { operationalConfigurationEnabled: gate, readOperationalConfiguration: reader });
+          assert.equal(result.ok && result.value.source, "supabase_operational");
+          assert.equal(result.ok && result.value.revision, String(revision));
+          assert.equal(result.ok && result.value.serviceTier, revision === 1 ? "default" : "fast");
+          revision++;
+        }
+      }
+      assert.equal(reads, 8);
     },
   },
   {
