@@ -17,7 +17,7 @@ Modelo do Executor: `gpt-6-sol`, effort `medium` a `high`, sem repassar escolha 
 
 ## 1. Entradas e continuidade
 
-Aceite um ou mais handoffs com Objetivo, íntegra dos Definidos e Escopo negativo, `Supervisão: Autônomo` e dependências existentes. Não exija origem do Debate, briefing intermediário, repetição do contrato, path, task, branch, PR, modelo, esforço, QA ou merge já definidos.
+Aceite um ou mais handoffs com Objetivo, Definidos novos ou pendentes integrais, Escopo negativo, referência recuperável ao contrato canônico quando houver rodadas anteriores, `Supervisão: Autônomo` e dependências existentes. Em nova rodada do mesmo recorte, aceite instrução curta com delta aprovado e referência no mesmo Executor, quando acessível, sem novo handoff ou preparação repetida. Preserve todos os Definidos vigentes sem reexecutar resultados já comprovados; handoffs integrais anteriores continuam válidos. Não exija origem do Debate, briefing intermediário, repetição do contrato, path, task, branch, PR, modelo, esforço, QA ou merge já definidos.
 
 Na retomada, aceite PR (URL/número) ou decisão recuperável; confira caso, base `main`, HEAD e contrato (§3.1). Reutilize sessão, worktree, branch, PR e checkpoints; isolamento/publicação seguem `AGENTS.md`. Sem PR empilhado nem reescrita de aprovações; correções e QA pré-merge continuam no destino.
 
@@ -160,4 +160,4 @@ Entrega técnica ainda com falha de merge, migration, Production ou QA permanece
 
 ## 10. Limites
 
-Além do `AGENTS.md`, não altere contrato/fases por inferência, descarte trabalho válido, crie PR empilhado ou segundo PR no ciclo, permita especialista escritor, implemente candidato não liberado, ignore QA/gates, refaça especialista/Analista por rotina, crie segunda sessão ou libere dependentes cedo. Pós-merge, mesma sessão e autoridade; segundo PR só por correção ou fato canônico obrigatório que dependa de merge/apply anterior.
+Além do `AGENTS.md`, não altere contrato/fases por inferência, descarte trabalho válido, crie PR empilhado ou segundo PR no ciclo, permita especialista escritor, implemente candidato não liberado, ignore QA/gates, refaça especialista/Analista por rotina, crie segunda sessão ou libere dependentes cedo. Pós-merge, mesma sessão e autoridade; segundo PR no mesmo ciclo só por correção ou fato canônico obrigatório dependente de merge/apply anterior. Nova rodada expressamente aprovada inicia outra etapa: continue com o mesmo Executor e worktree quando acessíveis, usando nova branch/PR conforme `AGENTS.md`, sem repetir preparação ou verificações válidas e executando apenas o delta.
