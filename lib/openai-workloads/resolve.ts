@@ -1,3 +1,4 @@
+import { isValidOpenAiServiceTierSnapshot } from "./service-tier";
 import type {
   OpenAiOperationalConfiguration,
   OpenAiOperationalConfigurationReader,
@@ -47,10 +48,7 @@ export async function resolveOpenAiProductWorkload(
   }
 
   if (environment === "unknown") return unknownEnvironmentFailure();
-  if (
-    environment === "development" ||
-    !usesOperationalConfiguration(dependencies)
-  ) {
+  if (environment === "development") {
     return success(toResolvedProductWorkload(workload));
   }
 
@@ -64,7 +62,8 @@ export async function resolveOpenAiProductWorkload(
     operational.value.workload !== workload.id ||
     operational.value.environment !== environment ||
     !isDecimalRevision(operational.value.revision) ||
-    !isTechnicalModel(operational.value.model)
+    !isTechnicalModel(operational.value.model) ||
+    !isValidOpenAiServiceTierSnapshot(operational.value.model, operational.value.serviceTier)
   ) {
     return failure(
       "OPERATIONAL_CONFIGURATION_INVALID",
@@ -75,6 +74,7 @@ export async function resolveOpenAiProductWorkload(
   return success(
     toResolvedProductWorkload(workload, {
       model: operational.value.model,
+      serviceTier: operational.value.serviceTier ?? null,
       reasoningEffort: operational.value.reasoningEffort,
       source: "supabase_operational",
       revision: operational.value.revision,
@@ -98,18 +98,6 @@ function unknownEnvironmentFailure(): Extract<
     "UNKNOWN_ENVIRONMENT",
     "OpenAI workload environment could not be resolved",
   );
-}
-
-function usesOperationalConfiguration(
-  dependencies: OpenAiWorkloadResolverDependencies,
-) {
-  const gate = Object.prototype.hasOwnProperty.call(
-    dependencies,
-    "operationalConfigurationEnabled",
-  )
-    ? dependencies.operationalConfigurationEnabled
-    : process.env.OPENAI_OPERATIONAL_CONFIG_ENABLED;
-  return gate === "true";
 }
 
 async function readOperationalConfiguration(
@@ -182,6 +170,7 @@ function toResolvedProductWorkload(
     reasoningEffort: OpenAiProductWorkloadDefinition["configuration"]["reasoningEffort"];
     source: ResolvedOpenAiProductWorkload["source"];
     revision: string;
+    serviceTier?: ResolvedOpenAiProductWorkload["serviceTier"];
   }> = workload.configuration,
 ): ResolvedOpenAiProductWorkload {
   return deepFreeze({
@@ -193,6 +182,7 @@ function toResolvedProductWorkload(
     consumer: workload.consumer,
     fallback: workload.fallback,
     model: configuration.model,
+    serviceTier: configuration.serviceTier ?? null,
     reasoningEffort: configuration.reasoningEffort,
     source: configuration.source,
     revision: configuration.revision,

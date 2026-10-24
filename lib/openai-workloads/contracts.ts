@@ -38,6 +38,7 @@ export type OpenAiOperationalWorkloadId =
 export type OpenAiWorkloadId =
   | OpenAiProductWorkloadId
   | OpenAiOperationalWorkloadId;
+export type OpenAiServiceTier = "default" | "fast" | "ultrafast";
 export type OpenAiReasoningEffort = (typeof openAiReasoningEfforts)[number];
 export type OpenAiImageQuality = (typeof openAiImageQualities)[number];
 export type OpenAiWebSearchContextSize =
@@ -111,6 +112,7 @@ export type ResolvedOpenAiProductWorkload = Readonly<{
   fallback: string;
   model: string;
   reasoningEffort: OpenAiReasoningEffort;
+  serviceTier?: OpenAiServiceTier | null;
   source: OpenAiConfigurationSource;
   revision: string;
   effectiveConfigurationVerified: true;
@@ -148,6 +150,7 @@ export type OpenAiOperationalConfiguration = Readonly<{
   apiKind: "responses_text";
   model: string;
   reasoningEffort: OpenAiReasoningEffort;
+  serviceTier?: OpenAiServiceTier | null;
   revision: string;
 }>;
 
@@ -222,6 +225,7 @@ export type OpenAiAdministrativeConfigurationValue = Readonly<{
   apiKind: "responses_text";
   model: string;
   reasoningEffort: OpenAiReasoningEffort;
+  serviceTier?: OpenAiServiceTier | null;
 }>;
 
 export type OpenAiAdministrativeCandidate =
@@ -258,6 +262,7 @@ export type OpenAiAdministrativeConfigurationUnit = Readonly<{
   displayName: string;
   apiKind: "responses_text";
   configurationVersion: number;
+  serviceTierSupported?: boolean;
   activeRevision: OpenAiAdministrativeRevision;
   candidate: OpenAiAdministrativeCandidate | null;
   pendingRevision: OpenAiAdministrativeRevision | null;
@@ -317,6 +322,8 @@ type OpenAiWorkloadEventBase = OpenAiWorkloadEventContext &
     requestId: string | null;
     promptVersion: string | null;
     contractVersion: number | null;
+    requestedServiceTier: string | null;
+    appliedServiceTier: string | null;
     responseId: string | null;
     httpStatus: number | null;
     providerRequestId: string | null;

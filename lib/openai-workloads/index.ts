@@ -30,3 +30,5 @@ export async function readOpenAiModelCatalog() {
   );
   return read();
 }
+
+export { listOpenAiServiceTiers, isEligibleOpenAiServiceTier, isValidOpenAiServiceTierSnapshot, normalizeOpenAiAppliedServiceTier, openAiServiceTierWasApplied, openAiServiceTierLabel } from "./service-tier";

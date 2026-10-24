@@ -1,3 +1,4 @@
+import { isValidOpenAiServiceTierSnapshot } from "../service-tier";
 import {
   openAiReasoningEfforts,
   type OpenAiAdministrativeActivation,
@@ -68,7 +69,8 @@ export function translateOperationalConfigurationRows(
   }
 
   const reasoningEffort = reasoningEffortValue(revision.reasoning_effort);
-  if (reasoningEffort === null || revision.quality !== null) {
+  if (reasoningEffort === null || revision.quality !== null ||
+    !isValidOpenAiServiceTierSnapshot(model, revision.service_tier)) {
     return failure(
       "ACTIVE_CONFIGURATION_INVALID",
       "Active text configuration has an invalid shape",
@@ -80,6 +82,7 @@ export function translateOperationalConfigurationRows(
     apiKind: "responses_text",
     model,
     reasoningEffort,
+    serviceTier: (revision.service_tier ?? null) as OpenAiAdministrativeConfigurationValue["serviceTier"],
     revision: String(revisionNumber),
   });
 }
@@ -231,8 +234,8 @@ export function translateOpenAiAdministrativeConfigurationRows(
     return administrativeFailure("READ_FAILED", "Administrative configuration read failed");
   }
 
-  const units = exactRecords(unitRead.data, unitRowKeys);
-  const revisions = exactRecords(revisionRead.data, revisionRowKeys);
+  const units = exactRecords(unitRead.data, unitRowKeys, "candidate_service_tier");
+  const revisions = exactRecords(revisionRead.data, revisionRowKeys, "service_tier");
   const activations = exactRecords(activationRead.data, activationRowKeys);
   const workloads = units?.length === managedWorkloads.length * managedEnvironments.length
     ? managedWorkloads
@@ -371,6 +374,8 @@ export function translateOpenAiAdministrativeConfigurationRows(
         displayName: projection.displayName,
         apiKind: projection.apiKind,
         configurationVersion: positiveInteger(unit.configuration_version) as number,
+        serviceTierSupported: units.every((row) => Object.hasOwn(row, "candidate_service_tier")) &&
+          revisions.every((row) => Object.hasOwn(row, "service_tier")),
         activeRevision: publicRevision(activeRevision),
         candidate,
         pendingRevision: pendingRevision ? publicRevision(pendingRevision) : null,
@@ -418,6 +423,7 @@ function parseRevision(
     row.model,
     row.reasoning_effort,
     row.quality,
+    row.service_tier,
   );
   return configuration
     ? {
@@ -506,7 +512,7 @@ function parseCandidate(
     row.candidate_saved_by,
     row.candidate_saved_at,
   ];
-  if (fields.every((field) => field === null)) return null;
+  if (fields.every((field) => field === null)) return row.candidate_service_tier == null ? null : undefined;
 
   const savedByUserId = uuid(row.candidate_saved_by);
   const savedAt = timestamp(row.candidate_saved_at);
@@ -515,6 +521,7 @@ function parseCandidate(
     row.candidate_model,
     row.candidate_reasoning_effort,
     row.candidate_quality,
+    row.candidate_service_tier,
   );
   return savedByUserId && savedAt && configuration
     ? { ...configuration, savedByUserId, savedAt }
@@ -526,9 +533,10 @@ function configurationValue(
   rawModel: unknown,
   rawReasoningEffort: unknown,
   rawQuality: unknown,
+  serviceTier: unknown,
 ): OpenAiAdministrativeConfigurationValue | null {
   const model = technicalModel(rawModel);
-  if (!model) return null;
+  if (!model || !isValidOpenAiServiceTierSnapshot(model, serviceTier)) return null;
   const reasoningEffort = reasoningEffortValue(rawReasoningEffort);
   if (
     reasoningEffort === null ||
@@ -536,7 +544,7 @@ function configurationValue(
   ) {
     return null;
   }
-  return { apiKind: "responses_text", model, reasoningEffort };
+  return { apiKind: "responses_text", model, reasoningEffort, serviceTier: (serviceTier ?? null) as OpenAiAdministrativeConfigurationValue["serviceTier"] };
 }
 
 function validActivationSequence(
@@ -592,6 +600,7 @@ function publicActivation(activation: ParsedActivation): OpenAiAdministrativeAct
 function exactRecords(
   value: unknown,
   expectedKeys: readonly string[],
+  optionalKey?: string,
 ): Record<string, unknown>[] | null {
   if (!Array.isArray(value)) return null;
   const records: Record<string, unknown>[] = [];
@@ -599,7 +608,7 @@ function exactRecords(
     if (!isRecord(candidate)) return null;
     const keys = Object.keys(candidate);
     if (
-      keys.length !== expectedKeys.length ||
+      keys.length !== expectedKeys.length + (optionalKey && Object.hasOwn(candidate, optionalKey) ? 1 : 0) ||
       !expectedKeys.every((key) => Object.hasOwn(candidate, key))
     ) {
       return null;
@@ -682,4 +691,20 @@ function administrativeFailure(
   message: string,
 ): OpenAiAdministrativeConfigurationReadResult {
   return deepFreeze({ ok: false, error: { code, message } });
+}
+
+// Compatibility is limited to a positively identified missing tier column.
+// Every other database error stays closed.
+export async function readWithOpenAiTierCompatibility<T extends { error: unknown }>(
+  read: (includeTier: boolean) => PromiseLike<T>,
+): Promise<T> {
+  const result = await read(true);
+  const error = isRecord(result.error) ? result.error : null;
+  const message = typeof error?.message === "string" ? error.message : "";
+  if ((error?.code === "42703" || error?.code === "PGRST204") &&
+    /\b(?:candidate_service_tier|service_tier)\b/.test(message) &&
+    /does not exist|could not find/i.test(message)) {
+    return await read(false);
+  }
+  return result;
 }

@@ -1,9 +1,11 @@
+import { openAiResponseMatchesConfiguration } from "../openai-workloads/service-tier";
 import {
   createOpenAiWorkloadFailureEvent,
   createOpenAiWorkloadSuccessEvent,
   emitOpenAiWorkloadEvent,
   isValidResolvedOpenAiProductWorkload,
   normalizeOpenAiResponseUsage,
+  normalizeOpenAiAppliedServiceTier,
   resolveOpenAiWorkloadEnvironment,
   type OpenAiWorkloadEnvironment,
   type OpenAiWorkloadEvent,
@@ -70,6 +72,7 @@ export type OpenAiResponsesResult<T> =
       providerRequestId: string | null;
       latencyMs: number;
       usage: OpenAiWorkloadUsage;
+      appliedServiceTier: string | null;
     }>
   | Readonly<{
       ok: false;
@@ -97,6 +100,7 @@ export async function requestOpenAiResponses<T>(
     configurationRevision: input.configuration.revision,
     model: input.configuration.model,
     reasoningEffort: input.configuration.reasoningEffort,
+    requestedServiceTier: input.configuration.serviceTier ?? input.request.service_tier,
     environment,
     requestId: input.requestId,
     promptVersion: input.promptVersion,
@@ -208,6 +212,7 @@ export async function requestOpenAiResponses<T>(
       },
       body: JSON.stringify({
         ...input.request,
+        ...(input.configuration.serviceTier == null ? {} : { service_tier: input.configuration.serviceTier }),
         model: input.configuration.model,
         reasoning: { effort: input.configuration.reasoningEffort },
       }),
@@ -261,6 +266,7 @@ export async function requestOpenAiResponses<T>(
     const eventWebSearchCallCount = webSearchRequested || observedWebSearchCalls !== null
       ? webSearchCallCount : undefined;
     const responseMetadata = {
+      appliedServiceTier: normalizeOpenAiAppliedServiceTier(responseRecord?.service_tier),
       responseId: responseRecord?.id,
       providerRequestId,
       latencyMs,
@@ -292,6 +298,16 @@ export async function requestOpenAiResponses<T>(
           ? "openai_incomplete"
           : nonEmptyString(providerError?.type) ?? "openai_response_error",
       };
+    }
+
+    if (!openAiResponseMatchesConfiguration(input.configuration, responseRecord)) {
+      emitEvent(createOpenAiWorkloadFailureEvent({
+        ...eventContext, ...responseMetadata, providerErrorCode: "active_configuration_mismatch",
+      }, "provider_error"));
+      await finishFinancial({ result: "failure", failureCategory: "provider_error",
+        responseId: nonEmptyString(responseRecord?.id), providerRequestId, usage: responseRecord?.usage,
+        webSearchCallCount });
+      return { ok: false, kind: "provider_error", reason: "openai_configuration_incompatible" };
     }
 
     const parsed = input.parseResponse(payload);
@@ -333,6 +349,7 @@ export async function requestOpenAiResponses<T>(
       providerRequestId,
       latencyMs,
       usage: normalizeOpenAiResponseUsage(responseRecord?.usage),
+      appliedServiceTier: normalizeOpenAiAppliedServiceTier(responseRecord?.service_tier),
     };
   } catch (error) {
     const timedOut = error instanceof Error && error.name === "AbortError";
