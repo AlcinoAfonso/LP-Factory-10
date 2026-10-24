@@ -11,7 +11,7 @@ import type {
   PendingSetupStage,
   PendingSetupWriteResult,
 } from "../contracts";
-import { validateStoredAttendanceProposal } from "../attendance-core";
+import { readAttendanceContactInput, readAttendanceBusinessNameCandidate, validateStoredAttendanceProposal } from "../attendance-core";
 import { readPendingSetupDialogueContext } from "./pendingSetupAccountContextAdapter";
 import { resolvePreferredNameFromAuth } from "../policy";
 import { isE1011PassageEnabled, isE1012AttendanceEnabled } from "../config";
@@ -166,7 +166,9 @@ export async function loadPendingSetupConversation(input: {
   const mapped = mapConversation(conversation as unknown as ConversationRow, ((messages ?? []) as MessageRow[]));
   if (!isE1012AttendanceEnabled()) return mapped;
   const dialogue = await readPendingSetupDialogueContext({ ...input, conversationId });
-  return dialogue ? { ...mapped, messages: dialogue.messages, accountContext: dialogue.context } : null;
+  const contact = readAttendanceContactInput(dialogue?.context.summary);
+  return dialogue ? { ...mapped, whatsappRequested: contact.requested, whatsappValue: contact.value, messages: dialogue.messages, accountContext: dialogue.context,
+    businessNameCandidate: readAttendanceBusinessNameCandidate(dialogue.context.summary) } : null;
 }
 
 export async function setPendingSetupPreferredName(input: {
@@ -333,4 +335,13 @@ export async function completePendingSetup(input: {
   return data === true
     ? { ok: true, version: input.expectedVersion + 1 }
     : { ok: false, reason: "write_failed" };
+}
+
+// Presentation only: the caller has already authorized an active account and member.
+export async function readCompletedPendingSetupName(accountId: string): Promise<string | null> {
+  if (!isE1011PassageEnabled()) return null;
+  const { data, error } = await createServiceClient().from("account_pending_setup_conversations")
+    .select("business_display_name").eq("account_id", accountId).eq("stage", "completed")
+    .not("business_display_name", "is", null).order("completed_at", { ascending: false }).order("id", { ascending: false }).limit(1).maybeSingle();
+  return error ? null : (data as { business_display_name: string } | null)?.business_display_name ?? null;
 }

@@ -7,12 +7,13 @@ import UserMenu from '@/components/layout/UserMenu';
 type HeaderVariant = 'public' | 'authenticated' | 'account';
 
 interface HeaderProps {
+  accountIdentity?: { publicName: string; officialTaxonName: string | null; operationalNicheLabel?: string | null };
   userEmail?: string | null;
   accountMembersEnabled?: boolean;
   communicationBaseEnabled?: boolean;
 }
 
-export function Header({ userEmail, accountMembersEnabled = false, communicationBaseEnabled = false }: HeaderProps) {
+export function Header({ userEmail, accountMembersEnabled = false, communicationBaseEnabled = false, accountIdentity }: HeaderProps) {
   const ctx = useAccessContext();
 
   const variant = getVariant(ctx, userEmail);
@@ -26,6 +27,7 @@ export function Header({ userEmail, accountMembersEnabled = false, communication
       return (
         <HeaderAccount
           account={ctx.account!}
+          identity={accountIdentity}
           userEmail={userEmail ?? undefined}
           role={(ctx?.member?.role ?? undefined) as string | undefined}
           membersEnabled={accountMembersEnabled}
@@ -102,28 +104,38 @@ function HeaderAuthenticated({ userEmail }: { userEmail?: string | null }) {
 
 function HeaderAccount({
   account,
+  identity,
   userEmail,
   role,
   membersEnabled,
   communicationBaseEnabled,
 }: {
+  identity?: HeaderProps["accountIdentity"];
   account: { name?: string | null; subdomain?: string | null; status?: string | null; primaryTaxonName?: string | null };
   userEmail?: string;
   role?: string;
   membersEnabled: boolean;
   communicationBaseEnabled: boolean;
 }) {
+  const publicName = identity?.publicName.trim();
   const accountLabel = account?.name ?? account?.subdomain ?? 'Minha conta';
   const primaryTaxonName = account?.primaryTaxonName?.trim();
 
   return (
     <header className="border-b border-border bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
-      <div className="mx-auto flex h-14 max-w-6xl items-center px-3 sm:px-4">
+      <div className={publicName ? "mx-auto flex min-h-14 max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2 sm:px-4" : "mx-auto flex h-14 max-w-6xl items-center px-3 sm:px-4"}>
         <BrandWordmark />
 
-        <div className="flex-1" />
+        {publicName ? <div className="order-3 w-full min-w-0 sm:order-none sm:w-auto sm:flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="break-words text-base font-semibold text-foreground">{publicName}</span>
+            <StatusChip status={account?.status} />
+          </div>
+          {identity?.officialTaxonName ? <p className="mt-1 break-words text-sm text-muted-foreground">{identity.officialTaxonName}</p>
+            : identity?.operationalNicheLabel ? <p className="mt-1 line-clamp-2 break-words text-sm text-muted-foreground" title={identity.operationalNicheLabel}>Referência operacional: {identity.operationalNicheLabel}</p> : null}
+        </div> : <div className="flex-1" />}
 
-        <div className="flex items-center gap-1.5 sm:gap-3">
+        <div className="ml-auto flex items-center gap-1.5 sm:gap-3">
           {communicationBaseEnabled ? (
             <Link
               href={`/a/${account.subdomain}/base-comunicacao`}
@@ -142,13 +154,13 @@ function HeaderAccount({
               Membros
             </Link>
           ) : null}
-          <div className="hidden min-w-0 max-w-40 items-center gap-2 sm:flex lg:max-w-64">
+          {!publicName ? <div className="hidden min-w-0 max-w-40 items-center gap-2 sm:flex lg:max-w-64">
             <span className="min-w-0 truncate text-sm text-foreground">
               {accountLabel}
               {primaryTaxonName ? <span className="text-muted-foreground"> · {primaryTaxonName}</span> : null}
             </span>
             <StatusChip status={account?.status} />
-          </div>
+          </div> : null}
           <div className="[&>div>button]:h-11 [&>div>button]:w-11">
             <UserMenu userEmail={userEmail} userRole={role} />
           </div>
