@@ -1820,7 +1820,7 @@
 21.2.4 Lifecycle administrativo e estado operacional
 - Status: lifecycle implementado; extensão service_tier candidata.
 - Conteúdo: lifecycle/autorização em Base Técnica 3.16; conflito sem retry autônomo, retirado sem nova operação. Terceira dimensão por ambiente/workload: Standard/Fast para gpt-6-luna; Standard/Fast/Ultrafast para gpt-6.1-sol, subordinados ao catálogo vigente e à prova real.
-- Pendências: apply seletivo E21.2 e prova real dos níveis após merge técnico, autorizados em 23/10/2026; ativação exclusivamente humana por unidade. gpt-6.1-sol e low/medium/high cadastrados e disponibilizados pelo titular; banco e Admin reconfirmados em 23/10/2026, sem divergência visual após recarga. Disponibilidade no catálogo não substitui prova operacional. Legado e revisões pendentes preservados.
+- Rodada 1: apply seletivo E21.2 concluído em 23/10/2026; prova real Standard Luna/max aprovada no #1091, sem ativação pelo Executor. Rodada 2: Salvar e aplicar sob confirmação única, revisão ativa por execução e incompatibilidade explícita; comprovação da próxima execução pendente neste delta. gpt-6.1-sol e low/medium/high cadastrados e disponibilizados pelo titular; banco e Admin reconfirmados em 23/10/2026, sem divergência visual após recarga. Disponibilidade no catálogo não substitui prova operacional. Legado e revisões pendentes preservados.
 - Limites: sem alteração de modelo/effort, D18A, D10/E21.5, D10B ou PRs #1086/#1090; sem testes/prompts do Pending Setup, branches/previews de teste, comparações de qualidade/latência/custo, retomada da E21.3 ou nova infraestrutura/agentes/automações.
 
 21.2.5 Catálogo administrável e UX

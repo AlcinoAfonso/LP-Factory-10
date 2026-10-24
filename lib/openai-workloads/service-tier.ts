@@ -27,3 +27,17 @@ export function openAiServiceTierWasApplied(requested: OpenAiServiceTier, applie
 export function openAiServiceTierLabel(value: OpenAiServiceTier | null | undefined): string {
   return value === "default" ? "Standard" : value === "fast" ? "Fast" : value === "ultrafast" ? "Ultrafast" : "Legado — sem nível explícito";
 }
+
+// A dated provider snapshot is compatible with its requested model alias.
+export function openAiResponseMatchesConfiguration(
+  configuration: { model: string; reasoningEffort: string; serviceTier?: OpenAiServiceTier | null },
+  response: { model?: unknown; reasoning?: unknown; service_tier?: unknown } | null,
+): boolean {
+  if (configuration.serviceTier != null && !openAiServiceTierWasApplied(configuration.serviceTier, response?.service_tier)) return false;
+  if (typeof response?.model === "string" && response.model !== configuration.model &&
+    !(response.model.startsWith(configuration.model + "-") &&
+      /^\d{4}-\d{2}-\d{2}$/.test(response.model.slice(configuration.model.length + 1)))) return false;
+  const reasoning = response?.reasoning;
+  return !reasoning || typeof reasoning !== "object" || !("effort" in reasoning) ||
+    reasoning.effort === configuration.reasoningEffort;
+}
