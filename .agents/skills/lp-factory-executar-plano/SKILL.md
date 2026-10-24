@@ -27,7 +27,7 @@ Em planos iniciados, condução, avaliação e liberação de merge atribuídas 
 
 ## 2. Fontes e preparação
 
-Consulte apenas o necessário:
+Consulte apenas o necessário: confirme caminhos reais no repositório, priorize trechos pertinentes e evite varreduras ou releituras sem mudança material.
 - `README.md`, `AGENTS.md`, contrato aprovado, V2 vigente e V1 legada quando aplicável;
 - `docs/roadmap.md` e `docs/template-roadmap.md`: casos, fases, identificadores e dependências;
 - repositório real: estado, arquivos, comportamento, contratos e consumidores;
@@ -38,6 +38,8 @@ Consulte apenas o necessário:
 **Catálogo QA:** em teste autorizado, consulte diretamente o `Catálogo de QA — Debate 09 — LP Factory 10` no Google Drive (`LP Factory`), sem nova autorização humana rotineira. Use identidades/credenciais exclusivas de QA apenas quando o contrato funcional permitir e o contrato técnico não restringir ou mediar; limite-se à jornada aprovada. Antes de pedir outra conta, verifique identidade catalogada reutilizável e fixture/tenant descartável no estado exigido, preparado por mecanismo técnico já autorizado, sem modificar conta ativa. Não trate esse atalho como jornada de produto; criação de identidade/signup/convite/recuperação, quando objeto do teste, exigem o fluxo real. Se o teste alterar valor catalogado, atualize apenas o registro correspondente (#924); caso contrário, não o modifique. Nunca exponha credenciais em chat, logs, prints, evidências ou Git. Esta permissão não cobre API keys, tokens, cookies, sessões nem secrets GitHub/Vercel/Supabase.
 
 Não invente fonte, path, schema, comportamento, dependência, rota, job, agente, automação, engine ou infraestrutura. Antes de editar, confirme Git conforme `AGENTS.md`, fases do roadmap, dependências e regressões; investigue banco só quando necessário e resolva dúvidas técnicas nas fontes.
+
+Reutilize referências, contexto e verificações válidas e compatíveis com o contrato e estado atual, sem retransmitir conteúdo extenso recuperável. Antes do código, percorra o aceite até a entrega: dependências, estados sucessivos, autorizações, operações externas e gates necessários; antecipe bloqueios e decisões sem executar operações prematuras nem reduzir controles.
 
 ### Bloqueios e convergência
 
