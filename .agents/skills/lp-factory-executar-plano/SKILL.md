@@ -141,7 +141,7 @@ Reutilize Updates só com versão exata do contrato, `source_repository_sha`, re
 
 ## 8. Gate de aderência
 
-Antes da entrega, confronte HEAD/diff e contrato/V2/escopo negativo com aceite, QA, checks, reviews, threads e documentos. Cada alteração material exige requisito ou dependência factual; retire excesso ou prove necessidade. Resolva achados ou rejeite justificadamente; QA adicional só por risco, aceite ou prova faltante. Não repita validação satisfeita; preserve UX/Design System, simplicidade e escalada §0.
+Antes da entrega, confronte HEAD/diff e contrato/V2/escopo negativo com aceite, QA, checks, reviews, threads e documentos. Cada alteração material exige requisito ou dependência factual; retire excesso ou prove necessidade. Resolva achados ou rejeite justificadamente; QA adicional só por risco, aceite ou prova faltante. Consolide o delta antes do check completo; não sobreponha o mesmo check nem repita validação satisfeita; preserve UX/Design System, simplicidade e escalada §0.
 
 ## 9. Entrega, merge e conclusão
 
