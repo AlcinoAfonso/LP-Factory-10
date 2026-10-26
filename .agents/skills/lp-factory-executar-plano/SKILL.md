@@ -145,7 +145,7 @@ Antes da entrega, confronte HEAD/diff e contrato/V2/escopo negativo com aceite, 
 
 ## 9. Entrega, merge e conclusão
 
-Recibo compacto no PR/Git: contrato/estado, branch/PR/HEAD, arquivos/diff, pareceres/achados, checks, QA por aceite, `npm ci`/`npm run check` com status, riscos, alternativas, pendências e decisões fora da autoridade. Não recopie V2/pareceres recuperáveis; preserve provas de prompt IA (§4) e ABC.
+Recibo compacto no PR/Git: contrato/estado, branch/PR/HEAD, arquivos/diff, pareceres/achados, checks, QA por aceite, `npm ci`/`npm run check` com status, riscos, alternativas, pendências e decisões fora da autoridade. Não reescreva descrição/recibo sem fato material nem recopie V2/pareceres recuperáveis; preserve provas de prompt IA (§4) e ABC.
 
 Libere somente PR/HEAD avaliados, após Definidos, QA, gates e review independente do SHA corrente (`AGENTS.md`); escritor único não substitui reviewer. Checks, QA, reviews automáticos disparados, threads, achados ou autorizações materiais pendentes bloqueiam merge. Autonomia não revoga ordem humana de impedir merge.
 
