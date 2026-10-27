@@ -2,7 +2,7 @@
 
 ## 1. Autoridade, validade e fontes
 
-- Data da fotografia técnica: 20/10/2026; baseline anterior de 14/09/2026, reorganizado em 22/09/2026.
+- Data da fotografia técnica: 27/10/2026; baseline anterior de 14/09/2026, reorganizado em 22/09/2026.
 - Objetivo: manter uma fotografia técnica itemizada e rastreável das capacidades OpenAI relevantes ao LP Factory 10.
 - Este documento não define sozinho modelo, `reasoning.effort`, tool, arquitetura ou configuração de produção e não autoriza adoção.
 - A configuração efetiva permanece em `docs/platform-config.md`; a governança das decisões por workload permanece em `docs/gestor-automations.md` e no caso competente do roadmap.
@@ -19,6 +19,9 @@
   - `https://developers.openai.com/api/docs/models/gpt-6-sol`
   - `https://developers.openai.com/api/docs/models/gpt-6-astra`
   - `https://developers.openai.com/api/docs/models/gpt-6.1-sol`
+  - `https://developers.openai.com/api/docs/models/gpt-6.1-terra`
+  - `https://developers.openai.com/api/docs/guides/prompt-caching`
+  - `https://developers.openai.com/api/docs/guides/error-codes`
   - `https://developers.openai.com/api/docs/changelog`
   - `https://developers.openai.com/api/docs/guides/agents-api/overview`
   - `https://developers.openai.com/api/docs/guides/latest-model?model=gpt-6-astra`
@@ -81,6 +84,7 @@
 | `OAI-M07` | `gpt-6-sol` | alternativa técnica avaliada focalmente para `OAI-W07` | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo e PR #978 |
 | `OAI-M08` | `gpt-6-astra` | tarefas complexas somente mediante comparação própria | 1,05M | 128k | `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo |
 | `OAI-M09` | `gpt-6.1-sol` | trabalho profissional complexo; candidato ainda não comparado para `OAI-W07` | 1,05M | 128k | `low`, `medium`, `high`, `xhigh`, `max` | documentada; `medium` é o padrão | documentação específica do modelo e Model guidance |
+| `OAI-M10` | `gpt-6.1-terra` | escrita e raciocínio visual; candidato dependente de comparação própria | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | documentada desde 26/10/2026; `medium` padrão | documentação específica do modelo e changelog |
 
 - Luna, Terra e Sol documentam Responses API, function calling, Structured Outputs e reasoning tokens.
 - Em GPT-5.6, o effort padrão documentado é `medium` quando omitido; comparações devem registrar o valor explicitamente.
@@ -88,6 +92,7 @@
 - `gpt-4.1-mini` é um modelo não reasoning; a referência operacional externa `OAI-W04` não deve receber `reasoning.effort`.
 - `OAI-M05`/`OAI-W04`: aviso oficial de 14/10/2026 agenda retirada de `gpt-4.1-mini-2025-04-14` para 14/01/2027 e indica `gpt-6-luna` como substituto. O workflow `pipeline-supabase-inspect.yml` ainda oferece somente `gpt-4.1-mini`; planejar migração antes do prazo, validando modelo resolvido, contrato, tools, qualidade e limites no recorte próprio. A configuração hospedada não foi inspecionada; não presumir troca automática nem equivalência. Fonte: página oficial de deprecações.
 - `gpt-6.1-sol` requer Responses API para tool calling; Chat Completions não oferece tools para esse modelo. Não suporta `none` nem `minimal`; preservar o effort atual e comparar somente em recorte autorizado.
+- `OAI-M10`: entrada textual/visual e saída textual; tools por Responses API, incluindo function calling, Web Search, file search, imagem, code interpreter, shell, apply patch, skills, computer use, MCP e tool search. Disponibilidade não demonstra superioridade nem substitui modelo/effort de workload existente.
 - Limites e capacidades são voláteis e devem ser reconfirmados na fonte oficial focal antes de uma decisão material.
 - A documentação da família GPT-6 indica entrada textual e visual, saída textual e limite máximo de entrada de 922k tokens; capacidade técnica não altera os gates de cada workload.
 
@@ -151,11 +156,11 @@
 
 ### `OAI-C08` — Explicit prompt caching
 
-- Natureza: reutilização de prefixos estáveis e repetidos do contexto.
-- Aplicabilidade: workloads com contexto repetitivo e benefício técnico mensurável.
-- Maturidade: condicional.
-- Limite: não é memória escolhida pelo modelo nem mecanismo de pausa do workflow.
-- Fonte: Model guidance.
+- Natureza: reutilização de prefixos estáveis; em modelos elegíveis, `prompt_cache_options.ttl` admite `30m` e `12h` na Responses API, com controle por breakpoint.
+- Aplicabilidade: medir reutilização e latência do contexto antes de escolher duração ou breakpoint; complementar a `OAI-C15`.
+- Maturidade: documentada; opção de 12h anunciada em 20/10/2026, sem configuração alterada no projeto.
+- Limites: TTL mínimo não é prazo máximo de retenção nem garantia de hit/latência. É distinto do parâmetro legado `prompt_cache_retention`; elegibilidade e política de dados precisam de validação focal. Não é memória escolhida pelo modelo nem pausa de workflow.
+- Fonte: guia oficial Prompt caching e changelog; conteúdo financeiro permanece fora desta fotografia.
 
 ### `OAI-C09` — Agents SDK
 
@@ -195,6 +200,7 @@
 - Aplicabilidade: somente recorte agentic com necessidade comprovada de estado ou orquestração gerenciada.
 - Maturidade: documentada em beta público; não registrada como workload do projeto.
 - Limite: não autoriza substituir Responses API nem criar fluxo autônomo sem contrato, governança e avaliação próprios.
+- Evolução documentada em outubro: pre-warm de sandbox, Artifact SDK/skills de documentos em sandboxes hospedados e Ultrafast com modelo elegível; continuam condicionados ao recorte, sem execução hospedada aprovada nesta fotografia.
 - Fonte: changelog e guia oficial Agents API, lançamento de 10/09/2026.
 
 ### `OAI-C14` — Async tool calling e mid-turn steering
@@ -217,7 +223,7 @@
 
 - Natureza: endpoint `POST /v1/decisions` para respostas tipadas `predicate`, `choice` ou `score` a partir de texto e imagens.
 - Aplicabilidade: hipótese futura de classificação ou avaliação delimitada; não substitui geração de conteúdo ou conversa dos workloads atuais.
-- Maturidade: beta público desde 06/10/2026, somente com `gpt-6-luna`; sem uso registrado no projeto.
+- Maturidade: GA desde 22/10/2026, somente com `gpt-6-luna`; sem uso registrado no projeto. Até 400 perguntas por request, `input_json`, imagens nas instruções de cada pergunta e reutilização de entrada compartilhada documentados.
 - Limites: exige comparação própria de qualidade, latência e probabilidades. A aceleração anunciada é referência do fornecedor, sem medição local; objetos JSON livres e tool calling continuam em Responses API. SDK mínimo documentado para JavaScript: 7.30.0.
 - Integração de voz: desde 15/10/2026, GPT-Live pode delegar decisões nativamente ou dispará-las a partir de deltas de transcrição de entrada/saída; capacidade condicional descrita em `OAI-C18`, sem alterar workloads textuais.
 - Fonte: changelog, guia oficial Decisions e Connect voice to Decisions.
@@ -237,6 +243,14 @@
 - Maturidade: capacidades documentadas no changelog de 15–16/10 e guias específicos; elegibilidade, idiomas, limites e versão do SDK exigem validação focal no caso real.
 - Limites: novo canal exige consentimento, handoff, interrupção e controle de ações; descrição de voz não autoriza imitação de pessoa. Não substitui Responses ou `OAI-W08`, nem justifica streaming, sessão persistente ou agente novo agora.
 - Fontes: changelog, Connect voice to Decisions e Custom voices oficiais. Sem adoção ou conteúdo financeiro.
+
+### `OAI-C19` — Restrições de níveis de serviço por projeto/organização
+
+- Natureza: desde 21/10/2026, configurações Platform podem restringir os tiers permitidos por projeto; a organização limita o que seus projetos podem habilitar.
+- Aplicabilidade: verificar compatibilidade em revisão autorizada de workloads/tiers ou diante de rejeição da API. Disponibilidade do modelo não comprova permissão para usar um tier.
+- Maturidade: documentada; política efetiva das contas do projeto não foi inspecionada.
+- Limites: `auto` ou parâmetro omitido também depende do tier resolvido permitido. Não alterar settings, credenciais, allowlist ou configuração E21 nesta catalogação; nenhuma nova implementação recomendada sem caso e custo zero comprovados.
+- Fontes: changelog e guia oficial Error codes.
 
 ## 5. Aplicabilidade e registro de decisões
 
