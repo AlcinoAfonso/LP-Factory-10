@@ -437,6 +437,15 @@ Dashboard de segurança da Vercel para agregar postura de segurança por conta e
 
 Agente da Vercel no dashboard para responder perguntas sobre projetos, investigar falhas de produção, analisar deploys/logs/métricas/configurações e executar ações aprovadas, como abrir PR, rollback ou ajuste de configuração.
 
+Em 26/10/2026, ganhou [validação de alertas antes do paging](https://vercel.com/changelog/vercel-agent-can-now-validate-alerts-before-paging-you): destinos webhook podem receber somente alertas classificados como críticos. Depende de Pro/Enterprise com Observability Plus, com investigações adicionais e varredura de monitores sujeitos a cobrança; não recomendar ativação no plano vigente sem prova econômica.
+
+- Estado atual: radar transversal, sem adoção ou monitor configurado.
+- Ação pendente: avaliar triagem por agente somente diante de incidentes e ruído operacional mensuráveis.
+- Prioridade: condicional, fora do caminho crítico atual.
+- Motivo da permanência: potencial de reduzir notificações sem impacto, sem substituir controles humanos.
+- Gatilho: operação de alertas aprovada, volume que justifique triagem e custo incremental zero comprovado.
+- Critério de encerramento: adoção validada e reconciliada documentalmente, rejeição fundamentada ou superação comprovada.
+
 ### Valor para o Projeto
 
 - Pode apoiar diagnóstico operacional futuro em Vercel.
