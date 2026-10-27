@@ -150,6 +150,12 @@ Atualizado em 2026-07-20
 
 Recurso de monitoramento público de secrets para Enterprise, capaz de detectar segredos vazados em conteúdo público do GitHub fora dos repositórios próprios da organização, como forks pessoais, issues, pull requests e outros repositórios públicos. A lista de alertas passou a exibir indicadores de vazamentos por atribuição, quantidade de membros e domínios verificados.
 
+A atualização de 23/10/2026 acrescenta encerramento/reabertura de alertas, timeline, filtros, checagem contínua de validade para tipos suportados e integração por REST API/webhooks. Encerrar alerta não revoga a credencial exposta.
+
+- Estado/ação: radar transversal não adotado; avaliar somente com necessidade de monitoramento público externo e elegibilidade real.
+- Prioridade: condicional, sem mudança; horizonte indefinido. Gatilho: licença/acesso comprovados e custo incremental zero; encerramento: adoção validada/ABC ou rejeição fundamentada.
+- Incluído em licença GHAS/Secret Protection no Enterprise Cloud, inclusive data residency; isso não comprova disponibilidade ou gratuidade no plano do projeto.
+
 ### Valor para o Projeto
 
 - Pode ser útil se o LP Factory 10 evoluir para estrutura Enterprise ou organização com domínio verificado.
@@ -166,6 +172,7 @@ Recurso de monitoramento público de secrets para Enterprise, capaz de detectar 
 
 - [Secret scanning public monitoring for enterprises](https://github.blog/changelog/2026-07-01-secret-scanning-public-monitoring-for-enterprises/)
 - [Improvements to secret scanning and public monitoring](https://github.blog/changelog/2026-07-15-improvements-to-secret-scanning-and-public-monitoring/)
+- [Triage, validity, API and webhooks — 23/10/2026](https://github.blog/changelog/2026-10-23-public-monitoring-adds-triage-validity-api-and-webhooks/)
 
 ---
 
@@ -265,7 +272,7 @@ As workflow execution protections permitem criar uma allow list para controlar q
 
 Na disponibilidade geral de 17/09/2026, o GitHub acrescentou escopo por arquivo de workflow, Insights e REST API. O modo de avaliação continua permitindo observar o efeito antes de bloquear runs.
 
-Para repositórios públicos sem policy aplicável, o GitHub também iniciou uma regra padrão em modo de avaliação para desabilitar `pull_request_target`, com enforcement previsto para 02/11/2026. O LP Factory 10 não possui esse trigger no estado atual, portanto a mudança padrão não exige alteração de workflow.
+Para repositórios públicos sem policy aplicável, o GitHub também iniciou uma regra padrão em modo de avaliação para desabilitar `pull_request_target`, com enforcement adiado para 02/12/2026, conforme correção oficial de 21/10. O LP Factory 10 não possui esse trigger no estado atual, portanto a mudança padrão não exige alteração de workflow.
 
 ### Valor para o Projeto
 
@@ -642,6 +649,37 @@ Catalogado em 2026-10-20
 ### Fonte oficial
 
 - [GitHub — workflow lockfiles em public preview](https://github.blog/changelog/2026-10-14-github-actions-workflow-lockfiles-in-public-preview/)
+
+---
+
+## github#19 — Arquivamento de pull requests *(🟩 Disponível; dependente de recorte)*
+
+2026-10-08
+Catalogado em 2026-10-27
+
+### Estado, valor e limite
+
+- Não adotado como procedimento: os PRs cancelados foram fechados, sem comprovação de arquivamento. Pode preservar histórico de PR abandonado ou indevido em estado somente leitura, reduzindo atividade automática posterior.
+- Triage ou papel superior permite arquivar/desarquivar. Arquivar fecha o PR, bloqueia atividade e o oculta de leitores públicos; usuários autorizados ainda o veem. Desarquivar não reabre o PR.
+- Horizonte: Starter, condicionado a disponibilidade, permissão e custo zero confirmados na superfície usada. Comparar com fechamento simples quando a necessidade real for somente rejeitar a alteração.
+- Não exclui o histórico nem desfaz merge. Aplicar apenas a PRs explicitamente cancelados pelo titular, por canal autorizado; esta catalogação não arquiva PR algum.
+- Fonte: [GitHub — PR archiving, 08/10/2026](https://github.blog/changelog/2026-10-08-triage-role-users-or-higher-can-now-archive-pull-requests/).
+
+---
+
+## github#20 — Package firewall para dependências npm *(🧪 Public preview; transversal condicional)*
+
+2026-10-20
+Catalogado em 2026-10-27
+
+### Estado, valor e pendência
+
+- Não implementado: não há configuração de proxy/firewall de pacotes no projeto. Pode filtrar instalações npm por advisories, cooldown e sinais de supply chain antes de baixar pacotes.
+- Complementa `github#9/#12/#18`; comparar com registry atual, lockfile, `npm ci` e revisão de dependências somente em recorte aprovado com risco concreto.
+- Horizonte indefinido. Preview exige Enterprise Cloud; gratuito durante preview, com cobrança por uso anunciada para GA. Elegibilidade e custo local não comprovados: radar, sem recomendação de adoção agora.
+- Prioridade condicional. Gatilho: necessidade demonstrada, plano elegível e custo incremental zero; encerramento: adoção validada/ABC ou rejeição fundamentada.
+- Não alterar registry, rede, CI, permissões ou instalar gateway nesta rodada.
+- Fonte: [GitHub — package firewall, 20/10/2026](https://github.blog/changelog/2026-10-20-github-package-firewall-in-public-preview/).
 
 ---
 
