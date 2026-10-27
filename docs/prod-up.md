@@ -848,6 +848,29 @@ Avaliar apenas quando:
 
 ---
 
+## 26 — Indexação intencional de páginas compartilhadas e prevenção de spam *(🟩 Orientação oficial; dependente de recorte)*
+
+2026-10-26
+
+### Status no Projeto
+
+- Status: avaliação futura, não implementado por esta rodada.
+- Evidência: o README prevê landing pages e serviços de comunicação; não foi encontrada política versionada específica para indexação de saídas compartilhadas. Não se presume exposição indevida ou incidente.
+- Natureza: dependente de recorte de publicação; horizonte indefinido até existir jornada aprovada de compartilhamento público.
+
+### Valor e aplicação
+
+- O Google atualizou a orientação para plataformas com páginas e conteúdo gerados por usuários: distinguir descoberta pública em busca de acesso direto por link e acompanhar abuso no Search Console.
+- Pode proteger reputação do domínio e evitar indexar saídas que não foram destinadas à busca. Não aplicar bloqueio indiscriminado às LPs comerciais destinadas ao SEO.
+- Gatilho: definir publicação/compartilhamento de LP ou saída gerada. Avaliar controles de indexação por intenção, risco de spam e regras do consumidor existente, sem criar infraestrutura preventiva.
+- Limites: `noindex` não é controle de acesso nem substitui autorização. Nenhuma configuração, página ou regra de publicação foi alterada. Adoção depende de recorte aprovado e custo incremental zero comprovado.
+
+### Fonte Oficial
+
+- [Google — Prevent user-generated spam, atualizado em 26/10/2026](https://developers.google.com/search/docs/monitor-debug/prevent-abuse)
+
+---
+
 ## Registro da rodada de 2026-08-10
 
 ### Veredito
