@@ -150,6 +150,15 @@ Atualizado em 2026-07-20
 
 Recurso de monitoramento público de secrets para Enterprise, capaz de detectar segredos vazados em conteúdo público do GitHub fora dos repositórios próprios da organização, como forks pessoais, issues, pull requests e outros repositórios públicos. A lista de alertas passou a exibir indicadores de vazamentos por atribuição, quantidade de membros e domínios verificados.
 
+A [atualização de 23/10/2026](https://github.blog/changelog/2026-10-23-public-monitoring-adds-triage-validity-api-and-webhooks/) adicionou triagem, histórico, filtros, verificações contínuas de validade para provedores compatíveis, REST API e webhooks. Continua em public preview, inclusive com residência de dados, exigindo Enterprise Cloud e licença Advanced Security ou Secret Protection; a inclusão na licença não comprova gratuidade no plano atual. Fechar o alerta não revoga a credencial exposta.
+
+- Estado atual: radar transversal Enterprise; sem adoção.
+- Ação pendente: avaliar elegibilidade e necessidade de monitorar exposições fora do repositório próprio.
+- Prioridade: condicional; proteções atuais do repositório permanecem independentes.
+- Motivo da permanência: alcance externo adicional em eventual operação Enterprise.
+- Gatilho: estrutura Enterprise aprovada, necessidade concreta e custo incremental zero comprovado.
+- Critério de encerramento: adoção validada e reconciliada, rejeição fundamentada ou inaplicabilidade comprovada.
+
 ### Valor para o Projeto
 
 - Pode ser útil se o LP Factory 10 evoluir para estrutura Enterprise ou organização com domínio verificado.
