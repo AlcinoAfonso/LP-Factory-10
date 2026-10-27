@@ -224,7 +224,7 @@
 - Natureza: endpoint `POST /v1/decisions` para respostas tipadas `predicate`, `choice` ou `score` a partir de texto e imagens.
 - Aplicabilidade: hipótese futura de classificação ou avaliação delimitada; não substitui geração de conteúdo ou conversa dos workloads atuais.
 - Maturidade: GA desde 22/10/2026, somente com `gpt-6-luna`; sem uso registrado no projeto. Até 400 perguntas por request, `input_json`, imagens nas instruções de cada pergunta e reutilização de entrada compartilhada documentados.
-- Limites: exige comparação própria de qualidade, latência e probabilidades. A aceleração anunciada é referência do fornecedor, sem medição local; objetos JSON livres e tool calling continuam em Responses API. SDK mínimo documentado para JavaScript: 7.30.0.
+- Limites: exige comparação própria de qualidade, latência e probabilidades. A aceleração anunciada é referência do fornecedor, sem medição local; objetos JSON livres e tool calling continuam em Responses API. Reconfirmar SDK e contrato compatíveis com GA no caso próprio; o mínimo da beta não foi reconfirmado nesta fotografia.
 - Integração de voz: desde 15/10/2026, GPT-Live pode delegar decisões nativamente ou dispará-las a partir de deltas de transcrição de entrada/saída; capacidade condicional descrita em `OAI-C18`, sem alterar workloads textuais.
 - Fonte: changelog, guia oficial Decisions e Connect voice to Decisions.
 
@@ -249,6 +249,7 @@
 - Natureza: desde 21/10/2026, configurações Platform podem restringir os tiers permitidos por projeto; a organização limita o que seus projetos podem habilitar.
 - Aplicabilidade: verificar compatibilidade em revisão autorizada de workloads/tiers ou diante de rejeição da API. Disponibilidade do modelo não comprova permissão para usar um tier.
 - Maturidade: documentada; política efetiva das contas do projeto não foi inspecionada.
+- Cobertura documentada: `default`, `flex` e `priority`; `fast` é avaliado como `priority`, e Scale Tier fica fora dessa policy. Rejeição gera erro400 de `service_tier`.
 - Limites: `auto` ou parâmetro omitido também depende do tier resolvido permitido. Não alterar settings, credenciais, allowlist ou configuração E21 nesta catalogação; nenhuma nova implementação recomendada sem caso e custo zero comprovados.
 - Fontes: changelog e guia oficial Error codes.
 
