@@ -686,8 +686,6 @@ Avaliar quando houver primeiros clientes ativos, incidente recorrente ou necessi
 
 Guia oficial da Supabase para criar apps do ChatGPT conectados ao banco usando **mcp-use**, facilitando o deploy de **MCP Servers** em **Supabase Edge Functions**.
 
-Atualização verificada em 27/10/2026: o [guia oficial de 22/10](https://supabase.com/blog/give-your-supabase-app-its-own-mcp-server) acrescenta o bloco MCP Server da Supabase Library, com SDK TypeScript oficial, helpers `@supabase/server`, OAuth 2.1 e identidade do usuário sujeita a RLS. É uma alternativa ao guia com mcp-use, não uma integração já adotada. Horizonte condicional: avaliar somente com serviço aprovado que precise ser consumido por cliente MCP, vantagem sobre a interface/API existente e custo incremental zero comprovado; não criar endpoint, OAuth ou Edge Function nesta rodada.
-
 ### Valor para o Projeto  
 
 - Opção concreta para “agentes com acesso a dados reais” usando a infraestrutura do Supabase.  
