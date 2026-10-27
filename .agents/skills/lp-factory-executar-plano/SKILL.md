@@ -61,9 +61,9 @@ Confira identidade, versão e acesso às referências; transporte conteúdo só 
 
 ### 3.2 Acionar somente o necessário
 
-O Executor seleciona especialistas/retornos pelos wrappers; pareceres read-only não impõem gates ou chamadas. Updates tem avaliação inicial obrigatória; demais, avaliação ordinária condicional. Wrappers garantem identidade, modo, recorte, fontes, referências, acesso, independência e parecer integral; runtimes mantêm métodos e conclusões. Gates legados e pedidos humanos prevalecem.
+O Executor seleciona especialistas/retornos pelos wrappers; pareceres read-only não impõem gates ou chamadas. Updates é padrão; demais condicionais. Wrappers garantem identidade, modo, recorte, fontes, referências, acesso, independência e parecer integral; runtimes mantêm métodos e conclusões. Gates legados e pedidos humanos prevalecem.
 
-- `$lp-factory-avaliar-plano-updates`: uma avaliação inicial dos catálogos antes de codificar, mesmo sem candidato; registre veredito negativo. Preserve contrato congelado, `source_repository_sha`, parecer e referências excepcionais; reutilize somente quando compatível (§7.3).
+- `$lp-factory-avaliar-plano-updates`: avaliação dos catálogos antes de codificar, mesmo sem candidato, salvo ajuste pontual comprovado sem mudança tecnológica; registre veredito negativo. Preserve contrato congelado, `source_repository_sha`, parecer e referências excepcionais; reutilize somente quando compatível (§7.3).
 - `$lp-factory-avaliar-plano-estrutura`: só para dúvida real de responsabilidades/boundaries, dependências, consumidores, arquitetura ou crescimento; preferencialmente após derivar a V2, antes da implementação. Mudança local resolvida dispensa chamada. Crescimento exige prova de necessidade; confrontar contrato, fontes, reuso, alternativa simples e complexidade líquida. Quando houver update pertinente, receba parecer prévio de Updates; tratamento já determinado vai à V2 com evidência, e pendência estrutural/gate legado requer parecer. Use `derivacao_inicial` ou `confronto_modernizacao`, sem segunda chamada ritual nem patch direto para update estrutural material.
 - `$lp-factory-avaliar-plano-automacoes`: só se decisão real de Automações não estiver resolvida nas fontes; menção a IA/agente/automação não obriga chamada.
 - `$lp-factory-avaliar-design`: nova página, interação relevante ou dúvida material de UX/UI; visual definido dispensa chamada, resultado renderizado materialmente novo pode justificar revisão.
@@ -141,11 +141,11 @@ Reutilize Updates só com versão exata do contrato, `source_repository_sha`, re
 
 ## 8. Gate de aderência
 
-Antes da entrega, confronte HEAD/diff e contrato/V2/escopo negativo com aceite, QA, checks, reviews, threads e documentos. Cada alteração material exige requisito ou dependência factual; retire excesso ou prove necessidade. Resolva achados ou rejeite justificadamente; QA adicional só por risco, aceite ou prova faltante. Não repita validação satisfeita; preserve UX/Design System, simplicidade e escalada §0.
+Antes da entrega, confronte HEAD/diff e contrato/V2/escopo negativo com aceite, QA, checks, reviews, threads e documentos. Cada alteração material exige requisito ou dependência factual; retire excesso ou prove necessidade. Resolva achados ou rejeite justificadamente; QA adicional só por risco, aceite ou prova faltante. Consolide o delta antes do check completo; não sobreponha o mesmo check nem repita validação satisfeita; preserve UX/Design System, simplicidade e escalada §0.
 
 ## 9. Entrega, merge e conclusão
 
-Recibo compacto no PR/Git: contrato/estado, branch/PR/HEAD, arquivos/diff, pareceres/achados, checks, QA por aceite, `npm ci`/`npm run check` com status, riscos, alternativas, pendências e decisões fora da autoridade. Não recopie V2/pareceres recuperáveis; preserve provas de prompt IA (§4) e ABC.
+Recibo compacto no PR/Git: contrato/estado, branch/PR/HEAD, arquivos/diff, pareceres/achados, checks, QA por aceite, `npm ci`/`npm run check` com status, riscos, alternativas, pendências e decisões fora da autoridade. Não reescreva descrição/recibo sem fato material nem recopie V2/pareceres recuperáveis; preserve provas de prompt IA (§4) e ABC.
 
 Libere somente PR/HEAD avaliados, após Definidos, QA, gates e review independente do SHA corrente (`AGENTS.md`); escritor único não substitui reviewer. Checks, QA, reviews automáticos disparados, threads, achados ou autorizações materiais pendentes bloqueiam merge. Autonomia não revoga ordem humana de impedir merge.
 
