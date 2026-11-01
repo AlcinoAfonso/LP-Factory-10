@@ -18,6 +18,7 @@ import { readCommunicationDefinitions } from "../../../../lib/communication-base
 import { getCommunicationSection } from "../../../../lib/communication-base/registry";
 import { hasConfirmedStageOneInput, type StageTwoDraft, type StageTwoTarget } from "../../../../lib/communication-base/ai-core";
 import { isCurrentGenerationVersion } from "../../../../lib/communication-base/generation-guard";
+import { readActivePrimaryAccountTaxon } from "../../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import { isE1011PassageEnabled } from "../../../../lib/onboarding/pending-setup/config";
 
 export type CommunicationActionState = Readonly<{
@@ -42,6 +43,13 @@ export async function startCommunicationBaseAction(
   const account = readFormString(formData, "account");
   const access = await requireCommunicationBaseAccess(account, true);
   if (!access.ok) return failure(UNAVAILABLE);
+
+  if (isCommunicationResourcesEnabled()) {
+    if (formData.get("confirm_base_context") !== "on") return failure("Confirme o nicho ou o entendimento apresentado antes de iniciar a Base.");
+    const taxonomy = await readActivePrimaryAccountTaxon({ accountId: access.value.accountId });
+    if (!taxonomy.ok) return failure("Não foi possível conferir o nicho. Atualize a página e tente novamente.");
+    if ((taxonomy.taxon?.taxonId ?? "") !== readFormString(formData, "base_niche")) return failure("O nicho mudou. Atualize a página e confirme o contexto atual antes de iniciar a Base.");
+  }
 
   let initialSections: Record<string, unknown> = {};
   const candidate = await readPendingSetupInitialContext(access.value.accountId);

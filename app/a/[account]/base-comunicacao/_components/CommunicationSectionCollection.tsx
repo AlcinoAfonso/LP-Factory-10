@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import type { CommunicationBase } from "../../../../../lib/communication-base/contracts";
 import type { CommunicationSectionDefinition } from "../../../../../lib/communication-base/registry";
+import { SectionGuidance } from "./SectionGuidance";
 import { hasSectionContent } from "./section-edit-state";
 
 export type SectionDetailControls = Readonly<{
@@ -14,10 +15,11 @@ export type SectionDetailControls = Readonly<{
 }>;
 type DetailRenderer = (definition: CommunicationSectionDefinition, controls: SectionDetailControls) => ReactNode;
 
-export function CommunicationSectionCollection({ definitions, base, suggestedKeys = [], renderDetail }: Readonly<{
+export function CommunicationSectionCollection({ definitions, base, suggestedKeys = [], renderDetail, showGuidance = false }: Readonly<{
   definitions: readonly CommunicationSectionDefinition[];
   base: CommunicationBase;
   suggestedKeys?: readonly string[];
+  showGuidance?: boolean;
   renderDetail: DetailRenderer;
 }>) {
   return <table className="w-full table-fixed text-left text-sm">
@@ -29,12 +31,12 @@ export function CommunicationSectionCollection({ definitions, base, suggestedKey
     </tr></thead>
     <tbody className="divide-y divide-border">{definitions.map((definition) => <SectionRow key={definition.key}
       definition={definition} hasContent={hasSectionContent(base.sections[definition.key]?.value) || Boolean(base.sections[definition.key]?.facts?.length)}
-      hasSuggestion={suggestedKeys.includes(definition.key)} renderDetail={renderDetail} />)}</tbody>
+      hasSuggestion={suggestedKeys.includes(definition.key)} renderDetail={renderDetail} showGuidance={showGuidance} />)}</tbody>
   </table>;
 }
 
-function SectionRow({ definition, hasContent, hasSuggestion, renderDetail }: Readonly<{
-  definition: CommunicationSectionDefinition; hasContent: boolean; hasSuggestion: boolean; renderDetail: DetailRenderer;
+function SectionRow({ definition, hasContent, hasSuggestion, renderDetail, showGuidance }: Readonly<{
+  definition: CommunicationSectionDefinition; hasContent: boolean; hasSuggestion: boolean; renderDetail: DetailRenderer; showGuidance: boolean;
 }>) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const discardRef = useRef<HTMLDialogElement>(null);
@@ -100,10 +102,13 @@ function SectionRow({ definition, hasContent, hasSuggestion, renderDetail }: Rea
           const rect = event.currentTarget.getBoundingClientRect();
           if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) requestClose();
         }}>
-        <header className="sticky top-0 z-10 flex items-start justify-between gap-2 border-b border-border bg-background px-3 py-2 sm:px-4">
-          <div><p className="text-xs text-muted-foreground">{definition.group}</p>
-            <h2 id={titleId} className="mt-1 text-lg font-semibold leading-6">{definition.label}</h2></div>
-          <Button variant="secondary" className="min-h-11 shrink-0 px-3" aria-label={`Fechar ${definition.label}`} onClick={requestClose}>Fechar</Button>
+        <header className="sticky top-0 z-10 border-b border-border bg-background px-3 py-2 sm:px-4">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0"><p className="text-xs text-muted-foreground">{definition.group}</p>
+              <h2 id={titleId} className="mt-1 text-lg font-semibold leading-6">{definition.label}</h2></div>
+            <Button variant="secondary" className="min-h-11 shrink-0 px-3" aria-label={`Fechar ${definition.label}`} onClick={requestClose}>Fechar</Button>
+          </div>
+          {showGuidance ? <SectionGuidance sectionKey={definition.key} label={definition.label} /> : null}
         </header>
         <div className="px-3 py-3 sm:px-4">
           {closingMessage ? <FeedbackMessage tone="warning" className="mb-4">{closingMessage}</FeedbackMessage> : null}

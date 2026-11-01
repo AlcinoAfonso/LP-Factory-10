@@ -127,3 +127,24 @@ assert.equal(hasConfirmedStageOneInput(onlyFactsOff,general),false);
 assert.equal(stageTwoPrompt(onlyFactsOff,general,false),null);
 assert.equal(hasConfirmedStageOneInput(onlyFactsOn,general),true);
 console.log("PB1: gate off/on DTO, legacy AI fingerprint, stored factual preservation and reactivation passed.");
+
+
+// D14D: predefined identification is only a view over the existing optional facts.
+import * as identification from "./business-identification";
+const legacyFacts = [{ label: "Razão social", value: "Empresa antiga" }, { label: "CEP", value: "01000-000" }, { label: "CEP", value: "Outro endereço" }];
+const legacySnapshot = JSON.stringify(legacyFacts);
+const initialName = identification.updateIdentificationFact(legacyFacts, "Nome completo ou razão social", "Nome completo");
+assert.deepEqual(initialName.slice(0, 3), legacyFacts);
+assert.equal(JSON.stringify(legacyFacts), legacySnapshot);
+const changedCep = identification.updateIdentificationFact(legacyFacts, "CEP", "02000-000");
+assert.deepEqual(changedCep[0], legacyFacts[0]);
+assert.deepEqual(changedCep[2], legacyFacts[2], "duplicate legacy facts remain editable as extra rows");
+assert.equal(changedCep[1].value, "02000-000");
+assert.deepEqual(identification.updateIdentificationFact(legacyFacts, "CEP", ""), [legacyFacts[0], legacyFacts[2]]);
+assert.deepEqual(identification.updateIdentificationFact([], "UF", ""), []);
+assert.deepEqual(parseCommunicationFacts(identification.updateIdentificationFact([], "UF", "SP")), [{label:"UF",value:"SP"}]);
+const fullFacts = Array.from({length:30}, (_,i) => ({label:"Extra "+i,value:"valor"}));
+assert.deepEqual(identification.updateIdentificationFact(fullFacts, "Cidade", "Nova"), fullFacts);
+assert.equal(sectionEditState(communicationSections[0], undefined, "", true, "[]").dirty, false);
+assert.equal(sectionEditState(communicationSections[0], undefined, "", true, "[]").valid, true);
+console.log("D14D: optional predefined fields, legacy duplicates, clearing and shared limits passed.");

@@ -79,6 +79,8 @@ export default async function CommunicationBasePage({ params }: PageProps) {
             <StartCommunicationBaseForm
               account={access.value.accountSubdomain}
               candidate={pendingSetupCandidate?.ok ? pendingSetupCandidate.value : null}
+              structured={structured}
+              niche={taxonomy.ok ? taxonomy.taxon : null}
               candidateReadFailed={pendingSetupCandidate !== null && !pendingSetupCandidate.ok}
             />
           ) : (
@@ -92,7 +94,7 @@ export default async function CommunicationBasePage({ params }: PageProps) {
               </p>
             ) : null}
             <CommunicationBaseTabs stageOne={<CommunicationStageOne account={access.value.accountSubdomain}
-              base={base} canEdit={access.value.canEdit} structured={structured} definitions={definitions.ok ? definitions.value : []} />}
+              base={base} canEdit={access.value.canEdit} structured={structured} nicheLabel={nicheLabel} definitions={definitions.ok ? definitions.value : []} />}
               stageTwo={<CommunicationStageTwo key={stageOneStateKey(base)} account={access.value.accountSubdomain}
                 base={base} canEdit={access.value.canEdit} structured={structured} definitions={definitions.ok ? definitions.value : []} />}
               materials={structured ? <CommunicationMaterials account={access.value.accountSubdomain} base={base} canEdit={access.value.canEdit} definitions={definitions.ok ? definitions.value : []} /> : undefined} />
