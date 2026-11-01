@@ -148,3 +148,12 @@ assert.deepEqual(identification.updateIdentificationFact(fullFacts, "Cidade", "N
 assert.equal(sectionEditState(communicationSections[0], undefined, "", true, "[]").dirty, false);
 assert.equal(sectionEditState(communicationSections[0], undefined, "", true, "[]").valid, true);
 console.log("D14D: optional predefined fields, legacy duplicates, clearing and shared limits passed.");
+const customNumber = [{ label: "Número", value: "Registro próprio" }];
+assert.equal(identification.identificationFactIndex(customNumber, "Número", [0]), -1);
+assert.deepEqual(identification.updateIdentificationFact(customNumber, "Número", "42", [0]),
+  [...customNumber, { label: "Número", value: "42" }]);
+assert.deepEqual(identification.updateIdentificationFact(customNumber, "Número", "", [0]), customNumber);
+const fixedAndCustom = [{ label: "Número", value: "42" }, ...customNumber];
+assert.deepEqual(identification.updateIdentificationFact(fixedAndCustom, "Número", "43", [1]),
+  [{ label: "Número", value: "43" }, ...customNumber]);
+console.log("D14D: custom labels do not become predefined targets during editing.");
