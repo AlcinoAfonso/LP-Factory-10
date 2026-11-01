@@ -76,13 +76,19 @@ export default async function CommunicationBasePage({ params }: PageProps) {
           </FeedbackMessage>
         ) : !base ? (
           access.value.canEdit ? (
-            <StartCommunicationBaseForm
-              account={access.value.accountSubdomain}
-              candidate={pendingSetupCandidate?.ok ? pendingSetupCandidate.value : null}
-              structured={structured}
-              niche={taxonomy.ok ? taxonomy.taxon : null}
-              candidateReadFailed={pendingSetupCandidate !== null && !pendingSetupCandidate.ok}
-            />
+            structured && !taxonomy.ok ? (
+              <FeedbackMessage tone="error">
+                Não foi possível consultar o nicho agora. Atualize a página e tente novamente.
+              </FeedbackMessage>
+            ) : (
+              <StartCommunicationBaseForm
+                account={access.value.accountSubdomain}
+                candidate={pendingSetupCandidate?.ok ? pendingSetupCandidate.value : null}
+                structured={structured}
+                niche={taxonomy.ok ? taxonomy.taxon : null}
+                candidateReadFailed={pendingSetupCandidate !== null && !pendingSetupCandidate.ok}
+              />
+            )
           ) : (
             <EmptyState title="A Base ainda não foi iniciada." description="Um membro com permissão de edição pode iniciar a Base desta conta." />
           )
