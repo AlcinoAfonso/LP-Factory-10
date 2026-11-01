@@ -2562,7 +2562,7 @@
 
 25.3.1 Objetivo e status
 - Objetivo: recursos manuais nas três categorias, legado/acesso/concorrência/assistências preservados.
-- Status: PB1/D14D operacional Preview/Production; PB2/PB3 em definição.
+- Status: PB1/D14D operacional Preview/Production; delta R3 implementado, pendente de QA autenticado, apply dos títulos e autorização humana. PB2/PB3 em definição.
 - Limites: sem novos agentes/IA/pesquisa, processamento/transcrição, publicação automática/canais; sem reabrir E25.1/PB-A/E25.2.
 
 25.3.2 Registros do recorte
@@ -2591,6 +2591,11 @@
     - `lib/communication-base/resource-validation-cases.ts`
     - `supabase/migrations/20261010202505_e25_3_communication_resources.sql`
     - `supabase/tests/e25_3_communication_resources.test.sql`
+    - `app/a/[account]/base-comunicacao/_components/SectionGuidance.tsx`
+    - `lib/communication-base/section-guidance.ts`
+    - `lib/communication-base/business-identification.ts`
+    - `supabase/migrations/20261101141410_d14d_section_titles.sql`
+    - `supabase/tests/d14d_section_titles.proof.mjs`
   - Ajustados:
     - `.github/workflows/e10-11-sql-proof.yml`
     - `.github/workflows/pipeline-supabase-apply-migrations.yml`
@@ -2616,7 +2621,8 @@
 
 25.3.3 Dados do negócio e Inteligência e copy
 - Status: operacional Preview/Production.
-- Conteúdo: Dados com rótulo/valor opcionais, vazios permitidos e nome público no cabeçalho; inicial Identificação e dados do negócio. Inteligência preserva sete seções/formatos/parágrafos/quebras/delimitadores/FAQ; novas manuais.
+- Conteúdo: Dados opcionais, nome público no cabeçalho e campos iniciais de identificação sobre os registros existentes; informações próprias preservadas. Atuação mostra nicho para consulta e exige confirmação ao iniciar a Base; ausência de nicho permite confirmar entendimento disponível. Inteligência preserva sete seções/formatos/parágrafos/quebras/delimitadores/FAQ; novas manuais.
+- R3: 17 textos discretos e 17 ajudas literais por identidade de seção, com teclado/clique/toque/hover; sem edição administrativa ou persistência nova. Títulos iniciais Identificação do negócio e Referências institucionais por migration; preservar rótulos personalizados, ordem e conteúdo. Apply depende de autorização para escopo seletivo no workflow vigente.
 - Assistências 25.1.5, permissões 25.1.3, descarte/retomada/conflito/foco 25.2 em Bases antigas/novas, com isolamento; FAQ 44 px.
 
 25.3.4 Materiais de comunicação

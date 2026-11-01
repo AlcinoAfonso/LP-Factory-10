@@ -41,10 +41,12 @@ const STAGE_ONE_GUIDANCE: Record<string, string> = {
   preferences: "Que linguagem, temas ou promessas devem ser usados ou evitados?",
 };
 
-export function StartCommunicationBaseForm({ account, candidate, candidateReadFailed }: Readonly<{
+export function StartCommunicationBaseForm({ account, candidate, candidateReadFailed, niche, structured = false }: Readonly<{
   account: string;
   candidate: { businessName: string | null; businessContext: string | null } | null;
   candidateReadFailed: boolean;
+  niche: { taxonId: string; name: string } | null;
+  structured?: boolean;
 }>) {
   const [state, action] = useActionState(startCommunicationBaseAction, INITIAL_STATE);
   const router = useRouter();
@@ -80,6 +82,14 @@ export function StartCommunicationBaseForm({ account, candidate, candidateReadFa
           Não foi possível consultar a conversa anterior. Você pode iniciar sem importar.
         </p>
       ) : null}
+      {structured ? <div className="mt-4 space-y-2 rounded-lg border border-border p-4">
+        <input type="hidden" name="base_niche" value={niche?.taxonId ?? ""} />
+        <p className="text-sm">{niche ? <>Nicho identificado: <strong>{niche.name}</strong>. Ele aparece apenas para consulta e não poderá ser alterado na seção Atuação.</> : "Nenhum nicho oficial foi identificado. Você pode iniciar a Base com o entendimento disponível do negócio e complementá-la depois."}</p>
+        <label className="flex min-h-11 items-center gap-3 text-sm">
+          <input type="checkbox" name="confirm_base_context" required className="h-5 w-5 shrink-0 accent-brand-700" />
+          {niche ? "Confirmo o nicho apresentado para iniciar minha Base." : "Confirmo o entendimento disponível do meu negócio para iniciar minha Base."}
+        </label>
+      </div> : null}
       <div className="mt-4"><SubmitButton label="Iniciar minha Base" pendingLabel="Iniciando..." /></div>
       <ActionFeedback state={state} />
     </form>
@@ -100,10 +110,11 @@ export function CommunicationSectionEditor(props: Readonly<{
   onStageTwoGenerationFinished?: () => void;
   onStageTwoSaveStarted?: () => void;
   onStageTwoSaveFinished?: () => void;
+  nicheLabel?: string;
 }> & SectionDetailControls) {
   const { account, version, definition, current, canEdit, structured = false, suggestedSuggestion, generalRevision = 0,
     stageTwoGenerationInFlight = false, onStageTwoGenerationStart, onStageTwoGenerationFinished,
-    onStageTwoSaveStarted, onStageTwoSaveFinished, resetRevision, onEditorStateChange, onCancel } = props;
+    onStageTwoSaveStarted, onStageTwoSaveFinished, nicheLabel, resetRevision, onEditorStateChange, onCancel } = props;
   const [state, action, savePending] = useActionState(saveCommunicationSectionAction, INITIAL_STATE);
   const lastHandledSaveStateRef = useRef(state);
   const startedSavesRef = useRef(0);
@@ -166,6 +177,7 @@ export function CommunicationSectionEditor(props: Readonly<{
   if (!canEdit) {
     return (
       <article>
+        {structured && definition.key === "business_context" ? <p className="mb-3 text-sm text-muted-foreground">Nicho: {nicheLabel}. Apenas para consulta nesta seção.</p> : null}
         {current && (typeof current.value === "string" ? current.value.trim() : current.value.length) ? (structured ? <StructuredSectionContent value={current.value} /> : <p className="whitespace-pre-wrap break-words text-sm leading-6">{value}</p>)
           : <EmptyState title="Esta seção ainda não foi preenchida." />}
         {current?.facts?.length ? <dl className="mt-3 space-y-2">{current.facts.map((fact, i) => <div key={i}><dt className="text-sm font-medium">{fact.label}</dt><dd className="whitespace-pre-wrap break-words text-sm">{fact.value}</dd></div>)}</dl> : null}
@@ -176,11 +188,12 @@ export function CommunicationSectionEditor(props: Readonly<{
   const fieldId = `communication-${definition.key}`;
   const hintId = `${fieldId}-hint`;
   const saveLockHintId = `${fieldId}-save-lock`;
-  const guidance = definition.stage === 1 ? STAGE_ONE_GUIDANCE[definition.key] : null;
+  const guidance = !structured && definition.stage === 1 ? STAGE_ONE_GUIDANCE[definition.key] : null;
   const stageTwoPresentation = selectStageTwoSectionPresentation(localStageTwoResult, generalRevision, suggestedSuggestion);
   const stageTwoSuggestion = stageTwoPresentation.suggestion;
   return (
     <article>
+      {structured && definition.key === "business_context" ? <p className="mb-3 text-sm text-muted-foreground">Nicho: {nicheLabel}. Apenas para consulta nesta seção.</p> : null}
       <form action={action} onSubmit={(event) => {
         if (saveLocked || !editState.valid || !editState.dirty) { event.preventDefault(); return; }
         localRequestRevisionRef.current += 1;
@@ -220,7 +233,7 @@ export function CommunicationSectionEditor(props: Readonly<{
         />}
         {!editState.valid ? <FormFieldError id={`${fieldId}-error`}>Confira o formato e os limites indicados antes de salvar.</FormFieldError> : null}
         </FormField>
-        {structured && definition.stage === 1 ? <BusinessFactsFields draft={factsDraft} onChange={setFactsDraft} disabled={saveLocked} id={fieldId + "-facts"} /> : null}
+        {structured && definition.stage === 1 ? <BusinessFactsFields draft={factsDraft} onChange={setFactsDraft} disabled={saveLocked} id={fieldId + "-facts"} identification={definition.key === "business_name"} /> : null}
         {saveLocked ? <p id={saveLockHintId} role="status" className="text-xs text-muted-foreground">
           Salvando esta seção. Aguarde para continuar a edição.
         </p> : null}
@@ -322,13 +335,13 @@ export function CommunicationSectionEditor(props: Readonly<{
   );
 }
 
-export function CommunicationStageOne({ account, base, canEdit, structured = false, definitions = communicationSections }: Readonly<{
-  account: string; base: CommunicationBase; canEdit: boolean; structured?: boolean; definitions?: readonly CommunicationSectionDefinition[];
+export function CommunicationStageOne({ account, base, canEdit, structured = false, definitions = communicationSections, nicheLabel }: Readonly<{
+  account: string; base: CommunicationBase; canEdit: boolean; structured?: boolean; definitions?: readonly CommunicationSectionDefinition[]; nicheLabel?: string;
 }>) {
-  return <CommunicationSectionCollection definitions={definitions.filter((section) => section.stage === 1)} base={base}
+  return <CommunicationSectionCollection definitions={definitions.filter((section) => section.stage === 1)} base={base} showGuidance={structured}
     renderDetail={(definition, controls) => <CommunicationSectionEditor {...controls}
       account={account} version={base.version} definition={definition}
-      current={base.sections[definition.key as CommunicationSectionKey]} canEdit={canEdit} structured={structured} />} />;
+      current={base.sections[definition.key as CommunicationSectionKey]} canEdit={canEdit} structured={structured} nicheLabel={nicheLabel} />} />;
 }
 
 export function CommunicationStageTwo({ account, base, canEdit, structured = false, definitions = communicationSections }: Readonly<{
@@ -426,7 +439,7 @@ export function CommunicationStageTwo({ account, base, canEdit, structured = fal
           <Sources sources={sources} />
         </div> : null}
       </div>
-      <CommunicationSectionCollection definitions={stageTwo} base={base} suggestedKeys={Object.keys(suggestions)}
+      <CommunicationSectionCollection definitions={stageTwo} base={base} showGuidance={structured} suggestedKeys={Object.keys(suggestions)}
         renderDetail={(section, controls) => <CommunicationSectionEditor {...controls}
           account={account} version={base.version} definition={section} current={base.sections[section.key as CommunicationSectionKey]}
           canEdit={canEdit} structured={structured} suggestedSuggestion={suggestions[section.key]} generalRevision={generalRevision}

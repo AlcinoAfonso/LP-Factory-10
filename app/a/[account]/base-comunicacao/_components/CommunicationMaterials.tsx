@@ -21,7 +21,7 @@ export function CommunicationMaterials({account,base,definitions,canEdit}:Readon
   account:string;base:CommunicationBase;definitions:readonly CommunicationSectionDefinition[];canEdit:boolean;
 }>) {
   return <div className="space-y-3"><p className="text-sm text-muted-foreground">Guarde referências, imagens e depoimentos para usar na sua comunicação. Salvar aqui não altera produtos publicados.</p>
-    <CommunicationSectionCollection definitions={definitions.filter(s=>s.stage===3)} base={base}
+    <CommunicationSectionCollection definitions={definitions.filter(s=>s.stage===3)} base={base} showGuidance
       renderDetail={(definition,controls)=><MaterialSection {...controls} account={account} base={base} definition={definition} canEdit={canEdit}/>} /></div>;
 }
 function MaterialSection({account,base,definition,canEdit,resetRevision,onEditorStateChange,onCancel}:Readonly<{

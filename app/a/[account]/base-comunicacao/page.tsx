@@ -76,11 +76,19 @@ export default async function CommunicationBasePage({ params }: PageProps) {
           </FeedbackMessage>
         ) : !base ? (
           access.value.canEdit ? (
-            <StartCommunicationBaseForm
-              account={access.value.accountSubdomain}
-              candidate={pendingSetupCandidate?.ok ? pendingSetupCandidate.value : null}
-              candidateReadFailed={pendingSetupCandidate !== null && !pendingSetupCandidate.ok}
-            />
+            structured && !taxonomy.ok ? (
+              <FeedbackMessage tone="error">
+                Não foi possível consultar o nicho agora. Atualize a página e tente novamente.
+              </FeedbackMessage>
+            ) : (
+              <StartCommunicationBaseForm
+                account={access.value.accountSubdomain}
+                candidate={pendingSetupCandidate?.ok ? pendingSetupCandidate.value : null}
+                structured={structured}
+                niche={taxonomy.ok ? taxonomy.taxon : null}
+                candidateReadFailed={pendingSetupCandidate !== null && !pendingSetupCandidate.ok}
+              />
+            )
           ) : (
             <EmptyState title="A Base ainda não foi iniciada." description="Um membro com permissão de edição pode iniciar a Base desta conta." />
           )
@@ -92,7 +100,7 @@ export default async function CommunicationBasePage({ params }: PageProps) {
               </p>
             ) : null}
             <CommunicationBaseTabs stageOne={<CommunicationStageOne account={access.value.accountSubdomain}
-              base={base} canEdit={access.value.canEdit} structured={structured} definitions={definitions.ok ? definitions.value : []} />}
+              base={base} canEdit={access.value.canEdit} structured={structured} nicheLabel={nicheLabel} definitions={definitions.ok ? definitions.value : []} />}
               stageTwo={<CommunicationStageTwo key={stageOneStateKey(base)} account={access.value.accountSubdomain}
                 base={base} canEdit={access.value.canEdit} structured={structured} definitions={definitions.ok ? definitions.value : []} />}
               materials={structured ? <CommunicationMaterials account={access.value.accountSubdomain} base={base} canEdit={access.value.canEdit} definitions={definitions.ok ? definitions.value : []} /> : undefined} />
