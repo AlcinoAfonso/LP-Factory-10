@@ -210,7 +210,7 @@ export function CommunicationSectionEditor(props: Readonly<{
           startedSavesRef.current += 1;
           onStageTwoSaveStarted?.();
         }
-      }} className="space-y-2">
+      }} className={structured && definition.key === "business_name" ? "space-y-0.5" : "space-y-2"}>
         <input type="hidden" name="account" value={account} />
         <input type="hidden" name="section_key" value={definition.key} />
         <input type="hidden" name="version" value={version} />
