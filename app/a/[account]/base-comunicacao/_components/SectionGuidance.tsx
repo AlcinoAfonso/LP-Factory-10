@@ -31,7 +31,7 @@ export function SectionGuidance({ sectionKey, label }: Readonly<{ sectionKey: st
     <p>{guidance.description}</p>
     <div className="mt-1" onMouseLeave={() => setHovered(false)}
       onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) { setOpen(false); setHovered(false); } }}>
-      <Button type="button" variant="secondary" className="min-h-11 gap-2 px-3 text-xs font-medium"
+      <Button type="button" variant="secondary" className="min-h-11 gap-2 border border-border px-3 text-xs font-medium !text-brand-700"
         aria-label={`Como preencher: ${label}`} aria-expanded={visible} aria-controls={id}
         onPointerEnter={(event) => { if (event.pointerType === "mouse") setHovered(true); }}
         onClick={() => { setOpen(!open); setHovered(false); }}>

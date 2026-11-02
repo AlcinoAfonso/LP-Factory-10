@@ -225,7 +225,7 @@ export function CommunicationSectionEditor(props: Readonly<{
               ? structured ? "Até 15 pares. Preencha a pergunta e a resposta nos campos correspondentes." : "Escreva uma pergunta e resposta por linha, separadas por |. Até 15 pares."
               : "Até 4.000 caracteres. Você pode voltar e complementar depois."}
         </FormFieldHint>
-        {structured && definition.key === "business_name" ? <Textarea id={fieldId} name="value" rows={1} value={draft} maxLength={4000} readOnly={saveLocked} className="min-h-11 resize-y" aria-describedby={hintId} onChange={(event) => setDraft(event.target.value)} /> : structured && (definition.format === "items" || definition.format === "faq") ? <StructuredSectionFields format={definition.format} draft={draft} onChange={setDraft} disabled={saveLocked} id={fieldId} /> : <Textarea
+        {structured && definition.key === "business_name" ? <Textarea id={fieldId} name="value" rows={1} value={draft} maxLength={4000} readOnly={saveLocked} className="!min-h-11 resize-y" aria-describedby={hintId} onChange={(event) => setDraft(event.target.value)} /> : structured && (definition.format === "items" || definition.format === "faq") ? <StructuredSectionFields format={definition.format} draft={draft} onChange={setDraft} disabled={saveLocked} id={fieldId} /> : <Textarea
           id={fieldId}
           name="value"
           rows={definition.format === "text" ? 5 : 6}
