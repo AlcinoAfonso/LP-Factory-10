@@ -5,6 +5,7 @@ import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { CommunicationBaseIntroduction } from "./CommunicationBaseTabs";
 import { FormField, FormFieldLabel, FormFieldHint, FormFieldError } from "@/components/ui/form-field";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -56,6 +57,7 @@ export function StartCommunicationBaseForm({ account, candidate, candidateReadFa
 
   return (
     <form action={action} className="rounded-xl border border-border bg-background p-5">
+      <CommunicationBaseIntroduction />
       <input type="hidden" name="account" value={account} />
       <p className="text-sm text-muted-foreground">
         Comece com o que já sabe sobre seu negócio. As demais seções podem ser preenchidas depois.
@@ -114,9 +116,10 @@ export function CommunicationSectionEditor(props: Readonly<{
 }> & SectionDetailControls) {
   const { account, version, definition, current, canEdit, structured = false, suggestedSuggestion, generalRevision = 0,
     stageTwoGenerationInFlight = false, onStageTwoGenerationStart, onStageTwoGenerationFinished,
-    onStageTwoSaveStarted, onStageTwoSaveFinished, nicheLabel, resetRevision, onEditorStateChange, onCancel } = props;
+    onStageTwoSaveStarted, onStageTwoSaveFinished, nicheLabel, resetRevision, onEditorStateChange, onCancel, onSaved } = props;
   const [state, action, savePending] = useActionState(saveCommunicationSectionAction, INITIAL_STATE);
   const lastHandledSaveStateRef = useRef(state);
+  const lastClosedSaveRef = useRef(state);
   const startedSavesRef = useRef(0);
   const [submittedVersion, setSubmittedVersion] = useState<number | null>(null);
   const [draft, setDraft] = useState(editorText(current, structured));
@@ -172,6 +175,11 @@ export function CommunicationSectionEditor(props: Readonly<{
     }
     if (state.status === "saved") router.refresh();
   }, [router, state, onStageTwoSaveFinished]);
+  useEffect(() => {
+    if (state.status !== "saved" || state === lastClosedSaveRef.current || savePending || submittedVersion === null || version <= submittedVersion) return;
+    lastClosedSaveRef.current = state;
+    onSaved();
+  }, [state, savePending, submittedVersion, version, onSaved]);
 
   const value = editorText(current, structured);
   if (!canEdit) {
@@ -207,18 +215,17 @@ export function CommunicationSectionEditor(props: Readonly<{
         <input type="hidden" name="section_key" value={definition.key} />
         <input type="hidden" name="version" value={version} />
         <input type="hidden" name="structured_value" value={String(structured)} />
-        <FormField className="gap-1.5">
+        <FormField className={structured && definition.key === "business_name" ? "grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-center gap-2" : "gap-1.5"}>
         <FormFieldLabel htmlFor={fieldId}>{structured && definition.key === "business_name" ? "Nome público" : "Conteúdo da seção"}</FormFieldLabel>
-        {structured && definition.key === "business_name" ? <p className="text-xs text-muted-foreground">Nome exibido no cabeçalho da Base.</p> : null}
         {guidance ? <p className="text-sm text-muted-foreground">{guidance}</p> : null}
-        <FormFieldHint id={hintId} className="leading-5">
+        <FormFieldHint id={hintId} className={structured && definition.key === "business_name" ? "sr-only" : "leading-5"}>
           {definition.format === "items"
             ? structured ? "Até 20 itens de 400 caracteres. Preserve parágrafos e subtítulos dentro de cada item." : "Escreva um item por linha, até 20 itens de 400 caracteres."
             : definition.format === "faq"
               ? structured ? "Até 15 pares. Preencha a pergunta e a resposta nos campos correspondentes." : "Escreva uma pergunta e resposta por linha, separadas por |. Até 15 pares."
               : "Até 4.000 caracteres. Você pode voltar e complementar depois."}
         </FormFieldHint>
-        {structured && (definition.format === "items" || definition.format === "faq") ? <StructuredSectionFields format={definition.format} draft={draft} onChange={setDraft} disabled={saveLocked} id={fieldId} /> : <Textarea
+        {structured && definition.key === "business_name" ? <Textarea id={fieldId} name="value" rows={1} value={draft} maxLength={4000} readOnly={saveLocked} className="min-h-11 resize-y" aria-describedby={hintId} onChange={(event) => setDraft(event.target.value)} /> : structured && (definition.format === "items" || definition.format === "faq") ? <StructuredSectionFields format={definition.format} draft={draft} onChange={setDraft} disabled={saveLocked} id={fieldId} /> : <Textarea
           id={fieldId}
           name="value"
           rows={definition.format === "text" ? 5 : 6}
@@ -246,7 +253,7 @@ export function CommunicationSectionEditor(props: Readonly<{
       {getCommunicationSection(definition.key) && (definition.stage === 1 ? (
         <div className="mt-3 border-t border-border pt-3">
           <p className="text-xs leading-5 text-muted-foreground">
-            A IA trabalha apenas com o texto desta seção que você enviar. Confira a sugestão antes de usá-la; salvar continua sendo sua decisão.
+            Melhore o texto, revise a versão sugerida e escolha Usar esta versão para levá-la ao campo. Depois, clique em Salvar. A IA usa apenas o texto enviado desta seção.
           </p>
           <button type="button" disabled={saveLocked || aiPending || !draft.trim()}
             onClick={() => startAiTransition(async () => {
@@ -268,10 +275,10 @@ export function CommunicationSectionEditor(props: Readonly<{
               }
             })}
             className="mt-2 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-3 py-1 text-sm font-medium text-foreground disabled:cursor-not-allowed disabled:opacity-60">
-            {aiPending ? "Preparando sugestão..." : "Ajudar com este texto usando IA"}
+            {aiPending ? "Preparando sugestão..." : "Melhorar meu texto"}
           </button>
           {missingQuestion ? <p className="mt-3 text-sm">Informação a confirmar: {missingQuestion}</p> : null}
-          {localSuggestion !== null ? <Suggestion value={localSuggestion} format={definition.format}
+          {localSuggestion !== null ? <Suggestion value={localSuggestion} original={draft} structured={structured} format={definition.format}
             disabled={saveLocked} onUse={() => setDraft(editorDraftValue(localSuggestion, definition.format, structured))} /> : null}
           {aiMessage ? <p role="alert" className="mt-2 text-sm text-state-error">{aiMessage}</p> : null}
         </div>
@@ -324,7 +331,7 @@ export function CommunicationSectionEditor(props: Readonly<{
           {stageTwoGenerationInFlight && !aiPending ? <p role="status" className="mt-2 text-xs text-muted-foreground">
             Aguarde a geração em andamento antes de revisar esta seção.
           </p> : null}
-          {stageTwoSuggestion !== null ? <Suggestion value={stageTwoSuggestion.value} format={definition.format}
+          {stageTwoSuggestion !== null ? <Suggestion value={stageTwoSuggestion.value} original={draft} structured={structured} format={definition.format}
             basis={stageTwoSuggestion.basis}
             disabled={saveLocked} onUse={() => setDraft(editorDraftValue(stageTwoSuggestion.value, definition.format, structured))} /> : null}
           <Sources sources={stageTwoPresentation.sources} />
@@ -459,20 +466,25 @@ export function CommunicationStageTwo({ account, base, canEdit, structured = fal
   );
 }
 
-function Suggestion({ value, format, basis, disabled = false, onUse }: Readonly<{
+function Suggestion({ value, original, structured, format, basis, disabled = false, onUse }: Readonly<{
   value: CommunicationSectionValue;
+  original: string;
+  structured: boolean;
   format: CommunicationSectionDefinition["format"];
   basis?: CommunicationSuggestion["basis"];
   disabled?: boolean;
   onUse: () => void;
 }>) {
+  const unchanged = editorDraftValue(value, format, structured).trim() === original.trim();
+  if (unchanged) return <p role="status" className="mt-3 text-sm text-muted-foreground">A versão sugerida é igual ao texto atual. Nenhuma melhoria foi identificada.</p>;
   return <div className="mt-3 rounded-lg border border-border bg-muted/30 p-3">
-    <p className="text-xs font-semibold">Sugestão da IA para revisar</p>
+    <p className="text-xs font-semibold">Versão sugerida</p>
+    <p className="mt-1 text-xs text-muted-foreground">Revise antes de usar. A sugestão só será salva quando você clicar em Salvar.</p>
     {basis ? <p className="mt-2 text-xs font-semibold text-brand-700">{stageTwoBasisLabel(basis)}</p> : null}
     <p className="mt-2 whitespace-pre-wrap text-sm">{formatEditorValue(value, format) || "Sem conteúdo suficiente para sugerir."}</p>
     {formatEditorValue(value, format).trim() ? <button type="button" onClick={onUse} disabled={disabled}
       className="mt-3 inline-flex min-h-11 items-center rounded-lg border border-border px-4 text-sm font-semibold disabled:cursor-wait disabled:opacity-60">
-      Usar no editor
+      Usar esta versão
     </button> : null}
   </div>;
 }

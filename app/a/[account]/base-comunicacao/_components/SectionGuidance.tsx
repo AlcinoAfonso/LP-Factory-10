@@ -31,11 +31,11 @@ export function SectionGuidance({ sectionKey, label }: Readonly<{ sectionKey: st
     <p>{guidance.description}</p>
     <div className="mt-1" onMouseLeave={() => setHovered(false)}
       onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) { setOpen(false); setHovered(false); } }}>
-      <Button type="button" variant="secondary" className="min-h-11 min-w-11 px-3"
-        aria-label={`Ajuda de ${label}`} aria-expanded={visible} aria-controls={id}
+      <Button type="button" variant="secondary" className="min-h-11 gap-2 px-3 text-xs font-medium"
+        aria-label={`Como preencher: ${label}`} aria-expanded={visible} aria-controls={id}
         onPointerEnter={(event) => { if (event.pointerType === "mouse") setHovered(true); }}
         onClick={() => { setOpen(!open); setHovered(false); }}>
-        <span aria-hidden="true">?</span>
+        Como preencher
       </Button>
       <div id={id} hidden={!visible} className="mt-1 rounded-lg border border-border bg-background p-3 text-foreground">
         {guidance.help}

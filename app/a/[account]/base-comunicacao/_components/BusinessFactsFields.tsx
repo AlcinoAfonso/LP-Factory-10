@@ -33,23 +33,23 @@ export function BusinessFactsFields({ draft, onChange, disabled, id, identificat
     <legend className="text-sm font-medium">Registros do negócio</legend>
     <p id={id + "-help"} className="text-xs text-muted-foreground">Acrescente razão social, CNPJ, contatos ou outros registros pertinentes. Até 30 informações.</p>
     <input type="hidden" name="facts" value={draft} />
-    {identification ? <div className="grid gap-2 sm:grid-cols-2">{BUSINESS_IDENTIFICATION_LABELS.map((label, i) => {
+    {identification ? <div className="space-y-1.5">{BUSINESS_IDENTIFICATION_LABELS.map((label, i) => {
       const index = predefinedIndexes[i];
-      return <label key={label} className="text-sm" htmlFor={id + "-initial-" + i}>{label}
-        <Input id={id + "-initial-" + i} value={index < 0 ? "" : rows[index].value} maxLength={1000}
+      return <label key={label} className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-center gap-2 text-sm" htmlFor={id + "-initial-" + i}><span>{label}</span>
+        <Input id={id + "-initial-" + i} className="min-h-11" value={index < 0 ? "" : rows[index].value} maxLength={1000}
           disabled={disabled || (index < 0 && rows.length >= 30)}
           onChange={(event) => change(updateIdentificationFact(rows, label, event.target.value, customIndexes),
             index >= 0 && !event.target.value.trim() ? afterRemoval(index) : customIndexes)} />
       </label>;
     })}</div> : null}
-    {rows.map((row, index) => predefinedIndexes.includes(index) ? null : <div key={index} className="space-y-1.5 border-b border-border pb-2">
-      <div className="grid gap-2 sm:grid-cols-2">
-        <label className="text-sm" htmlFor={id + index + "-label"}>Rótulo {index + 1}
-          <Input id={id + index + "-label"} value={row.label} maxLength={100} onChange={(e) => update(index, { label: e.target.value })} /></label>
-        <label className="text-sm" htmlFor={id + index + "-value"}>Valor {index + 1}
-          <Input id={id + index + "-value"} value={row.value} maxLength={1000} onChange={(e) => update(index, { value: e.target.value })} /></label>
+    {rows.map((row, index) => predefinedIndexes.includes(index) ? null : <div key={index} className="flex items-center gap-2 border-b border-border pb-2">
+      <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-2">
+        <label className="min-w-0 text-sm" htmlFor={id + index + "-label"}><span className="sr-only">Rótulo {index + 1}</span>
+          <Input id={id + index + "-label"} className="min-h-11" value={row.label} maxLength={100} onChange={(e) => update(index, { label: e.target.value })} /></label>
+        <label className="min-w-0 text-sm" htmlFor={id + index + "-value"}><span className="sr-only">Valor {index + 1}</span>
+          <Input id={id + index + "-value"} className="min-h-11" value={row.value} maxLength={1000} onChange={(e) => update(index, { value: e.target.value })} /></label>
       </div>
-      <Button type="button" variant="secondary" className="min-h-11" onClick={() => change(rows.filter((_, i) => i !== index), afterRemoval(index))}>Retirar informação {index + 1}</Button>
+      <Button type="button" variant="secondary" className="min-h-11 shrink-0 px-2" aria-label={`Retirar informação ${index + 1}`} onClick={() => change(rows.filter((_, i) => i !== index), afterRemoval(index))}>Retirar</Button>
     </div>)}
     <Button type="button" variant="secondary" className="min-h-11" disabled={rows.length >= 30} onClick={() => change([...rows, { label: "", value: "" }], [...customIndexes, rows.length])}>Adicionar informação</Button>
   </fieldset>;

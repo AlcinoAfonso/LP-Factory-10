@@ -24,7 +24,7 @@ export function CommunicationMaterials({account,base,definitions,canEdit}:Readon
     <CommunicationSectionCollection definitions={definitions.filter(s=>s.stage===3)} base={base} showGuidance
       renderDetail={(definition,controls)=><MaterialSection {...controls} account={account} base={base} definition={definition} canEdit={canEdit}/>} /></div>;
 }
-function MaterialSection({account,base,definition,canEdit,resetRevision,onEditorStateChange,onCancel}:Readonly<{
+function MaterialSection({account,base,definition,canEdit,resetRevision,onEditorStateChange,onCancel,onSaved}:Readonly<{
   account:string;base:CommunicationBase;definition:CommunicationSectionDefinition;canEdit:boolean;
 }>&SectionDetailControls) {
   const items=parseCommunicationMaterials(base.sections[definition.key]?.value??[])??[];
@@ -39,6 +39,7 @@ function MaterialSection({account,base,definition,canEdit,resetRevision,onEditor
   const router=useRouter();
   const reset=useRef(resetRevision);
   const saved=useRef(state);
+  const closedSave=useRef(state);
   const formRef=useRef<HTMLFormElement>(null);
   const addRef=useRef<HTMLButtonElement>(null);
   const editing=draft!==null&&canEdit;
@@ -57,6 +58,10 @@ function MaterialSection({account,base,definition,canEdit,resetRevision,onEditor
     reset.current=resetRevision;
   },[resetRevision,state,locked]);
   useEffect(()=>{if(state.status==="saved")router.refresh();},[state,router]);
+  useEffect(()=>{
+    if(state.status!=="saved"||state===closedSave.current||locked||submittedVersion===null||base.version<=submittedVersion)return;
+    closedSave.current=state;onSaved();
+  },[state,locked,submittedVersion,base.version,onSaved]);
   const update=(key:keyof Draft,value:string)=>setDraft(current=>current?{...current,[key]:value}:null);
   if(draft && canEdit) return <form ref={formRef} action={action} className="space-y-3" onSubmit={event=>{
     if(locked || !dirty){event.preventDefault();return;}setSubmittedVersion(base.version);

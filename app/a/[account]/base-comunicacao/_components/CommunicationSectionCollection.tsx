@@ -12,6 +12,7 @@ export type SectionDetailControls = Readonly<{
   resetRevision: number;
   onEditorStateChange: (dirty: boolean, saving: boolean) => void;
   onCancel: () => void;
+  onSaved: () => void;
 }>;
 type DetailRenderer = (definition: CommunicationSectionDefinition, controls: SectionDetailControls) => ReactNode;
 
@@ -112,7 +113,7 @@ function SectionRow({ definition, hasContent, hasSuggestion, renderDetail, showG
         </header>
         <div className="px-3 py-3 sm:px-4">
           {closingMessage ? <FeedbackMessage tone="warning" className="mb-4">{closingMessage}</FeedbackMessage> : null}
-          <SectionDetailContent definition={definition} controls={{ resetRevision, onCancel: requestClose, onEditorStateChange }} renderDetail={renderDetail} />
+          <SectionDetailContent definition={definition} controls={{ resetRevision, onCancel: requestClose, onSaved: closeDetail, onEditorStateChange }} renderDetail={renderDetail} />
         </div>
       </dialog>
       <dialog ref={discardRef} aria-labelledby={discardTitleId}
