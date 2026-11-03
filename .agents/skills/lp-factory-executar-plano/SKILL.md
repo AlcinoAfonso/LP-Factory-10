@@ -100,20 +100,20 @@ Com impacto no banco:
 - inspecione estado por recurso read-only autorizado e confronte com `docs/schema.md`; inspeção não autoriza escrita, migration, secret ou operação administrativa;
 - crie mudança de schema somente por `supabase/migrations/<timestamp>_<nome>.sql`; antes de merge execute migration integral em PostgreSQL compatível com o alvo (transação efêmera com rollback ou ambiente isolado autorizado) e SQL positivo/negativo para sintaxe e comportamento; dry-run/estática não substituem PostgreSQL quando ele determina resultado; não persista efeito no projeto remoto alvo;
 - antes do merge, operações remotas permitidas, quando autorizadas: inspeção read-only, `supabase migration list --linked`, `supabase db push --linked --dry-run`; proíbem-se `apply_migration`, SQL mutável, `migration repair`, `supabase db push --linked` sem `--dry-run` e quaisquer mutações de schema/histórico fora do fluxo;
-- migration aplicada é imutável; corrija/reverta por nova migration incremental. O merge na `main` aciona apply automático competente;
+- migration aplicada é imutável; corrija/reverta por nova migration incremental. Apply só após merge na `main`, via workflow seletivo autorizado;
 - se o plano exigir aplicação remota pré-merge ou ela tiver ocorrido fora do fluxo, pare somente o ponto em fail-closed, registre operação/estado e use autoridade competente; não infira rollback, repair ou mutação corretiva.
 
 Ambiente/confirmação externos ausentes são pendências; mantenha feature flag aplicável desligada, continue artefatos e atividades independentes. Pare a definição apenas se não puder implementar com segurança; prova obrigatória pendente impede prontidão para merge.
 
 ## 6. Validação e QA comum
 
-Comprove aceite por QA/evidência proporcionais, sem repetir no sandbox prova externa equivalente autorizada. Siga `AGENTS.md`; runtime exige observabilidade `aplicável`/`N/A` e, quando cabível, sinais de resultado/falha de `docs/base-tecnica.md`. Teste viewports/superfícies exigidos.
+Comprove QA técnico proporcional ao risco; teste humano de experiência não é gate de merge por padrão. Não repita prova externa equivalente autorizada no sandbox. Siga `AGENTS.md`; runtime exige observabilidade `aplicável`/`N/A` e, quando cabível, sinais de resultado/falha de `docs/base-tecnica.md`. Teste viewports/superfícies exigidos.
 
 **Prepare QA antes do código:** confirme Preview, ambiente, browser, credenciais por referência e fixture/estado em `docs/platform-config.md`, `docs/automations.md` e Catálogo (§2), quando pertinentes. Conta em pending_setup não prova conversa virgem: cheque mensagens e tenant descartável autorizado antes de pedir nova conta, sem tocar conta ativa nem substituir signup real.
 
 Priorize Preview e workflows autorizados; não improvise browser, rede ou mutação. Recurso/secret operacional pode ser consumido por plataforma autorizada mesmo se ilegível ao Executor: não peça, copie, divulgue ou recrie valor. Evidências de GitHub Actions, Vercel, Supabase ou outros consumidores só valem vinculadas ao código, Preview e estado pertinentes.
 
-Participação humana delimitada e autorizada no contrato funcional (sem restrição técnica) pode integrar QA; antes, esgote alternativas autorizadas equivalentes sem humano. Fora do contrato, não é fallback: registre critério, caminhos e bloqueio; escale só decisão fora da autoridade. Falta de prova impede prontidão; não infira conta privilegiada, automação, infraestrutura ou mutação remota e continue independentes.
+Humano em QA técnico só com autorização funcional, sem restrição técnica e sem alternativa autorizada equivalente. Fora disso, não é fallback: registre critério, caminhos e bloqueio; escale só decisão fora da autoridade. Sem prova técnica obrigatória, não libere merge. Não infira conta privilegiada, automação, infraestrutura ou mutação remota; siga no independente.
 
 ## 7. Checkpoints, revisão focal e retomada
 
@@ -147,7 +147,7 @@ Antes da entrega, confronte HEAD/diff e contrato/V2/escopo negativo com aceite, 
 
 Recibo compacto no PR/Git: contrato/estado, branch/PR/HEAD, arquivos/diff, pareceres/achados, checks, QA por aceite, `npm ci`/`npm run check` com status, riscos, alternativas, pendências e decisões fora da autoridade. Não reescreva descrição/recibo sem fato material nem recopie V2/pareceres recuperáveis; preserve provas de prompt IA (§4) e ABC.
 
-Libere somente PR/HEAD avaliados, após Definidos, QA, gates e review independente do SHA corrente (`AGENTS.md`); escritor único não substitui reviewer. Checks, QA, reviews automáticos disparados, threads, achados ou autorizações materiais pendentes bloqueiam merge. Autonomia não revoga ordem humana de impedir merge.
+Libere PR/HEAD só após Definidos, QA técnico (§6), gates e review independente do SHA corrente (`AGENTS.md`); escritor único não substitui reviewer. Checks, reviews automáticos disparados, threads, achados ou autorizações materiais pendentes bloqueiam merge. Autonomia não revoga ordem humana de impedir merge.
 
 Com liberação registrada e merge autorizado:
 1. fixe `head SHA` e confirme, nesse exato SHA, resultado concluído de **todos** os reviews aplicáveis já disparados e revisões automáticas de eventos ocorridos. Ausência/atraso de registro, falha ou cancelamento não são sucesso; confira novamente HEAD, checks, threads e alterações materiais;
