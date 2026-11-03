@@ -240,7 +240,7 @@ export function CommunicationSectionEditor(props: Readonly<{
         />}
         {!editState.valid ? <FormFieldError id={`${fieldId}-error`}>Confira o formato e os limites indicados antes de salvar.</FormFieldError> : null}
         </FormField>
-        {structured && definition.stage === 1 ? <BusinessFactsFields draft={factsDraft} onChange={setFactsDraft} disabled={saveLocked} id={fieldId + "-facts"} identification={definition.key === "business_name"} /> : null}
+        {structured && definition.stage === 1 && definition.key === "business_name" ? <BusinessFactsFields draft={factsDraft} onChange={setFactsDraft} disabled={saveLocked} id={fieldId + "-facts"} identification /> : null}
         {saveLocked ? <p id={saveLockHintId} role="status" className="text-xs text-muted-foreground">
           Salvando esta seção. Aguarde para continuar a edição.
         </p> : null}
