@@ -505,7 +505,7 @@ function Suggestion({ value, original, structured, format, basis, disabled = fal
     {basis ? <p className="mt-2 text-xs font-normal text-muted-foreground">{stageTwoBasisLabel(basis)}</p> : null}
     <p className="mt-2 whitespace-pre-wrap text-sm">{formatEditorValue(value, format) || "Sem conteúdo suficiente para sugerir."}</p>
     {formatEditorValue(value, format).trim() ? <button type="button" onClick={onUse} disabled={disabled}
-      className="mt-3 inline-flex min-h-11 items-center text-sm font-normal text-primary underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-60">
+      className="mt-3 inline-flex min-h-11 items-center text-sm font-normal text-brand-700 underline dark:text-primary underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-60">
       Usar esta versão
     </button> : null}
   </div>;
@@ -527,7 +527,7 @@ function SubmitButton({ label, pendingLabel, disabled = false, busy = false }: R
     <Button
       type="submit"
       disabled={pending || disabled}
-      className="min-h-11 !bg-brand-700 hover:!bg-brand-700/95"
+      className="min-h-11 !bg-brand-700 !text-surface-base hover:!bg-brand-700/95"
     >
       {pending || busy ? pendingLabel : label}
     </Button>

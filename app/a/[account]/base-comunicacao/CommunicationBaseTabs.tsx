@@ -14,7 +14,7 @@ export function CommunicationBaseTabs({stageOne,stageTwo,materials}:Readonly<{st
         const next=event.key==="Home"?0:event.key==="End"?labels.length-1:event.key==="ArrowRight"?(i+1)%labels.length:event.key==="ArrowLeft"?(i+labels.length-1)%labels.length:null;
         if(next!==null){event.preventDefault();setSelected(next);tabs.current[next]?.focus();}
       }}
-      className={"min-h-11 min-w-0 border-b-2 px-2 py-2 text-center text-sm font-medium leading-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset sm:px-4 "+(selected===i?"border-primary text-primary":"border-transparent text-muted-foreground hover:text-foreground")}><span className="sm:hidden">{shortLabels[i]}</span><span className="hidden sm:inline">{label}</span></button>)}
+      className={"min-h-11 min-w-0 border-b-2 px-2 py-2 text-center text-sm font-medium leading-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset sm:px-4 "+(selected===i?"border-brand-700 text-brand-700 dark:border-primary dark:text-primary":"border-transparent text-muted-foreground hover:text-foreground")}><span className="sm:hidden">{shortLabels[i]}</span><span className="hidden sm:inline">{label}</span></button>)}
   </div>{panels.map((panel,i)=><div key={i} id={"communication-panel-"+i} role="tabpanel" aria-labelledby={"communication-tab-"+i}
     tabIndex={0} hidden={selected!==i} className="pt-3">{materials ? <p className="mb-2 text-sm font-medium sm:hidden">{labels[i]}</p> : null}{panel}</div>)}</div>;
 }
@@ -36,7 +36,7 @@ export function CommunicationBaseIntroduction() {
     <Button ref={trigger} type="button" variant="secondary" className="mb-2 min-h-11 border border-border px-3 text-sm !text-foreground" onClick={() => dialog.current?.showModal()}>Como funciona</Button>
     <dialog ref={dialog} aria-labelledby="communication-introduction-title" onCancel={(event) => { event.preventDefault(); dismiss(); }}
       className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-3xl overflow-y-auto rounded-xl border border-border bg-background p-5 text-foreground shadow-xl backdrop:bg-black/40 sm:p-8">
-      <p className="mb-4 text-base font-bold text-primary">LP Factory</p>
+      <p className="mb-4 text-base font-bold text-brand-700 dark:text-primary">LP Factory</p>
       <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-x-6">
         <h2 id="communication-introduction-title" className="text-xl font-semibold leading-tight sm:col-span-2 sm:mb-3 sm:text-2xl">Sua comunicação começa aqui</h2>
         <p className="text-sm leading-6 text-muted-foreground sm:col-start-2 sm:row-start-2">A Base de Comunicação reúne as informações, os materiais e os diferenciais do seu negócio para orientar uma comunicação mais clara e consistente.</p>
@@ -60,7 +60,7 @@ export function CommunicationBaseIntroduction() {
         </div>
         <p className="text-sm leading-6 text-muted-foreground sm:col-start-2 sm:row-start-3">Comece com o que já tem. Você pode preencher aos poucos, revisar e complementar quando quiser. Cada seção é salva por você.</p>
       </div>
-      <Button type="button" className="mt-6 min-h-11 w-full sm:mx-auto sm:flex sm:w-56" onClick={dismiss}>Entendi</Button>
+      <Button type="button" className="mt-6 min-h-11 w-full !bg-brand-700 !text-surface-base hover:!bg-brand-700/95 sm:mx-auto sm:flex sm:w-56" onClick={dismiss}>Entendi</Button>
     </dialog>
   </>;
 }

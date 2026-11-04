@@ -91,7 +91,7 @@ function SectionRow({ definition, hasContent, hasSuggestion, renderDetail, showG
         onClick={() => {
           window.history.pushState({ ...window.history.state }, "", window.location.href); historyEntryRef.current = true;
           dialogRef.current?.showModal(); dialogRef.current?.querySelector<HTMLElement>("input:not([type=hidden]),textarea,button")?.focus({ preventScroll: true });
-        }}><span className="break-words font-medium text-primary hover:underline">{definition.label}</span>
+        }}><span className="break-words font-medium text-brand-700 hover:underline dark:text-primary">{definition.label}</span>
         <span className="text-xs leading-5 text-muted-foreground sm:hidden">{hasSuggestion ? "Sugestão disponível" : hasContent ? "Com conteúdo" : "Ainda não preenchida"}</span>
       </button>
       <dialog ref={dialogRef} aria-labelledby={titleId}

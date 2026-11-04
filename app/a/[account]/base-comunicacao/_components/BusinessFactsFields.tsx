@@ -51,6 +51,6 @@ export function BusinessFactsFields({ draft, onChange, disabled, id, identificat
       </div>
       <Button type="button" variant="secondary" className="min-h-11 shrink-0 px-2 font-normal !text-muted-foreground underline underline-offset-4" aria-label={`Retirar informação ${index + 1}`} onClick={() => change(rows.filter((_, i) => i !== index), afterRemoval(index))}>Retirar</Button>
     </div>)}
-    <Button type="button" variant="secondary" className="min-h-11 px-0 font-normal !text-primary underline underline-offset-4" disabled={rows.length >= 30} onClick={() => change([...rows, { label: "", value: "" }], [...customIndexes, rows.length])}>Adicionar informação</Button>
+    <Button type="button" variant="secondary" className="min-h-11 px-0 font-normal !text-brand-700 underline dark:!text-primary underline-offset-4" disabled={rows.length >= 30} onClick={() => change([...rows, { label: "", value: "" }], [...customIndexes, rows.length])}>Adicionar informação</Button>
   </fieldset>;
 }
