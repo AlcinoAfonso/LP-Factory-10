@@ -4,7 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNo
 import { Button } from "@/components/ui/button";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import type { CommunicationBase } from "../../../../../lib/communication-base/contracts";
-import type { CommunicationSectionDefinition } from "../../../../../lib/communication-base/registry";
+import { isBusinessLongTextSection, type CommunicationSectionDefinition } from "../../../../../lib/communication-base/registry";
 import { SectionGuidance } from "./SectionGuidance";
 import { hasSectionContent } from "./section-edit-state";
 
@@ -25,10 +25,9 @@ export function CommunicationSectionCollection({ definitions, base, suggestedKey
 }>) {
   return <table className="w-full table-fixed text-left text-sm">
     <caption className="sr-only">Seções da {definitions[0]?.group ?? "Base de Comunicação"}</caption>
-    <thead className="border-b border-border text-xs text-muted-foreground"><tr>
-      <th scope="col" className="w-[48%] py-2 pr-2 font-medium sm:w-auto">Seção</th>
-      <th scope="col" className="py-2 pr-2 font-medium sm:w-48">Estado</th>
-      <th scope="col" className="w-20 py-2 text-right font-medium sm:w-24">Ação</th>
+    <thead className="sr-only border-b border-border text-xs text-muted-foreground sm:not-sr-only"><tr>
+      <th scope="col" className="py-2 pr-3 font-medium">Seção</th>
+      <th scope="col" className="w-44 py-2 font-medium sm:w-48">Estado</th>
     </tr></thead>
     <tbody className="divide-y divide-border">{definitions.map((definition) => <SectionRow key={definition.key}
       definition={definition} hasContent={hasSectionContent(base.sections[definition.key]?.value) || Boolean(base.sections[definition.key]?.facts?.length)}
@@ -87,16 +86,16 @@ function SectionRow({ definition, hasContent, hasSuggestion, renderDetail, showG
   }, []);
 
   return <tr>
-    <th scope="row" className="break-words py-1 pr-3 font-medium leading-5">{definition.label}</th>
-    <td className="py-1 pr-2 text-xs leading-5 text-muted-foreground">{hasSuggestion ? "Sugestão disponível" : hasContent ? "Com conteúdo" : "Ainda não preenchida"}</td>
-    <td className="py-0 text-right">
-      <Button ref={triggerRef} variant="secondary" className="min-h-11 px-3 !text-brand-700" aria-label={`Abrir ${definition.label}`}
+    <th scope="row" className="py-1 font-normal leading-5 sm:pr-3">
+      <button ref={triggerRef} type="button" className="flex min-h-11 w-full flex-col justify-center py-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
         onClick={() => {
           window.history.pushState({ ...window.history.state }, "", window.location.href); historyEntryRef.current = true;
           dialogRef.current?.showModal(); dialogRef.current?.querySelector<HTMLElement>("input:not([type=hidden]),textarea,button")?.focus({ preventScroll: true });
-        }}>Abrir</Button>
+        }}><span className="break-words font-medium text-primary hover:underline">{definition.label}</span>
+        <span className="text-xs leading-5 text-muted-foreground sm:hidden">{hasSuggestion ? "Sugestão disponível" : hasContent ? "Com conteúdo" : "Ainda não preenchida"}</span>
+      </button>
       <dialog ref={dialogRef} aria-labelledby={titleId}
-        className="m-auto max-h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] max-w-xl overflow-y-auto overscroll-contain rounded-xl border border-border bg-background p-0 text-left text-foreground shadow-xl backdrop:bg-black/40"
+        className="m-auto max-h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] max-w-3xl overflow-y-auto overscroll-contain rounded-xl border border-border bg-background p-0 text-left text-foreground shadow-xl backdrop:bg-black/40"
         onCancel={(event) => { event.preventDefault(); requestClose(); }}
         onClick={(event) => {
           if (event.target !== event.currentTarget) return;
@@ -105,13 +104,12 @@ function SectionRow({ definition, hasContent, hasSuggestion, renderDetail, showG
         }}>
         <header className="sticky top-0 z-10 border-b border-border bg-background px-3 py-2 sm:px-4">
           <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0"><p className="text-xs text-muted-foreground">{definition.group}</p>
-              <h2 id={titleId} className="mt-1 text-lg font-semibold leading-6">{definition.label}</h2></div>
-            <Button variant="secondary" className="min-h-11 shrink-0 px-3" aria-label={`Fechar ${definition.label}`} onClick={requestClose}>Fechar</Button>
+            <h2 id={titleId} className="min-w-0 py-2 text-base font-semibold leading-6 [overflow-wrap:anywhere] sm:text-lg">{definition.label}</h2>
+            <Button variant="secondary" className="min-h-11 shrink-0 px-2 font-normal !text-foreground" aria-label={`Fechar ${definition.label}`} onClick={requestClose}>Fechar</Button>
           </div>
-          {showGuidance ? <SectionGuidance sectionKey={definition.key} label={definition.label} /> : null}
         </header>
         <div className="px-3 py-3 sm:px-4">
+          {showGuidance && !isBusinessLongTextSection(definition) ? <SectionGuidance key={resetRevision} sectionKey={definition.key} label={definition.label} /> : null}
           {closingMessage ? <FeedbackMessage tone="warning" className="mb-4">{closingMessage}</FeedbackMessage> : null}
           <SectionDetailContent definition={definition} controls={{ resetRevision, onCancel: requestClose, onSaved: closeDetail, onEditorStateChange }} renderDetail={renderDetail} />
         </div>
@@ -126,7 +124,8 @@ function SectionRow({ definition, hasContent, hasSuggestion, renderDetail, showG
           <Button variant="secondary" className="min-h-11" onClick={closeDetail}>Descartar alterações</Button>
         </div>
       </dialog>
-    </td>
+    </th>
+    <td className="hidden py-1 text-xs leading-5 text-muted-foreground sm:table-cell">{hasSuggestion ? "Sugestão disponível" : hasContent ? "Com conteúdo" : "Ainda não preenchida"}</td>
   </tr>;
 }
 

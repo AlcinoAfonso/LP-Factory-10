@@ -35,22 +35,22 @@ export function BusinessFactsFields({ draft, onChange, disabled, id, identificat
     <input type="hidden" name="facts" value={draft} />
     {identification ? <div className="space-y-0.5">{BUSINESS_IDENTIFICATION_LABELS.map((label, i) => {
       const index = predefinedIndexes[i];
-      return <label key={label} className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-center gap-2 text-sm" htmlFor={id + "-initial-" + i}><span>{label}</span>
+      return <label key={label} className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,8rem),1fr))] items-center gap-2 text-sm sm:grid-cols-[minmax(0,2fr)_minmax(0,5fr)]" htmlFor={id + "-initial-" + i}><span>{label}</span>
         <Input id={id + "-initial-" + i} className="min-h-11" value={index < 0 ? "" : rows[index].value} maxLength={1000}
           disabled={disabled || (index < 0 && rows.length >= 30)}
           onChange={(event) => change(updateIdentificationFact(rows, label, event.target.value, customIndexes),
             index >= 0 && !event.target.value.trim() ? afterRemoval(index) : customIndexes)} />
       </label>;
     })}</div> : null}
-    {rows.map((row, index) => predefinedIndexes.includes(index) ? null : <div key={index} className={identification ? "flex items-center gap-2" : "flex items-center gap-2 border-b border-border pb-2"}>
-      <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-2">
-        <label className="min-w-0 text-sm" htmlFor={id + index + "-label"}><span className="sr-only">Rótulo {index + 1}</span>
+    {rows.map((row, index) => predefinedIndexes.includes(index) ? null : <div key={index} className={identification ? "flex flex-wrap items-end gap-2 border-t border-border pt-2" : "flex flex-wrap items-end gap-2 border-b border-border pb-2"}>
+      <div className="grid min-w-[min(100%,12rem)] flex-1 grid-cols-[repeat(auto-fit,minmax(min(100%,5rem),1fr))] gap-2">
+        <label className="min-w-0 text-sm" htmlFor={id + index + "-label"}><span>Rótulo<span className="sr-only"> {index + 1}</span></span>
           <Input id={id + index + "-label"} className="min-h-11" placeholder="Rótulo" value={row.label} maxLength={100} onChange={(e) => update(index, { label: e.target.value })} /></label>
-        <label className="min-w-0 text-sm" htmlFor={id + index + "-value"}><span className="sr-only">Valor {index + 1}</span>
+        <label className="min-w-0 text-sm" htmlFor={id + index + "-value"}><span>Resposta<span className="sr-only"> {index + 1}</span></span>
           <Input id={id + index + "-value"} className="min-h-11" placeholder="Resposta" value={row.value} maxLength={1000} onChange={(e) => update(index, { value: e.target.value })} /></label>
       </div>
-      <Button type="button" variant="secondary" className="min-h-11 shrink-0 px-2" aria-label={`Retirar informação ${index + 1}`} onClick={() => change(rows.filter((_, i) => i !== index), afterRemoval(index))}>Retirar</Button>
+      <Button type="button" variant="secondary" className="min-h-11 shrink-0 px-2 font-normal !text-muted-foreground underline underline-offset-4" aria-label={`Retirar informação ${index + 1}`} onClick={() => change(rows.filter((_, i) => i !== index), afterRemoval(index))}>Retirar</Button>
     </div>)}
-    <Button type="button" variant="secondary" className="min-h-11" disabled={rows.length >= 30} onClick={() => change([...rows, { label: "", value: "" }], [...customIndexes, rows.length])}>Adicionar informação</Button>
+    <Button type="button" variant="secondary" className="min-h-11 px-0 font-normal !text-primary underline underline-offset-4" disabled={rows.length >= 30} onClick={() => change([...rows, { label: "", value: "" }], [...customIndexes, rows.length])}>Adicionar informação</Button>
   </fieldset>;
 }

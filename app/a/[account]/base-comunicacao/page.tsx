@@ -59,10 +59,10 @@ export default async function CommunicationBasePage({ params }: PageProps) {
           >
             Voltar à conta
           </Link>
-          <h1 className="text-2xl font-semibold tracking-tight text-ink-900 [overflow-wrap:anywhere]">
-            {businessName || "Base de Comunicação"}
+          <h1 className="text-xl font-semibold tracking-tight text-foreground [overflow-wrap:anywhere]">
+            Base de Comunicação
           </h1>
-          {businessName ? <p className="text-sm font-medium text-ink-900">Base de Comunicação</p> : null}
+          {businessName ? <p className="text-sm font-medium text-foreground [overflow-wrap:anywhere]">{businessName}</p> : null}
           <p className="text-sm text-muted-foreground [overflow-wrap:anywhere]">
             {taxonomy.ok && taxonomy.taxon ? `Nicho: ${nicheLabel}` : nicheLabel}
           </p>
