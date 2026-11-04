@@ -29,7 +29,7 @@ export function parseSectionValue(
   if (section.format === "material_items") return parseCommunicationMaterials(raw);
   if (section.format === "text") {
     if (typeof raw !== "string") return null;
-    const value = raw.trim();
+    const value = (isBusinessLongTextSection(section) ? raw.replace(/\r\n?/g, "\n") : raw).trim();
     return value.length <= communicationTextLimit(section) ? value : null;
   }
   if (section.format === "items") {
