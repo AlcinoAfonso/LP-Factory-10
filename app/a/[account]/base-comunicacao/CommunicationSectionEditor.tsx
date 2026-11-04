@@ -134,6 +134,7 @@ export function CommunicationSectionEditor(props: Readonly<{
   const localVersionRef = useRef(version);
   const [aiPending, startAiTransition] = useTransition();
   const [aiMessage, setAiMessage] = useState("");
+  const [aiNotice, setAiNotice] = useState("");
   const [localSuggestion, setLocalSuggestion] = useState<CommunicationSectionValue | null>(null);
   const [localStageTwoResult, setLocalStageTwoResult] = useState<LocalStageTwoResult | null>(null);
   const [missingQuestion, setMissingQuestion] = useState("");
@@ -163,6 +164,7 @@ export function CommunicationSectionEditor(props: Readonly<{
       setLocalStageTwoResult(null);
       setMissingQuestion("");
       setAiMessage("");
+      setAiNotice("");
     }
     priorResetRef.current = resetRevision;
     priorPersistedRef.current = persisted;
@@ -309,6 +311,7 @@ export function CommunicationSectionEditor(props: Readonly<{
                 const isCurrent = () => canInstallGeneralSuggestion(version, localVersionRef.current,
                   requestRevision, localRequestRevisionRef.current);
                 setAiMessage("");
+                setAiNotice("");
                 setLocalStageTwoResult(null);
                 try {
                   const result = await generateCommunicationIntelligenceAction({
@@ -317,6 +320,7 @@ export function CommunicationSectionEditor(props: Readonly<{
                   });
                   if (!isCurrent()) return;
                   if (result.ok) {
+                    setAiNotice(result.notice ?? "");
                     setLocalStageTwoResult({
                       generalRevision,
                       suggestion: result.draft.suggestions[0] ?? null,
@@ -340,6 +344,7 @@ export function CommunicationSectionEditor(props: Readonly<{
             basis={stageTwoSuggestion.basis}
             disabled={saveLocked} onUse={() => setDraft(editorDraftValue(stageTwoSuggestion.value, definition.format, structured))} /> : null}
           <Sources sources={stageTwoPresentation.sources} />
+          {aiNotice && localStageTwoResult?.generalRevision === generalRevision ? <FeedbackMessage tone="warning" className="mt-2">{aiNotice}</FeedbackMessage> : null}
           {aiMessage ? <p role="alert" className="mt-2 text-sm text-state-error">{aiMessage}</p> : null}
         </div>
       ))}
@@ -428,7 +433,7 @@ export function CommunicationStageTwo({ account, base, canEdit, structured = fal
                     setSuggestions(Object.fromEntries(result.draft.suggestions.map((item) => [item.key, item])));
                     setSources(result.draft.sources);
                     setGeneralRevision((current) => current + 1);
-                    setMessage("Sugestões prontas para revisão. Nenhuma seção foi salva automaticamente.");
+                    setMessage(["Sugestões prontas para revisão. Nenhuma seção foi salva automaticamente.", result.notice].filter(Boolean).join(" "));
                   } else {
                     setMessageIsError(true);
                     setMessage(result.message);

@@ -16,7 +16,7 @@ import { parseEditorDraft } from "../../../../lib/communication-base/manual-edit
 import { isCommunicationResourcesEnabled } from "../../../../lib/communication-base/config";
 import { readCommunicationDefinitions } from "../../../../lib/communication-base/adapters/communicationCatalogAdapter";
 import { getCommunicationSection } from "../../../../lib/communication-base/registry";
-import { COMMUNICATION_ASSISTANCE_LIMIT_MESSAGE, COMMUNICATION_ASSISTANCE_TEXT_MAX, hasConfirmedStageOneInput, hasOversizedConfirmedStageOneInput, type StageTwoDraft, type StageTwoTarget } from "../../../../lib/communication-base/ai-core";
+import { COMMUNICATION_ASSISTANCE_LIMIT_MESSAGE, COMMUNICATION_ASSISTANCE_TEXT_MAX, selectStageTwoInput, type StageTwoDraft, type StageTwoTarget } from "../../../../lib/communication-base/ai-core";
 import { isCurrentGenerationVersion } from "../../../../lib/communication-base/generation-guard";
 import { readActivePrimaryAccountTaxon } from "../../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import { isE1011PassageEnabled } from "../../../../lib/onboarding/pending-setup/config";
@@ -31,7 +31,7 @@ export type CommunicationStageOneAiResult =
   | Readonly<{ ok: false; message: string }>;
 
 export type CommunicationStageTwoAiResult =
-  | Readonly<{ ok: true; draft: StageTwoDraft }>
+  | Readonly<{ ok: true; draft: StageTwoDraft; notice?: string }>
   | Readonly<{ ok: false; message: string }>;
 
 const UNAVAILABLE = "Não foi possível salvar agora. Atualize a página e tente novamente.";
@@ -167,11 +167,11 @@ export async function generateCommunicationIntelligenceAction(input: Readonly<{
   if (!base.ok || !base.value || base.value.version !== input.version) {
     return { ok: false, message: "A Base mudou. Atualize a página antes de gerar sugestões." };
   }
-  if (!hasConfirmedStageOneInput(base.value, input.target)) {
-    return { ok: false, message: "Confirme primeiro ao menos um dado da Etapa 1." };
-  }
-  if (hasOversizedConfirmedStageOneInput(base.value, input.target)) {
-    return { ok: false, message: COMMUNICATION_ASSISTANCE_LIMIT_MESSAGE };
+  const selection = selectStageTwoInput(base.value, input.target);
+  if (!selection || Object.keys(selection.confirmed).length === 0) {
+    return { ok: false, message: selection?.notice
+      ? `${selection.notice} Não há outros dados confirmados compatíveis para esta geração.`
+      : "Confirme primeiro ao menos um dado da Etapa 1." };
   }
   const result = await generateCommunicationIntelligence({
     accountId: access.value.accountId,
@@ -186,7 +186,7 @@ export async function generateCommunicationIntelligenceAction(input: Readonly<{
   if (!latest.ok || !latest.value || !isCurrentGenerationVersion(input.version, latest.value.version)) {
     return { ok: false, message: "A Base mudou. Atualize a página antes de gerar sugestões." };
   }
-  return { ok: true, draft: result.value };
+  return { ok: true, draft: result.value, notice: selection.notice };
 }
 
 function readFormString(formData: FormData, key: string): string {

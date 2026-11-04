@@ -121,13 +121,24 @@ export function hasConfirmedStageOneInput(base: CommunicationBase, target: Stage
   return confirmed !== null && Object.keys(confirmed).length > 0;
 }
 
-export function hasOversizedConfirmedStageOneInput(base: CommunicationBase, target: StageTwoTarget): boolean {
-  return Object.entries(confirmedStageOneData(base, target) ?? {}).some(([key, entry]) => {
+export function selectStageTwoInput(base: CommunicationBase, target: StageTwoTarget) {
+  const confirmed = confirmedStageOneData(base, target);
+  if (!confirmed) return null;
+  const excludedLabels: string[] = [];
+  const compatible = Object.fromEntries(Object.entries(confirmed).filter(([key, entry]) => {
     const section = getCommunicationSection(key);
     const value = typeof entry === "object" && "facts" in entry ? entry.value : entry;
-    return section && isBusinessLongTextSection(section) && typeof value === "string" &&
-      value.length > COMMUNICATION_ASSISTANCE_TEXT_MAX;
-  });
+    if (section && isBusinessLongTextSection(section) && typeof value === "string" &&
+        value.length > COMMUNICATION_ASSISTANCE_TEXT_MAX) {
+      excludedLabels.push(section.label);
+      return false;
+    }
+    return true;
+  }));
+  const notice = excludedLabels.length
+    ? `Não consideradas nesta geração por excederem a capacidade da assistência: ${excludedLabels.join("; ")}. Os conteúdos completos continuam salvos, sem truncamento.`
+    : "";
+  return { confirmed: compatible, notice };
 }
 
 export type CommunicationSuggestion = Readonly<{
@@ -157,8 +168,8 @@ export function stageOnePrompt(key: string, userText: string) {
 export function stageTwoPrompt(base: CommunicationBase, target: StageTwoTarget, requiresCurrentResearch: boolean) {
   const keys = targetKeys(target);
   if (!keys) return null;
-  const confirmed = confirmedStageOneData(base, target);
-  if (!confirmed || Object.keys(confirmed).length === 0 || hasOversizedConfirmedStageOneInput(base, target)) return null;
+  const confirmed = selectStageTwoInput(base, target)?.confirmed;
+  if (!confirmed || Object.keys(confirmed).length === 0) return null;
   const existing = Object.fromEntries(keys.filter((key) => {
     const value = base.sections[key]?.value;
     return typeof value === "string" ? value.trim().length > 0 : Array.isArray(value) && value.length > 0;

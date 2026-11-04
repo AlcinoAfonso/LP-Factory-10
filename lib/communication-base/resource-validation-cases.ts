@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import type { CommunicationBase } from "./contracts";
-import { confirmedStageOneData, hasConfirmedStageOneInput, stageOnePrompt, stageTwoPrompt } from "./ai-core";
+import { confirmedStageOneData, hasConfirmedStageOneInput, selectStageTwoInput, stageOnePrompt, stageTwoPrompt } from "./ai-core";
 import { stageOneStateKey } from "./ui-state-keys";
 import { communicationSections, type CommunicationSectionDefinition } from "./registry";
 import { parseCommunicationFacts, parseSectionValue, parseStoredSections, projectCommunicationBase, withSection } from "./policy";
@@ -187,6 +187,27 @@ for (const key of ["offers", "proof", "materials"]) {
   assert.equal(parseCommunicationCatalog(catalogRows.map(row => row.section_key === key ? {...row,format:"items"} : row)),null);
 }
 const oversizedBase: CommunicationBase = {...aiBase,sections:{...aiBase.sections,business_context:{format:"text",value:"x".repeat(30_000),origin:"user_confirmed"}}};
-assert.equal(stageTwoPrompt(oversizedBase,general,false),null,"long confirmed content must not silently expand the existing AI workload");
+const inputSnapshot = JSON.stringify(oversizedBase);
+for (const target of [general, {kind:"section",key:"about"} as const]) {
+  const prompt = stageTwoPrompt(oversizedBase,target,false);
+  assert.ok(prompt,"compatible confirmed facts must still permit generation");
+  assert.deepEqual(JSON.parse(prompt.input).confirmed_business_data,confirmedStageOneData(aiBase,target));
+  assert.match(selectStageTwoInput(oversizedBase,target)!.notice,/Atuação/);
+  assert.equal(prompt.input.includes("x".repeat(100)),false,"excluded content must not be truncated into the payload");
+}
+assert.equal(JSON.stringify(oversizedBase),inputSnapshot,"selection must not rewrite storage");
+const onlyLong: CommunicationBase = {...oversizedBase,sections:{business_context:oversizedBase.sections.business_context}};
+assert.equal(stageTwoPrompt(onlyLong,general,false),null,"generation still needs at least one compatible fact");
+assert.deepEqual(selectStageTwoInput(onlyLong,general)?.confirmed,{});
+assert.match(selectStageTwoInput(onlyLong,general)!.notice,/Atuação/);
+const offersLong: CommunicationBase = {...aiBase,sections:{...aiBase.sections,business_context:{format:"text",value:"Consultoria",origin:"user_confirmed"},offers:{format:"text",value:"o".repeat(15_000),origin:"user_confirmed"}}};
+assert.equal(JSON.parse(stageTwoPrompt(offersLong,general,false)!.input).confirmed_business_data.business_context,"Consultoria");
+assert.equal("offers" in JSON.parse(stageTwoPrompt(offersLong,general,false)!.input).confirmed_business_data,false);
+assert.match(selectStageTwoInput(offersLong,general)!.notice,/Ofertas/);
+const atCapacity: CommunicationBase = {...aiBase,sections:{...aiBase.sections,offers:{format:"text",value:"o".repeat(10_000),origin:"user_confirmed"}}};
+assert.equal(JSON.parse(stageTwoPrompt(atCapacity,general,false)!.input).confirmed_business_data.offers.length,10_000);
+assert.equal(selectStageTwoInput(atCapacity,general)!.notice,"");
+assert.equal(selectStageTwoInput({...offersLong,sections:{...offersLong.sections,offers:{...offersLong.sections.offers!,origin:"user_reviewed"}}},general)!.notice,"");
+assert.equal(selectStageTwoInput({...aiBase,sections:{service:{format:"text",value:"s".repeat(15_000),origin:"user_confirmed"},business_context:{format:"text",value:"Consultoria",origin:"user_confirmed"}}},{kind:"section",key:"about"})!.notice,"","irrelevant sections are neither sent nor reported as exclusions");
 assert.ok(stageTwoPrompt({...aiBase,sections:{...aiBase.sections,materials:{format:"text",value:"x".repeat(30_000),origin:"user_confirmed"}}},general,false),"unrelated references must stay out of the AI payload");
 console.log("D14D: six 30,000-character save/reopen round trips, scoped limits, catalog and AI capacity passed.");
