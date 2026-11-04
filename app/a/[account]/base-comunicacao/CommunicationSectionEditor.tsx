@@ -16,9 +16,10 @@ import { editorDraftValue, parseEditorDraft } from "../../../../lib/communicatio
 import { sectionEditState } from "./_components/section-edit-state";
 
 import type { CommunicationBase, CommunicationSection, CommunicationSectionValue } from "../../../../lib/communication-base/contracts";
-import { hasStageTwoContent, type CommunicationSuggestion, type WebSource } from "../../../../lib/communication-base/ai-core";
+import { COMMUNICATION_ASSISTANCE_LIMIT_MESSAGE, COMMUNICATION_ASSISTANCE_TEXT_MAX, hasStageTwoContent, type CommunicationSuggestion, type WebSource } from "../../../../lib/communication-base/ai-core";
 import { selectStageTwoSectionPresentation, stageTwoBasisLabel, type LocalStageTwoResult } from "../../../../lib/communication-base/stage-two-presentation";
-import { communicationSections, getCommunicationSection, type CommunicationSectionKey } from "../../../../lib/communication-base/registry";
+import { communicationSections, getCommunicationSection, isBusinessLongTextSection, type CommunicationSectionKey } from "../../../../lib/communication-base/registry";
+import { communicationTextLimit } from "../../../../lib/communication-base/policy";
 import type { CommunicationSectionDefinition } from "../../../../lib/communication-base/registry";
 import { formatEditorValue, parseEditorValue } from "../../../../lib/communication-base/editor-value";
 import { isCommunicationSectionSaveLocked } from "../../../../lib/communication-base/editor-save-guard";
@@ -219,7 +220,7 @@ export function CommunicationSectionEditor(props: Readonly<{
         <FormFieldLabel htmlFor={fieldId}>{structured && definition.key === "business_name" ? "Nome público" : "Conteúdo da seção"}</FormFieldLabel>
         {guidance ? <p className="text-sm text-muted-foreground">{guidance}</p> : null}
         <FormFieldHint id={hintId} className={structured && definition.key === "business_name" ? "sr-only" : "leading-5"}>
-          {definition.format === "items"
+          {isBusinessLongTextSection(definition) ? `${draft.length.toLocaleString("pt-BR")} / ${communicationTextLimit(definition).toLocaleString("pt-BR")}` : definition.format === "items"
             ? structured ? "Até 20 itens de 400 caracteres. Preserve parágrafos e subtítulos dentro de cada item." : "Escreva um item por linha, até 20 itens de 400 caracteres."
             : definition.format === "faq"
               ? structured ? "Até 15 pares. Preencha a pergunta e a resposta nos campos correspondentes." : "Escreva uma pergunta e resposta por linha, separadas por |. Até 15 pares."
@@ -233,7 +234,7 @@ export function CommunicationSectionEditor(props: Readonly<{
           onChange={(event) => setDraft(event.target.value)}
           readOnly={saveLocked}
           placeholder={guidance ?? undefined}
-          maxLength={definition.format === "text" ? 4000 : undefined}
+          maxLength={definition.format === "text" ? communicationTextLimit(definition) : undefined}
           aria-invalid={!editState.valid}
           aria-describedby={`${hintId}${!editState.valid ? ` ${fieldId}-error` : ""}${saveLocked ? ` ${saveLockHintId}` : ""}`}
           className="min-h-40 resize-y text-sm"
@@ -263,6 +264,10 @@ export function CommunicationSectionEditor(props: Readonly<{
               setAiMessage("");
               setLocalSuggestion(null);
               setMissingQuestion("");
+              if (draft.length > COMMUNICATION_ASSISTANCE_TEXT_MAX) {
+                setAiMessage(COMMUNICATION_ASSISTANCE_LIMIT_MESSAGE);
+                return;
+              }
               try {
                 const result = await assistCommunicationSectionAction({ account, key: definition.key, userText: structured ? formatEditorValue(parseEditorDraft(definition.format, draft, true) as CommunicationSectionValue, definition.format) : draft, version });
                 if (!isCurrent()) return;

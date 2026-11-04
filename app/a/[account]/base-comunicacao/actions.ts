@@ -16,7 +16,7 @@ import { parseEditorDraft } from "../../../../lib/communication-base/manual-edit
 import { isCommunicationResourcesEnabled } from "../../../../lib/communication-base/config";
 import { readCommunicationDefinitions } from "../../../../lib/communication-base/adapters/communicationCatalogAdapter";
 import { getCommunicationSection } from "../../../../lib/communication-base/registry";
-import { hasConfirmedStageOneInput, type StageTwoDraft, type StageTwoTarget } from "../../../../lib/communication-base/ai-core";
+import { COMMUNICATION_ASSISTANCE_LIMIT_MESSAGE, COMMUNICATION_ASSISTANCE_TEXT_MAX, hasConfirmedStageOneInput, hasOversizedConfirmedStageOneInput, type StageTwoDraft, type StageTwoTarget } from "../../../../lib/communication-base/ai-core";
 import { isCurrentGenerationVersion } from "../../../../lib/communication-base/generation-guard";
 import { readActivePrimaryAccountTaxon } from "../../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import { isE1011PassageEnabled } from "../../../../lib/onboarding/pending-setup/config";
@@ -122,9 +122,12 @@ export async function assistCommunicationSectionAction(input: Readonly<{
   version: number;
 }>): Promise<CommunicationStageOneAiResult> {
   const section = input && typeof input.key === "string" ? getCommunicationSection(input.key) : null;
+  if (section?.stage === 1 && typeof input.userText === "string" && input.userText.length > COMMUNICATION_ASSISTANCE_TEXT_MAX) {
+    return { ok: false, message: COMMUNICATION_ASSISTANCE_LIMIT_MESSAGE };
+  }
   if (!section || section.stage !== 1 || typeof input.account !== "string" ||
       !Number.isSafeInteger(input.version) || input.version <= 0 ||
-      typeof input.userText !== "string" || !input.userText.trim() || input.userText.length > 10_000 ||
+      typeof input.userText !== "string" || !input.userText.trim() ||
       parseSectionValue(section, parseEditorValue(section.format, input.userText)) === null) {
     return { ok: false, message: "Preencha esta seção com seus dados reais antes de pedir ajuda à IA." };
   }
@@ -166,6 +169,9 @@ export async function generateCommunicationIntelligenceAction(input: Readonly<{
   }
   if (!hasConfirmedStageOneInput(base.value, input.target)) {
     return { ok: false, message: "Confirme primeiro ao menos um dado da Etapa 1." };
+  }
+  if (hasOversizedConfirmedStageOneInput(base.value, input.target)) {
+    return { ok: false, message: COMMUNICATION_ASSISTANCE_LIMIT_MESSAGE };
   }
   const result = await generateCommunicationIntelligence({
     accountId: access.value.accountId,
