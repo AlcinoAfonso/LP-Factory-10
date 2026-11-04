@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import type { CommunicationBase } from "./contracts";
-import { confirmedStageOneData, hasConfirmedStageOneInput, stageTwoPrompt } from "./ai-core";
+import { confirmedStageOneData, hasConfirmedStageOneInput, selectStageTwoInput, stageOnePrompt, stageTwoPrompt } from "./ai-core";
 import { stageOneStateKey } from "./ui-state-keys";
 import { communicationSections, type CommunicationSectionDefinition } from "./registry";
 import { parseCommunicationFacts, parseSectionValue, parseStoredSections, projectCommunicationBase, withSection } from "./policy";
@@ -92,7 +92,7 @@ assert.deepEqual(confirmedStageOneData(aiBase,general),{business_name:{value:"No
 const aiChanged: CommunicationBase={...aiBase,sections:{business_name:{...aiBase.sections.business_name!,facts:[{label:"Razão social",value:"Outra empresa"}]}}};
 assert.notEqual(stageOneStateKey(aiBase),stageOneStateKey(aiChanged));
 assert.deepEqual(confirmedStageOneData(aiBase,{kind:"section",key:"audience"}),{});
-assert.equal(stageOneStateKey({...aiLegacy,sections:{...aiLegacy.sections,materials:{format:"items",value:[],origin:"user_confirmed",facts:raw.business_name.facts}}}),stageOneStateKey(aiLegacy));
+assert.equal(stageOneStateKey({...aiLegacy,sections:{...aiLegacy.sections,materials:{format:"text",value:"",origin:"user_confirmed",facts:raw.business_name.facts}}}),stageOneStateKey(aiLegacy));
 assert.equal(stageOneStateKey({...aiLegacy,sections:{...aiLegacy.sections,custom_fixed:{format:"text",value:"Manual",origin:"user_confirmed",facts:raw.business_name.facts}}}),stageOneStateKey(aiLegacy));
 const unconfirmed: CommunicationBase={...onlyFacts,sections:{business_name:{...onlyFacts.sections.business_name!,origin:"user_reviewed"}}};
 assert.equal(hasConfirmedStageOneInput(unconfirmed,general),false);
@@ -157,3 +157,57 @@ const fixedAndCustom = [{ label: "Número", value: "42" }, ...customNumber];
 assert.deepEqual(identification.updateIdentificationFact(fixedAndCustom, "Número", "43", [1]),
   [{ label: "Número", value: "43" }, ...customNumber]);
 console.log("D14D: custom labels do not become predefined targets during editing.");
+
+// Free-text storage and AI input capacity are independent boundaries.
+for (const key of ["business_context", "offers", "service", "proof", "materials", "preferences"]) {
+  const definition = communicationSections.find(section => section.key === key)!;
+  assert.equal(definition.format, "text");
+  const pasted = "Texto colado.\n\n- Lista manual\n- Segunda linha\n\n";
+  const content = pasted + "x".repeat(30_000 - pasted.length);
+  const draft = formatManualEditorValue(content, definition.format);
+  const parsed = parseSectionValue(definition, parseManualEditorValue(definition.format, draft));
+  assert.notEqual(parsed, null);
+  const saved = withSection(raw, key, parsed!, "user_confirmed");
+  assert.ok(saved);
+  const reopened = projectCommunicationBase({account_id:account,version:2,sections_json:saved,created_at:"t",updated_at:"t"});
+  assert.ok(reopened);
+  assert.equal(reopened.sections[key]?.value, content, key + " preserves paragraphs and manual lists at 30,000");
+  assert.deepEqual(reopened.sections.business_name, raw.business_name);
+  assert.equal(sectionEditState(definition,reopened.sections[key],draft,true).dirty,false);
+  assert.equal(sectionEditState(definition,reopened.sections[key],draft,true).valid,true);
+  assert.equal(parseSectionValue(definition, content + "x"), null);
+  assert.ok(stageOnePrompt(key, "x".repeat(10_000)));
+  assert.equal(stageOnePrompt(key, content), null, "oversized AI input must fail before constructing a provider payload");
+  assert.equal(parseSectionValue(definition, []), null, "no implicit legacy conversion");
+}
+for (const definition of [communicationSections[0], extra, ...communicationSections.filter(section => section.stage === 2 && section.format === "text")]) {
+  assert.equal(parseSectionValue(definition, "x".repeat(4001)), null, "other text limits stay unchanged");
+}
+for (const key of ["offers", "proof", "materials"]) {
+  assert.equal(parseCommunicationCatalog(catalogRows.map(row => row.section_key === key ? {...row,format:"items"} : row)),null);
+}
+const oversizedBase: CommunicationBase = {...aiBase,sections:{...aiBase.sections,business_context:{format:"text",value:"x".repeat(30_000),origin:"user_confirmed"}}};
+const inputSnapshot = JSON.stringify(oversizedBase);
+for (const target of [general, {kind:"section",key:"about"} as const]) {
+  const prompt = stageTwoPrompt(oversizedBase,target,false);
+  assert.ok(prompt,"compatible confirmed facts must still permit generation");
+  assert.deepEqual(JSON.parse(prompt.input).confirmed_business_data,confirmedStageOneData(aiBase,target));
+  assert.match(selectStageTwoInput(oversizedBase,target)!.notice,/Atuação/);
+  assert.equal(prompt.input.includes("x".repeat(100)),false,"excluded content must not be truncated into the payload");
+}
+assert.equal(JSON.stringify(oversizedBase),inputSnapshot,"selection must not rewrite storage");
+const onlyLong: CommunicationBase = {...oversizedBase,sections:{business_context:oversizedBase.sections.business_context}};
+assert.equal(stageTwoPrompt(onlyLong,general,false),null,"generation still needs at least one compatible fact");
+assert.deepEqual(selectStageTwoInput(onlyLong,general)?.confirmed,{});
+assert.match(selectStageTwoInput(onlyLong,general)!.notice,/Atuação/);
+const offersLong: CommunicationBase = {...aiBase,sections:{...aiBase.sections,business_context:{format:"text",value:"Consultoria",origin:"user_confirmed"},offers:{format:"text",value:"o".repeat(15_000),origin:"user_confirmed"}}};
+assert.equal(JSON.parse(stageTwoPrompt(offersLong,general,false)!.input).confirmed_business_data.business_context,"Consultoria");
+assert.equal("offers" in JSON.parse(stageTwoPrompt(offersLong,general,false)!.input).confirmed_business_data,false);
+assert.match(selectStageTwoInput(offersLong,general)!.notice,/Ofertas/);
+const atCapacity: CommunicationBase = {...aiBase,sections:{...aiBase.sections,offers:{format:"text",value:"o".repeat(10_000),origin:"user_confirmed"}}};
+assert.equal(JSON.parse(stageTwoPrompt(atCapacity,general,false)!.input).confirmed_business_data.offers.length,10_000);
+assert.equal(selectStageTwoInput(atCapacity,general)!.notice,"");
+assert.equal(selectStageTwoInput({...offersLong,sections:{...offersLong.sections,offers:{...offersLong.sections.offers!,origin:"user_reviewed"}}},general)!.notice,"");
+assert.equal(selectStageTwoInput({...aiBase,sections:{service:{format:"text",value:"s".repeat(15_000),origin:"user_confirmed"},business_context:{format:"text",value:"Consultoria",origin:"user_confirmed"}}},{kind:"section",key:"about"})!.notice,"","irrelevant sections are neither sent nor reported as exclusions");
+assert.ok(stageTwoPrompt({...aiBase,sections:{...aiBase.sections,materials:{format:"text",value:"x".repeat(30_000),origin:"user_confirmed"}}},general,false),"unrelated references must stay out of the AI payload");
+console.log("D14D: six 30,000-character save/reopen round trips, scoped limits, catalog and AI capacity passed.");

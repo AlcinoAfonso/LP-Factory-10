@@ -1,6 +1,7 @@
 import { parseCommunicationMaterials } from "./materials";
 import {
   communicationSections,
+  isBusinessLongTextSection,
   type CommunicationSectionDefinition,
 } from "./registry";
 import type {
@@ -12,9 +13,14 @@ import type {
 } from "./contracts";
 
 export const COMMUNICATION_TEXT_MAX = 4000;
+export const COMMUNICATION_BUSINESS_TEXT_MAX = 30_000;
 export const COMMUNICATION_ITEMS_MAX = 20;
 export const COMMUNICATION_ITEM_MAX = 400;
 export const COMMUNICATION_FAQ_MAX = 15;
+
+export function communicationTextLimit(section: CommunicationSectionDefinition): number {
+  return isBusinessLongTextSection(section) ? COMMUNICATION_BUSINESS_TEXT_MAX : COMMUNICATION_TEXT_MAX;
+}
 
 export function parseSectionValue(
   section: CommunicationSectionDefinition,
@@ -24,7 +30,7 @@ export function parseSectionValue(
   if (section.format === "text") {
     if (typeof raw !== "string") return null;
     const value = raw.trim();
-    return value.length <= COMMUNICATION_TEXT_MAX ? value : null;
+    return value.length <= communicationTextLimit(section) ? value : null;
   }
   if (section.format === "items") {
     if (!Array.isArray(raw) || raw.length > COMMUNICATION_ITEMS_MAX) return null;

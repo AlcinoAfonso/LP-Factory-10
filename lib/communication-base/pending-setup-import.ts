@@ -1,5 +1,5 @@
 import { getCommunicationSection } from "./registry";
-import { parseSectionValue } from "./policy";
+import { COMMUNICATION_TEXT_MAX, parseSectionValue } from "./policy";
 
 type CandidateRow = Readonly<{
   business_display_name?: unknown;
@@ -25,7 +25,7 @@ export function selectPendingSetupInitialContext(rawRows: unknown): PendingSetup
   const context = parseSectionValue(businessContext, row.business_context_text);
   return {
     businessName: typeof name === "string" && name.length > 0 && name.length <= 120 ? name : null,
-    businessContext: typeof context === "string" && context.length > 0 ? context : null,
+    businessContext: typeof context === "string" && context.length > 0 && context.length <= COMMUNICATION_TEXT_MAX ? context : null,
   };
 }
 
@@ -39,5 +39,5 @@ export function selectPendingSetupBusinessContext(rawRows: unknown): string | nu
   const section = getCommunicationSection("business_context");
   if (!section) return null;
   const value = parseSectionValue(section, row.business_context_text);
-  return typeof value === "string" && value.length > 0 ? value : null;
+  return typeof value === "string" && value.length > 0 && value.length <= COMMUNICATION_TEXT_MAX ? value : null;
 }

@@ -16,9 +16,10 @@ import { editorDraftValue, parseEditorDraft } from "../../../../lib/communicatio
 import { sectionEditState } from "./_components/section-edit-state";
 
 import type { CommunicationBase, CommunicationSection, CommunicationSectionValue } from "../../../../lib/communication-base/contracts";
-import { hasStageTwoContent, type CommunicationSuggestion, type WebSource } from "../../../../lib/communication-base/ai-core";
+import { COMMUNICATION_ASSISTANCE_LIMIT_MESSAGE, COMMUNICATION_ASSISTANCE_TEXT_MAX, hasStageTwoContent, type CommunicationSuggestion, type WebSource } from "../../../../lib/communication-base/ai-core";
 import { selectStageTwoSectionPresentation, stageTwoBasisLabel, type LocalStageTwoResult } from "../../../../lib/communication-base/stage-two-presentation";
-import { communicationSections, getCommunicationSection, type CommunicationSectionKey } from "../../../../lib/communication-base/registry";
+import { communicationSections, getCommunicationSection, isBusinessLongTextSection, type CommunicationSectionKey } from "../../../../lib/communication-base/registry";
+import { communicationTextLimit } from "../../../../lib/communication-base/policy";
 import type { CommunicationSectionDefinition } from "../../../../lib/communication-base/registry";
 import { formatEditorValue, parseEditorValue } from "../../../../lib/communication-base/editor-value";
 import { isCommunicationSectionSaveLocked } from "../../../../lib/communication-base/editor-save-guard";
@@ -133,6 +134,7 @@ export function CommunicationSectionEditor(props: Readonly<{
   const localVersionRef = useRef(version);
   const [aiPending, startAiTransition] = useTransition();
   const [aiMessage, setAiMessage] = useState("");
+  const [aiNotice, setAiNotice] = useState("");
   const [localSuggestion, setLocalSuggestion] = useState<CommunicationSectionValue | null>(null);
   const [localStageTwoResult, setLocalStageTwoResult] = useState<LocalStageTwoResult | null>(null);
   const [missingQuestion, setMissingQuestion] = useState("");
@@ -162,6 +164,7 @@ export function CommunicationSectionEditor(props: Readonly<{
       setLocalStageTwoResult(null);
       setMissingQuestion("");
       setAiMessage("");
+      setAiNotice("");
     }
     priorResetRef.current = resetRevision;
     priorPersistedRef.current = persisted;
@@ -219,7 +222,7 @@ export function CommunicationSectionEditor(props: Readonly<{
         <FormFieldLabel htmlFor={fieldId}>{structured && definition.key === "business_name" ? "Nome público" : "Conteúdo da seção"}</FormFieldLabel>
         {guidance ? <p className="text-sm text-muted-foreground">{guidance}</p> : null}
         <FormFieldHint id={hintId} className={structured && definition.key === "business_name" ? "sr-only" : "leading-5"}>
-          {definition.format === "items"
+          {isBusinessLongTextSection(definition) ? `${draft.length.toLocaleString("pt-BR")} / ${communicationTextLimit(definition).toLocaleString("pt-BR")}` : definition.format === "items"
             ? structured ? "Até 20 itens de 400 caracteres. Preserve parágrafos e subtítulos dentro de cada item." : "Escreva um item por linha, até 20 itens de 400 caracteres."
             : definition.format === "faq"
               ? structured ? "Até 15 pares. Preencha a pergunta e a resposta nos campos correspondentes." : "Escreva uma pergunta e resposta por linha, separadas por |. Até 15 pares."
@@ -233,7 +236,7 @@ export function CommunicationSectionEditor(props: Readonly<{
           onChange={(event) => setDraft(event.target.value)}
           readOnly={saveLocked}
           placeholder={guidance ?? undefined}
-          maxLength={definition.format === "text" ? 4000 : undefined}
+          maxLength={definition.format === "text" ? communicationTextLimit(definition) : undefined}
           aria-invalid={!editState.valid}
           aria-describedby={`${hintId}${!editState.valid ? ` ${fieldId}-error` : ""}${saveLocked ? ` ${saveLockHintId}` : ""}`}
           className="min-h-40 resize-y text-sm"
@@ -263,6 +266,10 @@ export function CommunicationSectionEditor(props: Readonly<{
               setAiMessage("");
               setLocalSuggestion(null);
               setMissingQuestion("");
+              if (draft.length > COMMUNICATION_ASSISTANCE_TEXT_MAX) {
+                setAiMessage(COMMUNICATION_ASSISTANCE_LIMIT_MESSAGE);
+                return;
+              }
               try {
                 const result = await assistCommunicationSectionAction({ account, key: definition.key, userText: structured ? formatEditorValue(parseEditorDraft(definition.format, draft, true) as CommunicationSectionValue, definition.format) : draft, version });
                 if (!isCurrent()) return;
@@ -304,6 +311,7 @@ export function CommunicationSectionEditor(props: Readonly<{
                 const isCurrent = () => canInstallGeneralSuggestion(version, localVersionRef.current,
                   requestRevision, localRequestRevisionRef.current);
                 setAiMessage("");
+                setAiNotice("");
                 setLocalStageTwoResult(null);
                 try {
                   const result = await generateCommunicationIntelligenceAction({
@@ -312,6 +320,7 @@ export function CommunicationSectionEditor(props: Readonly<{
                   });
                   if (!isCurrent()) return;
                   if (result.ok) {
+                    setAiNotice(result.notice ?? "");
                     setLocalStageTwoResult({
                       generalRevision,
                       suggestion: result.draft.suggestions[0] ?? null,
@@ -335,6 +344,7 @@ export function CommunicationSectionEditor(props: Readonly<{
             basis={stageTwoSuggestion.basis}
             disabled={saveLocked} onUse={() => setDraft(editorDraftValue(stageTwoSuggestion.value, definition.format, structured))} /> : null}
           <Sources sources={stageTwoPresentation.sources} />
+          {aiNotice && localStageTwoResult?.generalRevision === generalRevision ? <FeedbackMessage tone="warning" className="mt-2">{aiNotice}</FeedbackMessage> : null}
           {aiMessage ? <p role="alert" className="mt-2 text-sm text-state-error">{aiMessage}</p> : null}
         </div>
       ))}
@@ -423,7 +433,7 @@ export function CommunicationStageTwo({ account, base, canEdit, structured = fal
                     setSuggestions(Object.fromEntries(result.draft.suggestions.map((item) => [item.key, item])));
                     setSources(result.draft.sources);
                     setGeneralRevision((current) => current + 1);
-                    setMessage("Sugestões prontas para revisão. Nenhuma seção foi salva automaticamente.");
+                    setMessage(["Sugestões prontas para revisão. Nenhuma seção foi salva automaticamente.", result.notice].filter(Boolean).join(" "));
                   } else {
                     setMessageIsError(true);
                     setMessage(result.message);

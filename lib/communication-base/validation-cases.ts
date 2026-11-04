@@ -40,7 +40,7 @@ const audience = getCommunicationSection("audience");
 const faq = getCommunicationSection("faq");
 assert.ok(business && audience && faq);
 assert.equal(parseSectionValue(business, "  Atuo em Recife.  "), "Atuo em Recife.");
-assert.equal(parseSectionValue(business, "x".repeat(4001)), null);
+assert.equal(parseSectionValue(business, "x".repeat(30001)), null);
 assert.equal(parseSectionValue(faq, [{ question: "Quem atende?", answer: "" }]), null);
 const marketInsights = getCommunicationSection("market_insights");
 assert.ok(marketInsights);
@@ -153,7 +153,7 @@ assert.equal(canInstallGeneralSuggestion(projected.version, projected.version, 0
 assert.equal(sectionStateKey(projected.sections.audience), sectionStateKey(stageTwoFirstSave.sections.audience),
   "saving another stage 2 section must preserve this editor's unsaved draft");
 const stageOneSiblingSave = { ...projected, version: projected.version + 1, sections: { ...projected.sections,
-  offers: { format: "items" as const, value: ["Oferta confirmada"], origin: "user_confirmed" as const },
+  offers: { format: "text" as const, value: "Oferta confirmada", origin: "user_confirmed" as const },
 } };
 assert.equal(sectionStateKey(projected.sections.business_context),
   sectionStateKey(stageOneSiblingSave.sections.business_context),
@@ -171,7 +171,7 @@ const changedFacts = { ...projected, version: projected.version + 1, sections: {
 assert.notEqual(stageOneStateKey(changedFacts), stageOneKey,
   "a changed confirmed stage 1 fact must invalidate the suggestion batch");
 assert.equal(stageOneStateKey({ ...projected, sections: { ...projected.sections,
-  materials: { format: "items", value: ["Referência fora do alcance da Etapa 2"], origin: "user_confirmed" },
+  materials: { format: "text", value: "Referência fora do alcance da Etapa 2", origin: "user_confirmed" },
 } }), stageOneKey, "unrelated stage 1 material must not discard paid stage 2 suggestions");
 assert.notEqual(stageOneStateKey({ ...projected, accountId: "another-account" }), stageOneKey,
   "suggestions must not survive switching accounts");
@@ -222,14 +222,14 @@ for (const key of ["offers", "proof", "materials"]) {
     suggestion, missing_question: "",
   }) }, key);
   assert.equal(response(Array.from({ length: 20 }, () => "a".repeat(400)).join("\n")).ok, true,
-    `${key} must accept the largest savable item list`);
-  assert.equal(response(Array.from({ length: 21 }, () => "item").join("\n")).ok, false,
-    `${key} must reject more than 20 item lines`);
-  assert.equal(response("a".repeat(401)).ok, false,
-    `${key} must reject an item exceeding the save limit`);
+    `${key} must accept manual lists as free text`);
+  assert.equal(response(Array.from({ length: 21 }, () => "item").join("\n")).ok, true,
+    `${key} no longer has an item count limit`);
+  assert.equal(response("a".repeat(401)).ok, true,
+    `${key} no longer has a per-item limit`);
 }
 assert.equal(parseStageOneResponse({ output_text: JSON.stringify({
-  suggestion: "a".repeat(4001), missing_question: "",
+  suggestion: "a".repeat(30001), missing_question: "",
 }) }, "business_context").ok, false, "text suggestions must follow the save limit");
 assert.equal(parseStageOneResponse({ output_text: JSON.stringify({
   suggestion: "item", missing_question: "",
@@ -237,7 +237,7 @@ assert.equal(parseStageOneResponse({ output_text: JSON.stringify({
 
 const generalTarget = { kind: "general" } as const;
 const emptySections = withSection(withSection({}, "business_name", "   ", "user_confirmed")!,
-  "offers", ["   "], "user_confirmed");
+  "offers", "   ", "user_confirmed");
 assert.ok(emptySections);
 const emptyBase = projectCommunicationBase({
   account_id: "00000000-0000-4000-8000-000000000001", version: 3, sections_json: emptySections,
@@ -386,7 +386,7 @@ assert.ok(firstGeneration);
 assert.equal("existing_stage_two_draft" in JSON.parse(firstGeneration.input), false,
   "first generation sends only confirmed stage 1 data");
 const privateInput = withSection(withSection(initial, "service", "Contato privado 11 99999-9999", "user_confirmed")!,
-  "materials", ["Referência interna"], "user_confirmed");
+  "materials", "Referência interna", "user_confirmed");
 assert.ok(privateInput);
 const privateBase = projectCommunicationBase({
   account_id: "00000000-0000-4000-8000-000000000001", version: 3, sections_json: privateInput,
@@ -456,7 +456,7 @@ assert.equal(projectCommunicationBase({
 assert.equal(projectCommunicationBase({
   account_id: "00000000-0000-4000-8000-000000000001",
   version: 3,
-  sections_json: { ...evolved, offers: { format: "items", value: ["Oferta"], origin: "pending_setup_confirmed" } },
+  sections_json: { ...evolved, offers: { format: "text", value: "Oferta", origin: "pending_setup_confirmed" } },
   created_at: "2026-09-27T00:00:00Z",
   updated_at: "2026-09-27T00:00:00Z",
 }), null, "Pending Setup provenance applies only to business context");
