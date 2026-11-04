@@ -164,6 +164,9 @@ for (const key of ["business_context", "offers", "service", "proof", "materials"
   assert.equal(definition.format, "text");
   const pasted = "Texto colado.\n\n- Lista manual\n- Segunda linha\n\n";
   const content = pasted + "x".repeat(30_000 - pasted.length);
+  assert.equal(parseSectionValue(definition, content.replace(/\n/g, "\r\n")),content,
+    "native form CRLF transport must preserve the textarea's 30,000-character limit");
+  assert.equal(parseSectionValue(definition, (content + "x").replace(/\n/g, "\r\n")),null);
   const draft = formatManualEditorValue(content, definition.format);
   const parsed = parseSectionValue(definition, parseManualEditorValue(definition.format, draft));
   assert.notEqual(parsed, null);
