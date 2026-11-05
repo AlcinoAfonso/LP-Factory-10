@@ -10,7 +10,8 @@ import { stageOneStateKey } from "../../../../lib/communication-base/ui-state-ke
 import { readActivePrimaryAccountTaxon } from "../../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { EmptyState } from "@/components/ui/empty-state";
-import { CommunicationBaseTabs } from "./CommunicationBaseTabs";
+import { CommunicationBaseTabs, CommunicationBaseIntroduction } from "./CommunicationBaseTabs";
+import styles from "./CommunicationBase.module.css";
 import { CommunicationStageOne, CommunicationStageTwo, StartCommunicationBaseForm } from "./CommunicationSectionEditor";
 
 type PageProps = Readonly<{ params: Promise<{ account: string }> }>;
@@ -49,8 +50,10 @@ export default async function CommunicationBasePage({ params }: PageProps) {
     ? await readPendingSetupInitialContext(access.value.accountId)
     : null;
 
+  const showIntroduction = result.ok && (Boolean(base) || (access.value.canEdit && (!structured || taxonomy.ok)));
+
   return (
-    <main className="mx-auto max-w-5xl px-4 py-4 sm:px-6 sm:py-6">
+    <main className={`${styles.surface} mx-auto max-w-5xl px-4 py-4 sm:px-6 sm:py-6`}>
       <div className="space-y-3">
         <header className="space-y-1">
           <Link
@@ -59,15 +62,15 @@ export default async function CommunicationBasePage({ params }: PageProps) {
           >
             Voltar à conta
           </Link>
-          <h1 className="text-xl font-semibold tracking-tight text-foreground [overflow-wrap:anywhere]">
-            Base de Comunicação
-          </h1>
+          <div className="flex items-start gap-2">
+            <h1 className="min-w-0 py-2 text-xl font-semibold tracking-tight text-foreground [overflow-wrap:anywhere]">
+              Base de Comunicação
+            </h1>
+            {showIntroduction ? <CommunicationBaseIntroduction /> : null}
+          </div>
           {businessName ? <p className="text-sm font-medium text-foreground [overflow-wrap:anywhere]">{businessName}</p> : null}
           <p className="text-sm text-muted-foreground [overflow-wrap:anywhere]">
             {taxonomy.ok && taxonomy.taxon ? `Nicho: ${nicheLabel}` : nicheLabel}
-          </p>
-          <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-            Reúna a verdade da empresa e desenvolva sua inteligência de comunicação no seu ritmo.
           </p>
         </header>
         {!result.ok ? (

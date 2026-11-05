@@ -1,0 +1,25 @@
+/* Only this account surface; shared typography and semantic tokens stay intact. */
+.surface :global(.text-muted-foreground),
+.surface textarea::placeholder,
+.surface input::placeholder {
+  color: color-mix(in srgb, theme("colors.graytech.500") 85%, theme("colors.graytech.600")) !important;
+}
+
+.surface :global(.text-muted-foreground) {
+  font-size: 0.9625rem;
+}
+
+.surface :global(.text-xs.text-muted-foreground) {
+  font-size: 0.825rem;
+}
+
+.surface textarea::placeholder,
+.surface input::placeholder {
+  font-size: 1.1em;
+}
+
+:global(.dark) .surface :global(.text-muted-foreground),
+:global(.dark) .surface textarea::placeholder,
+:global(.dark) .surface input::placeholder {
+  color: color-mix(in srgb, hsl(var(--muted-foreground)) 95%, hsl(var(--background))) !important;
+}

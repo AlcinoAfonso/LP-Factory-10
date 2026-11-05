@@ -7,7 +7,7 @@ export function CommunicationBaseTabs({stageOne,stageTwo,materials}:Readonly<{st
   const labels=materials?["Dados do negócio","Materiais de comunicação","Inteligência e copy"]:["Verdade da empresa","Inteligência de comunicação"];
   const shortLabels=materials?["Negócio","Materiais","Inteligência e copy"]:labels;
   const panels=materials?[stageOne,materials,stageTwo]:[stageOne,stageTwo];
-  return <div><CommunicationBaseIntroduction /><div role="tablist" aria-label="Categorias da Base de Comunicação" className="flex flex-wrap border-b border-border">
+  return <div><div role="tablist" aria-label="Categorias da Base de Comunicação" className="flex flex-wrap border-b border-border">
     {labels.map((label,i)=><button key={label} ref={el=>{tabs.current[i]=el;}} type="button" role="tab" id={"communication-tab-"+i}
       aria-controls={"communication-panel-"+i} aria-label={label} aria-selected={selected===i} tabIndex={selected===i?0:-1}
       onClick={()=>setSelected(i)} onKeyDown={event=>{
@@ -33,7 +33,7 @@ export function CommunicationBaseIntroduction() {
     trigger.current?.focus({ preventScroll: true });
   }
   return <>
-    <Button ref={trigger} type="button" variant="secondary" className="mb-2 min-h-11 border border-border px-3 text-sm !text-foreground" onClick={() => dialog.current?.showModal()}>Como funciona</Button>
+    <Button ref={trigger} type="button" variant="secondary" aria-label="Como funciona" title="Como funciona" className="h-11 w-11 shrink-0 border border-border p-0 !text-muted-foreground" onClick={() => dialog.current?.showModal()}><span aria-hidden="true" className="text-lg font-normal">?</span></Button>
     <dialog ref={dialog} aria-labelledby="communication-introduction-title" onCancel={(event) => { event.preventDefault(); dismiss(); }}
       className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-3xl overflow-y-auto rounded-xl border border-border bg-background p-5 text-foreground shadow-xl backdrop:bg-black/40 sm:p-8">
       <p className="mb-4 text-base font-bold text-brand-700 dark:text-primary">LP Factory</p>

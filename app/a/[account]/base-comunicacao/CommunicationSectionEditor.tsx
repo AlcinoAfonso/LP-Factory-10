@@ -5,31 +5,28 @@ import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { CommunicationBaseIntroduction } from "./CommunicationBaseTabs";
 import { FormField, FormFieldLabel, FormFieldHint, FormFieldError } from "@/components/ui/form-field";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CommunicationSectionCollection, type SectionDetailControls } from "./_components/CommunicationSectionCollection";
-import { SectionGuidance } from "./_components/SectionGuidance";
 import { getSectionGuidance } from "../../../../lib/communication-base/section-guidance";
 import { BusinessFactsFields } from "./_components/BusinessFactsFields";
 import { StructuredSectionFields, StructuredSectionContent } from "./_components/StructuredSectionFields";
-import { editorDraftValue, parseEditorDraft } from "../../../../lib/communication-base/manual-editor-value";
+import { editorDraftValue } from "../../../../lib/communication-base/manual-editor-value";
 import { sectionEditState } from "./_components/section-edit-state";
 
 import type { CommunicationBase, CommunicationSection, CommunicationSectionValue } from "../../../../lib/communication-base/contracts";
-import { COMMUNICATION_ASSISTANCE_LIMIT_MESSAGE, COMMUNICATION_ASSISTANCE_TEXT_MAX, hasStageTwoContent, type CommunicationSuggestion, type WebSource } from "../../../../lib/communication-base/ai-core";
+import { hasStageTwoContent, type CommunicationSuggestion, type WebSource } from "../../../../lib/communication-base/ai-core";
 import { selectStageTwoSectionPresentation, stageTwoBasisLabel, type LocalStageTwoResult } from "../../../../lib/communication-base/stage-two-presentation";
 import { communicationSections, getCommunicationSection, isBusinessLongTextSection, type CommunicationSectionKey } from "../../../../lib/communication-base/registry";
 import { communicationTextLimit } from "../../../../lib/communication-base/policy";
 import type { CommunicationSectionDefinition } from "../../../../lib/communication-base/registry";
-import { formatEditorValue, parseEditorValue } from "../../../../lib/communication-base/editor-value";
+import { formatEditorValue } from "../../../../lib/communication-base/editor-value";
 import { isCommunicationSectionSaveLocked } from "../../../../lib/communication-base/editor-save-guard";
 import { canInstallGeneralSuggestion, canStartGeneralGeneration, createStageTwoGenerationGate } from "../../../../lib/communication-base/generation-guard";
 import {
   saveCommunicationSectionAction,
   startCommunicationBaseAction,
-  assistCommunicationSectionAction,
   generateCommunicationIntelligenceAction,
   type CommunicationActionState,
 } from "./actions";
@@ -60,7 +57,6 @@ export function StartCommunicationBaseForm({ account, candidate, candidateReadFa
 
   return (
     <form action={action} className="rounded-xl border border-border bg-background p-5">
-      <CommunicationBaseIntroduction />
       <input type="hidden" name="account" value={account} />
       <p className="text-sm text-muted-foreground">
         Comece com o que já sabe sobre seu negócio. As demais seções podem ser preenchidas depois.
@@ -119,7 +115,7 @@ export function CommunicationSectionEditor(props: Readonly<{
 }> & SectionDetailControls) {
   const { account, version, definition, current, canEdit, structured = false, suggestedSuggestion, generalRevision = 0,
     stageTwoGenerationInFlight = false, onStageTwoGenerationStart, onStageTwoGenerationFinished,
-    onStageTwoSaveStarted, onStageTwoSaveFinished, nicheLabel, resetRevision, onEditorStateChange, onCancel, onSaved } = props;
+    onStageTwoSaveStarted, onStageTwoSaveFinished, nicheLabel, resetRevision, onEditorStateChange, onCancel, onSaved, sectionGuidance } = props;
   const [state, action, savePending] = useActionState(saveCommunicationSectionAction, INITIAL_STATE);
   const lastHandledSaveStateRef = useRef(state);
   const lastClosedSaveRef = useRef(state);
@@ -138,9 +134,7 @@ export function CommunicationSectionEditor(props: Readonly<{
   const [aiMessage, setAiMessage] = useState("");
   const [assistanceUsed, setAssistanceUsed] = useState(false);
   const [aiNotice, setAiNotice] = useState("");
-  const [localSuggestion, setLocalSuggestion] = useState<CommunicationSectionValue | null>(null);
   const [localStageTwoResult, setLocalStageTwoResult] = useState<LocalStageTwoResult | null>(null);
-  const [missingQuestion, setMissingQuestion] = useState("");
   const [requiresResearch, setRequiresResearch] = useState(false);
   const router = useRouter();
   const saveLocked = isCommunicationSectionSaveLocked(savePending, state.status, submittedVersion, version);
@@ -163,9 +157,7 @@ export function CommunicationSectionEditor(props: Readonly<{
     if (savedRefresh) lastSyncedSaveRef.current = state;
     if (reset || savedRefresh) {
       localRequestRevisionRef.current += 1;
-      setLocalSuggestion(null);
       setLocalStageTwoResult(null);
-      setMissingQuestion("");
       setAiMessage("");
       setAiNotice("");
       setAssistanceUsed(false);
@@ -193,7 +185,7 @@ export function CommunicationSectionEditor(props: Readonly<{
   if (!canEdit) {
     return (
       <article>
-        {structured && longText ? <SectionGuidance key={resetRevision} sectionKey={definition.key} label={definition.label} /> : null}
+        {longText ? sectionGuidance : null}
         {structured && definition.key === "business_context" ? <p className="mb-3 text-sm text-muted-foreground">Nicho: {nicheLabel}. Apenas para consulta nesta seção.</p> : null}
         {current && (typeof current.value === "string" ? current.value.trim() : current.value.length) ? (structured ? <StructuredSectionContent value={current.value} /> : <p className="whitespace-pre-wrap break-words text-sm leading-6">{value}</p>)
           : <EmptyState title="Esta seção ainda não foi preenchida." />}
@@ -209,34 +201,6 @@ export function CommunicationSectionEditor(props: Readonly<{
     : !structured && definition.stage === 1 ? STAGE_ONE_GUIDANCE[definition.key] : null;
   const stageTwoPresentation = selectStageTwoSectionPresentation(localStageTwoResult, generalRevision, suggestedSuggestion);
   const stageTwoSuggestion = stageTwoPresentation.suggestion;
-  const assistanceButton = <button type="button" disabled={saveLocked || aiPending || !draft.trim()}
-            onClick={() => {
-              setAssistanceUsed(true);
-              startAiTransition(async () => {
-              const requestRevision = ++localRequestRevisionRef.current;
-              const isCurrent = () => canInstallGeneralSuggestion(version, localVersionRef.current,
-                requestRevision, localRequestRevisionRef.current);
-              setAiMessage("");
-              setLocalSuggestion(null);
-              setMissingQuestion("");
-              if (draft.length > COMMUNICATION_ASSISTANCE_TEXT_MAX) {
-                setAiMessage(COMMUNICATION_ASSISTANCE_LIMIT_MESSAGE);
-                return;
-              }
-              try {
-                const result = await assistCommunicationSectionAction({ account, key: definition.key, userText: structured ? formatEditorValue(parseEditorDraft(definition.format, draft, true) as CommunicationSectionValue, definition.format) : draft, version });
-                if (!isCurrent()) return;
-                if (result.ok) {
-                  setLocalSuggestion(parseEditorValue(definition.format, result.suggestion));
-                  setMissingQuestion(result.missingQuestion);
-                } else setAiMessage(result.message);
-              } catch {
-                if (isCurrent()) setAiMessage("A assistência está indisponível agora. Continue a edição manual.");
-              }
-            }); }}
-            className="inline-flex min-h-11 items-center text-sm font-normal text-muted-foreground underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50">
-            {aiPending ? "Preparando sugestão..." : "Melhorar meu texto"}
-          </button>;
   return (
     <article>
       {structured && definition.key === "business_context" ? <p className="mb-3 text-sm text-muted-foreground">Nicho: {nicheLabel}. Apenas para consulta nesta seção.</p> : null}
@@ -283,18 +247,8 @@ export function CommunicationSectionEditor(props: Readonly<{
         {saveLocked ? <p id={saveLockHintId} role="status" className="text-xs text-muted-foreground">
           Salvando esta seção. Aguarde para continuar a edição.
         </p> : null}
-      {getCommunicationSection(definition.key) && (definition.stage === 1 ? (
-        <div className="mt-1">
-          {assistanceUsed ? <p className="text-xs font-normal leading-5 text-muted-foreground">
-            Melhore o texto, revise a versão sugerida e escolha Usar esta versão para levá-la ao campo. Depois, clique em Salvar. A IA usa apenas o texto enviado desta seção.
-          </p> : null}
-          {structured && longText ? <SectionGuidance key={resetRevision} sectionKey={definition.key} label={definition.label} showDescription={false} actions={assistanceButton} /> : assistanceButton}
-          {missingQuestion ? <p className="mt-3 text-sm">Informação a confirmar: {missingQuestion}</p> : null}
-          {localSuggestion !== null ? <Suggestion value={localSuggestion} original={draft} structured={structured} format={definition.format}
-            disabled={saveLocked} onUse={() => setDraft(editorDraftValue(localSuggestion, definition.format, structured))} /> : null}
-          {aiMessage ? <p role="alert" className="mt-2 text-sm text-state-error">{aiMessage}</p> : null}
-        </div>
-      ) : (
+        {longText ? sectionGuidance : null}
+      {getCommunicationSection(definition.key) && definition.stage === 2 ? (
         <div className="mt-3 border-t border-border pt-3">
           {assistanceUsed ? <p className="text-xs font-normal leading-5 text-muted-foreground">
             A IA revisa apenas {definition.label} usando os dados confirmados pertinentes e o texto salvo desta seção. As demais seções permanecem como estão.
@@ -353,7 +307,7 @@ export function CommunicationSectionEditor(props: Readonly<{
           {aiNotice && localStageTwoResult?.generalRevision === generalRevision ? <FeedbackMessage tone="warning" className="mt-2">{aiNotice}</FeedbackMessage> : null}
           {aiMessage ? <p role="alert" className="mt-2 text-sm text-state-error">{aiMessage}</p> : null}
         </div>
-      ))}
+      ) : null}
         <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-2 border-t border-border bg-background py-2 [&>button]:px-3 [&>button]:py-1">
           <Button variant="secondary" className="min-h-11 px-0 font-normal !text-foreground underline underline-offset-4" disabled={saveLocked} onClick={onCancel}>Cancelar</Button>
           <SubmitButton label="Salvar" pendingLabel="Salvando..." disabled={saveLocked || !editState.dirty || !editState.valid} busy={saveLocked} />

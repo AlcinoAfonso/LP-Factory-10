@@ -6,10 +6,12 @@ import { FeedbackMessage } from "@/components/ui/feedback-message";
 import type { CommunicationBase } from "../../../../../lib/communication-base/contracts";
 import { isBusinessLongTextSection, type CommunicationSectionDefinition } from "../../../../../lib/communication-base/registry";
 import { SectionGuidance } from "./SectionGuidance";
+import { getSectionGuidance } from "../../../../../lib/communication-base/section-guidance";
 import { hasSectionContent } from "./section-edit-state";
 
 export type SectionDetailControls = Readonly<{
   resetRevision: number;
+  sectionGuidance: ReactNode;
   onEditorStateChange: (dirty: boolean, saving: boolean) => void;
   onCancel: () => void;
   onSaved: () => void;
@@ -46,6 +48,12 @@ function SectionRow({ definition, hasContent, hasSuggestion, renderDetail, showG
   const closeRequestRef = useRef<() => void>(() => undefined);
   const [resetRevision, setResetRevision] = useState(0);
   const [closingMessage, setClosingMessage] = useState("");
+  const [guidanceOpen, setGuidanceOpen] = useState(false);
+  const [guidanceHovered, setGuidanceHovered] = useState(false);
+  const guidanceVisible = guidanceOpen || guidanceHovered;
+  const guidanceId = `section-guidance-${definition.key}`;
+  const hasGuidance = showGuidance && Boolean(getSectionGuidance(definition.key));
+  const sectionGuidance = hasGuidance ? <SectionGuidance sectionKey={definition.key} id={guidanceId} open={guidanceVisible} showDescription={!isBusinessLongTextSection(definition)} /> : null;
   const titleId = `section-detail-${definition.key}`;
   const discardTitleId = `section-discard-${definition.key}`;
 
@@ -55,6 +63,8 @@ function SectionRow({ definition, hasContent, hasSuggestion, renderDetail, showG
     editorStateRef.current = { dirty: false, saving: false };
     setResetRevision((revision) => revision + 1);
     setClosingMessage("");
+    setGuidanceOpen(false);
+    setGuidanceHovered(false);
     if (historyEntryRef.current) { historyEntryRef.current = false; window.history.back(); }
     triggerRef.current?.focus({ preventScroll: true });
   }
@@ -90,28 +100,43 @@ function SectionRow({ definition, hasContent, hasSuggestion, renderDetail, showG
       <button ref={triggerRef} type="button" className="flex min-h-11 w-full flex-col justify-center py-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
         onClick={() => {
           window.history.pushState({ ...window.history.state }, "", window.location.href); historyEntryRef.current = true;
-          dialogRef.current?.showModal(); dialogRef.current?.querySelector<HTMLElement>("input:not([type=hidden]),textarea,button")?.focus({ preventScroll: true });
+          dialogRef.current?.showModal(); dialogRef.current?.querySelector<HTMLElement>("button[data-section-close],input:not([type=hidden]),textarea")?.focus({ preventScroll: true });
         }}><span className="break-words font-medium text-brand-700 hover:underline dark:text-primary">{definition.label}</span>
         <span className="text-xs leading-5 text-muted-foreground sm:hidden">{hasSuggestion ? "Sugestão disponível" : hasContent ? "Com conteúdo" : "Ainda não preenchida"}</span>
       </button>
       <dialog ref={dialogRef} aria-labelledby={titleId}
-        className="m-auto max-h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] max-w-3xl overflow-y-auto overscroll-contain rounded-xl border border-border bg-background p-0 text-left text-foreground shadow-xl backdrop:bg-black/40"
-        onCancel={(event) => { event.preventDefault(); requestClose(); }}
+        className="m-auto h-[min(42rem,calc(100dvh-1rem))] max-h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] max-w-3xl overflow-hidden rounded-xl border border-border bg-background p-0 text-left text-foreground shadow-xl backdrop:bg-black/40 open:flex open:flex-col"
+        onCancel={(event) => {
+          event.preventDefault();
+          if (guidanceVisible) { setGuidanceOpen(false); setGuidanceHovered(false); }
+          else requestClose();
+        }}
         onClick={(event) => {
           if (event.target !== event.currentTarget) return;
           const rect = event.currentTarget.getBoundingClientRect();
           if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) requestClose();
         }}>
-        <header className="sticky top-0 z-10 border-b border-border bg-background px-3 py-2 sm:px-4">
+        <header className="shrink-0 border-b border-border bg-background px-3 py-2 sm:px-4">
           <div className="flex items-start justify-between gap-2">
-            <h2 id={titleId} className="min-w-0 py-2 text-base font-semibold leading-6 [overflow-wrap:anywhere] sm:text-lg">{definition.label}</h2>
-            <Button variant="secondary" className="min-h-11 shrink-0 px-2 font-normal !text-foreground" aria-label={`Fechar ${definition.label}`} onClick={requestClose}>Fechar</Button>
+            <div className="flex min-w-0 items-start gap-1">
+              <h2 id={titleId} className="min-w-0 py-2 text-base font-semibold leading-6 [overflow-wrap:anywhere] sm:text-lg">{definition.label}</h2>
+              {hasGuidance ? <Button type="button" variant="secondary" aria-label={`Exemplos: ${definition.label}`} title="Exemplos de preenchimento"
+                aria-expanded={guidanceVisible} aria-controls={guidanceId} className="h-11 w-11 shrink-0 p-0 !text-muted-foreground"
+                onPointerEnter={(event) => { if (event.pointerType === "mouse") setGuidanceHovered(true); }}
+                onPointerLeave={() => setGuidanceHovered(false)}
+                onClick={() => { setGuidanceOpen(!guidanceOpen); setGuidanceHovered(false); }}>
+                <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1Zm0 0v15M6 8h3m-3 4h3m6-4h3m-3 4h3" />
+                </svg>
+              </Button> : null}
+            </div>
+            <Button data-section-close variant="secondary" className="min-h-11 shrink-0 px-2 font-normal !text-foreground" aria-label={`Fechar ${definition.label}`} onClick={requestClose}>Fechar</Button>
           </div>
         </header>
-        <div className="px-3 py-3 sm:px-4">
-          {showGuidance && !isBusinessLongTextSection(definition) ? <SectionGuidance key={resetRevision} sectionKey={definition.key} label={definition.label} /> : null}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 sm:px-4">
+          {!isBusinessLongTextSection(definition) ? sectionGuidance : null}
           {closingMessage ? <FeedbackMessage tone="warning" className="mb-4">{closingMessage}</FeedbackMessage> : null}
-          <SectionDetailContent definition={definition} controls={{ resetRevision, onCancel: requestClose, onSaved: closeDetail, onEditorStateChange }} renderDetail={renderDetail} />
+          <SectionDetailContent definition={definition} controls={{ resetRevision, sectionGuidance, onCancel: requestClose, onSaved: closeDetail, onEditorStateChange }} renderDetail={renderDetail} />
         </div>
       </dialog>
       <dialog ref={discardRef} aria-labelledby={discardTitleId}
