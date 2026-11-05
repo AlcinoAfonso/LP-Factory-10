@@ -122,10 +122,10 @@ function SectionRow({ definition, hasContent, hasSuggestion, renderDetail, showG
             <div className="flex min-w-0 items-start gap-1">
               <h2 id={titleId} className="min-w-0 py-2 text-base font-semibold leading-6 [overflow-wrap:anywhere] sm:text-lg">{definition.label}</h2>
               {hasGuidance ? <Button type="button" variant="secondary" aria-label={`Exemplos: ${definition.label}`} title="Exemplos de preenchimento"
-                aria-expanded={guidanceVisible} aria-controls={guidanceId} className="h-11 w-11 shrink-0 p-0 !text-brand-700 dark:!text-primary"
+                aria-expanded={guidanceVisible} aria-controls={guidanceId} className="h-11 w-11 shrink-0 !p-0 !text-brand-700 dark:!text-primary"
                 onPointerEnter={(event) => { if (event.pointerType === "mouse") { setGuidanceHovered(true); bodyRef.current?.scrollTo({ top: 0 }); } }}
                 onClick={() => { if (!guidanceOpen) bodyRef.current?.scrollTo({ top: 0 }); setGuidanceOpen(!guidanceOpen); setGuidanceHovered(false); }}>
-                <svg aria-hidden="true" viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                <svg aria-hidden="true" viewBox="0 0 24 24" className="h-7 w-7 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1Zm0 0v15M6 8h3m-3 4h3m6-4h3m-3 4h3" />
                 </svg>
               </Button> : null}
