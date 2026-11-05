@@ -2,6 +2,7 @@
 
 import { useAccessContext } from '@/providers/AccessProvider';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import UserMenu from '@/components/layout/UserMenu';
 
 type HeaderVariant = 'public' | 'authenticated' | 'account';
@@ -113,11 +114,13 @@ function HeaderAccount({
   membersEnabled: boolean;
   communicationBaseEnabled: boolean;
 }) {
+  const pathname = usePathname();
+  const keepVisible = pathname?.replace(/\/$/, '') === `/a/${account.subdomain}/base-comunicacao`;
   const accountLabel = account?.name ?? account?.subdomain ?? 'Minha conta';
   const primaryTaxonName = account?.primaryTaxonName?.trim();
 
   return (
-    <header className="border-b border-border bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
+    <header className={`${keepVisible ? "sticky top-0 z-40 " : ""}border-b border-border bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85`}>
       <div className="mx-auto flex h-14 max-w-6xl items-center px-3 sm:px-4">
         <BrandWordmark />
 
