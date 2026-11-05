@@ -106,6 +106,7 @@ function SectionRow({ definition, hasContent, hasSuggestion, renderDetail, showG
       </button>
       <dialog ref={dialogRef} aria-labelledby={titleId}
         className="m-auto h-[min(42rem,calc(100dvh-1rem))] max-h-[calc(100dvh-1rem)] w-[calc(100dvw-1rem)] max-w-3xl overflow-hidden rounded-xl border border-border bg-background p-0 text-left text-foreground shadow-xl backdrop:bg-black/40 open:flex open:flex-col"
+        onPointerLeave={() => setGuidanceHovered(false)}
         onCancel={(event) => {
           event.preventDefault();
           if (guidanceVisible) { setGuidanceOpen(false); setGuidanceHovered(false); }
@@ -123,7 +124,6 @@ function SectionRow({ definition, hasContent, hasSuggestion, renderDetail, showG
               {hasGuidance ? <Button type="button" variant="secondary" aria-label={`Exemplos: ${definition.label}`} title="Exemplos de preenchimento"
                 aria-expanded={guidanceVisible} aria-controls={guidanceId} className="h-11 w-11 shrink-0 p-0 !text-muted-foreground"
                 onPointerEnter={(event) => { if (event.pointerType === "mouse") setGuidanceHovered(true); }}
-                onPointerLeave={() => setGuidanceHovered(false)}
                 onClick={() => { setGuidanceOpen(!guidanceOpen); setGuidanceHovered(false); }}>
                 <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1Zm0 0v15M6 8h3m-3 4h3m6-4h3m-3 4h3" />
