@@ -47,11 +47,13 @@ export function CommunicationBaseIntroduction() {
     } catch { /* The presentation remains usable without browser storage. */ }
   }
   return <>
-    <Button ref={trigger} type="button" variant="secondary" aria-label="Como funciona" title="Como funciona" className="h-11 w-11 shrink-0 rounded-xl border border-brand-700/20 !bg-brand-50 !p-0 !text-brand-700 hover:!bg-brand-100 dark:border-primary/30 dark:!bg-primary/10 dark:!text-primary" onClick={() => dialog.current?.showModal()}>
-      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-6 w-6 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <Button ref={trigger} type="button" variant="secondary" aria-label="Como funciona" title="Como funciona" className="group h-11 w-11 shrink-0 !bg-transparent !p-0 !text-brand-700 dark:!text-primary" onClick={() => dialog.current?.showModal()}>
+      <span aria-hidden="true" className="flex h-[1.875rem] w-[1.875rem] items-center justify-center rounded-lg border border-brand-700/20 bg-brand-50 group-hover:bg-brand-100 dark:border-primary/30 dark:bg-primary/10">
+      <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="9" />
         <path d="M9.4 9a2.7 2.7 0 0 1 5.2 1c0 1.8-2.6 2-2.6 3.5M12 17h.01" />
       </svg>
+      </span>
     </Button>
     <dialog ref={dialog} aria-labelledby="communication-introduction-title" onCancel={(event) => { event.preventDefault(); dismiss(); }}
       className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-3xl overflow-y-auto rounded-xl border border-border bg-background p-5 text-foreground shadow-xl backdrop:bg-black/40 sm:p-8">
