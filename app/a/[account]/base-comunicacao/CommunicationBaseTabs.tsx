@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { useAccessContext } from "@/providers/AccessProvider";
 export function CommunicationBaseTabs({stageOne,stageTwo,materials}:Readonly<{stageOne:ReactNode;stageTwo:ReactNode;materials?:ReactNode}>) {
   const [selected,setSelected]=useState(0);
   const tabs=useRef<(HTMLButtonElement|null)[]>([]);
@@ -22,18 +23,36 @@ export function CommunicationBaseTabs({stageOne,stageTwo,materials}:Readonly<{st
 export function CommunicationBaseIntroduction() {
   const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
-  const storageKey = "communication-base:introduction-dismissed";
+  const { member } = useAccessContext();
+  const userId = member && "userId" in member && typeof member.userId === "string" ? member.userId : null;
+  const storageKey = userId ? `communication-base:introduction-optout:v1:${userId}` : null;
+  const [dontShowAgain, setDontShowAgain] = useState(false);
   useEffect(() => {
-    try { if (window.localStorage.getItem(storageKey) === "true") return; } catch { /* Keep guidance usable when browser storage is unavailable. */ }
-    if (!dialog.current?.open) dialog.current?.showModal();
-  }, []);
+    let suppressed = false;
+    try { suppressed = storageKey !== null && window.localStorage.getItem(storageKey) === "true"; } catch { /* Keep guidance usable when browser storage is unavailable. */ }
+    setDontShowAgain(suppressed);
+    if (suppressed) dialog.current?.close();
+    else if (!dialog.current?.open) dialog.current?.showModal();
+  }, [storageKey]);
   function dismiss() {
-    try { window.localStorage.setItem(storageKey, "true"); } catch { /* Dismissal still works without storage. */ }
     dialog.current?.close();
     trigger.current?.focus({ preventScroll: true });
   }
+  function updatePreference(checked: boolean) {
+    setDontShowAgain(checked);
+    if (!storageKey) return;
+    try {
+      if (checked) window.localStorage.setItem(storageKey, "true");
+      else window.localStorage.removeItem(storageKey);
+    } catch { /* The presentation remains usable without browser storage. */ }
+  }
   return <>
-    <Button ref={trigger} type="button" variant="secondary" aria-label="Como funciona" title="Como funciona" className="h-11 w-11 shrink-0 border border-border p-0 !text-muted-foreground" onClick={() => dialog.current?.showModal()}><span aria-hidden="true" className="text-lg font-normal">?</span></Button>
+    <Button ref={trigger} type="button" variant="secondary" aria-label="Como funciona" title="Como funciona" className="h-11 w-11 shrink-0 rounded-xl border border-brand-700/20 !bg-brand-50 p-0 !text-brand-700 hover:!bg-brand-100 dark:border-primary/30 dark:!bg-primary/10 dark:!text-primary" onClick={() => dialog.current?.showModal()}>
+      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M9.4 9a2.7 2.7 0 0 1 5.2 1c0 1.8-2.6 2-2.6 3.5M12 17h.01" />
+      </svg>
+    </Button>
     <dialog ref={dialog} aria-labelledby="communication-introduction-title" onCancel={(event) => { event.preventDefault(); dismiss(); }}
       className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-3xl overflow-y-auto rounded-xl border border-border bg-background p-5 text-foreground shadow-xl backdrop:bg-black/40 sm:p-8">
       <p className="mb-4 text-base font-bold text-brand-700 dark:text-primary">LP Factory</p>
@@ -60,7 +79,11 @@ export function CommunicationBaseIntroduction() {
         </div>
         <p className="text-sm leading-6 text-muted-foreground sm:col-start-2 sm:row-start-3">Comece com o que já tem. Você pode preencher aos poucos, revisar e complementar quando quiser. Cada seção é salva por você.</p>
       </div>
-      <Button type="button" className="mt-6 min-h-11 w-full !bg-brand-700 !text-surface-base hover:!bg-brand-700/95 sm:mx-auto sm:flex sm:w-56" onClick={dismiss}>Entendi</Button>
+      {storageKey ? <label className="mt-4 flex min-h-11 cursor-pointer items-center justify-center gap-2 text-xs font-normal text-muted-foreground">
+        <input type="checkbox" checked={dontShowAgain} onChange={(event) => updatePreference(event.target.checked)} className="h-4 w-4 shrink-0 accent-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
+        Não mostrar novamente
+      </label> : null}
+      <Button type="button" className="mt-3 min-h-11 w-full !bg-brand-700 !text-surface-base hover:!bg-brand-700/95 sm:mx-auto sm:flex sm:w-56" onClick={dismiss}>Entendi</Button>
     </dialog>
   </>;
 }

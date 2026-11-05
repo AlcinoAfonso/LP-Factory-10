@@ -11,7 +11,6 @@ import { hasSectionContent } from "./section-edit-state";
 
 export type SectionDetailControls = Readonly<{
   resetRevision: number;
-  sectionGuidance: ReactNode;
   onEditorStateChange: (dirty: boolean, saving: boolean) => void;
   onCancel: () => void;
   onSaved: () => void;
@@ -41,6 +40,7 @@ function SectionRow({ definition, hasContent, hasSuggestion, renderDetail, showG
   definition: CommunicationSectionDefinition; hasContent: boolean; hasSuggestion: boolean; renderDetail: DetailRenderer; showGuidance: boolean;
 }>) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
   const discardRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const historyEntryRef = useRef(false);
@@ -122,10 +122,10 @@ function SectionRow({ definition, hasContent, hasSuggestion, renderDetail, showG
             <div className="flex min-w-0 items-start gap-1">
               <h2 id={titleId} className="min-w-0 py-2 text-base font-semibold leading-6 [overflow-wrap:anywhere] sm:text-lg">{definition.label}</h2>
               {hasGuidance ? <Button type="button" variant="secondary" aria-label={`Exemplos: ${definition.label}`} title="Exemplos de preenchimento"
-                aria-expanded={guidanceVisible} aria-controls={guidanceId} className="h-11 w-11 shrink-0 p-0 !text-muted-foreground"
-                onPointerEnter={(event) => { if (event.pointerType === "mouse") setGuidanceHovered(true); }}
-                onClick={() => { setGuidanceOpen(!guidanceOpen); setGuidanceHovered(false); }}>
-                <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                aria-expanded={guidanceVisible} aria-controls={guidanceId} className="h-11 w-11 shrink-0 p-0 !text-brand-700 dark:!text-primary"
+                onPointerEnter={(event) => { if (event.pointerType === "mouse") { setGuidanceHovered(true); bodyRef.current?.scrollTo({ top: 0 }); } }}
+                onClick={() => { if (!guidanceOpen) bodyRef.current?.scrollTo({ top: 0 }); setGuidanceOpen(!guidanceOpen); setGuidanceHovered(false); }}>
+                <svg aria-hidden="true" viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1Zm0 0v15M6 8h3m-3 4h3m6-4h3m-3 4h3" />
                 </svg>
               </Button> : null}
@@ -133,10 +133,10 @@ function SectionRow({ definition, hasContent, hasSuggestion, renderDetail, showG
             <Button data-section-close variant="secondary" className="min-h-11 shrink-0 px-2 font-normal !text-foreground" aria-label={`Fechar ${definition.label}`} onClick={requestClose}>Fechar</Button>
           </div>
         </header>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 sm:px-4">
-          {!isBusinessLongTextSection(definition) ? sectionGuidance : null}
+        <div ref={bodyRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 sm:px-4">
+          {sectionGuidance}
           {closingMessage ? <FeedbackMessage tone="warning" className="mb-4">{closingMessage}</FeedbackMessage> : null}
-          <SectionDetailContent definition={definition} controls={{ resetRevision, sectionGuidance, onCancel: requestClose, onSaved: closeDetail, onEditorStateChange }} renderDetail={renderDetail} />
+          <SectionDetailContent definition={definition} controls={{ resetRevision, onCancel: requestClose, onSaved: closeDetail, onEditorStateChange }} renderDetail={renderDetail} />
         </div>
       </dialog>
       <dialog ref={discardRef} aria-labelledby={discardTitleId}

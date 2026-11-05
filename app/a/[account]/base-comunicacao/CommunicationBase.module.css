@@ -6,7 +6,7 @@
 }
 
 .surface :global(.text-muted-foreground) {
-  font-size: 0.9625rem;
+  font-size: 0.875rem;
 }
 
 .surface :global(.text-xs.text-muted-foreground) {
@@ -15,7 +15,7 @@
 
 .surface textarea::placeholder,
 .surface input::placeholder {
-  font-size: 1.1em;
+  font-size: 1em;
 }
 
 :global(.dark) .surface :global(.text-muted-foreground),

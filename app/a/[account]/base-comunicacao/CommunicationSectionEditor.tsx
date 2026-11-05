@@ -115,7 +115,7 @@ export function CommunicationSectionEditor(props: Readonly<{
 }> & SectionDetailControls) {
   const { account, version, definition, current, canEdit, structured = false, suggestedSuggestion, generalRevision = 0,
     stageTwoGenerationInFlight = false, onStageTwoGenerationStart, onStageTwoGenerationFinished,
-    onStageTwoSaveStarted, onStageTwoSaveFinished, nicheLabel, resetRevision, onEditorStateChange, onCancel, onSaved, sectionGuidance } = props;
+    onStageTwoSaveStarted, onStageTwoSaveFinished, nicheLabel, resetRevision, onEditorStateChange, onCancel, onSaved } = props;
   const [state, action, savePending] = useActionState(saveCommunicationSectionAction, INITIAL_STATE);
   const lastHandledSaveStateRef = useRef(state);
   const lastClosedSaveRef = useRef(state);
@@ -185,7 +185,6 @@ export function CommunicationSectionEditor(props: Readonly<{
   if (!canEdit) {
     return (
       <article>
-        {longText ? sectionGuidance : null}
         {structured && definition.key === "business_context" ? <p className="mb-3 text-sm text-muted-foreground">Nicho: {nicheLabel}. Apenas para consulta nesta seção.</p> : null}
         {current && (typeof current.value === "string" ? current.value.trim() : current.value.length) ? (structured ? <StructuredSectionContent value={current.value} /> : <p className="whitespace-pre-wrap break-words text-sm leading-6">{value}</p>)
           : <EmptyState title="Esta seção ainda não foi preenchida." />}
@@ -247,7 +246,6 @@ export function CommunicationSectionEditor(props: Readonly<{
         {saveLocked ? <p id={saveLockHintId} role="status" className="text-xs text-muted-foreground">
           Salvando esta seção. Aguarde para continuar a edição.
         </p> : null}
-        {longText ? sectionGuidance : null}
       {getCommunicationSection(definition.key) && definition.stage === 2 ? (
         <div className="mt-3 border-t border-border pt-3">
           {assistanceUsed ? <p className="text-xs font-normal leading-5 text-muted-foreground">
