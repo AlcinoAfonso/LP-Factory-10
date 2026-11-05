@@ -5,29 +5,28 @@ import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { CommunicationBaseIntroduction } from "./CommunicationBaseTabs";
 import { FormField, FormFieldLabel, FormFieldHint, FormFieldError } from "@/components/ui/form-field";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CommunicationSectionCollection, type SectionDetailControls } from "./_components/CommunicationSectionCollection";
+import { getSectionGuidance } from "../../../../lib/communication-base/section-guidance";
 import { BusinessFactsFields } from "./_components/BusinessFactsFields";
 import { StructuredSectionFields, StructuredSectionContent } from "./_components/StructuredSectionFields";
-import { editorDraftValue, parseEditorDraft } from "../../../../lib/communication-base/manual-editor-value";
+import { editorDraftValue } from "../../../../lib/communication-base/manual-editor-value";
 import { sectionEditState } from "./_components/section-edit-state";
 
 import type { CommunicationBase, CommunicationSection, CommunicationSectionValue } from "../../../../lib/communication-base/contracts";
-import { COMMUNICATION_ASSISTANCE_LIMIT_MESSAGE, COMMUNICATION_ASSISTANCE_TEXT_MAX, hasStageTwoContent, type CommunicationSuggestion, type WebSource } from "../../../../lib/communication-base/ai-core";
+import { hasStageTwoContent, type CommunicationSuggestion, type WebSource } from "../../../../lib/communication-base/ai-core";
 import { selectStageTwoSectionPresentation, stageTwoBasisLabel, type LocalStageTwoResult } from "../../../../lib/communication-base/stage-two-presentation";
 import { communicationSections, getCommunicationSection, isBusinessLongTextSection, type CommunicationSectionKey } from "../../../../lib/communication-base/registry";
 import { communicationTextLimit } from "../../../../lib/communication-base/policy";
 import type { CommunicationSectionDefinition } from "../../../../lib/communication-base/registry";
-import { formatEditorValue, parseEditorValue } from "../../../../lib/communication-base/editor-value";
+import { formatEditorValue } from "../../../../lib/communication-base/editor-value";
 import { isCommunicationSectionSaveLocked } from "../../../../lib/communication-base/editor-save-guard";
 import { canInstallGeneralSuggestion, canStartGeneralGeneration, createStageTwoGenerationGate } from "../../../../lib/communication-base/generation-guard";
 import {
   saveCommunicationSectionAction,
   startCommunicationBaseAction,
-  assistCommunicationSectionAction,
   generateCommunicationIntelligenceAction,
   type CommunicationActionState,
 } from "./actions";
@@ -58,7 +57,6 @@ export function StartCommunicationBaseForm({ account, candidate, candidateReadFa
 
   return (
     <form action={action} className="rounded-xl border border-border bg-background p-5">
-      <CommunicationBaseIntroduction />
       <input type="hidden" name="account" value={account} />
       <p className="text-sm text-muted-foreground">
         Comece com o que já sabe sobre seu negócio. As demais seções podem ser preenchidas depois.
@@ -134,10 +132,9 @@ export function CommunicationSectionEditor(props: Readonly<{
   const localVersionRef = useRef(version);
   const [aiPending, startAiTransition] = useTransition();
   const [aiMessage, setAiMessage] = useState("");
+  const [assistanceUsed, setAssistanceUsed] = useState(false);
   const [aiNotice, setAiNotice] = useState("");
-  const [localSuggestion, setLocalSuggestion] = useState<CommunicationSectionValue | null>(null);
   const [localStageTwoResult, setLocalStageTwoResult] = useState<LocalStageTwoResult | null>(null);
-  const [missingQuestion, setMissingQuestion] = useState("");
   const [requiresResearch, setRequiresResearch] = useState(false);
   const router = useRouter();
   const saveLocked = isCommunicationSectionSaveLocked(savePending, state.status, submittedVersion, version);
@@ -160,11 +157,10 @@ export function CommunicationSectionEditor(props: Readonly<{
     if (savedRefresh) lastSyncedSaveRef.current = state;
     if (reset || savedRefresh) {
       localRequestRevisionRef.current += 1;
-      setLocalSuggestion(null);
       setLocalStageTwoResult(null);
-      setMissingQuestion("");
       setAiMessage("");
       setAiNotice("");
+      setAssistanceUsed(false);
     }
     priorResetRef.current = resetRevision;
     priorPersistedRef.current = persisted;
@@ -184,6 +180,7 @@ export function CommunicationSectionEditor(props: Readonly<{
     onSaved();
   }, [state, savePending, submittedVersion, version, onSaved]);
 
+  const longText = isBusinessLongTextSection(definition);
   const value = editorText(current, structured);
   if (!canEdit) {
     return (
@@ -199,7 +196,8 @@ export function CommunicationSectionEditor(props: Readonly<{
   const fieldId = `communication-${definition.key}`;
   const hintId = `${fieldId}-hint`;
   const saveLockHintId = `${fieldId}-save-lock`;
-  const guidance = !structured && definition.stage === 1 ? STAGE_ONE_GUIDANCE[definition.key] : null;
+  const guidance = structured && longText ? getSectionGuidance(definition.key)?.description
+    : !structured && definition.stage === 1 ? STAGE_ONE_GUIDANCE[definition.key] : null;
   const stageTwoPresentation = selectStageTwoSectionPresentation(localStageTwoResult, generalRevision, suggestedSuggestion);
   const stageTwoSuggestion = stageTwoPresentation.suggestion;
   return (
@@ -218,16 +216,16 @@ export function CommunicationSectionEditor(props: Readonly<{
         <input type="hidden" name="section_key" value={definition.key} />
         <input type="hidden" name="version" value={version} />
         <input type="hidden" name="structured_value" value={String(structured)} />
-        <FormField className={structured && definition.key === "business_name" ? "grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-center gap-2" : "gap-1.5"}>
-        <FormFieldLabel htmlFor={fieldId}>{structured && definition.key === "business_name" ? "Nome público" : "Conteúdo da seção"}</FormFieldLabel>
-        {guidance ? <p className="text-sm text-muted-foreground">{guidance}</p> : null}
-        <FormFieldHint id={hintId} className={structured && definition.key === "business_name" ? "sr-only" : "leading-5"}>
-          {isBusinessLongTextSection(definition) ? `${draft.length.toLocaleString("pt-BR")} / ${communicationTextLimit(definition).toLocaleString("pt-BR")}` : definition.format === "items"
+        <FormField className={structured && definition.key === "business_name" ? "grid-cols-[repeat(auto-fit,minmax(min(100%,8rem),1fr))] items-center gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,5fr)]" : "gap-1.5"}>
+        <FormFieldLabel htmlFor={fieldId} className={longText ? "sr-only" : "font-normal"}>{longText ? definition.label : structured && definition.key === "business_name" ? "Nome público" : "Conteúdo da seção"}</FormFieldLabel>
+        {guidance && (!longText || !structured) ? <p className="text-sm text-muted-foreground">{guidance}</p> : null}
+        {!longText ? <FormFieldHint id={hintId} className={structured && definition.key === "business_name" ? "sr-only" : "leading-5"}>
+          {definition.format === "items"
             ? structured ? "Até 20 itens de 400 caracteres. Preserve parágrafos e subtítulos dentro de cada item." : "Escreva um item por linha, até 20 itens de 400 caracteres."
             : definition.format === "faq"
               ? structured ? "Até 15 pares. Preencha a pergunta e a resposta nos campos correspondentes." : "Escreva uma pergunta e resposta por linha, separadas por |. Até 15 pares."
               : "Até 4.000 caracteres. Você pode voltar e complementar depois."}
-        </FormFieldHint>
+        </FormFieldHint> : null}
         {structured && definition.key === "business_name" ? <Textarea id={fieldId} name="value" rows={1} value={draft} maxLength={4000} readOnly={saveLocked} className="!min-h-11 resize-y" aria-describedby={hintId} onChange={(event) => setDraft(event.target.value)} /> : structured && (definition.format === "items" || definition.format === "faq") ? <StructuredSectionFields format={definition.format} draft={draft} onChange={setDraft} disabled={saveLocked} id={fieldId} /> : <Textarea
           id={fieldId}
           name="value"
@@ -239,61 +237,20 @@ export function CommunicationSectionEditor(props: Readonly<{
           maxLength={definition.format === "text" ? communicationTextLimit(definition) : undefined}
           aria-invalid={!editState.valid}
           aria-describedby={`${hintId}${!editState.valid ? ` ${fieldId}-error` : ""}${saveLocked ? ` ${saveLockHintId}` : ""}`}
-          className="min-h-40 resize-y text-sm"
+          className={longText ? "min-h-[min(24rem,50dvh)] resize-y text-sm font-normal leading-6 placeholder:font-normal placeholder:text-muted-foreground" : "min-h-40 resize-y text-sm"}
         />}
+        {longText ? <FormFieldHint id={hintId} className="text-right font-normal tabular-nums">{draft.length.toLocaleString("pt-BR")} / {communicationTextLimit(definition).toLocaleString("pt-BR")}</FormFieldHint> : null}
         {!editState.valid ? <FormFieldError id={`${fieldId}-error`}>Confira o formato e os limites indicados antes de salvar.</FormFieldError> : null}
         </FormField>
         {structured && definition.stage === 1 && definition.key === "business_name" ? <BusinessFactsFields draft={factsDraft} onChange={setFactsDraft} disabled={saveLocked} id={fieldId + "-facts"} identification /> : null}
         {saveLocked ? <p id={saveLockHintId} role="status" className="text-xs text-muted-foreground">
           Salvando esta seção. Aguarde para continuar a edição.
         </p> : null}
-        <div className="sticky bottom-0 flex flex-wrap gap-2 border-t border-border bg-background py-2 [&>button]:px-3 [&>button]:py-1">
-          <SubmitButton label="Salvar" pendingLabel="Salvando..." disabled={saveLocked || !editState.dirty || !editState.valid} busy={saveLocked} />
-          <Button variant="secondary" className="min-h-11" disabled={saveLocked} onClick={onCancel}>Cancelar</Button>
-        </div>
-        {!savePending && state !== dismissedState ? <ActionFeedback state={state} /> : null}
-      </form>
-      {getCommunicationSection(definition.key) && (definition.stage === 1 ? (
+      {getCommunicationSection(definition.key) && definition.stage === 2 ? (
         <div className="mt-3 border-t border-border pt-3">
-          <p className="text-xs leading-5 text-muted-foreground">
-            Melhore o texto, revise a versão sugerida e escolha Usar esta versão para levá-la ao campo. Depois, clique em Salvar. A IA usa apenas o texto enviado desta seção.
-          </p>
-          <button type="button" disabled={saveLocked || aiPending || !draft.trim()}
-            onClick={() => startAiTransition(async () => {
-              const requestRevision = ++localRequestRevisionRef.current;
-              const isCurrent = () => canInstallGeneralSuggestion(version, localVersionRef.current,
-                requestRevision, localRequestRevisionRef.current);
-              setAiMessage("");
-              setLocalSuggestion(null);
-              setMissingQuestion("");
-              if (draft.length > COMMUNICATION_ASSISTANCE_TEXT_MAX) {
-                setAiMessage(COMMUNICATION_ASSISTANCE_LIMIT_MESSAGE);
-                return;
-              }
-              try {
-                const result = await assistCommunicationSectionAction({ account, key: definition.key, userText: structured ? formatEditorValue(parseEditorDraft(definition.format, draft, true) as CommunicationSectionValue, definition.format) : draft, version });
-                if (!isCurrent()) return;
-                if (result.ok) {
-                  setLocalSuggestion(parseEditorValue(definition.format, result.suggestion));
-                  setMissingQuestion(result.missingQuestion);
-                } else setAiMessage(result.message);
-              } catch {
-                if (isCurrent()) setAiMessage("A assistência está indisponível agora. Continue a edição manual.");
-              }
-            })}
-            className="mt-2 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-3 py-1 text-sm font-medium text-foreground disabled:cursor-not-allowed disabled:opacity-60">
-            {aiPending ? "Preparando sugestão..." : "Melhorar meu texto"}
-          </button>
-          {missingQuestion ? <p className="mt-3 text-sm">Informação a confirmar: {missingQuestion}</p> : null}
-          {localSuggestion !== null ? <Suggestion value={localSuggestion} original={draft} structured={structured} format={definition.format}
-            disabled={saveLocked} onUse={() => setDraft(editorDraftValue(localSuggestion, definition.format, structured))} /> : null}
-          {aiMessage ? <p role="alert" className="mt-2 text-sm text-state-error">{aiMessage}</p> : null}
-        </div>
-      ) : (
-        <div className="mt-3 border-t border-border pt-3">
-          <p className="text-xs leading-5 text-muted-foreground">
+          {assistanceUsed ? <p className="text-xs font-normal leading-5 text-muted-foreground">
             A IA revisa apenas {definition.label} usando os dados confirmados pertinentes e o texto salvo desta seção. As demais seções permanecem como estão.
-          </p>
+          </p> : null}
           <label className="mt-2 flex min-h-11 items-center gap-2 text-sm">
             <input type="checkbox" checked={requiresResearch} disabled={saveLocked}
               onChange={(event) => setRequiresResearch(event.target.checked)}
@@ -302,6 +259,7 @@ export function CommunicationSectionEditor(props: Readonly<{
           </label>
           <button type="button" disabled={saveLocked || aiPending || stageTwoGenerationInFlight}
             onClick={() => {
+              setAssistanceUsed(true);
               if (!onStageTwoGenerationStart?.()) {
                 setAiMessage("Aguarde a geração em andamento antes de revisar esta seção.");
                 return;
@@ -347,7 +305,13 @@ export function CommunicationSectionEditor(props: Readonly<{
           {aiNotice && localStageTwoResult?.generalRevision === generalRevision ? <FeedbackMessage tone="warning" className="mt-2">{aiNotice}</FeedbackMessage> : null}
           {aiMessage ? <p role="alert" className="mt-2 text-sm text-state-error">{aiMessage}</p> : null}
         </div>
-      ))}
+      ) : null}
+        <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-2 border-t border-border bg-background py-2 [&>button]:px-3 [&>button]:py-1">
+          <Button variant="secondary" className="min-h-11 px-0 font-normal !text-foreground underline underline-offset-4" disabled={saveLocked} onClick={onCancel}>Cancelar</Button>
+          <SubmitButton label="Salvar" pendingLabel="Salvando..." disabled={saveLocked || !editState.dirty || !editState.valid} busy={saveLocked} />
+        </div>
+        {!savePending && state !== dismissedState ? <ActionFeedback state={state} /> : null}
+      </form>
     </article>
   );
 }
@@ -487,13 +451,13 @@ function Suggestion({ value, original, structured, format, basis, disabled = fal
 }>) {
   const unchanged = editorDraftValue(value, format, structured).trim() === original.trim();
   if (unchanged) return <p role="status" className="mt-3 text-sm text-muted-foreground">A versão sugerida é igual ao texto atual. Nenhuma melhoria foi identificada.</p>;
-  return <div className="mt-3 rounded-lg border border-border bg-muted/30 p-3">
-    <p className="text-xs font-semibold">Versão sugerida</p>
+  return <div className="mt-3 border-t border-border pt-3">
+    <p className="text-sm font-normal">Versão sugerida</p>
     <p className="mt-1 text-xs text-muted-foreground">Revise antes de usar. A sugestão só será salva quando você clicar em Salvar.</p>
-    {basis ? <p className="mt-2 text-xs font-semibold text-brand-700">{stageTwoBasisLabel(basis)}</p> : null}
+    {basis ? <p className="mt-2 text-xs font-normal text-muted-foreground">{stageTwoBasisLabel(basis)}</p> : null}
     <p className="mt-2 whitespace-pre-wrap text-sm">{formatEditorValue(value, format) || "Sem conteúdo suficiente para sugerir."}</p>
     {formatEditorValue(value, format).trim() ? <button type="button" onClick={onUse} disabled={disabled}
-      className="mt-3 inline-flex min-h-11 items-center rounded-lg border border-border px-4 text-sm font-semibold disabled:cursor-wait disabled:opacity-60">
+      className="mt-3 inline-flex min-h-11 items-center text-sm font-normal text-brand-700 underline dark:text-primary underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-60">
       Usar esta versão
     </button> : null}
   </div>;
@@ -515,7 +479,7 @@ function SubmitButton({ label, pendingLabel, disabled = false, busy = false }: R
     <Button
       type="submit"
       disabled={pending || disabled}
-      className="min-h-11 !bg-brand-700 hover:!bg-brand-700/95"
+      className="min-h-11 !bg-brand-700 !text-surface-base hover:!bg-brand-700/95"
     >
       {pending || busy ? pendingLabel : label}
     </Button>
