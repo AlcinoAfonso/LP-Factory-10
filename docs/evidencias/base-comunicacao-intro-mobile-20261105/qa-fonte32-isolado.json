@@ -1,0 +1,112 @@
+{
+  "before": {
+    "body": [
+      16,
+      1312
+    ],
+    "dialogBottom": 464,
+    "footerBottom": 552.8000183105469,
+    "outer": [
+      446,
+      536,
+      "hidden"
+    ],
+    "rootFont": "32px",
+    "viewport": [
+      320,
+      480
+    ]
+  },
+  "afterTop": {
+    "body": [
+      1360,
+      1360
+    ],
+    "mode": "outer",
+    "outer": [
+      446,
+      1962,
+      0,
+      "auto"
+    ],
+    "overflowWrap": "anywhere",
+    "rootFont": "32px",
+    "titleTop": 96.8000030517578,
+    "viewport": [
+      320,
+      480
+    ],
+    "width": [
+      239,
+      239
+    ]
+  },
+  "afterEnd": {
+    "button": [
+      350.8000183105469,
+      438.8000183105469
+    ],
+    "buttonFocused": true,
+    "buttonWithinDialog": true,
+    "dialog": [
+      16,
+      464
+    ],
+    "mode": "outer",
+    "outerScroll": 1516
+  },
+  "reopened": {
+    "mode": "outer",
+    "outerScroll": 0,
+    "titleFocused": true
+  },
+  "wideResize": {
+    "mode": "body",
+    "rootFont": "32px",
+    "viewport": [
+      1440,
+      900
+    ],
+    "width": [
+      1374,
+      1374
+    ]
+  },
+  "narrowResize": {
+    "mode": "outer",
+    "viewport": [
+      320,
+      480
+    ],
+    "width": [
+      239,
+      239
+    ]
+  },
+  "sourceBlob": "43f4fc429e09cc1a1e4b41d519a1cea5082c442e",
+  "method": "Isolated render of actual source component and current Tailwind/global/local CSS; initial html font-size32px; public local AccessProvider fixture, no backend. Browser read-only DOM measurements/native interaction. Font family uses available local fallback; not Android/Samsung emulation.",
+  "normal16": {
+    "body": [
+      256,
+      320
+    ],
+    "footer": [
+      363.2000122070313,
+      471.2000122070313
+    ],
+    "header": [
+      8.800000190734863,
+      106.80000019073486
+    ],
+    "mode": "body",
+    "rootFont": "16px",
+    "viewport": [
+      320,
+      480
+    ],
+    "width": [
+      286,
+      286
+    ]
+  }
+}

@@ -25,8 +25,28 @@ export function CommunicationBaseIntroduction() {
   const trigger = useRef<HTMLButtonElement>(null);
   const introductionTitle = useRef<HTMLHeadingElement>(null);
   const introductionBody = useRef<HTMLDivElement>(null);
+  const introductionHeader = useRef<HTMLElement>(null);
+  const introductionFooter = useRef<HTMLElement>(null);
+  const [needsOuterScroll, setNeedsOuterScroll] = useState(false);
+  useEffect(() => {
+    const element = dialog.current;
+    const header = introductionHeader.current;
+    const footer = introductionFooter.current;
+    const body = introductionBody.current;
+    if (!element || !header || !footer || !body) return;
+    if (typeof ResizeObserver === "undefined") { setNeedsOuterScroll(true); return; }
+    const observer = new ResizeObserver(() => {
+      if (!element.open) return;
+      const minimumBodyHeight = Number.parseFloat(window.getComputedStyle(body).fontSize) * 4;
+      const fixedHeight = header.getBoundingClientRect().height + footer.getBoundingClientRect().height;
+      setNeedsOuterScroll(fixedHeight + minimumBodyHeight > element.clientHeight);
+    });
+    observer.observe(element); observer.observe(header); observer.observe(footer);
+    return () => observer.disconnect();
+  }, []);
   const openIntroduction = useCallback(() => {
     if (!dialog.current?.open) dialog.current?.showModal();
+    dialog.current?.scrollTo({ top: 0 });
     introductionTitle.current?.focus({ preventScroll: true });
     introductionBody.current?.scrollTo({ top: 0 });
   }, []);
@@ -62,13 +82,13 @@ export function CommunicationBaseIntroduction() {
       </svg>
       </span>
     </Button>
-    <dialog ref={dialog} aria-labelledby="communication-introduction-title" onCancel={(event) => { event.preventDefault(); dismiss(); }}
-      className="m-auto max-h-[calc(100dvh-1rem)] w-[calc(100%-2rem)] max-w-3xl overflow-hidden rounded-xl border border-border bg-background p-0 text-foreground shadow-xl backdrop:bg-black/40 open:flex open:flex-col">
-      <header className="shrink-0 px-4 pb-2 pt-3 sm:px-8 sm:pt-6">
+    <dialog ref={dialog} data-scroll-mode={needsOuterScroll ? "outer" : "body"} aria-labelledby="communication-introduction-title" onCancel={(event) => { event.preventDefault(); dismiss(); }}
+      className={`m-auto max-h-[calc(100dvh-1rem)] w-[calc(100%-2rem)] max-w-3xl [overflow-wrap:anywhere] rounded-xl border border-border bg-background p-0 text-foreground shadow-xl backdrop:bg-black/40 ${needsOuterScroll ? "overflow-y-auto" : "overflow-hidden open:flex open:flex-col"}`}>
+      <header ref={introductionHeader} className="shrink-0 px-4 pb-2 pt-3 sm:px-8 sm:pt-6">
         <p className="mb-1 text-base font-bold text-brand-700 dark:text-primary">LP Factory</p>
         <h2 ref={introductionTitle} tabIndex={-1} id="communication-introduction-title" className="text-xl font-semibold leading-tight focus:outline-none sm:text-2xl">Sua comunicação começa aqui</h2>
       </header>
-      <div ref={introductionBody} role="region" aria-label="Sobre a Base de Comunicação" tabIndex={0} className="min-h-0 overflow-y-auto overscroll-contain px-4 pb-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-8">
+      <div ref={introductionBody} role="region" aria-label="Sobre a Base de Comunicação" tabIndex={0} className={`px-4 pb-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-8 ${needsOuterScroll ? "" : "min-h-0 overflow-y-auto overscroll-contain"}`}>
       <div className="grid gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-x-6 sm:gap-y-4">
         <p className="text-sm leading-6 text-muted-foreground sm:col-start-2 sm:row-start-1">A Base de Comunicação reúne as informações, os materiais e os diferenciais do seu negócio para orientar uma comunicação mais clara e consistente.</p>
         <div className="flex items-center justify-center sm:col-start-1 sm:row-start-1 sm:row-span-2 sm:border-r sm:border-border sm:pr-6">
@@ -92,7 +112,7 @@ export function CommunicationBaseIntroduction() {
         <p className="text-sm leading-6 text-muted-foreground sm:col-start-2 sm:row-start-2">Comece com o que já tem. Você pode preencher aos poucos, revisar e complementar quando quiser. Cada seção é salva por você.</p>
       </div>
       </div>
-      <footer className="shrink-0 px-4 pb-3 pt-1 sm:px-8 sm:pb-6">
+      <footer ref={introductionFooter} className="shrink-0 px-4 pb-3 pt-1 sm:px-8 sm:pb-6">
       {storageKey ? <label className=" flex min-h-11 cursor-pointer items-center justify-center gap-2 text-xs font-normal text-muted-foreground">
         <input type="checkbox" checked={dontShowAgain} onChange={(event) => updatePreference(event.target.checked)} className="h-4 w-4 shrink-0 accent-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
         Não mostrar novamente
