@@ -105,7 +105,7 @@ function SectionRow({ definition, hasContent, hasSuggestion, renderDetail, showG
         <span className="text-xs leading-5 text-muted-foreground sm:hidden">{hasSuggestion ? "Sugestão disponível" : hasContent ? "Com conteúdo" : "Ainda não preenchida"}</span>
       </button>
       <dialog ref={dialogRef} aria-labelledby={titleId}
-        className="m-auto h-[min(42rem,calc(100dvh-1rem))] max-h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] max-w-3xl overflow-hidden rounded-xl border border-border bg-background p-0 text-left text-foreground shadow-xl backdrop:bg-black/40 open:flex open:flex-col"
+        className="m-auto h-[min(42rem,calc(100dvh-1rem))] max-h-[calc(100dvh-1rem)] w-[calc(100dvw-1rem)] max-w-3xl overflow-hidden rounded-xl border border-border bg-background p-0 text-left text-foreground shadow-xl backdrop:bg-black/40 open:flex open:flex-col"
         onCancel={(event) => {
           event.preventDefault();
           if (guidanceVisible) { setGuidanceOpen(false); setGuidanceHovered(false); }
