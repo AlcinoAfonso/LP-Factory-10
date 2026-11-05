@@ -90,7 +90,7 @@ export function CommunicationBaseIntroduction() {
       </header>
       <div ref={introductionBody} role="region" aria-label="Sobre a Base de Comunicação" tabIndex={0} className={`px-4 pb-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-8 ${needsOuterScroll ? "" : "min-h-0 overflow-y-auto overscroll-contain"}`}>
       <div className="grid gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-x-6 sm:gap-y-4">
-        <p className="text-sm leading-6 text-muted-foreground sm:col-start-2 sm:row-start-1">A Base de Comunicação reúne as informações, os materiais e os diferenciais do seu negócio para orientar uma comunicação mais clara e consistente.</p>
+        <p className="!text-[0.9375rem] leading-6 text-muted-foreground sm:col-start-2 sm:row-start-1">A Base de Comunicação reúne as informações, os materiais e os diferenciais do seu negócio para orientar uma comunicação mais clara e consistente.</p>
         <div className="flex items-center justify-center sm:col-start-1 sm:row-start-1 sm:row-span-2 sm:border-r sm:border-border sm:pr-6">
           <svg viewBox="0 0 240 160" aria-hidden="true" className="h-20 w-36 max-w-full text-primary sm:h-36 sm:w-60" fill="none">
             <circle cx="114" cy="83" r="64" fill="currentColor" opacity=".07" />
@@ -109,7 +109,7 @@ export function CommunicationBaseIntroduction() {
             <g className="fill-background"><circle cx="149" cy="62" r="1.5" /><circle cx="155" cy="62" r="1.5" /><circle cx="161" cy="62" r="1.5" /></g>
           </svg>
         </div>
-        <p className="text-sm leading-6 text-muted-foreground sm:col-start-2 sm:row-start-2">Comece com o que já tem. Você pode preencher aos poucos, revisar e complementar quando quiser. Cada seção é salva por você.</p>
+        <p className="!text-[0.9375rem] leading-6 text-muted-foreground sm:col-start-2 sm:row-start-2">Comece com o que já tem. Você pode preencher aos poucos, revisar e complementar quando quiser. Cada seção é salva por você.</p>
       </div>
       </div>
       <footer ref={introductionFooter} className="shrink-0 px-4 pb-3 pt-1 sm:px-8 sm:pb-6">
