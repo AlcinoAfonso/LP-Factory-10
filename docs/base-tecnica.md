@@ -188,7 +188,7 @@
 
 3.14.6 Pending Setup conversacional
 - `lib/onboarding/pending-setup/` isola persistência; client e boundaries de acesso, perfil e taxonomia não a acessam diretamente.
-- Conversa executável somente para conta pending_setup, membership ativa e owner autenticado. Após active, preservar transcript/vínculo sem chat executável.
+- Conversa executável somente para conta pending_setup, membership ativa e owner autenticado. Após active, preservar transcript/vínculo sem chat executável. Exceção D14D: o mesmo agente atende conta ativa somente para definição/redefinição de nicho, com propósito próprio, membership/papel autorizados e confirmação determinística; não reabre nem escreve na conversa concluída.
 - Histórico append-only por conta/usuário. Reservar versão/token antes dos efeitos; reautorizar na escrita; retomada idempotente sem duplicar entrada ou efeito.
 - Novas conversas inicializam Diálogo/Resumo sem backfill, cópia ou inferência histórica; legadas mantêm seu motor. Desligar gate após turno IA suspende, preservando estado; reativar retoma o mesmo motor, sem estado de alternância.
 - Diálogo pertence à conta e identifica o participante; Resumo é único por conta e separado do estado do fluxo. Ambos são contexto subordinado às fontes oficiais, sem sincronização ou reconciliação retroativa obrigatórias.
@@ -197,7 +197,7 @@
 - IA usa projeção pertinente, limitada e sanitizada, Structured Outputs e transporte foreground sem memória autoritativa do provider. Catálogo/aliases somente leitura, sem pesquisa Web classificatória; resolvedor complementar mantém contrato próprio.
 - Classificação só vira vínculo após confirmação inequívoca e validação determinística de categoria/hierarquia ativas, com deduplicação e proteção do primário. Sem correspondência segura, preservar entendimento operacional.
 - Mensagem, estado, Resumo e efeito taxonômico são atômicos. Alteração externa impede sobrescrita/falso sucesso; descartar proposta obsoleta preserva contexto/histórico sem reavaliação ou reconfirmação automáticas.
-- Sem escrita cruzada, relacionamento operacional ou dependência com a Base. Ela não consome Diálogo/Resumo; reaproveitamento legado aprovado preservado. Novo consumidor exige recorte próprio, sem engine/infra antecipadas.
+- Pending Setup não escreve nem depende da Base, que não consome Diálogo/Resumo; reaproveitamento legado aprovado preservado. O consumidor D14D consulta Resumo, nicho oficial e projeção server-side dos dados confirmados pertinentes da Base, que prevalecem sobre interpretações antigas. Essa leitura revalida conta/membership/papel e independe de entitlement, sem alterar o acesso direto à Base. Conversa transitória restrita ao nicho não atualiza Diálogo, Resumo ou Base; memória permanente fora do recorte. Outros consumidores exigem recorte próprio, sem engine/infra antecipadas.
 - Comportamentos comerciais e requisitos de conclusão: `docs/roadmap.md` — E10.11–E10.12. Encerramento inconclusivo preserva pendência/contexto, não promove conta, não bloqueia retomada nem cria estado; sem contador/tempo fixo. Excesso ao contrato físico falha fechado, sem perda silenciosa para anunciar sucesso.
 - Conclusão exige taxon primário oficial ativo ou entendimento operacional confirmado; é transacional/idempotente e promove pending_setup → active sem entitlement. Atendimento não governa mudanças posteriores. Formulário E10.4 não é fallback; account_profiles histórico e card de nicho somente no consumidor active existente.
 
@@ -226,7 +226,7 @@
 - Deprecada em 01/10/2026: liberação por cobertura factual retirada. Ativação no CRUD independente segue 3.14.5; retirada na E22.7 do roadmap.
 
 3.15.9 Estado residual do antigo produto de `landing_page`
-- Produto LP legado sem consumidor de runtime, inclusive leitura, escrita, revisão, reprodução, entrega de assets ou compatibilidade de catálogo.
+- Produto LP legado sem consumidor de conteúdo, escrita, revisão, reprodução, entrega de assets ou compatibilidade de catálogo. A guarda de redefinição de nicho pode consultar somente a existência de produto da conta, inclusive rascunho, sem reativar o produto.
 - Resíduos físicos inertes no `docs/schema.md`; limpeza destrutiva de banco/dados/Storage exige recorte próprio.
 
 3.16 Configuração e observabilidade de workloads OpenAI

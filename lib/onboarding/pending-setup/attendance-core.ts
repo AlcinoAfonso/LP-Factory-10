@@ -42,6 +42,7 @@ export type AttendanceMarketContext = Readonly<{
   items: readonly Readonly<{ key: string; text: string; notes: string | null }>[];
 }>;
 export type AttendanceContext = Readonly<{
+  purpose?: "account_niche"; businessData?: Readonly<Record<string, string>>;
   preferredName: string | null; summary: string | null; preferredNameDeclined?: boolean;
   recent: readonly Readonly<{ role: "user" | "assistant"; content: string }>[];
   catalog: readonly AttendanceTaxon[]; marketContext?: readonly AttendanceMarketContext[];
@@ -69,15 +70,18 @@ A fonte comercial competente disponível neste recorte confirma somente a propos
 Não conceda trial, entitlement ou acesso pago; não gere LP/produto, conteúdo da Base, CRM, canais, integrações, pós-venda ou followup. Não crie dependência Pending Setup–Base, sincronização, reconstrução ou governança de mudanças externas futuras.
 A resposta só aparece depois do commit transacional. No turno confirm, o servidor valida e grava antes de publicar; nos demais, não anuncie escrita oficial ou sucesso. Em falha/alteração externa, preserve contexto e não prometa sucesso, reconstrução automática ou retorno assíncrono. Forma e semântica, autorização, isolamento e escrita são validados pelo servidor.`;
 
+export const NICHE_ATTENDANCE_PROMPT_VERSION = "d14d_account_niche_v1";
+const NICHE_ATTENDANCE_INSTRUCTIONS = `Neste propósito account_niche, ajude exclusivamente a definir ou redefinir o nicho de uma conta ativa, conversando com naturalidade até compreender atividade, ofertas e público. Estas regras específicas substituem as regras de acolhimento, venda, identidade, WhatsApp e conclusão do atendimento inicial acima. Consulte summary, currentPrimaryTaxonId, publicName, businessData e recent antes de responder; não repita perguntas já respondidas. businessData contém dados atuais confirmados da Base e prevalece sobre interpretações antigas do Resumo; correções novas são propostas, nunca fatos confirmados automaticamente. A conversa e displayedUnderstanding são contexto transitório, sem autoridade para alterar fontes oficiais. Não solicite nome, contato nem dados comerciais acessórios. Faça uma pergunta focal somente quando faltar informação material. Se já houver contexto suficiente, proponha diretamente uma categoria segura pelo mecanismo existing e explique a equivalência; currentPrimaryTaxonId identifica o vínculo atual, mas neste propósito é permitido propor outro ID ativo com ancestrais ativos. Propor não altera nem confirma o vínculo. Sem correspondência segura, use pending e explique a ausência; preserve o nicho atual, sem inventar categoria nem afirmar que fallback operacional cria nicho oficial. Assuntos fora do recorte recebem resposta breve e redirecionamento ao nicho. Não ofereça serviços, não faça pesquisa Web nem crie categorias. Fora de existing, existingTaxonId é null. Devolva preferredName=null, preferredNameDeclined=false, requestWhatsapp=false, whatsappReference=null, whatsappDeclined=false, confirmedUnderstanding=null, suggestions=[], readyToComplete=false. Use somente ask, existing ou pending; confirm é proibido. A confirmação humana ocorre separadamente no popup, por operação determinística que revalida permissões, catálogo, concorrência e ausência de produto. Só a classificação confirmada será salva; a conversa não atualiza Diálogo, Resumo ou Base, e não deve anunciar esses efeitos.`;
+
 export function attendancePrompt(context: AttendanceContext) {
   const schema = z.toJSONSchema(attendanceOutputSchema, { target: "draft-7" });
   delete schema.$schema;
-  return { instructions: ATTENDANCE_INSTRUCTIONS, input: JSON.stringify({ data: context }), schema };
+  return { instructions: ATTENDANCE_INSTRUCTIONS + (context.purpose === "account_niche" ? "\n" + NICHE_ATTENDANCE_INSTRUCTIONS : ""), input: JSON.stringify({ data: context }), schema };
 }
 function escapeContactReferenceTokens(text: string): string {
   return text.replace(/\[?\bphone_\d+_\d+\b\]?/giu, "[referência de contato literal removida]");
 }
-function projectAttendanceText(input: string, replaceContact: (raw: string) => string = () => "[telefone removido]",
+export function projectAttendanceText(input: string, replaceContact: (raw: string) => string = () => "[telefone removido]",
   contactReply = false): string {
   // Remove addresses before creating references; retain the literal value only in the server-side map.
   const source = escapeContactReferenceTokens(input
@@ -109,16 +113,23 @@ export function attendanceContactProjection(messages: AttendanceContext["recent"
   // contactReferences keeps provenance available even when display text is bounded.
   return { recent, contacts };
 }
-export function attendanceProjection(conversation: PendingSetupConversation, catalog: readonly AttendanceTaxon[]): AttendanceContext {
-  const summary = readAccountSummary(conversation.accountContext?.summary);
+export function projectAttendanceSummary(raw: string | null | undefined): string | null {
+  const summary = readAccountSummary(raw);
   const projectText = (text: string) => projectAttendanceText(text);
   const projectedSummary = summary ? Object.fromEntries(Object.entries(summary).filter(([key]) => key !== "whatsapp").map(([key, value]) =>
     [key, Array.isArray(value) ? value.map(projectText)
       : typeof value === "string" ? projectText(value) : value])) : null;
+  return projectedSummary ? JSON.stringify(projectedSummary) : null;
+}
+
+export function attendanceProjection(conversation: PendingSetupConversation, catalog: readonly AttendanceTaxon[]): AttendanceContext {
+  const projectedSummary = projectAttendanceSummary(conversation.accountContext?.summary);
+  const summary = readAccountSummary(conversation.accountContext?.summary);
+  const projectText = (text: string) => projectAttendanceText(text);
   const contactProjection = attendanceContactProjection(conversation.messages);
   return {
     preferredName: conversation.preferredName ? projectText(conversation.preferredName) : null, preferredNameDeclined: conversation.preferredNameDeclined ?? false,
-    summary: projectedSummary ? JSON.stringify(projectedSummary) : null,
+    summary: projectedSummary,
     publicName: conversation.businessDisplayName ? projectText(conversation.businessDisplayName) : null,
     displayedUnderstanding: conversation.businessContextText ? projectText(conversation.businessContextText) : null,
     recent: contactProjection.recent, contactReferences: [...contactProjection.contacts.keys()], whatsappProvided: Boolean(summary?.whatsapp),
@@ -140,6 +151,10 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
   const parsed = attendanceOutputSchema.safeParse(raw);
   if (!parsed.success) return null;
   const value = parsed.data;
+  const nicheOnly = context.purpose === "account_niche";
+  if (nicheOnly && (value.preferredName !== null || value.preferredNameDeclined || value.requestWhatsapp ||
+    value.whatsappReference !== null || value.whatsappDeclined || value.confirmedUnderstanding !== null ||
+    value.suggestions.length || value.readyToComplete || value.action === "confirm")) return null;
   const semanticText = [value.reply, value.preferredName, value.businessUnderstanding,
     value.confirmedUnderstanding, value.closureReason, ...value.suggestions];
   if (semanticText.some(text => text !== null && /\bphone_\d+_\d+\b/i.test(text))) return null;
@@ -149,7 +164,7 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
   if (value.whatsappReference !== null && (value.whatsappDeclined ||
     !context.contactReferences?.includes(value.whatsappReference))) return null;
   if (value.action !== "confirm" && value.confirmedUnderstanding !== null && !prior?.confirmedUnderstanding) return null;
-  if (!value.businessUnderstanding) value.confirmedUnderstanding = prior?.confirmedUnderstanding ?? null;
+  if (!nicheOnly && !value.businessUnderstanding) value.confirmedUnderstanding = prior?.confirmedUnderstanding ?? null;
   if (value.closureReason !== null && (value.action !== "ask" || value.readyToComplete)) return null;
   if (!value.businessUnderstanding && (value.action !== "ask" || value.readyToComplete || value.requestWhatsapp))
     value.businessUnderstanding = context.displayedUnderstanding ?? "";
@@ -158,7 +173,7 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
   if (context.preferredName && value.preferredNameDeclined) return null;
   if (value.preferredName !== null && (context.preferredNameDeclined || value.preferredName !== context.preferredName)
     && !preferredNameIsSourced(context, value.preferredName)) return null;
-  const needsName = !context.preferredName && !context.preferredNameDeclined && !value.preferredName && !value.preferredNameDeclined;
+  const needsName = !nicheOnly && !context.preferredName && !context.preferredNameDeclined && !value.preferredName && !value.preferredNameDeclined;
   if (needsName && !context.confirmedProposal && !value.closureReason
     && (value.reply !== PREFERRED_NAME_QUESTION || value.action !== "ask" || value.readyToComplete)) return null;
   if (value.action !== "existing" && value.existingTaxonId !== null) return null;
@@ -168,9 +183,9 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
   if (value.action === "existing") {
     const target = context.catalog.find(taxon => taxon.id === value.existingTaxonId);
     if (!target || !activeAncestors(target, context.catalog) ||
-      (context.currentPrimaryTaxonId && target.id !== context.currentPrimaryTaxonId)) return null;
+      (!nicheOnly && context.currentPrimaryTaxonId && target.id !== context.currentPrimaryTaxonId)) return null;
   }
-  if (value.action === "pending" && (context.currentPrimaryTaxonId || context.confirmedOperationalUnderstanding)) return null;
+  if (!nicheOnly && value.action === "pending" && (context.currentPrimaryTaxonId || context.confirmedOperationalUnderstanding)) return null;
   if (value.action === "confirm") {
     if (!context.displayedUnderstanding?.trim()) return null;
     value.businessUnderstanding = context.displayedUnderstanding; // Confirm exactly the understanding the user saw.

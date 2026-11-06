@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
+import { useActionState, useEffect, useLayoutEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -103,6 +103,7 @@ export function CommunicationSectionEditor(props: Readonly<{
   definition: CommunicationSectionDefinition;
   current: CommunicationSection | undefined;
   canEdit: boolean;
+  canGenerate?: boolean;
   structured?: boolean;
   suggestedSuggestion?: CommunicationSuggestion;
   generalRevision?: number;
@@ -115,7 +116,7 @@ export function CommunicationSectionEditor(props: Readonly<{
 }> & SectionDetailControls) {
   const { account, version, definition, current, canEdit, structured = false, suggestedSuggestion, generalRevision = 0,
     stageTwoGenerationInFlight = false, onStageTwoGenerationStart, onStageTwoGenerationFinished,
-    onStageTwoSaveStarted, onStageTwoSaveFinished, nicheLabel, resetRevision, onEditorStateChange, onCancel, onSaved } = props;
+    onStageTwoSaveStarted, onStageTwoSaveFinished, nicheLabel, canGenerate = false, resetRevision, onEditorStateChange, onCancel, onSaved } = props;
   const [state, action, savePending] = useActionState(saveCommunicationSectionAction, INITIAL_STATE);
   const lastHandledSaveStateRef = useRef(state);
   const lastClosedSaveRef = useRef(state);
@@ -246,7 +247,7 @@ export function CommunicationSectionEditor(props: Readonly<{
         {saveLocked ? <p id={saveLockHintId} role="status" className="text-xs text-muted-foreground">
           Salvando esta seção. Aguarde para continuar a edição.
         </p> : null}
-      {getCommunicationSection(definition.key) && definition.stage === 2 ? (
+      {canGenerate && getCommunicationSection(definition.key) && definition.stage === 2 ? (
         <div className="mt-3 border-t border-border pt-3">
           {assistanceUsed ? <p className="text-xs font-normal leading-5 text-muted-foreground">
             A IA revisa apenas {definition.label} usando os dados confirmados pertinentes e o texto salvo desta seção. As demais seções permanecem como estão.
@@ -325,10 +326,12 @@ export function CommunicationStageOne({ account, base, canEdit, structured = fal
       current={base.sections[definition.key as CommunicationSectionKey]} canEdit={canEdit} structured={structured} nicheLabel={nicheLabel} />} />;
 }
 
-export function CommunicationStageTwo({ account, base, canEdit, structured = false, definitions = communicationSections }: Readonly<{
+export function CommunicationStageTwo({ account, base, canEdit, canGenerate = false, nicheControl, structured = false, definitions = communicationSections }: Readonly<{
   account: string;
   base: CommunicationBase;
   canEdit: boolean;
+  canGenerate?: boolean;
+  nicheControl?: ReactNode;
   structured?: boolean;
   definitions?: readonly CommunicationSectionDefinition[];
 }>) {
@@ -359,7 +362,11 @@ export function CommunicationStageTwo({ account, base, canEdit, structured = fal
   return (
     <section aria-label="Inteligência de comunicação" className="space-y-2">
       <div className="space-y-2">
-        {canEdit ? <div className="rounded-lg border border-border bg-background px-3 py-2">
+        {canEdit && !canGenerate ? <div className="rounded-lg border border-border px-3 py-2">
+          <p className="text-sm text-muted-foreground">Defina e confirme um nicho oficial para gerar sugestões com IA. A edição manual continua disponível.</p>
+          {nicheControl}
+        </div> : null}
+        {canEdit && canGenerate ? <div className="rounded-lg border border-border bg-background px-3 py-2">
           <p className="text-xs leading-5 text-muted-foreground">
             Sugestões para as sete seções da Etapa 2. Revise cada uma antes de usar ou salvar.
           </p>
@@ -423,7 +430,7 @@ export function CommunicationStageTwo({ account, base, canEdit, structured = fal
       <CommunicationSectionCollection definitions={stageTwo} base={base} showGuidance={structured} suggestedKeys={Object.keys(suggestions)}
         renderDetail={(section, controls) => <CommunicationSectionEditor {...controls}
           account={account} version={base.version} definition={section} current={base.sections[section.key as CommunicationSectionKey]}
-          canEdit={canEdit} structured={structured} suggestedSuggestion={suggestions[section.key]} generalRevision={generalRevision}
+          canEdit={canEdit} canGenerate={canGenerate} structured={structured} suggestedSuggestion={suggestions[section.key]} generalRevision={generalRevision}
           stageTwoGenerationInFlight={generationInFlight}
           onStageTwoGenerationStart={tryStartStageTwoGeneration}
           onStageTwoGenerationFinished={finishStageTwoGeneration}

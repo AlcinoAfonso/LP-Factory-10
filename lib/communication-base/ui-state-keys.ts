@@ -1,10 +1,14 @@
 import { createHash } from "node:crypto";
 
 import type { CommunicationBase, CommunicationSection } from "./contracts";
-import { confirmedStageOneData } from "./ai-core";
+import { confirmedCommunicationMaterials, confirmedStageOneData } from "./ai-core";
 
 export function stageOneStateKey(base: CommunicationBase): string {
   return fingerprint([base.accountId, confirmedStageOneData(base, { kind: "general" })]);
+}
+
+export function stageTwoInputStateKey(base: CommunicationBase): string {
+  return fingerprint([base.accountId, confirmedStageOneData(base, { kind: "general" }), confirmedCommunicationMaterials(base)]);
 }
 
 export function sectionStateKey(section: CommunicationSection | undefined): string {

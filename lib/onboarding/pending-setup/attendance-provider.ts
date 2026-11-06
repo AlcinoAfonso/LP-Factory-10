@@ -4,7 +4,7 @@ import { requestOpenAiResponses, type OpenAiResponsesDependencies } from "../../
 import { clientOpenAiCostContext, type OpenAiCostEconomicContext } from "../../openai-costs";
 import { resolveOpenAiProductWorkload, resolveOpenAiWorkloadEnvironment,
   type ResolvedOpenAiProductWorkload, type OpenAiWorkloadEnvironment } from "../../openai-workloads";
-import { ATTENDANCE_PROMPT_VERSION, ATTENDANCE_CONTRACT_VERSION, attendancePrompt,
+import { ATTENDANCE_PROMPT_VERSION, ATTENDANCE_CONTRACT_VERSION, NICHE_ATTENDANCE_PROMPT_VERSION, attendancePrompt,
   attendanceOutputSchema, validateAttendanceOutput, type AttendanceContext, type AttendanceOutput } from "./attendance-core";
 
 export async function requestAttendance(input: Readonly<{
@@ -22,7 +22,7 @@ export async function requestAttendance(input: Readonly<{
   const result = await requestOpenAiResponses<Readonly<{ output: AttendanceOutput }>>({
     apiKey: input.apiKey ?? process.env.OPENAI_API_KEY,
     environment, configuration: resolved.value, expectedWorkload: "pending_setup_conversation",
-    requestId: randomUUID(), promptVersion: ATTENDANCE_PROMPT_VERSION, contractVersion: ATTENDANCE_CONTRACT_VERSION,
+    requestId: randomUUID(), promptVersion: input.context.purpose === "account_niche" ? NICHE_ATTENDANCE_PROMPT_VERSION : ATTENDANCE_PROMPT_VERSION, contractVersion: ATTENDANCE_CONTRACT_VERSION,
     financialContext: input.financialContext ?? clientOpenAiCostContext(input.accountId),
     executionOrigin: input.executionOrigin ?? "runtime", baselineReference: "e10_12_attendance",
     timeoutMs: 120_000,

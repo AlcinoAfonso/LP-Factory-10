@@ -54,6 +54,39 @@ export async function readCommunicationBase(
   }
 }
 
+// Niche definition is available without entitlement. This server-only consumer receives
+// only confirmed classification context; direct Base reads retain their authenticated RLS.
+export async function readBusinessContextForNiche(input: Readonly<{ accountId: string; actorUserId: string }>):
+  Promise<CommunicationBaseResult<Readonly<Record<string, string>>>> {
+  if (!input.accountId || !input.actorUserId) return { ok: false, error: "invalid" };
+  try {
+    const service = createServiceClient();
+    const { data: member, error: memberError } = await service.from("account_users")
+      .select("account_id,accounts!inner(status)").eq("account_id", input.accountId).eq("user_id", input.actorUserId)
+      .eq("status", "active").in("role", ["owner", "admin", "editor"]).eq("accounts.status", "active").maybeSingle();
+    if (memberError) return { ok: false, error: "read_failed" };
+    if (!member) return { ok: false, error: "forbidden" };
+    const keys = ["business_name", "business_context", "offers", "preferences"] as const;
+    const { data, error } = await service.from("account_communication_bases")
+      .select(keys.map(key => key + ":sections_json->" + key).join(","))
+      .eq("account_id", input.accountId).maybeSingle();
+    if (error) return { ok: false, error: "read_failed" };
+    if (data !== null && (typeof data !== "object" || Array.isArray(data))) return { ok: false, error: "read_failed" };
+    const row = data as unknown as Record<string, unknown> | null;
+    const value: Record<string, string> = {};
+    for (const key of keys) {
+      const stored = row?.[key];
+      if (stored === null || stored === undefined) continue;
+      if (typeof stored !== "object" || Array.isArray(stored)) return { ok: false, error: "read_failed" };
+      const section = stored as Record<string, unknown>;
+      if (!["user_confirmed", "pending_setup_confirmed"].includes(String(section.origin))) continue;
+      if (section.format !== "text" || typeof section.value !== "string") return { ok: false, error: "read_failed" };
+      value[key] = section.value;
+    }
+    return { ok: true, value };
+  } catch { return { ok: false, error: "read_failed" }; }
+}
+
 export async function readPendingSetupBusinessContext(
   accountId: string,
 ): Promise<CommunicationBaseResult<string | null>> {

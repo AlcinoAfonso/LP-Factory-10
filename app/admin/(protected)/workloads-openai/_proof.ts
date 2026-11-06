@@ -17,7 +17,7 @@ import {
 } from "./proofCore";
 import { parseCommercialProof } from "./commercialProof";
 import { lpFactoryOpenAiCostContext } from "@/openai-costs";
-import { assistCommunicationSection, generateCommunicationIntelligence } from "@/communication-base/adapters/communicationAiAdapter";
+import { generateCommunicationIntelligence } from "@/communication-base/adapters/communicationAiAdapter";
 import type { CommunicationBase } from "@/communication-base/contracts";
 
 import { requestAttendance } from "@/onboarding/pending-setup/attendance-provider";
@@ -45,33 +45,13 @@ export async function runOpenAiCandidateProof(
       attendance: dependencies.attendance ?? proveAttendance,
       commercial: dependencies.commercial ?? proveCommercialActivation,
       communicationStageOne:
-        dependencies.communicationStageOne ?? proveCommunicationStageOne,
+        async () => ({ ok: false, code: "configuration" }),
       communicationStageTwo:
         dependencies.communicationStageTwo ?? proveCommunicationStageTwo,
     },
   );
 }
 
-async function proveCommunicationStageOne(
-  workload: ResolvedOpenAiProductWorkload,
-  environment: OpenAiManagedWorkloadEnvironment,
-  apiKey: string,
-  _requestId: string,
-): Promise<ProofAttempt> {
-  const result = await assistCommunicationSection({
-    accountId: "10000000-0000-4000-8000-000000000001",
-    key: "business_context",
-    userText: "Ofereço manutenção de jardins para condomínios.",
-    environment,
-    apiKey,
-    configurationOverride: workload,
-    financialContext: lpFactoryOpenAiCostContext,
-    executionOrigin: "administrative_proof",
-  });
-  return result.ok && (result.value.suggestion || result.value.missingQuestion)
-    ? { ok: true, providerRequestId: result.responseId, latencyMs: result.latencyMs }
-    : { ok: false, code: result.ok ? "contract" : "provider" };
-}
 
 async function proveCommunicationStageTwo(
   workload: ResolvedOpenAiProductWorkload,
@@ -96,6 +76,7 @@ async function proveCommunicationStageTwo(
     base,
     target: { kind: "section", key: "market_insights" },
     requiresCurrentResearch: true,
+    niche: { taxonId: "10000000-0000-4000-8000-000000000002", name: "Jardinagem", confirmed: true, revision: "proof" },
     environment,
     apiKey,
     configurationOverride: workload,

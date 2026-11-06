@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
-import type { DeterministicMatchDecision } from "../contracts";
+import { hasHumanNicheConfirmation, type DeterministicMatchDecision } from "../contracts";
 
 const ACCOUNT_TAXONOMY_DETERMINISTIC_SOURCE_TYPE = "taxonomy_match" as const;
 const ACCOUNT_TAXONOMY_USER_CONFIRMED_AI_SOURCE_TYPE = "user_confirmed_ai" as const;
@@ -24,7 +24,14 @@ export type ActivePrimaryAccountTaxon = {
   taxonId: string;
   name: string;
   slug: string;
+  confirmed: boolean;
+  confirmedAt: string | null;
+  revision: string;
 };
+
+export function isAccountNicheEditingEnabled(): boolean {
+  return process.env.D14D_ACCOUNT_NICHE_EDITING_ENABLED === "true";
+}
 
 export async function getActivePrimaryAccountTaxon(input: {
   accountId: string;
@@ -45,7 +52,7 @@ export async function readActivePrimaryAccountTaxon(input: {
     const supabase = createServiceClient();
     const { data: primary, error: primaryError } = await supabase
       .from("account_taxonomy")
-      .select("taxon_id")
+      .select(isAccountNicheEditingEnabled() ? "taxon_id,source_type,updated_at,user_confirmed_at" : "taxon_id,source_type,updated_at")
       .eq("account_id", input.accountId)
       .eq("is_primary", true)
       .eq("status", ACCOUNT_TAXONOMY_STATUS)
@@ -81,7 +88,18 @@ export async function readActivePrimaryAccountTaxon(input: {
     const row = taxon as { id?: string | null; name?: string | null; slug?: string | null } | null;
     if (!row?.id || !row.name || !row.slug) return { ok: false };
 
-    return { ok: true, taxon: { taxonId: row.id, name: row.name, slug: row.slug } };
+    const link = primary as unknown as { source_type: string; updated_at: string; user_confirmed_at?: string | null };
+    let confirmed = hasHumanNicheConfirmation({ taxonId, sourceType: link.source_type, confirmedAt: link.user_confirmed_at });
+    if (!confirmed) {
+      const { data: resolution, error } = await supabase.from("account_niche_resolutions")
+        .select("user_resolution_status,user_selected_taxon_id,user_confirmed_at").eq("account_id", input.accountId).maybeSingle();
+      if (error) { console.error("getActivePrimaryAccountTaxon confirmation lookup failed", { code: error.code }); return { ok: false }; }
+      confirmed = hasHumanNicheConfirmation({ taxonId, sourceType: link.source_type,
+        resolution: resolution ? { status: resolution.user_resolution_status, taxonId: resolution.user_selected_taxon_id, confirmedAt: resolution.user_confirmed_at } : undefined });
+    }
+    return { ok: true, taxon: { taxonId: row.id, name: row.name, slug: row.slug,
+      confirmed,
+      confirmedAt: link.user_confirmed_at ?? null, revision: link.updated_at } };
   } catch (error) {
     console.error("getActivePrimaryAccountTaxon failed:", {
       code: error instanceof Error ? error.name : undefined,
@@ -89,6 +107,33 @@ export async function readActivePrimaryAccountTaxon(input: {
     });
     return { ok: false };
   }
+}
+
+export async function readAccountNicheProductGuard(accountId: string): Promise<boolean | null> {
+  try {
+    const { count, error } = await createServiceClient().from("account_landing_pages")
+      .select("id", { count: "exact", head: true }).eq("account_id", accountId);
+    return error || count === null ? null : count > 0;
+  } catch { return null; }
+}
+
+export async function confirmAccountNiche(input: Readonly<{
+  accountId: string; actorUserId: string; taxonId: string; expectedTaxonId: string | null;
+}>) {
+  if (!isAccountNicheEditingEnabled()) return { ok: false as const, reason: "unavailable" };
+  try {
+    const { error, data } = await createServiceClient().rpc("confirm_account_niche_v1", {
+      p_account_id: input.accountId, p_actor_user_id: input.actorUserId,
+      p_taxon_id: input.taxonId, p_expected_taxon_id: input.expectedTaxonId, p_confirmed: true,
+    });
+    if (error || data !== input.taxonId) {
+      const reason = error?.message === "niche_changed" ? "conflict"
+        : error?.message === "niche_product_exists" ? "product_exists" : "unavailable";
+      console.error("confirmAccountNiche failed", { code: error?.code ?? "invalid_result" });
+      return { ok: false as const, reason };
+    }
+    return { ok: true as const };
+  } catch { return { ok: false as const, reason: "unavailable" }; }
 }
 
 export type AccountTaxonomyLinkResult =

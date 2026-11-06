@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { requireCommunicationBaseAccess } from "../../../../lib/communication-base/access";
-import { assistCommunicationSection, generateCommunicationIntelligence } from "../../../../lib/communication-base/adapters/communicationAiAdapter";
+import { generateCommunicationIntelligence } from "../../../../lib/communication-base/adapters/communicationAiAdapter";
 import {
   createCommunicationBase,
   readCommunicationBase,
@@ -11,13 +11,12 @@ import {
   saveCommunicationSection,
 } from "../../../../lib/communication-base/adapters/communicationBaseAdapter";
 import { parseCommunicationFacts, parseSectionValue, withSection } from "../../../../lib/communication-base/policy";
-import { parseEditorValue } from "../../../../lib/communication-base/editor-value";
 import { parseEditorDraft } from "../../../../lib/communication-base/manual-editor-value";
 import { isCommunicationResourcesEnabled } from "../../../../lib/communication-base/config";
 import { readCommunicationDefinitions } from "../../../../lib/communication-base/adapters/communicationCatalogAdapter";
 import { getCommunicationSection } from "../../../../lib/communication-base/registry";
-import { COMMUNICATION_ASSISTANCE_LIMIT_MESSAGE, COMMUNICATION_ASSISTANCE_TEXT_MAX, selectStageTwoInput, type StageTwoDraft, type StageTwoTarget } from "../../../../lib/communication-base/ai-core";
-import { isCurrentGenerationVersion } from "../../../../lib/communication-base/generation-guard";
+import { selectStageTwoInput, type StageTwoDraft, type StageTwoTarget } from "../../../../lib/communication-base/ai-core";
+import { isCurrentGenerationNiche, isCurrentGenerationVersion } from "../../../../lib/communication-base/generation-guard";
 import { readActivePrimaryAccountTaxon } from "../../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import { isE1011PassageEnabled } from "../../../../lib/onboarding/pending-setup/config";
 
@@ -26,9 +25,6 @@ export type CommunicationActionState = Readonly<{
   message: string;
 }>;
 
-export type CommunicationStageOneAiResult =
-  | Readonly<{ ok: true; suggestion: string; missingQuestion: string }>
-  | Readonly<{ ok: false; message: string }>;
 
 export type CommunicationStageTwoAiResult =
   | Readonly<{ ok: true; draft: StageTwoDraft; notice?: string }>
@@ -115,37 +111,6 @@ export async function saveCommunicationSectionAction(
   return { status: "saved", message: "Seção salva." };
 }
 
-export async function assistCommunicationSectionAction(input: Readonly<{
-  account: string;
-  key: string;
-  userText: string;
-  version: number;
-}>): Promise<CommunicationStageOneAiResult> {
-  const section = input && typeof input.key === "string" ? getCommunicationSection(input.key) : null;
-  if (section?.stage === 1 && typeof input.userText === "string" && input.userText.length > COMMUNICATION_ASSISTANCE_TEXT_MAX) {
-    return { ok: false, message: COMMUNICATION_ASSISTANCE_LIMIT_MESSAGE };
-  }
-  if (!section || section.stage !== 1 || typeof input.account !== "string" ||
-      !Number.isSafeInteger(input.version) || input.version <= 0 ||
-      typeof input.userText !== "string" || !input.userText.trim() ||
-      parseSectionValue(section, parseEditorValue(section.format, input.userText)) === null) {
-    return { ok: false, message: "Preencha esta seção com seus dados reais antes de pedir ajuda à IA." };
-  }
-  const access = await requireCommunicationBaseAccess(input.account, true);
-  if (!access.ok) return { ok: false, message: "A assistência não está disponível para este acesso." };
-  const base = await readCommunicationBase(access.value.accountId);
-  if (!base.ok || !base.value || base.value.version !== input.version) {
-    return { ok: false, message: "A Base mudou. Atualize a página antes de pedir ajuda à IA." };
-  }
-  const result = await assistCommunicationSection({
-    accountId: access.value.accountId,
-    key: input.key,
-    userText: input.userText,
-  });
-  return result.ok
-    ? { ok: true, suggestion: result.value.suggestion, missingQuestion: result.value.missingQuestion }
-    : { ok: false, message: result.reason === "configuration_incompatible" ? "A configuração ativa da IA é incompatível com a resposta da OpenAI. Nenhuma configuração alternativa foi usada." : "A assistência está indisponível agora. Você pode continuar a edição manual." };
-}
 
 export async function generateCommunicationIntelligenceAction(input: Readonly<{
   account: string;
@@ -163,6 +128,9 @@ export async function generateCommunicationIntelligenceAction(input: Readonly<{
   }
   const access = await requireCommunicationBaseAccess(input.account, true);
   if (!access.ok) return { ok: false, message: "A geração não está disponível para este acesso." };
+  const taxonomy = await readActivePrimaryAccountTaxon({ accountId: access.value.accountId });
+  if (!taxonomy.ok) return { ok: false, message: "Não foi possível conferir o nicho. Tente novamente." };
+  if (!taxonomy.taxon?.confirmed) return { ok: false, message: "Defina e confirme um nicho oficial antes de gerar sugestões com IA. A edição manual continua disponível." };
   const base = await readCommunicationBase(access.value.accountId);
   if (!base.ok || !base.value || base.value.version !== input.version) {
     return { ok: false, message: "A Base mudou. Atualize a página antes de gerar sugestões." };
@@ -178,11 +146,16 @@ export async function generateCommunicationIntelligenceAction(input: Readonly<{
     base: base.value,
     target: input.target,
     requiresCurrentResearch: input.requiresCurrentResearch,
+    niche: taxonomy.taxon,
   });
   if (!result.ok) {
     return { ok: false, message: result.reason === "configuration_incompatible" ? "A configuração ativa da IA é incompatível com a resposta da OpenAI. Nenhuma configuração alternativa foi usada." : "Não foi possível concluir a geração. Seus textos salvos continuam disponíveis." };
   }
   const latest = await readCommunicationBase(access.value.accountId);
+  const latestTaxonomy = await readActivePrimaryAccountTaxon({ accountId: access.value.accountId });
+  if (!latestTaxonomy.ok || !isCurrentGenerationNiche(taxonomy.taxon, latestTaxonomy.taxon)) {
+    return { ok: false, message: "O nicho mudou durante a geração. Confira o nicho atual antes de gerar sugestões novamente." };
+  }
   if (!latest.ok || !latest.value || !isCurrentGenerationVersion(input.version, latest.value.version)) {
     return { ok: false, message: "A Base mudou. Atualize a página antes de gerar sugestões." };
   }
