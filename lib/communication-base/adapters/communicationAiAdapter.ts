@@ -13,61 +13,30 @@ import {
 import {
   COMMUNICATION_AI_CONTRACT_VERSION,
   COMMUNICATION_AI_PROMPT_VERSION,
-  parseStageOneResponse,
   parseStageTwoResponse,
-  stageOnePrompt,
   stageTwoPrompt,
   type StageTwoDraft,
   type StageTwoTarget,
+  type OfficialNicheContext,
 } from "../ai-core";
 import type { CommunicationBase } from "../contracts";
 
 type AiFailure = Readonly<{ ok: false; reason: "invalid_input" | "unavailable" | "configuration_incompatible" }>;
 
-export async function assistCommunicationSection(input: Readonly<{
-  accountId: string;
-  key: string;
-  userText: string;
-  environment?: OpenAiWorkloadEnvironment;
-  apiKey?: string;
-  configurationOverride?: ResolvedOpenAiProductWorkload;
-  financialContext?: OpenAiCostEconomicContext;
-  executionOrigin?: "runtime" | "administrative_proof";
-}>) {
-  const prompt = stageOnePrompt(input.key, input.userText);
-  if (!prompt) return { ok: false, reason: "invalid_input" } as AiFailure;
-  const configuration = input.configurationOverride ?? await resolveConfiguration("communication_base_stage1_assistance");
-  if (!configuration) return { ok: false, reason: "unavailable" } as AiFailure;
-  const result = await requestOpenAiResponses<Readonly<{ suggestion: string; missingQuestion: string }>>({
-    apiKey: input.apiKey ?? process.env.OPENAI_API_KEY,
-    configuration,
-    environment: input.environment,
-    expectedWorkload: "communication_base_stage1_assistance",
-    requestId: randomUUID(),
-    promptVersion: COMMUNICATION_AI_PROMPT_VERSION,
-    contractVersion: COMMUNICATION_AI_CONTRACT_VERSION,
-    financialContext: input.financialContext ?? clientOpenAiCostContext(input.accountId),
-    executionOrigin: input.executionOrigin ?? "runtime",
-    baselineReference: `e25_1_stage1_${input.key}`,
-    request: responseRequest(prompt, 2_500, input.accountId),
-    parseResponse: (payload) => parseStageOneResponse(payload, input.key),
-  });
-  return result.ok ? { ok: true as const, value: result.value, responseId: result.responseId, latencyMs: result.latencyMs }
-    : { ok: false as const, reason: result.reason === "openai_configuration_incompatible" ? "configuration_incompatible" as const : "unavailable" as const };
-}
 
 export async function generateCommunicationIntelligence(input: Readonly<{
   accountId: string;
   base: CommunicationBase;
   target: StageTwoTarget;
   requiresCurrentResearch: boolean;
+  niche: OfficialNicheContext;
   environment?: OpenAiWorkloadEnvironment;
   apiKey?: string;
   configurationOverride?: ResolvedOpenAiProductWorkload;
   financialContext?: OpenAiCostEconomicContext;
   executionOrigin?: "runtime" | "administrative_proof";
 }>) {
-  const prompt = stageTwoPrompt(input.base, input.target, input.requiresCurrentResearch);
+  const prompt = stageTwoPrompt(input.base, input.target, input.requiresCurrentResearch, input.niche);
   if (!prompt) return { ok: false, reason: "invalid_input" } as AiFailure;
   const configuration = input.configurationOverride ?? await resolveConfiguration("communication_base_stage2_intelligence");
   if (!configuration) return { ok: false, reason: "unavailable" } as AiFailure;

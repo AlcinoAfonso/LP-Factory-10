@@ -259,7 +259,7 @@
 - public e anon: sem grants.
 
 1.9.8 Observações de escopo
-- Infraestrutura inerte do produto retirado, sem autorização para nova escrita ou leitura de produto; eventual escrita exige fluxo server-side autorizado.
+- Infraestrutura inerte do produto retirado; somente a consulta de existência por conta para impedir redefinição de nicho com produto é autorizada neste recorte. Não reativa leitura de conteúdo nem escrita do produto.
 - Não materializa publicação pública, domínio customizado, analytics, A/B ou IA runtime.
 
 1.10 ai_readonly (role)
@@ -369,6 +369,12 @@
 - account_taxonomy_insert_admin_only (INSERT to public): is_super_admin() OU is_platform_admin()
 - account_taxonomy_update_admin_only (UPDATE to public): is_super_admin() OU is_platform_admin() (USING + WITH CHECK)
 - account_taxonomy_delete_admin_only (DELETE to public): is_super_admin() OU is_platform_admin()
+
+1.13.5 Confirmação e redefinição de nicho — migration preparada
+- `20261106145723_d14d_account_niche_confirmation.sql` ainda não aplicada: acrescenta `user_confirmed_at timestamptz NULL`, sem backfill e sem reescrever `source_type` existente. Vínculos `manual` e `user_confirmed_ai` já comprovam confirmação; `taxonomy_match` exige aceite persistido.
+- `confirm_account_niche_v1(uuid,uuid,uuid,uuid,boolean) → uuid`: SECURITY INVOKER, search_path vazio, EXECUTE somente `service_role`/`postgres`. Server Action deriva ator do Access Context; RPC revalida conta ativa e membership owner/admin/editor, confirmação, primário esperado e hierarquia ativa nos três níveis E10.5.
+- Lock da conta serializa a troca com a FK de produtos; qualquer `account_landing_pages`, inclusive draft/archived, impede substituir primário existente. Definição inicial e confirmação do mesmo vínculo continuam possíveis. Despromove anterior/promove escolhido atomicamente, conserva vínculos e proveniência e não escreve na Base ou nas resoluções históricas.
+- Consumo da coluna/RPC condicionado ao gate de ativação descrito em Platform Config 3.5, fechado até apply validado. RLS e grants das tabelas permanecem iguais.
 
 1.14 content_templates
 

@@ -6,7 +6,7 @@ import { resolveCommunicationBaseAccess, type CommunicationBaseAccessDependencie
 import { accessUserIdFromAuthLookup } from "../access/auth-user-result";
 import { parseSectionValue, projectCommunicationBase, withSection } from "./policy";
 import { selectPendingSetupBusinessContext, selectPendingSetupInitialContext } from "./pending-setup-import";
-import { hasConfirmedStageOneInput, hasStageTwoContent, parseStageOneResponse, parseStageTwoResponse, stageOnePrompt, stageTwoPrompt } from "./ai-core";
+import { hasConfirmedStageOneInput, hasStageTwoContent, parseStageTwoResponse, stageTwoPrompt as buildStageTwoPrompt } from "./ai-core";
 import { selectStageTwoSectionPresentation, stageTwoBasisLabel } from "./stage-two-presentation";
 import { sectionStateKey, stageOneStateKey } from "./ui-state-keys";
 import { formatEditorValue, parseEditorValue } from "./editor-value";
@@ -15,6 +15,9 @@ import { canInstallGeneralSuggestion, canStartGeneralGeneration, createStageTwoG
 import { requestOpenAiResponses } from "../openai-responses/openAiResponsesAdapter";
 import { calculateOpenAiOperationCost, type OpenAiCostOperationTerminal, type OpenAiCostRecorder } from "../openai-costs";
 import { resolveOpenAiProductWorkload } from "../openai-workloads";
+
+const officialNiche = { taxonId: "10000000-0000-4000-8000-000000000002", name: "Jardinagem", confirmed: true, revision: "1" };
+const stageTwoPrompt = (...args: Parameters<typeof buildStageTwoPrompt>) => buildStageTwoPrompt(args[0], args[1], args[2], args[3] ?? officialNiche);
 
 const keys = communicationSections.map((section) => section.key);
 assert.equal(new Set(keys).size, keys.length, "section keys must be unique");
@@ -175,65 +178,6 @@ assert.equal(stageOneStateKey({ ...projected, sections: { ...projected.sections,
 } }), stageOneKey, "unrelated stage 1 material must not discard paid stage 2 suggestions");
 assert.notEqual(stageOneStateKey({ ...projected, accountId: "another-account" }), stageOneKey,
   "suggestions must not survive switching accounts");
-const stageOne = stageOnePrompt("business_context", "Consultoria para pequenas empresas em Recife.");
-assert.ok(stageOne);
-assert.match(stageOne.instructions, /Nunca crie preço/);
-assert.deepEqual(JSON.parse(stageOne.input), {
-  section: { key: "business_context", label: "Atuação" },
-  user_text: "Consultoria para pequenas empresas em Recife.",
-});
-assert.equal(stageOnePrompt("audience", "texto"), null);
-assert.equal(stageOnePrompt("business_context", "OPENAI_API_KEY=placeholder-credential"), null,
-  "credential-like text must fail before stage 1 egress");
-for (const name of ["SUPABASE_SECRET_KEY", "SUPABASE_DB_PASSWORD", "STRIPE_WEBHOOK_SECRET", "GH_TOKEN"]) {
-  assert.equal(stageOnePrompt("business_context", `${name}=placeholder-value`), null,
-    `${name} must fail before stage 1 egress`);
-}
-assert.equal(stageOnePrompt("business_context", "SUPABASE_DB_URL_READONLY=postgresql://example.invalid/db"), null,
-  "the authenticated read-only database URL must fail before stage 1 egress");
-assert.ok(stageOnePrompt("business_context", "Produzimos molho secreto artesanal e atendimento humano."),
-  "ordinary business language must remain eligible");
-assert.equal(parseStageOneResponse({ output_text: JSON.stringify({
-  suggestion: "Consultoria para pequenas empresas em Recife.", missing_question: "",
-}) }, "business_context").ok, true);
-for (const [suggestion, missingQuestion] of [["", ""], [" \n ", " \t "]]) {
-  assert.equal(parseStageOneResponse({ output_text: JSON.stringify({
-    suggestion, missing_question: missingQuestion,
-  }) }, "business_context").ok, false, "stage 1 must reject an empty suggestion and question");
-}
-for (const [suggestion, missingQuestion] of [
-  ["  Sugestão útil  ", ""], ["", "  Qual informação falta?  "],
-  ["  Sugestão útil  ", "  Qual informação falta?  "],
-]) {
-  const parsed = parseStageOneResponse({ output_text: JSON.stringify({
-    suggestion, missing_question: missingQuestion,
-  }) }, "business_context");
-  assert.equal(parsed.ok, true, "stage 1 must retain useful suggestions or localized questions");
-  if (parsed.ok) assert.deepEqual(parsed.value, {
-    suggestion: suggestion.trim(), missingQuestion: missingQuestion.trim(),
-  });
-}
-assert.equal(parseStageOneResponse({ output_text: JSON.stringify({
-  suggestion: "Sugestão", missing_question: "",
-}), output: [{ type: "web_search_call", status: "completed" }] }, "business_context").ok, false,
-"stage 1 must reject any web search call");
-for (const key of ["offers", "proof", "materials"]) {
-  const response = (suggestion: string) => parseStageOneResponse({ output_text: JSON.stringify({
-    suggestion, missing_question: "",
-  }) }, key);
-  assert.equal(response(Array.from({ length: 20 }, () => "a".repeat(400)).join("\n")).ok, true,
-    `${key} must accept manual lists as free text`);
-  assert.equal(response(Array.from({ length: 21 }, () => "item").join("\n")).ok, true,
-    `${key} no longer has an item count limit`);
-  assert.equal(response("a".repeat(401)).ok, true,
-    `${key} no longer has a per-item limit`);
-}
-assert.equal(parseStageOneResponse({ output_text: JSON.stringify({
-  suggestion: "a".repeat(30001), missing_question: "",
-}) }, "business_context").ok, false, "text suggestions must follow the save limit");
-assert.equal(parseStageOneResponse({ output_text: JSON.stringify({
-  suggestion: "item", missing_question: "",
-}) }, "audience").ok, false, "stage 2 keys must not be accepted for stage 1");
 
 const generalTarget = { kind: "general" } as const;
 const emptySections = withSection(withSection({}, "business_name", "   ", "user_confirmed")!,

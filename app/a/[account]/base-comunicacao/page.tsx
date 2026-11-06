@@ -7,7 +7,10 @@ import { notFound } from "next/navigation";
 import { requireCommunicationBaseAccess } from "../../../../lib/communication-base/access";
 import { readCommunicationBase, readPendingSetupInitialContext } from "../../../../lib/communication-base/adapters/communicationBaseAdapter";
 import { stageOneStateKey } from "../../../../lib/communication-base/ui-state-keys";
-import { readActivePrimaryAccountTaxon } from "../../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
+import { isAccountNicheEditingEnabled, readActivePrimaryAccountTaxon } from "../../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
+import { loadAccountNicheEditorAction } from "../niche-resolution-actions";
+import { AccountNicheEditor } from "../_components/NicheResolutionCard";
+import { hasStageTwoContent } from "../../../../lib/communication-base/ai-core";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CommunicationBaseTabs, CommunicationBaseIntroduction } from "./CommunicationBaseTabs";
@@ -51,6 +54,8 @@ export default async function CommunicationBasePage({ params }: PageProps) {
     : null;
 
   const showIntroduction = result.ok && (Boolean(base) || (access.value.canEdit && (!structured || taxonomy.ok)));
+  const nicheEditor = isAccountNicheEditingEnabled() ? await loadAccountNicheEditorAction(access.value.accountSubdomain) : null;
+  const canGenerate = Boolean(taxonomy.ok && taxonomy.taxon?.confirmed);
 
   return (
     <main className={`${styles.surface} mx-auto max-w-5xl px-4 py-4 sm:px-6 sm:py-6`}>
@@ -72,6 +77,7 @@ export default async function CommunicationBasePage({ params }: PageProps) {
           <p className="text-sm text-muted-foreground [overflow-wrap:anywhere]">
             {taxonomy.ok && taxonomy.taxon ? `Nicho: ${nicheLabel}` : nicheLabel}
           </p>
+          {nicheEditor ? <AccountNicheEditor account={access.value.accountSubdomain} state={nicheEditor} hasIntelligence={base ? hasStageTwoContent(base) : false} /> : null}
         </header>
         {!result.ok ? (
           <FeedbackMessage tone="error">
@@ -104,8 +110,9 @@ export default async function CommunicationBasePage({ params }: PageProps) {
             ) : null}
             <CommunicationBaseTabs stageOne={<CommunicationStageOne account={access.value.accountSubdomain}
               base={base} canEdit={access.value.canEdit} structured={structured} nicheLabel={nicheLabel} definitions={definitions.ok ? definitions.value : []} />}
-              stageTwo={<CommunicationStageTwo key={stageOneStateKey(base)} account={access.value.accountSubdomain}
-                base={base} canEdit={access.value.canEdit} structured={structured} definitions={definitions.ok ? definitions.value : []} />}
+              stageTwo={<CommunicationStageTwo key={`${stageOneStateKey(base)}:${taxonomy.ok ? taxonomy.taxon?.taxonId ?? "" : "error"}:${taxonomy.ok ? taxonomy.taxon?.revision ?? "" : ""}`} account={access.value.accountSubdomain}
+                base={base} canEdit={access.value.canEdit} canGenerate={canGenerate} nicheControl={nicheEditor ? <AccountNicheEditor account={access.value.accountSubdomain} state={nicheEditor} hasIntelligence={hasStageTwoContent(base)} /> : undefined}
+                structured={structured} definitions={definitions.ok ? definitions.value : []} />}
               materials={structured ? <CommunicationMaterials account={access.value.accountSubdomain} base={base} canEdit={access.value.canEdit} definitions={definitions.ok ? definitions.value : []} /> : undefined} />
           </div>
         )}

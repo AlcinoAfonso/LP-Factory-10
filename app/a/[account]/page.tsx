@@ -1,5 +1,7 @@
 import { PendingSetupConversation } from "./_components/PendingSetupConversation";
-import { NicheResolutionCard } from "./_components/NicheResolutionCard";
+import { AccountNicheEditor, NicheResolutionCard } from "./_components/NicheResolutionCard";
+import { loadAccountNicheEditorAction } from "./niche-resolution-actions";
+import { isAccountNicheEditingEnabled } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import { GenericCommercialPage } from "./_components/commercial-page/GenericCommercialPage";
 import { PublishedCommercialActivationPage } from "./_components/commercial-page/PublishedCommercialActivationPage";
 import { loadAccountJourney } from "./account-journey-loader";
@@ -39,7 +41,10 @@ export default async function Page({ params }: PageProps) {
       </main>
     );
   }
-  if (journey.view === "waiting") return <CommercialWaitingState />;
+  if (journey.view === "waiting") {
+    const nicheEditor = isAccountNicheEditingEnabled() ? await loadAccountNicheEditorAction(accountSubdomain) : null;
+    return <>{nicheEditor ? <div className="mx-auto max-w-5xl px-4 pt-4"><AccountNicheEditor account={accountSubdomain} state={nicheEditor} /></div> : null}<CommercialWaitingState /></>;
+  }
   if (journey.view === "journey_unavailable") {
     return (
       <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
@@ -56,6 +61,7 @@ export default async function Page({ params }: PageProps) {
     );
   }
   if (journey.view === "commercial") {
+    const nicheEditor = isAccountNicheEditingEnabled() ? await loadAccountNicheEditorAction(accountSubdomain) : null;
     const commercialPage =
       journey.bundle ? (
         <PublishedCommercialActivationPage
@@ -73,7 +79,7 @@ export default async function Page({ params }: PageProps) {
     return (
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10">
         <div className="space-y-6">
-          {journey.nicheResolution ? (
+          {nicheEditor ? <AccountNicheEditor account={accountSubdomain} state={nicheEditor} /> : journey.nicheResolution ? (
             <NicheResolutionCard
               accountSubdomain={accountSubdomain}
               resolution={journey.nicheResolution}

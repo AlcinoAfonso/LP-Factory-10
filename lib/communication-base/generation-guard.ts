@@ -2,6 +2,13 @@ export function isCurrentGenerationVersion(requestedVersion: number, currentVers
   return requestedVersion === currentVersion;
 }
 
+export function isCurrentGenerationNiche(
+  requested: Readonly<{ taxonId: string; revision: string }>,
+  current: Readonly<{ taxonId: string; revision: string; confirmed: boolean }> | null,
+): boolean {
+  return Boolean(current?.confirmed && requested.taxonId === current.taxonId && requested.revision === current.revision);
+}
+
 export function canStartGeneralGeneration(pendingSaves: number): boolean {
   return pendingSaves === 0;
 }

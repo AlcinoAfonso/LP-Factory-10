@@ -1,13 +1,17 @@
 import assert from "node:assert/strict";
 import type { CommunicationBase } from "./contracts";
-import { confirmedStageOneData, hasConfirmedStageOneInput, selectStageTwoInput, stageOnePrompt, stageTwoPrompt } from "./ai-core";
+import { confirmedStageOneData, hasConfirmedStageOneInput, selectStageTwoInput, stageTwoPrompt as buildStageTwoPrompt } from "./ai-core";
 import { stageOneStateKey } from "./ui-state-keys";
 import { communicationSections, type CommunicationSectionDefinition } from "./registry";
 import { parseCommunicationFacts, parseSectionValue, parseStoredSections, projectCommunicationBase, withSection } from "./policy";
 import { formatManualEditorValue, parseManualEditorValue } from "./manual-editor-value";
 import { COMMUNICATION_MATERIAL_BUCKET, imageExtension, ownsMaterialPath, parseCommunicationMaterials, safeMaterialLink } from "./materials";
+import { isCurrentGenerationNiche } from "./generation-guard";
+import { hasHumanNicheConfirmation } from "../onboarding/niche-resolution/contracts";
 import { parseCommunicationCatalog } from "./catalog";
 import { sectionEditState } from "../../app/a/[account]/base-comunicacao/_components/section-edit-state";
+const officialNiche = { taxonId: "10000000-0000-4000-8000-000000000002", name: "Jardinagem", confirmed: true, revision: "1" };
+const stageTwoPrompt = (...args: Parameters<typeof buildStageTwoPrompt>) => buildStageTwoPrompt(args[0], args[1], args[2], args[3] ?? officialNiche);
 const faq=communicationSections.find(s=>s.key==="faq")!;
 const items=communicationSections.find(s=>s.key==="market_insights")!;
 for(const [definition,value] of [[faq,[{question:"Qual | opção?\nCom detalhes",answer:"Primeiro parágrafo.\n\nSegundo | parágrafo."}]],[items,["Dores\n\nUm parágrafo.","Desejos\nOutro texto."]]] as const) {
@@ -179,8 +183,6 @@ for (const key of ["business_context", "offers", "service", "proof", "materials"
   assert.equal(sectionEditState(definition,reopened.sections[key],draft,true).dirty,false);
   assert.equal(sectionEditState(definition,reopened.sections[key],draft,true).valid,true);
   assert.equal(parseSectionValue(definition, content + "x"), null);
-  assert.ok(stageOnePrompt(key, "x".repeat(10_000)));
-  assert.equal(stageOnePrompt(key, content), null, "oversized AI input must fail before constructing a provider payload");
   assert.equal(parseSectionValue(definition, []), null, "no implicit legacy conversion");
 }
 for (const definition of [communicationSections[0], extra, ...communicationSections.filter(section => section.stage === 2 && section.format === "text")]) {
@@ -214,3 +216,36 @@ assert.equal(selectStageTwoInput({...offersLong,sections:{...offersLong.sections
 assert.equal(selectStageTwoInput({...aiBase,sections:{service:{format:"text",value:"s".repeat(15_000),origin:"user_confirmed"},business_context:{format:"text",value:"Consultoria",origin:"user_confirmed"}}},{kind:"section",key:"about"})!.notice,"","irrelevant sections are neither sent nor reported as exclusions");
 assert.ok(stageTwoPrompt({...aiBase,sections:{...aiBase.sections,materials:{format:"text",value:"x".repeat(30_000),origin:"user_confirmed"}}},general,false),"unrelated references must stay out of the AI payload");
 console.log("D14D: six 30,000-character save/reopen round trips, scoped limits, catalog and AI capacity passed.");
+
+assert.equal(buildStageTwoPrompt(aiBase, general, false), null, "missing official niche must fail before egress");
+for (const sourceType of ["manual", "user_confirmed_ai"]) assert.equal(hasHumanNicheConfirmation({ taxonId: id, sourceType }), true);
+assert.equal(hasHumanNicheConfirmation({ taxonId: id, sourceType: "taxonomy_match" }), false);
+assert.equal(hasHumanNicheConfirmation({ taxonId: id, sourceType: "taxonomy_match", confirmedAt: "2026-11-06T00:00:00Z" }), true);
+const resolution = { status: "confirmed", taxonId: id, confirmedAt: "2026-11-06T00:00:00Z" };
+assert.equal(hasHumanNicheConfirmation({ taxonId: id, sourceType: "taxonomy_match", resolution }), true, "reuse existing E10.5 human confirmation of this exact taxon");
+assert.equal(hasHumanNicheConfirmation({ taxonId: account, sourceType: "taxonomy_match", resolution }), false);
+assert.equal(hasHumanNicheConfirmation({ taxonId: id, sourceType: "taxonomy_match", resolution: { ...resolution, status: "dismissed" } }), false);
+assert.equal(buildStageTwoPrompt(aiBase, general, false, { ...officialNiche, confirmed: false }), null);
+assert.equal(isCurrentGenerationNiche(officialNiche, officialNiche), true);
+assert.equal(isCurrentGenerationNiche(officialNiche, null), false);
+assert.equal(isCurrentGenerationNiche(officialNiche, { ...officialNiche, confirmed: false }), false);
+assert.equal(isCurrentGenerationNiche(officialNiche, { ...officialNiche, taxonId: account }), false);
+assert.equal(isCurrentGenerationNiche(officialNiche, { ...officialNiche, revision: "2" }), false, "changing away and back must invalidate an in-flight suggestion");
+const privatePath = account + "/" + id + "/" + asset + ".png";
+const materialBase: CommunicationBase = { ...aiBase, sections: { ...aiBase.sections,
+  visual_identity: { format: "material_items", origin: "user_reviewed", value: [{ ...row, kind: "image", source: { type: "private", bucket: COMMUNICATION_MATERIAL_BUCKET, path: privatePath, mime: "image/png" } }] },
+  testimonials: { format: "material_items", origin: "user_reviewed", value: [{ ...row, kind: "testimonial", source: { type: "text", text: "Atendimento excelente.\n\nRecomendo." } }] },
+} };
+const materialSnapshot = JSON.stringify(materialBase);
+const nichePrompt = buildStageTwoPrompt(materialBase, general, true, officialNiche)!;
+const nichePayload = JSON.parse(nichePrompt.input);
+assert.deepEqual(nichePayload.official_niche, { taxon_id: officialNiche.taxonId, name: officialNiche.name });
+assert.equal(nichePayload.communication_materials.length, 2);
+assert.equal(nichePayload.communication_materials[1].text, "Atendimento excelente.\n\nRecomendo.");
+assert.equal(nichePrompt.input.includes(privatePath), false, "never send private paths or bytes to the text provider");
+assert.equal(nichePrompt.input.includes(COMMUNICATION_MATERIAL_BUCKET), false);
+assert.match(nichePrompt.instructions, /não presuma ter analisado arquivos/);
+assert.match(nichePrompt.instructions, /pesquisa web efetivamente executada/);
+assert.equal(JSON.stringify(materialBase), materialSnapshot, "constructing context must not change any category");
+assert.equal(buildStageTwoPrompt(materialBase, general, false, { ...officialNiche, name: "OPENAI_API_KEY=placeholder-credential" }), null);
+console.log("D14D niche: confirmed official context, changed niche rejection, material text, private asset protection and preservation passed.");

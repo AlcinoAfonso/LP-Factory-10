@@ -226,7 +226,7 @@
 - Deprecada em 01/10/2026: liberação por cobertura factual retirada. Ativação no CRUD independente segue 3.14.5; retirada na E22.7 do roadmap.
 
 3.15.9 Estado residual do antigo produto de `landing_page`
-- Produto LP legado sem consumidor de runtime, inclusive leitura, escrita, revisão, reprodução, entrega de assets ou compatibilidade de catálogo.
+- Produto LP legado sem consumidor de conteúdo, escrita, revisão, reprodução, entrega de assets ou compatibilidade de catálogo. A guarda de redefinição de nicho pode consultar somente a existência de produto da conta, inclusive rascunho, sem reativar o produto.
 - Resíduos físicos inertes no `docs/schema.md`; limpeza destrutiva de banco/dados/Storage exige recorte próprio.
 
 3.16 Configuração e observabilidade de workloads OpenAI

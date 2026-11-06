@@ -2528,11 +2528,11 @@
 25.1.4 Etapa 1 e aproveitamento inicial
 - Status: implementado.
 - Conteúdo: nome público/atuação, Negócio, Ofertas, Atendimento, Provas/credenciais/resultados, Materiais/identidade, Preferências/limites; incompletude sem bloqueio global. Cópia inicial E10.11.
-- Orientação previsível determinística; IA só explícita/com ganho real para explicar/exemplificar/organizar/resumir/reformular fornecido, sem Web, invenção de fatos ou confirmação em nome do cliente. Ausência vira pergunta localizada/pendência; falha IA mantém edição manual. Sugestões/edição seguem 25.1.5.
+- Edição manual progressiva preservada. Assistência da categoria 1 descontinuada pelo D14E §5; action, transporte, prompt e prova exclusivos retirados. Identificadores, configurações e custos históricos preservados; helpers compartilhados continuam atendendo a inteligência.
 
 25.1.5 Etapa 2 e inteligência de comunicação
 - Status: implementado; gpt-6-luna/max (configuração E21), comparação isolada gpt-6-sol/medium.
-- Conteúdo: IA central interpreta mercado/gera comunicação com Etapa 1 confirmada pertinente; Web Search se atualidade/localidade material, sem fallback paramétrico silencioso após falha. Fato particular distinto de hipótese; revisão humana sem aprovação por chamada/vínculo persistente de pesquisa.
+- Conteúdo: IA exige nicho oficial confirmado e usa dados confirmados pertinentes da categoria 1 e textos/metadados de materiais da categoria 2; sem leitura automática de arquivos privados. Web Search se atualidade/localidade material, sem fallback paramétrico silencioso após falha. Fato particular distinto de hipótese; revisão humana sem salvamento automático. Nova metodologia D14F fora do recorte.
 - Quem somos, Público/contexto, Dores/desejos/crenças/objeções, Proposta de valor, Benefícios, Diferenciais, FAQ. Geral gera sete vazias/atualiza conjunto pertinente; revisão por seção. Salvo Etapa 2 só contextualiza alvo, sem autoridade factual; sugestão exige instalação explícita, não salva automaticamente; edição manual não dispara IA.
 - Sem LP/produto/canal, mudança de Pending Setup/comercial/trial ou Agents SDK/multiagente/job/fila/infraestrutura novos. Carteira/saldo/franquia/bloqueio comercial IA fora; créditos no D10B.
 
@@ -2562,7 +2562,8 @@
 
 25.3.1 Objetivo e status
 - Objetivo: recursos manuais nas três categorias, legado/acesso/concorrência/assistências preservados.
-- Status: PB1/D14D operacional Preview/Production; delta R3 implementado, pendente de QA autenticado, apply dos títulos e autorização humana. PB2/PB3 em definição.
+- Status: PB1/D14D e Rodada 3 operacionais em Preview/Production. D14E descontinuado; metodologia D14F em definição.
+- Rodada 4: definição/redefinição de nicho preparada em branch isolada; migration, ativação e QA autenticado da gravação pendentes.
 - Limites: sem novos agentes/IA/pesquisa, processamento/transcrição, publicação automática/canais; sem reabrir E25.1/PB-A/E25.2.
 
 25.3.2 Registros do recorte
@@ -2596,6 +2597,8 @@
     - `lib/communication-base/business-identification.ts`
     - `supabase/migrations/20261101141410_d14d_section_titles.sql`
     - `supabase/tests/d14d_section_titles.proof.mjs`
+    - `supabase/migrations/20261106145723_d14d_account_niche_confirmation.sql`
+    - `supabase/tests/d14d_account_niche.proof.mjs`
   - Ajustados:
     - `.github/workflows/e10-11-sql-proof.yml`
     - `.github/workflows/pipeline-supabase-apply-migrations.yml`
@@ -2615,6 +2618,10 @@
     - `lib/communication-base/ui-state-keys.ts`
     - `lib/communication-base/validation-cases.ts`
     - `next.config.js`
+    - `app/a/[account]/niche-resolution-actions.ts`
+    - `app/a/[account]/_components/NicheResolutionCard.tsx`
+    - `app/a/[account]/page.tsx`
+    - `lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter.ts`
 - Referências:
   - Exceção de sequência, apply seletivo e ativação por ambiente: `docs/platform-config.md` — seções 2.3 e 3.5.
   - Catálogo, segurança, RPC e Storage aplicados: `docs/schema.md` — seção 1.39.
@@ -2634,3 +2641,9 @@
 - Status: operacional Preview/Production.
 - Conteúdo: Admin central adiciona/renomeia/reordena nas três categorias; sem autoridade, recusa. Identidade/categoria/formato/salvos preservados; novas vazias/opcionais em Bases antigas/futuras, sem retroescrita/exclusão.
 - Inclusão global: prova isolada/rollback/projeção antiga/vazia aceita, sem inclusão autenticada persistente; SQL não substitui Auth/Storage/UI. Gate desligado mantém runtime anterior; progressão autorizada, apply integral continua suspenso.
+
+25.3.6 Nicho e continuidade da Base
+- Status: implementação preparada; aplicação seletiva e ativação pendentes, sem merge ou Production autorizados.
+- Conteúdo: conta ativa pode definir nicho antes ou depois de iniciar a Base; redefinição exige confirmação humana e ausência de qualquer produto, inclusive rascunho. Reutiliza taxonomia E10.5, catálogo e confirmação, sem reabrir Pending Setup. Categorias 1/2 e edição manual da categoria 3 disponíveis sem nicho.
+- Troca não altera a Base; havendo inteligência, orienta revisão antes da reutilização. Geração exige nicho oficial confirmado e descarta resposta se o vínculo mudar durante a execução; revisão humana permanece obrigatória.
+- Banco/ativação: `docs/schema.md` — 1.13.5; `docs/platform-config.md` — 3.5. Redefinição com produto e nova metodologia D14F pertencem a outra rodada.
