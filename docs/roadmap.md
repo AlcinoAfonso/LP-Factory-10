@@ -2643,7 +2643,7 @@
 - Inclusão global: prova isolada/rollback/projeção antiga/vazia aceita, sem inclusão autenticada persistente; SQL não substitui Auth/Storage/UI. Gate desligado mantém runtime anterior; progressão autorizada, apply integral continua suspenso.
 
 25.3.6 Nicho e continuidade da Base
-- Status: implementação preparada; aplicação seletiva e ativação pendentes, sem merge ou Production autorizados.
+- Status: merge, aplicação seletiva e Production autorizados em 06/11/2026, condicionados aos gates técnicos; conclusão funcional depende do teste humano.
 - Conteúdo: conta ativa pode definir nicho antes ou depois de iniciar a Base; redefinição exige confirmação humana e ausência de qualquer produto, inclusive rascunho. Reutiliza o agente conversacional do Pending Setup com propósito restrito, taxonomia E10.5, catálogo e confirmação, sem reabrir o fluxo. Antes de responder, consulta Resumo, nicho oficial e dados confirmados pertinentes da Base, sem repetir perguntas respondidas. Conversa transitória não atualiza Diálogo/Resumo/Base; limite de 6.000 e memória de longo prazo fora do recorte. Categorias 1/2 e edição manual da categoria 3 disponíveis sem nicho.
 - Troca não altera a Base; havendo inteligência, orienta revisão antes da reutilização. Geração exige nicho oficial confirmado e descarta resposta se o vínculo mudar durante a execução; mudança nos materiais usados invalida sugestões transitórias, sem afetar conteúdos persistidos. Revisão humana permanece obrigatória.
 - Banco/ativação: `docs/schema.md` — 1.13.5; `docs/platform-config.md` — 3.5. Redefinição com produto e nova metodologia D14F pertencem a outra rodada.

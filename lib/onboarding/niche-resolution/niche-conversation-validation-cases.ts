@@ -32,6 +32,7 @@ export async function validateNicheConversationActions() {
     about: { format: "text", origin: "user_reviewed", value: "Hipótese de copy, sem autoridade factual." },
   } };
   const snapshot = JSON.stringify({ base, summary });
+  await validateNicheProjectionAdapter(base, accountId, currentId);
   const catalog = [
     { id: currentId, name: "Serviços", level: "segment", parentId: null, active: true, aliases: [] },
     { id: proposedId, name: "Jardinagem", level: "niche", parentId: currentId, active: true, aliases: [] },
@@ -54,7 +55,10 @@ export async function validateNicheConversationActions() {
     };
     if (name.includes("pendingSetupAccountContextAdapter")) return { readAccountSummaryForNiche: async () => ({ ok: summaryOk, summary }) };
     if (name.includes("pendingSetupCatalogContextAdapter")) return { readAttendanceCatalog: async () => catalogOk ? catalog : null };
-    if (name.includes("communicationBaseAdapter")) return { readCommunicationBase: async () => ({ ok: baseOk, value: base }) };
+    if (name.includes("communicationBaseAdapter")) return { readBusinessContextForNiche: async (input: { accountId: string; actorUserId: string }) => {
+      assert.deepEqual(input, { accountId, actorUserId: accountId });
+      return { ok: baseOk, value: Object.fromEntries(["business_name", "business_context", "offers", "preferences"].map(key => [key, base.sections[key]!.value])) };
+    } };
     if (name.includes("communicationCatalogAdapter")) return { readCommunicationDefinitions: async () => ({ ok: true, value: communicationSections }) };
     if (name.includes("accountNicheResolutionUserAdapter")) return {};
     if (name.includes("attendance-provider")) return { requestAttendance: async (input: { context: AttendanceContext }) => {
@@ -104,4 +108,78 @@ export async function validateNicheConversationActions() {
   assert.deepEqual(writes[0], { accountId, actorUserId: accountId, taxonId: proposedId, expectedTaxonId: currentId });
   assert.equal(JSON.stringify({ base, summary }), snapshot, "conversation and confirmation never update Base or Summary");
   console.log("D14D niche conversation: existing agent/context, long text, roles, no products, read failures, concurrency and explicit confirmation passed.");
+}
+
+async function validateNicheProjectionAdapter(base: CommunicationBase, accountId: string, anotherUser: string) {
+  let entitlement = "expired";
+  let memberRole = "owner";
+  let memberActive = true;
+  let accountActive = true;
+  let failedRead = false;
+  let baseReads = 0;
+  const selections: string[] = [];
+  const projected: Record<string, unknown> = Object.fromEntries(["business_name", "business_context", "offers", "preferences"].map(key => [key, base.sections[key]]));
+  function client(service: boolean) {
+    return { from(table: string) {
+      const filters: Record<string, unknown> = {};
+      return {
+        select(columns: string) { selections.push(columns); return this; },
+        eq(key: string, value: unknown) { filters[key] = value; return this; },
+        in(key: string, value: unknown) { filters[key] = value; return this; },
+        limit() { return this; },
+        async maybeSingle() {
+          if (failedRead) return { data: null, error: { code: "read_failed" } };
+          if (table === "account_users") {
+            assert.equal(service, true); assert.equal(filters["accounts.status"], "active"); assert.equal(filters.status, "active");
+            assert.deepEqual(filters.role, ["owner", "admin", "editor"]);
+            const allowed = filters.account_id === accountId && filters.user_id === accountId &&
+              memberActive && accountActive && ["owner", "admin", "editor"].includes(memberRole);
+            return { data: allowed ? { account_id: accountId } : null, error: null };
+          }
+          assert.equal(table, "account_communication_bases"); assert.equal(filters.account_id, accountId); baseReads++;
+          return { data: service ? projected : entitlement !== "active" ? null : {
+            account_id: accountId, version: base.version, sections_json: base.sections, created_at: base.createdAt, updated_at: base.updatedAt,
+          }, error: null };
+        },
+      };
+    } };
+  }
+  const loader = nodeModule as unknown as { _load: (name: string, parent: unknown, isMain: boolean) => unknown };
+  const original = loader._load;
+  loader._load = function(name, parent, isMain) {
+    if (name === "server-only") return {};
+    if (name === "@/lib/supabase/service") return { createServiceClient: () => client(true) };
+    if (name === "@/lib/supabase/server") return { createClient: async () => client(false) };
+    return original.call(this, name, parent, isMain);
+  };
+  const adapter = await import("../../communication-base/adapters/communicationBaseAdapter").finally(() => { loader._load = original; });
+  for (const state of ["expired", "canceled"]) {
+    entitlement = state;
+    assert.deepEqual(await adapter.readCommunicationBase(accountId), { ok: true, value: null }, "direct Base access still follows commercial RLS");
+    const read = await adapter.readBusinessContextForNiche({ accountId, actorUserId: accountId });
+    assert.equal(read.ok, true); if (!read.ok) throw Error("projection unavailable");
+    assert.equal(read.value.business_context.length, 30000); assert.equal(read.value.offers, base.sections.offers!.value);
+    assert.equal("about" in read.value, false); assert.equal("facts" in read.value, false);
+    assert.equal(selections.at(-1), "business_name:sections_json->business_name,business_context:sections_json->business_context,offers:sections_json->offers,preferences:sections_json->preferences");
+  }
+  entitlement = "active";
+  assert.equal((await adapter.readCommunicationBase(accountId)).ok, true);
+  for (const role of ["owner", "admin", "editor"]) { memberRole = role;
+    assert.equal((await adapter.readBusinessContextForNiche({ accountId, actorUserId: accountId })).ok, true); }
+  memberRole = "viewer"; const count = baseReads;
+  assert.equal((await adapter.readBusinessContextForNiche({ accountId, actorUserId: accountId })).ok, false); assert.equal(baseReads, count);
+  memberRole = "owner"; memberActive = false;
+  assert.equal((await adapter.readBusinessContextForNiche({ accountId, actorUserId: accountId })).ok, false);
+  memberActive = true; accountActive = false;
+  assert.equal((await adapter.readBusinessContextForNiche({ accountId, actorUserId: accountId })).ok, false);
+  accountActive = true;
+  assert.equal((await adapter.readBusinessContextForNiche({ accountId, actorUserId: anotherUser })).ok, false);
+  failedRead = true;
+  assert.equal((await adapter.readBusinessContextForNiche({ accountId, actorUserId: accountId })).ok, false);
+  failedRead = false; projected.offers = { format: "text", origin: "ai_generated", value: "Unconfirmed" };
+  const unconfirmed = await adapter.readBusinessContextForNiche({ accountId, actorUserId: accountId });
+  assert.equal(unconfirmed.ok && "offers" in unconfirmed.value, false);
+  projected.offers = { format: "text", origin: "user_confirmed", value: [] };
+  assert.equal((await adapter.readBusinessContextForNiche({ accountId, actorUserId: accountId })).ok, false);
+  console.log("D14D niche projection: expired/canceled entitlement preserves context; direct Base RLS, narrow fields and active membership/roles preserved.");
 }

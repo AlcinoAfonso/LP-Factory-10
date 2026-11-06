@@ -6,8 +6,7 @@ import { readAttendanceCatalog } from "../../../lib/onboarding/pending-setup/ada
 import { readAccountSummaryForNiche } from "../../../lib/onboarding/pending-setup/adapters/pendingSetupAccountContextAdapter";
 import { activeAncestors, projectAttendanceSummary, projectAttendanceText, type AttendanceContext } from "../../../lib/onboarding/pending-setup/attendance-core";
 import { requestAttendance } from "../../../lib/onboarding/pending-setup/attendance-provider";
-import { readCommunicationBase } from "../../../lib/communication-base/adapters/communicationBaseAdapter";
-import { readCommunicationDefinitions } from "../../../lib/communication-base/adapters/communicationCatalogAdapter";
+import { readBusinessContextForNiche } from "../../../lib/communication-base/adapters/communicationBaseAdapter";
 import { getAccessContext } from "@/lib/access/getAccessContext";
 import type { MemberInfo } from "@/lib/access/adapters/accountAdapter";
 import { confirmAccountNiche, isAccountNicheEditingEnabled, readAccountNicheProductGuard, readActivePrimaryAccountTaxon, type ActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
@@ -61,21 +60,16 @@ export async function converseAccountNicheAction(raw: z.input<typeof nicheTurnIn
     const input = parsed.data;
     const ctx = await nicheEditorContext(input.account);
     if (!ctx?.account || !ctx.member || !["owner", "admin", "editor"].includes(ctx.member.role)) return { ok: false as const, message: GENERIC_ERROR };
-    const [current, products, summary, catalog, definitions] = await Promise.all([
+    const [current, products, summary, catalog] = await Promise.all([
       readActivePrimaryAccountTaxon({ accountId: ctx.account.id }), readAccountNicheProductGuard(ctx.account.id),
-      readAccountSummaryForNiche(ctx.account.id), readAttendanceCatalog(), readCommunicationDefinitions(),
+      readAccountSummaryForNiche(ctx.account.id), readAttendanceCatalog(),
     ]);
-    if (!current.ok || products === null || !summary.ok || !catalog || !definitions.ok) return { ok: false as const, message: "Não foi possível consultar o contexto do negócio agora. Tente novamente." };
+    if (!current.ok || products === null || !summary.ok || !catalog) return { ok: false as const, message: "Não foi possível consultar o contexto do negócio agora. Tente novamente." };
     if ((current.taxon?.taxonId ?? null) !== input.expectedTaxonId) return { ok: false as const, message: "O nicho mudou. Reabra a conversa para conferir o vínculo atual." };
     if (current.taxon && products) return { ok: false as const, message: "A redefinição não está disponível porque esta conta já possui produto desenvolvido." };
-    const base = await readCommunicationBase(ctx.account.id, definitions.value);
-    if (!base.ok) return { ok: false as const, message: "Não foi possível consultar a Base agora. Tente novamente." };
-    const businessData: Record<string, string> = {};
-    for (const key of ["business_name", "business_context", "offers", "preferences"]) {
-      const section = base.value?.sections[key];
-      if (section && ["user_confirmed", "pending_setup_confirmed"].includes(section.origin) && typeof section.value === "string")
-        businessData[key] = projectAttendanceText(section.value);
-    }
+    const savedContext = await readBusinessContextForNiche({ accountId: ctx.account.id, actorUserId: ctx.member.userId });
+    if (!savedContext.ok) return { ok: false as const, message: "Não foi possível consultar a Base agora. Tente novamente." };
+    const businessData = Object.fromEntries(Object.entries(savedContext.value).map(([key, value]) => [key, projectAttendanceText(value)]));
     const context: AttendanceContext = { purpose: "account_niche", preferredName: null,
       summary: projectAttendanceSummary(summary.summary), currentPrimaryTaxonId: current.taxon?.taxonId ?? null,
       publicName: businessData.business_name ?? null, businessData, catalog,
