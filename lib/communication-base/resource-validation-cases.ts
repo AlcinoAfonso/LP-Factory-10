@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import type { CommunicationBase } from "./contracts";
 import { confirmedStageOneData, hasConfirmedStageOneInput, selectStageTwoInput, stageTwoPrompt as buildStageTwoPrompt } from "./ai-core";
-import { stageOneStateKey } from "./ui-state-keys";
+import { stageOneStateKey, stageTwoInputStateKey } from "./ui-state-keys";
 import { communicationSections, type CommunicationSectionDefinition } from "./registry";
 import { parseCommunicationFacts, parseSectionValue, parseStoredSections, projectCommunicationBase, withSection } from "./policy";
 import { formatManualEditorValue, parseManualEditorValue } from "./manual-editor-value";
@@ -249,3 +249,22 @@ assert.match(nichePrompt.instructions, /pesquisa web efetivamente executada/);
 assert.equal(JSON.stringify(materialBase), materialSnapshot, "constructing context must not change any category");
 assert.equal(buildStageTwoPrompt(materialBase, general, false, { ...officialNiche, name: "OPENAI_API_KEY=placeholder-credential" }), null);
 console.log("D14D niche: confirmed official context, changed niche rejection, material text, private asset protection and preservation passed.");
+
+const materialInputKey = stageTwoInputStateKey(materialBase);
+const changedMaterial = (patch: Record<string, unknown>): CommunicationBase => ({ ...materialBase, sections: { ...materialBase.sections,
+  testimonials: { ...materialBase.sections.testimonials!, value: [{ ...row, kind: "testimonial", source: { type: "text", text: "Atendimento excelente.\n\nRecomendo." }, ...patch }] },
+} });
+for (const patch of [{ name: "Outro nome" }, { context: "Outro contexto" }, { author: "Outra pessoa" },
+  { authorization: "Outra autorização" }, { source: { type: "text", text: "Depoimento corrigido." } },
+  { kind: "image", source: { type: "link", url: "https://example.com/referencia" } }]) {
+  assert.equal(parseCommunicationMaterials(changedMaterial(patch).sections.testimonials!.value)?.length, 1);
+  assert.notEqual(stageTwoInputStateKey(changedMaterial(patch)), materialInputKey, "every material input used by the prompt invalidates suggestions");
+}
+assert.notEqual(stageTwoInputStateKey({ ...materialBase, sections: { ...materialBase.sections,
+  testimonials: { ...materialBase.sections.testimonials!, value: [] },
+} }), materialInputKey, "removing a testimonial invalidates suggestions");
+assert.equal(stageTwoInputStateKey({ ...materialBase, version: materialBase.version + 1,
+  sections: { ...materialBase.sections, audience: { format: "text", origin: "user_reviewed", value: "Copy revisada" } },
+}), materialInputKey, "saving category 3 must preserve unapplied suggestions");
+assert.equal(JSON.stringify(materialBase), materialSnapshot, "fingerprinting inputs must not mutate persisted materials");
+console.log("D14D review: material edits/removal invalidate suggestions while category 3 saves preserve them.");

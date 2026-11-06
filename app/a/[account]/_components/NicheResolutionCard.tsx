@@ -1,12 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useId, useRef, useState } from "react";
+import { useActionState, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { FormField, FormFieldLabel } from "@/components/ui/form-field";
 import type { ActionableNicheResolution } from "../../../../lib/onboarding/niche-resolution/contracts";
 import {
@@ -15,9 +15,12 @@ import {
   rewriteNicheResolutionAction,
   type NicheResolutionActionState,
   type AccountNicheEditorState,
-  searchAccountNicheAction,
+  converseAccountNicheAction,
   saveAccountNicheAction,
 } from "../niche-resolution-actions";
+
+type NicheMessage = Readonly<{ role: "user" | "assistant"; content: string }>;
+type NicheChoice = Readonly<{ taxonId: string; name: string }>;
 
 export function AccountNicheEditor({ account, state, hasIntelligence = false }: Readonly<{
   account: string; state: AccountNicheEditorState; hasIntelligence?: boolean;
@@ -28,86 +31,110 @@ export function AccountNicheEditor({ account, state, hasIntelligence = false }: 
   const discard = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const expected = useRef<string | null>(null);
-  const searchRevision = useRef(0);
-  const [query, setQuery] = useState("");
-  const [searchedQuery, setSearchedQuery] = useState("");
-  const [candidates, setCandidates] = useState<readonly { taxonId: string; name: string; parentName: string | null }[]>([]);
-  const [selected, setSelected] = useState("");
+  const turnRevision = useRef(0);
+  const historyEntry = useRef(false);
+  const closeRequest = useRef<() => void>(() => undefined);
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState<readonly NicheMessage[]>([]);
+  const [understanding, setUnderstanding] = useState("");
+  const [chosen, setChosen] = useState<NicheChoice | null>(null);
   const [confirmed, setConfirmed] = useState(false);
-  const [pending, setPending] = useState<"search" | "save" | null>(null);
+  const [pending, setPending] = useState<"conversation" | "save" | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const dirty = Boolean(selected && (selected !== expected.current || confirmed));
+  const dirty = Boolean(message.trim() || messages.some(entry => entry.role === "user") ||
+    (chosen && (chosen.taxonId !== expected.current || confirmed)));
+  useLayoutEffect(() => { closeRequest.current = requestClose; });
   useEffect(() => {
     function beforeUnload(event: BeforeUnloadEvent) {
       if (dialog.current?.open && (dirty || pending === "save")) { event.preventDefault(); event.returnValue = ""; }
     }
+    function onBack() {
+      if (!dialog.current?.open) return;
+      window.history.pushState({ ...window.history.state }, "", window.location.href);
+      historyEntry.current = true;
+      closeRequest.current();
+    }
     window.addEventListener("beforeunload", beforeUnload);
-    return () => window.removeEventListener("beforeunload", beforeUnload);
+    window.addEventListener("popstate", onBack);
+    return () => { window.removeEventListener("beforeunload", beforeUnload); window.removeEventListener("popstate", onBack); };
   }, [dirty, pending]);
   if (!state.ok) return <FeedbackMessage tone="error">{state.message}</FeedbackMessage>;
   if (!state.canEdit) return null;
   const taxon = state.taxon;
   const label = !taxon ? "Definir nicho" : !taxon.confirmed ? "Confirmar nicho" : "Redefinir nicho";
-  const chosen = candidates.find(candidate => candidate.taxonId === selected);
-  const changed = selected !== taxon?.taxonId;
-  function close() { searchRevision.current += 1; setPending(null); discard.current?.close(); dialog.current?.close(); trigger.current?.focus(); }
+  const changed = Boolean(chosen && chosen.taxonId !== taxon?.taxonId);
+  function close() {
+    turnRevision.current += 1; setPending(null); discard.current?.close(); dialog.current?.close();
+    if (historyEntry.current) { historyEntry.current = false; window.history.back(); }
+    trigger.current?.focus();
+  }
   function requestClose() {
     if (pending === "save") return;
     if (dirty) { if (!discard.current?.open) discard.current?.showModal(); } else close();
+  }
+  async function converse(nextMessages: readonly NicheMessage[], currentUnderstanding: string) {
+    const revision = ++turnRevision.current;
+    setPending("conversation"); setError(""); setChosen(null); setConfirmed(false);
+    try {
+      const result = await converseAccountNicheAction({ account, expectedTaxonId: expected.current,
+        messages: nextMessages.slice(-8), understanding: currentUnderstanding });
+      if (revision !== turnRevision.current) return;
+      if (!result.ok) { setError(result.message); return; }
+      setMessages([...nextMessages, { role: "assistant", content: result.reply }]);
+      setUnderstanding(result.understanding); setChosen(result.proposal); setMessage("");
+    } catch { if (revision === turnRevision.current) setError("Não foi possível conversar agora. Sua mensagem foi preservada; tente novamente."); }
+    finally { if (revision === turnRevision.current) setPending(null); }
   }
   return <div className="text-sm">
     {taxon?.confirmed && state.hasProducts ? <p className="text-xs text-muted-foreground">A redefinição não está disponível porque esta conta já possui produto desenvolvido.</p> : <Button
       ref={trigger} variant="secondary" className="min-h-11 px-0 underline underline-offset-4" onClick={() => {
         expected.current = taxon?.taxonId ?? null;
-        setQuery(""); setSearchedQuery(""); setCandidates(taxon ? [{ ...taxon, parentName: null }] : []);
-        setSelected(taxon?.taxonId ?? ""); setConfirmed(false); setError("");
+        setMessage(""); setMessages([]); setUnderstanding(""); setConfirmed(false); setError(""); setChosen(null);
+        window.history.pushState({ ...window.history.state }, "", window.location.href); historyEntry.current = true;
         dialog.current?.showModal();
+        if (taxon && state.hasProducts) setChosen(taxon);
+        else void converse([], "");
       }}>{label}</Button>}
     {notice ? <FeedbackMessage tone="success">{notice}</FeedbackMessage> : null}
-    <dialog ref={dialog} aria-labelledby={`${id}-title`} onCancel={event => { event.preventDefault(); requestClose(); }}
+    <dialog ref={dialog} aria-labelledby={id + "-title"} onCancel={event => { event.preventDefault(); requestClose(); }}
       onClick={event => { if (event.target === event.currentTarget) requestClose(); }}
       className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg overflow-y-auto rounded-xl border border-border bg-background p-4 text-foreground shadow-xl backdrop:bg-black/40">
-      <h2 id={`${id}-title`} className="text-lg font-semibold">{label}</h2>
+      <h2 id={id + "-title"} className="text-lg font-semibold">{label}</h2>
       {taxon ? <p className="mt-2 break-words text-sm">Nicho atual: <strong>{taxon.name}</strong></p> : null}
-      {taxon && state.hasProducts ? <p className="mt-2 text-sm text-muted-foreground">Você pode confirmar o nicho atual. A redefinição não está disponível porque esta conta já possui produto desenvolvido.</p> : null}
-      {!(taxon && state.hasProducts) ? <form className="mt-3 flex items-end gap-2" onSubmit={async event => {
-        event.preventDefault(); if (pending) return;
-        const revision = ++searchRevision.current;
-        setPending("search"); setError("");
-        try {
-          const result = await searchAccountNicheAction(account, query);
-          if (revision !== searchRevision.current) return;
-          if (result.ok) {
-            setCandidates(result.candidates); setSearchedQuery(query); setSelected(""); setConfirmed(false);
-            if (!result.candidates.length) setError("Nenhum nicho oficial encontrado. Tente descrever sua atividade de outra forma.");
-          } else setError(result.message);
-        } catch { if (revision === searchRevision.current) setError("Não foi possível buscar os nichos agora. Tente novamente."); }
-        finally { if (revision === searchRevision.current) setPending(null); }
-      }}>
-        <FormField className="min-w-0 flex-1"><FormFieldLabel htmlFor={`${id}-search`}>Buscar nicho</FormFieldLabel>
-          <Input id={`${id}-search`} autoFocus minLength={2} maxLength={120} value={query} disabled={pending !== null}
-            onChange={event => setQuery(event.target.value)} className="min-h-11" /></FormField>
-        <Button type="submit" className="min-h-11" disabled={pending !== null || query.trim().length < 2}>{pending === "search" ? "Buscando..." : "Buscar"}</Button>
-      </form> : null}
-      {candidates.length ? <FormField className="mt-3"><FormFieldLabel htmlFor={`${id}-choice`}>Nicho oficial</FormFieldLabel>
-        <Select id={`${id}-choice`} value={selected} disabled={pending !== null} className="min-h-11" onChange={event => { setSelected(event.target.value); setConfirmed(false); }}>
-          <option value="">Selecione um nicho</option>
-          {candidates.map(candidate => <option key={candidate.taxonId} value={candidate.taxonId}>{candidate.name}{candidate.parentName ? ` — ${candidate.parentName}` : ""}</option>)}
-        </Select></FormField> : null}
+      {taxon && state.hasProducts ? <p className="mt-2 text-sm text-muted-foreground">Você pode confirmar o nicho atual. A redefinição não está disponível porque esta conta já possui produto desenvolvido.</p> : <>
+        <p className="mt-2 text-xs text-muted-foreground">Vamos conversar sobre seu negócio para identificar o nicho. Só o nicho confirmado será salvo; esta conversa não atualiza automaticamente a Base ou o Resumo da conta.</p>
+        <div role="log" aria-label="Conversa sobre o nicho" aria-live="polite" className="mt-3 space-y-3">
+          {messages.map((entry, index) => <div key={index} className="rounded-lg border border-border bg-muted/30 p-3">
+            <p className="text-xs font-medium text-muted-foreground">{entry.role === "user" ? "Você" : "LP Factory"}</p>
+            <p className="mt-1 whitespace-pre-wrap break-words text-sm">{entry.content}</p>
+          </div>)}
+        </div>
+        {pending === "conversation" ? <p role="status" className="mt-3 text-sm text-muted-foreground">Consultando o contexto e preparando a resposta...</p> : null}
+        <form className="mt-3 space-y-2" onSubmit={event => {
+          event.preventDefault(); if (pending || !message.trim()) return;
+          void converse([...messages, { role: "user", content: message.trim() }], understanding);
+        }}>
+          <FormField><FormFieldLabel htmlFor={id + "-message"}>Conte sobre seu negócio ou o que mudou</FormFieldLabel>
+            <Textarea id={id + "-message"} autoFocus maxLength={4000} rows={3} value={message} disabled={pending !== null}
+              onChange={event => { setMessage(event.target.value); setConfirmed(false); }} /></FormField>
+          <Button type="submit" className="min-h-11" disabled={pending !== null || !message.trim()}>Enviar mensagem</Button>
+          {error && !message.trim() && !messages.length ? <Button variant="secondary" className="min-h-11 ml-2" disabled={pending !== null} onClick={() => void converse([], "")}>Tentar novamente</Button> : null}
+        </form>
+      </>}
       {chosen ? <label className="mt-3 flex min-h-11 items-start gap-2 text-sm">
-        <input type="checkbox" className="mt-1 h-5 w-5 shrink-0" checked={confirmed} disabled={pending !== null} onChange={event => setConfirmed(event.target.checked)} />
+        <input type="checkbox" className="mt-1 h-5 w-5 shrink-0" checked={confirmed} disabled={pending !== null || Boolean(message.trim())} onChange={event => setConfirmed(event.target.checked)} />
         <span className="break-words">Confirmo que <strong>{chosen.name}</strong> representa o nicho do meu negócio.</span>
       </label> : null}
       {hasIntelligence && changed ? <FeedbackMessage tone="warning" className="mt-3">Os conteúdos de Inteligência e copy serão preservados. Revise-os para adequá-los ao novo nicho antes de reutilizá-los.</FeedbackMessage> : null}
       {error ? <FeedbackMessage tone="error" className="mt-3">{error}</FeedbackMessage> : null}
       <div className="mt-4 flex flex-wrap justify-end gap-2">
         <Button variant="secondary" className="min-h-11" disabled={pending === "save"} onClick={requestClose}>Cancelar</Button>
-        <Button className="min-h-11" disabled={pending !== null || !chosen || !confirmed || (!changed && Boolean(taxon?.confirmed))} onClick={async () => {
-          if (!chosen || !confirmed || pending) return;
+        <Button className="min-h-11" disabled={pending !== null || !chosen || !confirmed || Boolean(message.trim()) || (!changed && Boolean(taxon?.confirmed))} onClick={async () => {
+          if (!chosen || !confirmed || pending || message.trim()) return;
           setPending("save"); setError("");
           try {
-            const result = await saveAccountNicheAction({ account, query: searchedQuery, taxonId: chosen.taxonId, expectedTaxonId: expected.current, confirmed });
+            const result = await saveAccountNicheAction({ account, taxonId: chosen.taxonId, expectedTaxonId: expected.current, confirmed });
             if (!result.ok) { setError(result.message); return; }
             setNotice(hasIntelligence && changed ? "Nicho salvo. Revise os conteúdos de Inteligência e copy antes de reutilizá-los. Nenhum conteúdo foi alterado." : "Nicho confirmado e salvo.");
             close(); router.refresh();
@@ -116,10 +143,10 @@ export function AccountNicheEditor({ account, state, hasIntelligence = false }: 
         }}>{pending === "save" ? "Salvando..." : "Salvar"}</Button>
       </div>
     </dialog>
-    <dialog ref={discard} aria-labelledby={`${id}-discard`} onCancel={event => { event.preventDefault(); discard.current?.close(); }}
+    <dialog ref={discard} aria-labelledby={id + "-discard"} onCancel={event => { event.preventDefault(); discard.current?.close(); }}
       className="m-auto w-[calc(100%-2rem)] max-w-md rounded-xl border border-border bg-background p-4 text-foreground shadow-xl backdrop:bg-black/40">
-      <h2 id={`${id}-discard`} className="font-semibold">Descartar a escolha do nicho?</h2>
-      <p className="mt-2 text-sm">A escolha ainda não foi salva.</p>
+      <h2 id={id + "-discard"} className="font-semibold">Descartar a escolha do nicho?</h2>
+      <p className="mt-2 text-sm">A conversa e a escolha ainda não foram salvas.</p>
       <div className="mt-3 flex flex-wrap gap-2"><Button className="min-h-11" onClick={() => discard.current?.close()}>Continuar editando</Button>
         <Button className="min-h-11" variant="secondary" onClick={close}>Descartar alterações</Button></div>
     </dialog>

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import nodeModule from "node:module";
 import { attendanceContactProjection, attendanceProjection, attendancePrompt, attendanceProposal, attendanceSummary, validateAttendanceOutput,
-  validateStoredAttendanceProposal, type AttendanceContext, type AttendanceOutput } from "./attendance-core";
+  projectAttendanceSummary, ATTENDANCE_INSTRUCTIONS, NICHE_ATTENDANCE_PROMPT_VERSION, validateStoredAttendanceProposal, type AttendanceContext, type AttendanceOutput } from "./attendance-core";
 import type { AttendanceDependencies } from "./attendance-coordinator";
 import type { PendingSetupConversation } from "./contracts";
 const accountId = "10000000-0000-4000-8000-000000000001";
@@ -492,6 +492,33 @@ async function main() {
   })).ok, true);
   assert.equal(wires[0].model, "gpt-6-luna");
   assert.equal("tools" in wires[0], false); assert.equal("tool_choice" in wires[0], false); assert.equal(events.length, 1);
+  const nicheContext: AttendanceContext = { ...context, purpose: "account_niche", preferredName: null,
+    currentPrimaryTaxonId: segmentId, businessData: { business_context: "Agora faço jardins para condomínios." } };
+  const nicheOutput = { ...base, preferredName: null, suggestions: [] };
+  assert.equal(attendancePrompt(context).instructions, ATTENDANCE_INSTRUCTIONS, "Pending Setup instructions remain byte-for-byte unchanged");
+  assert.equal(JSON.stringify(attendancePrompt(nicheContext).schema), JSON.stringify(attendancePrompt(context).schema));
+  assert.match(attendancePrompt(nicheContext).instructions, /não repita perguntas já respondidas/);
+  assert.match(attendancePrompt(nicheContext).instructions, /prevalece sobre interpretações antigas/);
+  assert.equal(validateAttendanceOutput(nicheOutput, nicheContext)?.existingTaxonId, nicheId);
+  assert.equal(validateAttendanceOutput({ ...nicheOutput, action: "pending", existingTaxonId: null }, nicheContext)?.action, "pending");
+  for (const patch of [{ preferredName: "Ana" }, { suggestions: ["Vender serviços"] }, { requestWhatsapp: true },
+    { readyToComplete: true }, { action: "confirm", existingTaxonId: null }, { existingTaxonId: accountId }])
+    assert.equal(validateAttendanceOutput({ ...nicheOutput, ...patch }, nicheContext), null);
+  assert.equal(validateAttendanceOutput(nicheOutput, { ...nicheContext,
+    catalog: context.catalog.map(taxon => ({ ...taxon, active: taxon.id !== segmentId })) }), null);
+  const summaryForNiche = attendanceSummary(base, "Serviços", null);
+  assert.deepEqual(projectAttendanceSummary(summaryForNiche), attendanceProjection({ ...conversation,
+    accountContext: { summary: summaryForNiche, updatedAt: conversation.updatedAt } }, context.catalog).summary);
+  const nicheWires: Record<string, unknown>[] = [];
+  const nicheEvents: unknown[] = [];
+  assert.equal((await requestAttendance({ accountId, context: nicheContext, environment: "development", apiKey: "test-key" }, {
+    fetchImpl: async (_url, init) => { nicheWires.push(JSON.parse(String(init?.body))); return new Response(JSON.stringify(response(nicheOutput)), { status: 200 }); },
+    emitEvent: event => nicheEvents.push(event),
+  })).ok, true);
+  assert.equal(nicheWires[0].model, wires[0].model); assert.equal("tools" in nicheWires[0], false);
+  assert.equal(nicheWires[0].store, false); assert.equal(nicheWires[0].background, false);
+  assert.ok(JSON.stringify(nicheEvents).includes(NICHE_ATTENDANCE_PROMPT_VERSION));
+  await (await import("../niche-resolution/niche-conversation-validation-cases")).validateNicheConversationActions();
   const effects: string[] = [];
   let current = { ...conversation };
   const deps: AttendanceDependencies = {

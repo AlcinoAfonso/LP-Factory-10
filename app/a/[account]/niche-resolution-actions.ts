@@ -1,10 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
+import { readAttendanceCatalog } from "../../../lib/onboarding/pending-setup/adapters/pendingSetupCatalogContextAdapter";
+import { readAccountSummaryForNiche } from "../../../lib/onboarding/pending-setup/adapters/pendingSetupAccountContextAdapter";
+import { activeAncestors, projectAttendanceSummary, projectAttendanceText, type AttendanceContext } from "../../../lib/onboarding/pending-setup/attendance-core";
+import { requestAttendance } from "../../../lib/onboarding/pending-setup/attendance-provider";
+import { readCommunicationBase } from "../../../lib/communication-base/adapters/communicationBaseAdapter";
+import { readCommunicationDefinitions } from "../../../lib/communication-base/adapters/communicationCatalogAdapter";
 import { getAccessContext } from "@/lib/access/getAccessContext";
 import type { MemberInfo } from "@/lib/access/adapters/accountAdapter";
 import { confirmAccountNiche, isAccountNicheEditingEnabled, readAccountNicheProductGuard, readActivePrimaryAccountTaxon, type ActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
-import { matchBusinessTaxonsDeterministic } from "../../../lib/onboarding/niche-resolution/adapters/taxonMatchAdapter";
 import {
   confirmAiOptionForAccount,
   confirmAiSuggestedTaxonForAccount,
@@ -43,30 +49,66 @@ export async function loadAccountNicheEditorAction(account: string): Promise<Acc
   } catch { return { ok: false, message: GENERIC_ERROR }; }
 }
 
-export async function searchAccountNicheAction(account: string, query: string) {
+const nicheTurnInput = z.object({
+  account: z.string(), expectedTaxonId: z.uuid().nullable(), understanding: z.string().max(4000),
+  messages: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().min(1).max(4000) }).strict()).max(8),
+}).strict();
+
+export async function converseAccountNicheAction(raw: z.input<typeof nicheTurnInput>) {
   try {
-    const ctx = await nicheEditorContext(account);
-    if (!ctx?.member || !["owner", "admin", "editor"].includes(ctx.member.role)) return { ok: false as const, message: GENERIC_ERROR };
-    if (typeof query !== "string" || query.trim().length < 2 || query.length > 120) return { ok: false as const, message: "Descreva o nicho em 2 a 120 caracteres." };
-    const matches = await matchBusinessTaxonsDeterministic(query, 20);
-    return matches.ok ? { ok: true as const, candidates: matches.candidates.map(({ taxonId, name, parentName }) => ({ taxonId, name, parentName })) }
-      : { ok: false as const, message: "Não foi possível buscar os nichos agora. Tente novamente." };
+    const parsed = nicheTurnInput.safeParse(raw);
+    if (!parsed.success) return { ok: false as const, message: "Não foi possível enviar a mensagem. Use até 4.000 caracteres." };
+    const input = parsed.data;
+    const ctx = await nicheEditorContext(input.account);
+    if (!ctx?.account || !ctx.member || !["owner", "admin", "editor"].includes(ctx.member.role)) return { ok: false as const, message: GENERIC_ERROR };
+    const [current, products, summary, catalog, definitions] = await Promise.all([
+      readActivePrimaryAccountTaxon({ accountId: ctx.account.id }), readAccountNicheProductGuard(ctx.account.id),
+      readAccountSummaryForNiche(ctx.account.id), readAttendanceCatalog(), readCommunicationDefinitions(),
+    ]);
+    if (!current.ok || products === null || !summary.ok || !catalog || !definitions.ok) return { ok: false as const, message: "Não foi possível consultar o contexto do negócio agora. Tente novamente." };
+    if ((current.taxon?.taxonId ?? null) !== input.expectedTaxonId) return { ok: false as const, message: "O nicho mudou. Reabra a conversa para conferir o vínculo atual." };
+    if (current.taxon && products) return { ok: false as const, message: "A redefinição não está disponível porque esta conta já possui produto desenvolvido." };
+    const base = await readCommunicationBase(ctx.account.id, definitions.value);
+    if (!base.ok) return { ok: false as const, message: "Não foi possível consultar a Base agora. Tente novamente." };
+    const businessData: Record<string, string> = {};
+    for (const key of ["business_name", "business_context", "offers", "preferences"]) {
+      const section = base.value?.sections[key];
+      if (section && ["user_confirmed", "pending_setup_confirmed"].includes(section.origin) && typeof section.value === "string")
+        businessData[key] = projectAttendanceText(section.value);
+    }
+    const context: AttendanceContext = { purpose: "account_niche", preferredName: null,
+      summary: projectAttendanceSummary(summary.summary), currentPrimaryTaxonId: current.taxon?.taxonId ?? null,
+      publicName: businessData.business_name ?? null, businessData, catalog,
+      displayedUnderstanding: projectAttendanceText(input.understanding),
+      recent: input.messages.map(message => ({ ...message, content: projectAttendanceText(message.content) })),
+    };
+    const result = await requestAttendance({ accountId: ctx.account.id, context });
+    if (!result.ok) return { ok: false as const, message: "Não foi possível conversar agora. Sua mensagem foi preservada; tente novamente." };
+    // The model only proposes. Revalidate account access and the official link after the external call.
+    const authorized = await nicheEditorContext(input.account);
+    const latest = authorized?.account ? await readActivePrimaryAccountTaxon({ accountId: authorized.account.id }) : null;
+    if (!authorized?.member || !["owner", "admin", "editor"].includes(authorized.member.role) || !latest?.ok ||
+      latest.taxon?.taxonId !== current.taxon?.taxonId || latest.taxon?.revision !== current.taxon?.revision)
+      return { ok: false as const, message: "O acesso ou o nicho mudou durante a conversa. Reabra o popup antes de confirmar." };
+    const candidate = result.output.action === "existing" ? catalog.find(taxon => taxon.id === result.output.existingTaxonId) : null;
+    return { ok: true as const, reply: result.output.reply,
+      understanding: result.output.businessUnderstanding || input.understanding,
+      proposal: candidate ? { taxonId: candidate.id, name: candidate.name } : null };
   } catch { return { ok: false as const, message: GENERIC_ERROR }; }
 }
 
 export async function saveAccountNicheAction(input: Readonly<{
-  account: string; query: string; taxonId: string; expectedTaxonId: string | null; confirmed: boolean;
+  account: string; taxonId: string; expectedTaxonId: string | null; confirmed: boolean;
 }>) {
   try {
     const ctx = await nicheEditorContext(input.account);
     if (!ctx?.account || !ctx.member || !["owner", "admin", "editor"].includes(ctx.member.role) || input.confirmed !== true) return { ok: false as const, message: GENERIC_ERROR };
     const current = await readActivePrimaryAccountTaxon({ accountId: ctx.account.id });
     if (!current.ok || (current.taxon?.taxonId ?? null) !== input.expectedTaxonId) return { ok: false as const, message: "O nicho mudou. Atualize a página e confira antes de confirmar novamente." };
-    // Recheck the allowed choice server-side; a client-supplied option is not authority.
-    if (input.taxonId !== current.taxon?.taxonId) {
-      const search = await searchAccountNicheAction(input.account, input.query);
-      if (!search.ok || !search.candidates.some(candidate => candidate.taxonId === input.taxonId)) return { ok: false as const, message: "Busque e selecione um nicho oficial antes de confirmar." };
-    }
+    // Human confirmation is authority; validate the official catalog independently of conversation text.
+    const catalog = await readAttendanceCatalog();
+    const selected = catalog?.find(taxon => taxon.id === input.taxonId);
+    if (!catalog || !selected || !activeAncestors(selected, catalog)) return { ok: false as const, message: "O nicho proposto não está mais disponível. Reabra a conversa." };
     const saved = await confirmAccountNiche({ accountId: ctx.account.id, actorUserId: ctx.member.userId,
       taxonId: input.taxonId, expectedTaxonId: input.expectedTaxonId });
     if (!saved.ok) return { ok: false as const, message: saved.reason === "product_exists"

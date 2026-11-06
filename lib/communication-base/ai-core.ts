@@ -137,6 +137,14 @@ const CREDENTIAL_PATTERN = /(?:\b(?:SUPABASE_DB_URL_READONLY|[A-Z][A-Z0-9_]*_(?:
 
 export type OfficialNicheContext = Readonly<{ taxonId: string; name: string; confirmed: boolean; revision: string }>;
 
+export function confirmedCommunicationMaterials(base: CommunicationBase) {
+  return Object.entries(base.sections).filter(([, section]) => section?.format === "material_items" && section.origin === "user_reviewed")
+    .flatMap(([section, stored]) => (parseCommunicationMaterials(stored!.value) ?? []).map(item => ({
+      section, kind: item.kind, name: item.name, context: item.context, author: item.author, authorization: item.authorization,
+      ...(item.source.type === "text" ? { text: item.source.text } : item.source.type === "link" ? { url: item.source.url } : {}),
+    })));
+}
+
 export function stageTwoPrompt(base: CommunicationBase, target: StageTwoTarget, requiresCurrentResearch: boolean, niche?: OfficialNicheContext) {
   if (!niche?.confirmed || !isMaterialId(niche.taxonId) || !niche.name.trim()) return null;
   const keys = targetKeys(target);
@@ -150,11 +158,7 @@ export function stageTwoPrompt(base: CommunicationBase, target: StageTwoTarget, 
   const factualText = Object.values(confirmed).flatMap((entry) =>
     typeof entry === "object" && "facts" in entry
       ? entry.facts.map((fact) => fact.label + ": " + fact.value) : []).join("\n");
-  const materials = Object.entries(base.sections).filter(([, section]) => section?.format === "material_items" && section.origin === "user_reviewed")
-    .flatMap(([section, stored]) => (parseCommunicationMaterials(stored!.value) ?? []).map(item => ({
-      section, kind: item.kind, name: item.name, context: item.context, author: item.author, authorization: item.authorization,
-      ...(item.source.type === "text" ? { text: item.source.text } : item.source.type === "link" ? { url: item.source.url } : {}),
-    })));
+  const materials = confirmedCommunicationMaterials(base);
   if (CREDENTIAL_PATTERN.test(JSON.stringify(niche)) || CREDENTIAL_PATTERN.test(JSON.stringify(materials)) ||
     CREDENTIAL_PATTERN.test(JSON.stringify(confirmed)) || CREDENTIAL_PATTERN.test(factualText) ||
     CREDENTIAL_PATTERN.test(JSON.stringify(existing))) {

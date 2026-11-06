@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 
 import { requireCommunicationBaseAccess } from "../../../../lib/communication-base/access";
 import { readCommunicationBase, readPendingSetupInitialContext } from "../../../../lib/communication-base/adapters/communicationBaseAdapter";
-import { stageOneStateKey } from "../../../../lib/communication-base/ui-state-keys";
+import { stageTwoInputStateKey } from "../../../../lib/communication-base/ui-state-keys";
 import { isAccountNicheEditingEnabled, readActivePrimaryAccountTaxon } from "../../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import { loadAccountNicheEditorAction } from "../niche-resolution-actions";
 import { AccountNicheEditor } from "../_components/NicheResolutionCard";
@@ -110,7 +110,7 @@ export default async function CommunicationBasePage({ params }: PageProps) {
             ) : null}
             <CommunicationBaseTabs stageOne={<CommunicationStageOne account={access.value.accountSubdomain}
               base={base} canEdit={access.value.canEdit} structured={structured} nicheLabel={nicheLabel} definitions={definitions.ok ? definitions.value : []} />}
-              stageTwo={<CommunicationStageTwo key={`${stageOneStateKey(base)}:${taxonomy.ok ? taxonomy.taxon?.taxonId ?? "" : "error"}:${taxonomy.ok ? taxonomy.taxon?.revision ?? "" : ""}`} account={access.value.accountSubdomain}
+              stageTwo={<CommunicationStageTwo key={`${stageTwoInputStateKey(base)}:${taxonomy.ok ? taxonomy.taxon?.taxonId ?? "" : "error"}:${taxonomy.ok ? taxonomy.taxon?.revision ?? "" : ""}`} account={access.value.accountSubdomain}
                 base={base} canEdit={access.value.canEdit} canGenerate={canGenerate} nicheControl={nicheEditor ? <AccountNicheEditor account={access.value.accountSubdomain} state={nicheEditor} hasIntelligence={hasStageTwoContent(base)} /> : undefined}
                 structured={structured} definitions={definitions.ok ? definitions.value : []} />}
               materials={structured ? <CommunicationMaterials account={access.value.accountSubdomain} base={base} canEdit={access.value.canEdit} definitions={definitions.ok ? definitions.value : []} /> : undefined} />
