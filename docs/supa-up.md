@@ -1430,6 +1430,12 @@ Supabase Evals não é uma dependência do projeto nem justifica criar suíte pr
 2. Consultar fontes oficiais e validar qualquer mutação.
 3. Usar Supabase Evals apenas como referência externa até existir necessidade concreta de avaliação própria.
 
+### Evolução oficial — 07/11/2026
+
+- Autorização gerenciada pode usar Claude como emissor para organizações Supabase Team/Enterprise com SSO. Exige revisar desligamento de membros e substituição do emissor; não comprova acesso ou gratuidade local.
+- Make oferece módulos API e MCP para cenários aprovados. A inclusão do cliente MCP nos planos não prova custo zero do cenário; comparar com a automação existente antes de adotar.
+- Fontes: [autorização empresarial](https://supabase.com/blog/claude-issued-enterprise-managed-auth-for-mcp) e [integração Make](https://supabase.com/blog/automate-your-supabase-backend-with-make). Nenhuma conexão, aprovação organizacional ou integração foi realizada.
+
 ### Fontes Oficiais
 
 - [Supabase Blog — Introducing Supabase Evals](https://supabase.com/blog/introducing-supabase-evals)
@@ -2210,6 +2216,75 @@ Catalogado em 2026-10-20
 - [Supabase Compute — 27/10/2026](https://supabase.com/blog/supabase-compute-private-alpha)
 
 ---
+
+## 77 — Supabase CLI v3: destino e consentimento explícitos *(🟦 GA; compatibilidade transversal condicional)*
+
+2026-11-04  
+Conferido em 2026-11-07
+
+### Estado e aplicabilidade
+
+- Não adotado no CI: migrations fixa CLI 2.106.0; versão dos operadores não inspecionada. O config local ainda usa `[inbucket]`.
+- A v3 muda seleção de ambiente, consentimento e precedência de configuração. Isso não altera automaticamente o banco hospedado nem exige migrar o pipeline v2 saudável.
+
+### Ação, prioridade e encerramento
+
+- Prioridade condicional, antes de instalar v3 ou diante de erro real. Conferir alvo remoto, confirmação não interativa, configuração e diff engine no recorte autorizado; não atualizar nesta rodada.
+- Encerrar com compatibilidade comprovada e reconciliação ABC ou inaplicabilidade. Horizonte Starter; não autoriza mutação, instalação ou custo adicional.
+- Fontes: [aviso](https://supabase.com/changelog/supabase-cli-v3) e [migração oficial](https://supabase.com/docs/guides/local-development/cli/migrating-to-v3).
+
+---
+
+## 78 — Explorer e Notebooks para investigações reproduzíveis *(🧪 Feature preview; dependente de recorte)*
+
+2026-10-30  
+Conferido em 2026-11-07
+
+### Estado, valor e gatilho
+
+- Adoção não comprovada; busca por notebooks sem consumidor. Editor reúne consultas de banco/logs, notas e gráficos; o arquivo guarda consultas, não resultados.
+- Valor: reutilizar investigação real e comparar antes/depois de deploy. Complementa `supa#5`, `supa#40` e `supa#70`; não justifica substituir snippets ou inspeção existentes por rotina.
+- Horizonte indefinido; avaliar somente diante de investigação recorrente e vantagem comprovada, com acesso e custo incremental zero. CLI de notebooks em beta; nenhuma ativação, arquivo, query ou monitor criado.
+- Fonte: [anúncio oficial](https://supabase.com/blog/explorer-and-notebooks-investigations-your-team-can-rerun).
+
+---
+
+## 79 — Multigres: alta disponibilidade e failover *(🧪 Private alpha; transversal condicional)*
+
+2026-10-29  
+Conferido em 2026-11-07
+
+### Estado, valor e limites
+
+- Sem adoção documentada ou configuração/consumidor no repositório. Pode reduzir indisponibilidade por falha do primário em serviço com requisito real de continuidade.
+- Plano pago e convite; alpha sem SLA, imprópria para Production. Exige projeto novo; sem Realtime ou PITR e com região/tamanho limitados. Gratuidade temporária não comprova elegibilidade ou custo local.
+
+### Prioridade, gatilho e encerramento
+
+- Condicional, horizonte indefinido. Reavaliar com requisito de disponibilidade aprovado, comparando com operação atual e alternativas mais simples.
+- Adoção exige maturidade, compatibilidade e custo zero comprovados; encerrar por adoção validada/ABC ou rejeição fundamentada. Não criar cluster, réplica ou projeto nesta catalogação.
+- Fonte: [anúncio oficial](https://supabase.com/blog/multigres-private-alpha).
+
+---
+
+## 80 — OrioleDB: engine para cargas com muitas atualizações *(🧪 Public beta; transversal condicional)*
+
+2026-10-28  
+Conferido em 2026-11-07
+
+### Estado, valor e limites
+
+- Sem adoção documentada; `orioledb_version` vazio no config. Pode reduzir bloat e I/O em carga comprovadamente intensiva em UPDATE/DELETE; benchmark externo não prova ganho no projeto.
+- Selecionado ao criar projeto; beta sem SLA, ainda não indicada para Production. Há limitações de índices, extensões, comandos e recuperação; não é troca transparente do projeto atual.
+
+### Prioridade, gatilho e encerramento
+
+- Condicional, horizonte indefinido. Somente diante de gargalo real, após comparar índices/tuning existentes e medir a carga pertinente.
+- Exigir compatibilidade e custo incremental zero antes de adoção; encerrar com validação/ABC ou rejeição fundamentada. Nenhum banco, extensão ou engine alterado.
+- Fonte: [anúncio oficial](https://supabase.com/blog/orioledb-public-beta).
+
+---
+
 
 ## Registro da rodada — Supabase Update August 2026 — 10/08/2026
 
