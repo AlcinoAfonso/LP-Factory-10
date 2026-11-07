@@ -879,6 +879,27 @@ Catalogado em 2026-10-27
 
 ---
 
+## 28 — Google Business Profile: status de edições por campo *(🧪 API v1alpha; dependente de recorte)*
+
+2026-11-02  
+Conferido em 2026-11-07
+
+### Estado e valor
+
+- Sem consumidor versionado encontrado; acesso e OAuth do projeto não inspecionados. GMB é canal estratégico, ainda sem serviço de integração aprovado.
+- Métodos estendidos para localização e atributos distinguem o valor enviado pelo negócio do que aparece em Search/Maps, com estágio, origem e motivo de rejeição da edição.
+- Valor: em uma operação gerenciada de perfis, evitar informar “publicado” quando a alteração está pendente/rejeitada e reduzir investigação manual.
+
+### Gatilho e limites
+
+- Horizonte indefinido. Avaliar somente em serviço GMB aprovado com necessidade real de acompanhar edições, permissões e custo zero comprovados.
+- API alpha e publicação externa exigem validação focal; envio aceito não equivale a conteúdo visível. Não confundir com edição ou sincronização automática da Base de Comunicação.
+- Não criar conta, credencial, OAuth, rota, integração ou job nesta catalogação.
+- Fontes: [atualizações oficiais](https://developers.google.com/my-business/content/latest-updates) e [guia de status](https://developers.google.com/my-business/content/edit-status).
+
+---
+
+
 ## Registro da rodada de 2026-08-10
 
 ### Veredito
