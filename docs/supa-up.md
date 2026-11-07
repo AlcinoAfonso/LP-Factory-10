@@ -684,7 +684,10 @@ Avaliar quando houver primeiros clientes ativos, incidente recorrente ou necessi
 
 ### Descrição  
 
-Guia oficial da Supabase para criar apps do ChatGPT conectados ao banco usando **mcp-use**, facilitando o deploy de **MCP Servers** em **Supabase Edge Functions**.
+O guia com **mcp-use** continua como referência. O [bloco MCP Server oficial de 22/10/2026](https://supabase.com/blog/give-your-supabase-app-its-own-mcp-server) oferece outra implementação em Edge Function, com SDK TypeScript, OAuth 2.1 e cliente Supabase por usuário sujeito a RLS. Permite expor ações de um serviço aprovado a clientes MCP sem duplicar suas regras de negócio.
+
+- Não adotado: `docs/services.md` mantém a camada sem MCP operacional. Horizonte indefinido; comparar com API/helper existente somente diante de consumidor aprovado e vantagem demonstrada, com custo incremental zero comprovado.
+- Exige configuração de OAuth, consentimento e validação de identidade; não habilitar endpoints, registro de clientes ou alterar JWT nesta catalogação.
 
 ### Valor para o Projeto  
 
@@ -2104,6 +2107,7 @@ Catalogado em 2026-10-14
 
 - Permite limitar projetos, organizações, permissões e expiração.
 - `supabase link` exige permissões próprias; `db push` autenticado pela senha do banco não é limitado pelo PAT.
+- O [guia de 26/10](https://supabase.com/blog/scope-your-personal-access-tokens) alerta que o preset Read-only também inclui leitura de secrets. Na próxima revisão autorizada, partir de No access e liberar só o necessário; usar `read_only=true` no MCP é uma restrição distinta. Não presumir segurança apenas pelo nome do preset.
 - Não criar, ler, trocar nem testar credencial nesta rodada.
 
 ### Fontes oficiais
@@ -2182,6 +2186,28 @@ Catalogado em 2026-10-20
 
 - [Supabase — Middleware 1.0](https://supabase.com/changelog/supabase-middleware-1-0)
 - [Supabase — middleware reutilizável (15/10/2026)](https://supabase.com/blog/supabase-middleware)
+
+---
+
+## 76 — Supabase Compute para agentes e serviços longos *(🧪 Private alpha; dependente de recorte)*
+
+2026-10-27
+
+### Estado, valor e horizonte
+
+- Não implementado; sem `supabase/compute/` ou ativação em `supabase/config.toml`.
+- Executa agentes, APIs e tarefas longas próximos ao banco. Pode atender futuro serviço aprovado que ultrapasse limites do runtime atual; comparar com Core/Vercel e Edge Functions antes de criar infraestrutura.
+- Horizonte indefinido; acesso e custo no projeto não comprovados. A gratuidade anunciada restringe-se à avaliação alpha, não garante operação futura gratuita.
+
+### Gatilho e limites
+
+- Radar: reavaliar com consumidor, gargalo e ganho mensurável, maturidade adequada e custo incremental zero comprovado.
+- Alpha somente em `us-west-2`, sem uso em Production. Serviços podem reiniciar e recebem todos os secrets do projeto; não são sandbox para código não confiável.
+- Não aderir à waitlist, atualizar CLI, criar serviço ou autorizar implementação nesta rodada.
+
+### Fonte oficial
+
+- [Supabase Compute — 27/10/2026](https://supabase.com/blog/supabase-compute-private-alpha)
 
 ---
 
