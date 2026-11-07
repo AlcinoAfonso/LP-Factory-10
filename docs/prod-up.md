@@ -848,6 +848,37 @@ Avaliar apenas quando:
 
 ---
 
+## 26 — Indexação intencional de páginas compartilhadas *(🟩 Orientação oficial; dependente de recorte)*
+
+2026-10-26
+Catalogado em 2026-10-27
+
+### Estado, valor e gatilho
+
+- Não implementado como política de publicação: há `noindex` em Auth/protected no `next.config.js`, mas não foi localizada decisão equivalente para futuras saídas compartilhadas.
+- O Google recomenda distinguir conteúdo destinado à descoberta pública de páginas criadas apenas para compartilhamento ou utilidade. Pode reduzir spam e indexação indesejada de resultados gerados por usuários.
+- Horizonte indefinido. No próximo recorte aprovado de publicação, decidir a intenção de cada tipo de página e comparar controles existentes, com custo incremental zero.
+- Preservar LPs destinadas a SEO; não aplicar `noindex` indiscriminadamente, criar moderação/monitor ou mudar rotas nesta rodada. Controle de indexação não substitui autorização para conteúdo privado.
+- Fonte: [Google Search — prevenção de abuso, atualizado em 26/10/2026](https://developers.google.com/search/docs/monitor-debug/prevent-abuse).
+
+---
+
+## 27 — Extração de imagens das LPs em Performance Max *(🟨 Mudança anunciada; dependente de recorte)*
+
+2026-10-21
+Catalogado em 2026-10-27
+
+### Estado, valor e gatilho
+
+- Sem campanha ou integração Performance Max aprovada localizada; preservar como referência para serviço futuro de aquisição.
+- A partir de 04/12/2026, novas campanhas terão extração de imagens habilitada por padrão no nível da campanha, inclusive quando desabilitada na configuração de conta. Campanhas existentes mantêm sua configuração.
+- Pode afetar quais imagens de uma LP são reutilizadas nos anúncios. No primeiro caso aprovado de Performance Max, definir escolha explícita de extração e conferir autorização de uso dos materiais.
+- Horizonte indefinido; depende de campanha real, responsável e custo aprovado. Não recomendar ativação ou contratação de mídia nesta catalogação.
+- Não alterar campanha, conta, API, imagens ou configuração do projeto nesta rodada.
+- Fonte: [Google Ads — image extraction, 21/10/2026](https://ads-developers.googleblog.com/2026/10/upcoming-changes-to-image-extraction-in.html).
+
+---
+
 ## Registro da rodada de 2026-08-10
 
 ### Veredito
