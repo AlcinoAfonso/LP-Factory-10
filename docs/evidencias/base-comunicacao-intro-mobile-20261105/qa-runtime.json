@@ -1,0 +1,271 @@
+{
+  "source": "423f2d8b380587a62fda1351ac7c6b6cbe3d23d6",
+  "measurements": [
+    {
+      "body": [
+        272,
+        272,
+        0
+      ],
+      "dialog": [
+        358.3999938964844,
+        454.6000061035156,
+        194.6999969482422,
+        649.3000030517578
+      ],
+      "focusedTitle": true,
+      "footer": [
+        540.5,
+        648.5
+      ],
+      "header": [
+        195.5,
+        268.5
+      ],
+      "illustrationHeight": 80,
+      "label": "390x844",
+      "outerScroll": 0,
+      "overflowX": false,
+      "textFont": "14px",
+      "titleFont": "20px",
+      "viewport": [
+        390,
+        844
+      ]
+    },
+    {
+      "body": [
+        320,
+        320,
+        0
+      ],
+      "dialog": [
+        272.8000183105469,
+        527.6000366210938,
+        20.200000762939453,
+        547.8000373840332
+      ],
+      "focusedTitle": true,
+      "footer": [
+        439,
+        547
+      ],
+      "header": [
+        21,
+        119
+      ],
+      "illustrationHeight": 80,
+      "label": "320x568",
+      "outerScroll": 0,
+      "overflowX": false,
+      "textFont": "14px",
+      "titleFont": "20px",
+      "viewport": [
+        320,
+        568
+      ]
+    },
+    {
+      "body": [
+        256,
+        344,
+        0
+      ],
+      "dialog": [
+        272.8000183105469,
+        464,
+        8,
+        472
+      ],
+      "focusedTitle": true,
+      "footer": [
+        363.2000122070313,
+        471.2000122070313
+      ],
+      "header": [
+        8.800000190734863,
+        106.80000019073486
+      ],
+      "illustrationHeight": 80,
+      "label": "320x480-before-scroll",
+      "outerScroll": 0,
+      "overflowX": false,
+      "textFont": "14px",
+      "titleFont": "20px",
+      "viewport": [
+        320,
+        480
+      ]
+    },
+    {
+      "body": [
+        256,
+        344,
+        16.799999237060547
+      ],
+      "dialog": [
+        272.8000183105469,
+        464,
+        8,
+        472
+      ],
+      "focusedTitle": false,
+      "footer": [
+        363.2000122070313,
+        471.2000122070313
+      ],
+      "header": [
+        8.800000190734863,
+        106.80000019073486
+      ],
+      "illustrationHeight": 80,
+      "label": "320x480-after-scroll",
+      "outerScroll": 0,
+      "overflowX": false,
+      "textFont": "14px",
+      "titleFont": "20px",
+      "viewport": [
+        320,
+        480
+      ]
+    },
+    {
+      "body": [
+        256,
+        344,
+        0
+      ],
+      "dialog": [
+        272.8000183105469,
+        464,
+        8,
+        472
+      ],
+      "focusedTitle": true,
+      "footer": [
+        363.2000122070313,
+        471.2000122070313
+      ],
+      "header": [
+        8.800000190734863,
+        106.80000019073486
+      ],
+      "illustrationHeight": 80,
+      "label": "320x480-reopened",
+      "outerScroll": 0,
+      "overflowX": false,
+      "textFont": "14px",
+      "titleFont": "20px",
+      "viewport": [
+        320,
+        480
+      ]
+    },
+    {
+      "body": [
+        256,
+        344,
+        87.19999694824219
+      ],
+      "dialog": [
+        272.8000183105469,
+        464,
+        8,
+        472
+      ],
+      "focusedTitle": false,
+      "footer": [
+        363.2000122070313,
+        471.2000122070313
+      ],
+      "header": [
+        8.800000190734863,
+        106.80000019073486
+      ],
+      "illustrationHeight": 80,
+      "label": "320x480-scroll-settled",
+      "outerScroll": 0,
+      "overflowX": false,
+      "textFont": "14px",
+      "titleFont": "20px",
+      "viewport": [
+        320,
+        480
+      ]
+    },
+    {
+      "body": [
+        168,
+        168,
+        0
+      ],
+      "dialog": [
+        768,
+        381.6000061035156,
+        259.20001220703125,
+        640.8000183105469
+      ],
+      "focusedTitle": true,
+      "footer": [
+        520,
+        640
+      ],
+      "header": [
+        260,
+        352
+      ],
+      "illustrationHeight": 144,
+      "label": "1440x900",
+      "outerScroll": 0,
+      "overflowX": false,
+      "textFont": "14px",
+      "titleFont": "24px",
+      "viewport": [
+        1440,
+        900
+      ]
+    },
+    {
+      "body": [
+        320,
+        320,
+        0
+      ],
+      "dialog": [
+        272.8000183105469,
+        527.6000366210938,
+        20.200000762939453,
+        547.8000373840332
+      ],
+      "focusedTitle": true,
+      "footer": [
+        439,
+        547
+      ],
+      "header": [
+        21,
+        119
+      ],
+      "illustrationHeight": 80,
+      "label": "320x568-recapture-stable",
+      "outerScroll": 0,
+      "overflowX": false,
+      "textFont": "14px",
+      "titleFont": "20px",
+      "viewport": [
+        320,
+        568
+      ]
+    }
+  ],
+  "optOutSuppresses": true,
+  "manualKeepsChecked": true,
+  "escapeReturnsFocus": true,
+  "keyboardFirst": true,
+  "keyboardCheckbox": true,
+  "keyboardButton": {
+    "focused": true,
+    "height": 44
+  },
+  "console": []
+}

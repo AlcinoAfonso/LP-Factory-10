@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { useAccessContext } from "@/providers/AccessProvider";
 export function CommunicationBaseTabs({stageOne,stageTwo,materials}:Readonly<{stageOne:ReactNode;stageTwo:ReactNode;materials?:ReactNode}>) {
@@ -23,6 +23,33 @@ export function CommunicationBaseTabs({stageOne,stageTwo,materials}:Readonly<{st
 export function CommunicationBaseIntroduction() {
   const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
+  const introductionTitle = useRef<HTMLHeadingElement>(null);
+  const introductionBody = useRef<HTMLDivElement>(null);
+  const introductionHeader = useRef<HTMLElement>(null);
+  const introductionFooter = useRef<HTMLElement>(null);
+  const [needsOuterScroll, setNeedsOuterScroll] = useState(false);
+  useEffect(() => {
+    const element = dialog.current;
+    const header = introductionHeader.current;
+    const footer = introductionFooter.current;
+    const body = introductionBody.current;
+    if (!element || !header || !footer || !body) return;
+    if (typeof ResizeObserver === "undefined") { setNeedsOuterScroll(true); return; }
+    const observer = new ResizeObserver(() => {
+      if (!element.open) return;
+      const minimumBodyHeight = Number.parseFloat(window.getComputedStyle(body).fontSize) * 4;
+      const fixedHeight = header.getBoundingClientRect().height + footer.getBoundingClientRect().height;
+      setNeedsOuterScroll(fixedHeight + minimumBodyHeight > element.clientHeight);
+    });
+    observer.observe(element); observer.observe(header); observer.observe(footer);
+    return () => observer.disconnect();
+  }, []);
+  const openIntroduction = useCallback(() => {
+    if (!dialog.current?.open) dialog.current?.showModal();
+    dialog.current?.scrollTo({ top: 0 });
+    introductionTitle.current?.focus({ preventScroll: true });
+    introductionBody.current?.scrollTo({ top: 0 });
+  }, []);
   const { member } = useAccessContext();
   const userId = member && "userId" in member && typeof member.userId === "string" ? member.userId : null;
   const storageKey = userId ? `communication-base:introduction-optout:v1:${userId}` : null;
@@ -32,8 +59,8 @@ export function CommunicationBaseIntroduction() {
     try { suppressed = storageKey !== null && window.localStorage.getItem(storageKey) === "true"; } catch { /* Keep guidance usable when browser storage is unavailable. */ }
     setDontShowAgain(suppressed);
     if (suppressed) dialog.current?.close();
-    else if (!dialog.current?.open) dialog.current?.showModal();
-  }, [storageKey]);
+    else openIntroduction();
+  }, [storageKey, openIntroduction]);
   function dismiss() {
     dialog.current?.close();
     trigger.current?.focus({ preventScroll: true });
@@ -47,7 +74,7 @@ export function CommunicationBaseIntroduction() {
     } catch { /* The presentation remains usable without browser storage. */ }
   }
   return <>
-    <Button ref={trigger} type="button" variant="secondary" aria-label="Como funciona" title="Como funciona" className="group h-11 w-11 shrink-0 !bg-transparent !p-0 !text-brand-700 dark:!text-primary" onClick={() => dialog.current?.showModal()}>
+    <Button ref={trigger} type="button" variant="secondary" aria-label="Como funciona" title="Como funciona" className="group h-11 w-11 shrink-0 !bg-transparent !p-0 !text-brand-700 dark:!text-primary" onClick={openIntroduction}>
       <span aria-hidden="true" className="flex h-[1.875rem] w-[1.875rem] items-center justify-center rounded-lg border border-brand-700/20 bg-brand-50 group-hover:bg-brand-100 dark:border-primary/30 dark:bg-primary/10">
       <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="9" />
@@ -55,14 +82,17 @@ export function CommunicationBaseIntroduction() {
       </svg>
       </span>
     </Button>
-    <dialog ref={dialog} aria-labelledby="communication-introduction-title" onCancel={(event) => { event.preventDefault(); dismiss(); }}
-      className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-3xl overflow-y-auto rounded-xl border border-border bg-background p-5 text-foreground shadow-xl backdrop:bg-black/40 sm:p-8">
-      <p className="mb-4 text-base font-bold text-brand-700 dark:text-primary">LP Factory</p>
-      <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-x-6">
-        <h2 id="communication-introduction-title" className="text-xl font-semibold leading-tight sm:col-span-2 sm:mb-3 sm:text-2xl">Sua comunicação começa aqui</h2>
-        <p className="text-sm leading-6 text-muted-foreground sm:col-start-2 sm:row-start-2">A Base de Comunicação reúne as informações, os materiais e os diferenciais do seu negócio para orientar uma comunicação mais clara e consistente.</p>
-        <div className="flex items-center justify-center sm:col-start-1 sm:row-start-2 sm:row-span-2 sm:border-r sm:border-border sm:pr-6">
-          <svg viewBox="0 0 240 160" aria-hidden="true" className="h-36 w-60 max-w-full text-primary" fill="none">
+    <dialog ref={dialog} data-scroll-mode={needsOuterScroll ? "outer" : "body"} aria-labelledby="communication-introduction-title" onCancel={(event) => { event.preventDefault(); dismiss(); }}
+      className={`m-auto max-h-[calc(100dvh-1rem)] w-[calc(100%-2rem)] max-w-3xl [overflow-wrap:anywhere] rounded-xl border border-border bg-background p-0 text-foreground shadow-xl backdrop:bg-black/40 ${needsOuterScroll ? "overflow-y-auto" : "overflow-hidden open:flex open:flex-col"}`}>
+      <header ref={introductionHeader} className="shrink-0 px-4 pb-2 pt-3 sm:px-8 sm:pt-6">
+        <p className="mb-1 text-base font-bold text-brand-700 dark:text-primary">LP Factory</p>
+        <h2 ref={introductionTitle} tabIndex={-1} id="communication-introduction-title" className="text-xl font-semibold leading-tight focus:outline-none sm:text-2xl">Sua comunicação começa aqui</h2>
+      </header>
+      <div ref={introductionBody} role="region" aria-label="Sobre a Base de Comunicação" tabIndex={0} className={`px-4 pb-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-8 ${needsOuterScroll ? "" : "min-h-0 overflow-y-auto overscroll-contain"}`}>
+      <div className="grid gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-x-6 sm:gap-y-4">
+        <p className="!text-[0.9375rem] leading-6 text-muted-foreground sm:col-start-2 sm:row-start-1">A Base de Comunicação reúne as informações, os materiais e os diferenciais do seu negócio para orientar uma comunicação mais clara e consistente.</p>
+        <div className="flex items-center justify-center sm:col-start-1 sm:row-start-1 sm:row-span-2 sm:border-r sm:border-border sm:pr-6">
+          <svg viewBox="0 0 240 160" aria-hidden="true" className="h-20 w-36 max-w-full text-primary sm:h-36 sm:w-60" fill="none">
             <circle cx="114" cy="83" r="64" fill="currentColor" opacity=".07" />
             <g stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
               <rect x="20" y="65" width="45" height="65" rx="4" transform="rotate(-14 20 65)" className="fill-background" />
@@ -79,13 +109,16 @@ export function CommunicationBaseIntroduction() {
             <g className="fill-background"><circle cx="149" cy="62" r="1.5" /><circle cx="155" cy="62" r="1.5" /><circle cx="161" cy="62" r="1.5" /></g>
           </svg>
         </div>
-        <p className="text-sm leading-6 text-muted-foreground sm:col-start-2 sm:row-start-3">Comece com o que já tem. Você pode preencher aos poucos, revisar e complementar quando quiser. Cada seção é salva por você.</p>
+        <p className="!text-[0.9375rem] leading-6 text-muted-foreground sm:col-start-2 sm:row-start-2">Comece com o que já tem. Você pode preencher aos poucos, revisar e complementar quando quiser. Cada seção é salva por você.</p>
       </div>
-      {storageKey ? <label className="mt-4 flex min-h-11 cursor-pointer items-center justify-center gap-2 text-xs font-normal text-muted-foreground">
+      </div>
+      <footer ref={introductionFooter} className="shrink-0 px-4 pb-3 pt-1 sm:px-8 sm:pb-6">
+      {storageKey ? <label className=" flex min-h-11 cursor-pointer items-center justify-center gap-2 text-xs font-normal text-muted-foreground">
         <input type="checkbox" checked={dontShowAgain} onChange={(event) => updatePreference(event.target.checked)} className="h-4 w-4 shrink-0 accent-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
         Não mostrar novamente
       </label> : null}
-      <Button type="button" className="mt-3 min-h-11 w-full !bg-brand-700 !text-surface-base hover:!bg-brand-700/95 sm:mx-auto sm:flex sm:w-56" onClick={dismiss}>Entendi</Button>
+      <Button type="button" className="mt-1 min-h-11 w-full !bg-brand-700 !text-surface-base hover:!bg-brand-700/95 sm:mx-auto sm:flex sm:w-56" onClick={dismiss}>Entendi</Button>
+      </footer>
     </dialog>
   </>;
 }
