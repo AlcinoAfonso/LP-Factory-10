@@ -2,7 +2,7 @@
 
 ## 1. Autoridade, validade e fontes
 
-- Data da fotografia técnica: 27/10/2026; baseline anterior de 14/09/2026, reorganizado em 22/09/2026.
+- Data da fotografia técnica: 07/11/2026; baseline anterior de 14/09/2026, reorganizado em 22/09/2026.
 - Objetivo: manter uma fotografia técnica itemizada e rastreável das capacidades OpenAI relevantes ao LP Factory 10.
 - Este documento não define sozinho modelo, `reasoning.effort`, tool, arquitetura ou configuração de produção e não autoriza adoção.
 - A configuração efetiva permanece em `docs/platform-config.md`; a governança das decisões por workload permanece em `docs/gestor-automations.md` e no caso competente do roadmap.
@@ -23,6 +23,10 @@
   - `https://developers.openai.com/api/docs/guides/prompt-caching`
   - `https://developers.openai.com/api/docs/guides/error-codes`
   - `https://developers.openai.com/api/docs/changelog`
+  - `https://developers.openai.com/api/docs/guides/image-generation`
+  - `https://developers.openai.com/api/docs/guides/agents-api/configuration`
+  - `https://developers.openai.com/api/docs/guides/agents-api/sessions/approvals`
+  - `https://developers.openai.com/api/docs/guides/voice-sip`
   - `https://developers.openai.com/api/docs/guides/agents-api/overview`
   - `https://developers.openai.com/api/docs/guides/latest-model?model=gpt-6-astra`
   - `https://developers.openai.com/api/docs/guides/async-tool-calling`
@@ -183,8 +187,9 @@
 - Natureza: capacidade de imagem preservada no catálogo de modelos do projeto.
 - Aplicabilidade: workload de imagem futuro autorizado por recorte próprio.
 - Maturidade: documentada; não existe workload de imagem vigente.
-- Limite: disponibilidade de `gpt-image-2` e parâmetros não autoriza ativação.
-- Fontes: catálogo Models, `lib/openai-workloads/adapters/modelCatalogAdapter.ts` e `supabase/migrations/20260823144334_e21_2_5_openai_model_catalog.sql`.
+- Evolução de 04/11/2026: `gpt-image-2.6-sunburst` prioriza trabalhos detalhados; `gpt-image-2.6-flare`, iteração rápida. A Image API documenta complexidade separada de qualidade, edição guiada por marcações, geração SVG e GIF animado. SVG é estático; GIF possui restrições próprias de quadros e streaming.
+- Limite: capacidade documentada não altera o modelo do catálogo interno nem comprova suporte de cada formato na tool da Responses API. Comparar qualidade, latência, segurança dos arquivos e parâmetros no caso aprovado; sem ativação.
+- Fontes: catálogo Models, guia oficial Image generation, `lib/openai-workloads/adapters/modelCatalogAdapter.ts` e `supabase/migrations/20260823144334_e21_2_5_openai_model_catalog.sql`.
 
 ### `OAI-C12` — Fast mode para `gpt-5.6-sol`
 
@@ -201,7 +206,9 @@
 - Maturidade: documentada em beta público; não registrada como workload do projeto.
 - Limite: não autoriza substituir Responses API nem criar fluxo autônomo sem contrato, governança e avaliação próprios.
 - Evolução documentada em outubro: pre-warm de sandbox, Artifact SDK/skills de documentos em sandboxes hospedados e Ultrafast com modelo elegível; continuam condicionados ao recorte, sem execução hospedada aprovada nesta fotografia.
-- Fonte: changelog e guia oficial Agents API, lançamento de 10/09/2026.
+- Evolução de 30/10/2026: atualização de tools de uma Session substitui a lista inteira; alterações em functions/MCP passam a valer na próxima chamada do modelo e nas tools nativas no próximo turno. Compactação passa a ocorrer em segundo plano por padrão; `compaction.async=false` mantém execução bloqueante. Consciência temporal experimental depende de opt-in.
+- Limite adicional: substituir a lista exige preservar todas as tools necessárias; nenhuma dessas mudanças autoriza migrar os workloads atuais.
+- Fontes: changelog e guias oficiais Agents API e Configuration; lançamento de 10/09/2026.
 
 ### `OAI-C14` — Async tool calling e mid-turn steering
 
@@ -236,13 +243,14 @@
 - Limite: nenhum workload vigente usa GPT-6.1 Sol ou esse tier; disponibilidade não altera configuração nem autoriza adoção. Reconfirmar elegibilidade e medir benefício no recorte competente.
 - Fontes: changelog e página oficial GPT-6.1 Sol.
 
-### `OAI-C18` — GPT-Live: decisões durante conversa e vozes por descrição
+### `OAI-C18` — GPT-Live: decisões, vozes e chamadas SIP
 
 - Natureza: GPT-Live integra decisões com `gpt-6-luna` durante a fala; desde 16/10/2026, criação de voz por descrição textual disponível aos clientes API para reutilização em sessões Live.
 - Aplicabilidade: serviço futuro aprovado de voz/atendimento; pode avaliar intenção ou critério durante conversa e adaptar identidade vocal. Não há consumidor Live no projeto.
 - Maturidade: capacidades documentadas no changelog de 15–16/10 e guias específicos; elegibilidade, idiomas, limites e versão do SDK exigem validação focal no caso real.
 - Limites: novo canal exige consentimento, handoff, interrupção e controle de ações; descrição de voz não autoriza imitação de pessoa. Não substitui Responses ou `OAI-W08`, nem justifica streaming, sessão persistente ou agente novo agora.
-- Fontes: changelog, Connect voice to Decisions e Custom voices oficiais. Sem adoção ou conteúdo financeiro.
+- Evolução de 02/11/2026: chamadas SIP de saída disponíveis às organizações pela Live API, utilizando uma operadora SIP; não são criadas pelo endpoint de chamadas da Realtime API. Isso amplia a referência de voz, sem aprovar telefonia no projeto.
+- Fontes: changelog, Connect voice to Decisions, Custom voices e Telephony and SIP oficiais. Sem adoção ou conteúdo financeiro.
 
 ### `OAI-C19` — Restrições de níveis de serviço por projeto/organização
 
@@ -252,6 +260,15 @@
 - Cobertura documentada: `default`, `flex` e `priority`; `fast` é avaliado como `priority`, e Scale Tier fica fora dessa policy. Rejeição gera erro400 de `service_tier`.
 - Limites: `auto` ou parâmetro omitido também depende do tier resolvido permitido. Não alterar settings, credenciais, allowlist ou configuração E21 nesta catalogação; nenhuma nova implementação recomendada sem caso e custo zero comprovados.
 - Fontes: changelog e guia oficial Error codes.
+
+### `OAI-C20` — Revisão automática de ações na Agents API
+
+- Natureza: revisão de pedidos suportados de ferramentas/permissões conforme risco e instruções do usuário, por `review: "auto_review"` na Session.
+- Aplicabilidade: hipótese condicional para um futuro recorte aprovado de Agents API; não existe consumidor registrado no projeto.
+- Maturidade: documentada desde 30/10/2026, dependente de acesso do projeto e ambiente compatível.
+- Limites: omitir `review` equivale a `"none"`, que não encaminha automaticamente as ações para aprovação humana. Alterar o modo exige tarefa ociosa e submissão estabilizada. A revisão do provedor não substitui autorização humana, revisão independente, gates de merge ou preservação funcional do LP Factory.
+- Estado e encerramento: sem adoção ou implementação recomendada agora; avaliar apenas diante de caso real, comprovar benefício e condições de uso, reconciliar os documentos canônicos afetados ou registrar rejeição. Não alterar as automações deste chat.
+- Fonte: guia oficial Automatic review.
 
 ## 5. Aplicabilidade e registro de decisões
 
