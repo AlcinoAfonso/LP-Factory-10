@@ -444,6 +444,12 @@ Em 26/10/2026, passou a validar alertas antes do paging: consulta logs/métricas
 - Gatilho: problema mensurado, acesso elegível e custo incremental zero; critério de encerramento: adoção validada e reconciliada pelo ABC ou rejeição fundamentada.
 - Plano e custo: Pro/Enterprise com Observability Plus; investigações adicionais e monitores customizados têm cobrança. O projeto não tem gratuidade comprovada para essa capacidade; não recomendar ativação nesta rodada.
 
+### Security Review — 07/11/2026
+
+- Beta própria para equipes Pro/Enterprise: analisa pushes GitHub e pode encaminhar correções ao Agent. Não é auditoria de runtime nem substitui review independente do projeto.
+- Gratuidade promocional até10/11 não comprova custo zero continuado; análise posterior e correções têm cobrança. Comparar cobertura com Codex/checks existentes somente em caso aprovado; não habilitar.
+- Fonte: [anúncio de03/11](https://vercel.com/changelog/vercel-security-review-public-beta). Prioridade condicional mantida.
+
 ### Valor para o Projeto
 
 - Pode apoiar diagnóstico operacional futuro em Vercel.
@@ -629,6 +635,11 @@ O upgrade mínimo para `16.3.3` foi feito na E23.1; a versão operacional foi po
 3. Medir navegação, Web Vitals, build autorizado e Preview antes e depois de qualquer otimização.
 4. Usar `instant()` ou o skill oficial apenas diante de rota-alvo e sem escrita irrestrita por agente.
 
+### Evolução de tooling — 07/11/2026
+
+- O skill `next-bundle-optimizer` e a comparação de snapshots do analisador apoiam diagnóstico de imports e JavaScript inicial. Exigem Next.js16.4/Turbopack; permanecem condicionados a rota e gargalo medidos, após segurança, sem instalar skill ou aplicar fixes por rotina.
+- Fonte: [anúncio oficial de28/10](https://nextjs.org/blog/ship-less-javascript-with-ai).
+
 ### Fontes Oficiais
 
 - [Next.js — Next.js 16.3](https://nextjs.org/blog/next-16-3)
@@ -784,18 +795,18 @@ No plano Hobby, a Vercel passou a preservar, além do deployment de produção a
 
 ---
 
-## 34 — Next.js setembro/outubro de 2026: correções upstream publicadas *(🟨 Patch de outubro pendente)*
+## 34 — Next.js setembro–novembro de 2026: correções upstream publicadas *(🟨 Patch corretivo pendente)*
 
 2026-09-22
 Catalogado em 2026-09-29
-Atualizado em 2026-10-20
+Atualizado em 2026-11-07
 
 ### Status no Projeto
 
 - Histórico preservado: sete correções de setembro aplicadas em `16.3.8` pelo PB 18B.1 / E23.4, PR [#1029](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1029), merge `bd3b8186501384945954be9fd255d9d6c5d42c8f`; instalação, checks, review, Preview e Production aprovados no recorte. O levantamento PB 18D.1 / E23.6 encerrou-se em 14/10 com fontes incompletas, sem remediação: [provas](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6173085395).
 - Estado atual: em 20/10 os três advisories de 14/10 foram recuperados; `package.json` e lockfile na base da rodada ainda resolvem Next.js/eslint-config-next `16.3.8`, React/React DOM `19.2.1` e `sharp 0.35.4`.
 - Natureza: segurança transversal da dependência existente; horizonte Starter. Publicação completa removeu a trava informacional do 18D, sem reabrir seu contrato concluído.
-- Ação pendente: propor atualização corretiva para `next 16.4.1` e alinhamento de dependências/lockfile no recorte próprio, com validação de Auth, SSR, Server Actions e imagens. Não exige novo plano ou serviço; custo incremental de plataforma zero, testes devem caber nos limites vigentes.
+- Ação pendente: propor atualização corretiva para `next 16.4.5` e alinhamento de dependências/lockfile no recorte próprio, com validação de Auth, SSR, Server Actions e imagens. Não exige novo plano ou serviço; custo incremental de plataforma zero, testes devem caber nos limites vigentes.
 - Prioridade: alta, ação recomendada agora. Motivo da permanência: baseline na faixa afetada e Server Actions em uso.
 - Gatilho: atendido pela publicação recuperada. Critério de encerramento: correção aplicável mergeada, verificada em Preview/Production e reconciliada documentalmente; catalogação não autoriza upgrade.
 
@@ -804,6 +815,13 @@ Atualizado em 2026-10-20
 - `GHSA-p3m5-59mp-jv5r` (alta): DoS em App Router com Server Actions; faixa 16.0.0–16.4.0, corrigida em 16.4.1. Há ações `use server` em `app/auth/update-password/page.tsx`; os requisitos observáveis se aplicam, sem teste de exploração.
 - `GHSA-673q-mjm6-r5xr` (crítica): RCE em Cache Components com funções `use cache` que retornam múltiplos typed arrays; faixa 16.0.0–16.4.0, corrigida em 16.4.1. `next.config.js` não habilita Cache Components; esse caminho não foi demonstrado no projeto. O fornecedor recomenda atualizar mesmo sem funções semelhantes.
 - `GHSA-2464-fhr4-w9xw` / CVE-2026-96889 (crítica): Image Optimization/SVG em Linux glibc; linha 16 até 16.4.0, corrigida em 16.4.1; mitigação upstream `sharp >=0.35.5`. Lockfile contém 0.35.4, mas exploração, processamento SVG e biblioteca efetiva no deploy não foram demonstrados. Ausência de `next/og` não exclui este caminho.
+
+### Atualização de novembro — 07/11/2026
+
+- A release oficial de03/11 indica 16.4.5 para a linha16. O alvo corretivo foi atualizado; os requisitos observáveis do DoS de outubro continuam presentes, sem remediação implementada.
+- Os novos avisos abrangem cache entre usuários/tenants, respostas em self-hosting, cookies em rotas Edge e rejeição de SVG. Não habilitar Cache Components nem equiparar middleware com cookies a um Edge Route Handler afetado.
+- Config não habilita Cache Components; condições de exploração de novembro não foram demonstradas. Conferir apenas consumidores pertinentes durante o patch, sem nova varredura ampla ou teste ofensivo.
+- Fontes: [release oficial](https://nextjs.org/blog/november-2026-security-release), [cache/root params](https://github.com/vercel/next.js/security/advisories/GHSA-mfr8-8qww-v76h), [cookies/Edge](https://github.com/vercel/next.js/security/advisories/GHSA-f3mh-rxg3-f5g2) e [SVG](https://github.com/vercel/next.js/security/advisories/GHSA-7qx7-33qx-rqx2). Prioridade alta mantida; atualizar a proposta existente no18E, sem novo Debate.
 
 ### Valor e limites
 
@@ -853,6 +871,47 @@ Catalogado em 2026-10-14
 - [React 19.3](https://react.dev/blog/2026/09/09/react-19-3)
 
 ---
+
+## 36 — Vercel Tracing com busca por spans *(🟩 GA; transversal condicional)*
+
+2026-11-06
+
+### Estado, valor e limites
+
+- Adoção não comprovada; sem `@vercel/otel` ou instrumentation encontrado. Busca de traces por dashboard/CLI pode ajudar em latência entre etapas que os logs atuais não esclareçam.
+- GA em todos os planos; retenção Hobby3dias e Pro/Enterprise14dias. Tracing automático anunciado para projetos novos Next.js16.5 não comprova ativação neste projeto16.3.8.
+- Prioridade condicional, horizonte indefinido. Gatilho: incidente/gargalo real, vantagem sobre logs atuais e custo zero validado. Sampling, dados sensíveis e retenção exigem recorte próprio; traces não substituem evidência durável.
+- Encerrar com adoção validada/ABC ou rejeição fundamentada. Nenhuma instrumentação ou configuração alterada.
+- Fonte: [anúncio oficial](https://vercel.com/changelog/vercel-tracing-is-now-generally-available).
+
+---
+
+## 37 — Vercel Schedules: execução recorrente ou pontual *(🧪 Public beta; dependente de recorte)*
+
+2026-11-05
+
+### Estado, valor e gatilho
+
+- Não adotado: `vercel.json` sem schedules e sem pacote consumidor. Pode atender tarefa de serviço real com horário e fuso, quando uma operação repetida já estiver validada.
+- Suporta Functions/HTTP/Queues; agendamento dinâmico usa Queue. Cron Jobs existentes continuam funcionando, sem migração obrigatória.
+- Horizonte indefinido; avaliar necessidade, idempotência e vantagem sobre automações atuais. Quotas Hobby e cobrança por uso nos planos pagos exigem custo zero comprovado no caso.
+- Não criar job, fila, rota ou agendamento nem substituir automação pausada. Fonte: [anúncio oficial](https://vercel.com/changelog/vercel-schedules-is-now-in-public-beta).
+
+---
+
+## 38 — Revogação automática de tokens Vercel expostos *(🟩 Plataforma; saldo transversal condicional)*
+
+2026-11-04
+
+### Estado, valor e ação
+
+- O fornecedor ampliou detecção em fontes públicas e revogação automática, com aviso por e-mail. Isso reduz uso indevido de acessos existentes; não comprova ocorrência ou cobertura integral dos tokens locais.
+- Sem ativação adicional proposta. Prioridade condicional, horizonte Starter: diante de aviso real ou falha de autenticação, confirmar a causa e tratar consumidor/rotação no fluxo autorizado.
+- Não ler, publicar ou provocar vazamento para testar detector. Encerrar o saldo com incidente/configuração competente reconciliados, ou inaplicabilidade fundamentada.
+- Fonte: [anúncio oficial](https://vercel.com/changelog/vercel-token-scanning-expands-to-more-public-sources).
+
+---
+
 
 ## Registro da rodada — Vercel + Next.js Update — 10/08/2026
 
