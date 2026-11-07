@@ -437,6 +437,13 @@ Dashboard de segurança da Vercel para agregar postura de segurança por conta e
 
 Agente da Vercel no dashboard para responder perguntas sobre projetos, investigar falhas de produção, analisar deploys/logs/métricas/configurações e executar ações aprovadas, como abrir PR, rollback ou ajuste de configuração.
 
+Em 26/10/2026, passou a validar alertas antes do paging: consulta logs/métricas e pode enviar ao webhook apenas os classificados como críticos. Monitores customizados permitem limiares, anomalias e filtros; a configuração ainda exige decisão própria.
+
+- Estado/ação: radar transversal não adotado; comparar com inspeção existente somente diante de ruído ou incidente recorrente.
+- Prioridade: condicional, sem mudança. Motivo: possível redução de falsos positivos, ainda sem ganho comprovado no projeto.
+- Gatilho: problema mensurado, acesso elegível e custo incremental zero; critério de encerramento: adoção validada e reconciliada pelo ABC ou rejeição fundamentada.
+- Plano e custo: Pro/Enterprise com Observability Plus; investigações adicionais e monitores customizados têm cobrança. O projeto não tem gratuidade comprovada para essa capacidade; não recomendar ativação nesta rodada.
+
 ### Valor para o Projeto
 
 - Pode apoiar diagnóstico operacional futuro em Vercel.
@@ -452,6 +459,11 @@ Agente da Vercel no dashboard para responder perguntas sobre projetos, investiga
 1. Manter como avaliação futura.
 2. Não habilitar ações aprovadas ou automações sem decisão humana explícita.
 3. Não transformar em agente operacional do LP Factory 10 sem plano próprio e fonte real do projeto.
+
+### Fontes oficiais
+
+- [Validação de alertas — 26/10/2026](https://vercel.com/changelog/vercel-agent-can-now-validate-alerts-before-paging-you)
+- [Monitores customizados — 26/10/2026](https://vercel.com/changelog/create-custom-monitors-in-vercel-observability)
 
 ---
 
