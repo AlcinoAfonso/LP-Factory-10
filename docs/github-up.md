@@ -136,7 +136,7 @@ Atualizado em 2026-08-04
 
 ---
 
-## github#7 — Secret scanning public monitoring for enterprises *(🧪 Public preview / Enterprise)*
+## github#7 — Secret scanning public monitoring for enterprises *(🟩 GA / Enterprise)*
 
 2026-07-01
 Atualizado em 2026-07-20
@@ -145,6 +145,11 @@ Atualizado em 2026-07-20
 
 - Status: Não implementado.
 - Evidência: sem registro de uso de Enterprise Cloud com Secret Protection/Advanced Security para este recurso no LP Factory 10.
+
+### Evolução de disponibilidade — 07/11/2026
+
+- GA desde28/10 para Enterprise com GHSP/GHAS, incluído na licença pertinente. Isso não prova elegibilidade ou custo zero no plano local; prioridade condicional preservada.
+- Fonte: [anúncio oficial](https://github.blog/changelog/2026-10-28-public-monitoring-for-enterprises-generally-available/).
 
 ### Descrição
 
@@ -273,6 +278,11 @@ As workflow execution protections permitem criar uma allow list para controlar q
 Na disponibilidade geral de 17/09/2026, o GitHub acrescentou escopo por arquivo de workflow, Insights e REST API. O modo de avaliação continua permitindo observar o efeito antes de bloquear runs.
 
 Para repositórios públicos sem policy aplicável, o GitHub também iniciou uma regra padrão em modo de avaliação para desabilitar `pull_request_target`, com enforcement adiado para 02/12/2026, conforme correção oficial de 21/10. O LP Factory 10 não possui esse trigger no estado atual, portanto a mudança padrão não exige alteração de workflow.
+
+### Janelas anunciadas — 07/11/2026
+
+- Brownouts em09/11 e16/11, 16:00–18:00UTC, antes do enforcement02/12. Os seis workflows foram relidos: nenhum usa `pull_request_target`; não criar exceção ou alterar policy por esse calendário.
+- Fonte: [aviso oficial de02/11](https://github.blog/changelog/2026-11-02-pull_request_target-blocked-by-default-december-2/). Prioridade condicional mantida; reavaliar apenas se o evento passar a ser necessário.
 
 ### Valor para o Projeto
 
@@ -608,7 +618,7 @@ Catalogado em 2026-10-14
 - Natureza de uso: segurança transversal complementar aos detectores de padrões.
 - Relação com a stack: pode identificar senhas sem formato reconhecível; não substitui `github#13`, `github#16` ou revisão independente.
 - Horizonte: indefinido; mantido no radar, sem recomendação de adoção agora.
-- Estado atual: scans de alertas já detectados por IA em GHSP/GHAS recebem o modelo novo; isso não inclui todos os alertas baseados em padrões. AI push protection está em private preview; checks do classificador no Copilot foram anunciados para private preview futuro.
+- Estado atual: scans de alertas já detectados por IA em GHSP/GHAS recebem o modelo novo; isso não inclui todos os alertas baseados em padrões. Desde28/10, o bloqueio contextual na push protection está em public preview, desligado por padrão; requer push protection e AI-detected secrets habilitados.
 - Ação pendente: avaliar elegibilidade, benefício adicional e cobrança somente diante de necessidade comprovada.
 - Prioridade: condicional.
 - Motivo da permanência: cobertura potencial de credenciais não estruturadas.
@@ -618,36 +628,41 @@ Catalogado em 2026-10-14
 ### Valor e limites
 
 - Scans de alertas já detectados por IA em GHSP/GHAS recebem o modelo novo sem cobrança adicional por essa troca; isso não prova gratuidade ou elegibilidade no plano local.
-- O GitHub anunciou consumo futuro de AI Credits para os novos checks opt-in de push protection e Copilot, a introduzir nas próximas semanas. A cobrança depende da disponibilidade aplicável, adesão ao public preview e habilitação; não comprova cobrança ativa nesta data. Não habilitar, contratar nem alterar políticas ou orçamento.
-- Quando o modelo de cobrança anunciado entrar em vigor e o recurso estiver habilitado, uma verificação poderá consumir créditos mesmo sem bloquear push.
+- A push protection contextual consome AI Credits após adesão e habilitação no preview. Isso não altera por si só o custo dos alertas pós-push incluídos em GHSP/GHAS, nem comprova elegibilidade ou cobrança ativa no projeto. Não habilitar ou alterar políticas/orçamento.
+- Quando habilitado, o classificador pode consumir créditos mesmo sem bloquear push; manter no radar pelo gate econômico.
+
+Atualização factual: 07/11/2026; prioridade condicional preservada.
 
 ### Fonte oficial
 
+- [Public preview e cobrança — 28/10](https://github.blog/changelog/2026-10-28-push-protection-beyond-predefined-secret-patterns/)
 - [GitHub Changelog — Purpose-built model for leaked secret detection](https://github.blog/changelog/2026-10-07-purpose-built-model-for-leaked-secret-detection/)
 
 ---
 
-## github#18 — Lockfiles de dependências do GitHub Actions *(🧪 Public preview; transversal condicional)*
+## github#18 — Lockfiles de dependências do GitHub Actions *(🟩 GA; transversal condicional)*
 
 2026-10-14
 Catalogado em 2026-10-20
+Atualizado em 2026-11-07
 
 ### Estado e valor
 
 - Não implementado: não há `.github/workflows/actions.lock`; workflows ainda usam referências como `actions/checkout@v4`, além de pins SHA existentes.
-- Preview disponível inclusive no Free. A extensão `gh actions-lock` registra commits de actions, dependências transitivas e workflows reutilizáveis; pode reduzir execução inesperada quando tags mudam.
+- GA desde28/10, inclusive no Free. A extensão `gh actions-lock` registra commits de actions, dependências transitivas e workflows reutilizáveis; pode reduzir execução inesperada quando tags mudam.
 - Horizonte: Starter, condicionado a necessidade e compatibilidade. Complementa revisão de dependências; não comprova segurança do código bloqueado.
 
 ### Pendência e limites
 
 - Estado: radar; prioridade condicional. Avaliar somente na próxima revisão aprovada de supply chain/Actions com referências móveis, comparando com pin SHA direto e menor manutenção.
-- Ação pendente: validar preview, cobertura e custo incremental zero no plano efetivo antes de adoção. Cada workflow integrado passa a exigir entradas completas.
+- Ação pendente: validar cobertura, compatibilidade e custo incremental zero no plano efetivo antes de adoção. Cada workflow integrado passa a exigir entradas completas.
 - Motivo da permanência: Actions real com referências móveis. Gatilho: recorte aprovado que demonstre vantagem sobre pin direto.
 - Encerramento: adoção validada/reconciliada ou rejeição fundamentada.
 - Não instalar extensão, criar lockfile, habilitar policy nem alterar workflow nesta rodada.
 
 ### Fonte oficial
 
+- [GitHub — GA de workflow lockfiles](https://github.blog/changelog/2026-10-28-github-actions-workflow-lockfiles-are-generally-available/)
 - [GitHub — workflow lockfiles em public preview](https://github.blog/changelog/2026-10-14-github-actions-workflow-lockfiles-in-public-preview/)
 
 ---
@@ -682,6 +697,50 @@ Catalogado em 2026-10-27
 - Fonte: [GitHub — package firewall, 20/10/2026](https://github.blog/changelog/2026-10-20-github-package-firewall-in-public-preview/).
 
 ---
+
+## github#21 — AI Scan de repositório completo *(🧪 Public preview; transversal condicional)*
+
+2026-10-28
+
+### Estado, valor e limites
+
+- Adoção não comprovada. Análise da branch padrão pode complementar o review do delta e encontrar riscos fora do PR; não substitui revisão, testes ou controles determinísticos.
+- Disponível para repositórios públicos pessoais e superfícies organizacionais elegíveis; consome Code Security AI credits. Público não significa gratuito, e configurações/budgets locais não foram lidos.
+- Prioridade condicional, horizonte indefinido. Gatilho: lacuna concreta de cobertura, elegibilidade e custo zero comprovados, comparando com checks/Codex atuais.
+- Alertas exigem novo scan após correção; merge não os encerra automaticamente. Encerrar com adoção validada/ABC ou rejeição fundamentada. Não habilitar ou executar scan nesta rodada.
+- Fonte: [anúncio oficial](https://github.blog/changelog/2026-10-28-ai-scan-for-repositories-in-public-preview/).
+
+---
+
+## github#22 — Code scanning para aplicações de IA *(🧪 Public preview; transversal condicional)*
+
+2026-10-28
+
+### Estado, valor e limites
+
+- Adoção não comprovada; sem workflow CodeQL versionado entre os seis atuais. Settings hospedadas não inspecionadas.
+- Pode apontar prompt injection indireta, acesso indevido a dados e autonomia excessiva em caminhos com modelos/tools. Pertinente à IA existente, sem prova de cobertura do código ou falha local.
+- Exige GHAS e habilitação própria; licença/custo local desconhecidos. Horizonte indefinido e prioridade condicional: avaliar lacuna real dos controles atuais e custo zero antes de recomendar.
+- Encerrar com cobertura/adoção validadas e ABC ou rejeição fundamentada. Nenhum workflow, política, scanner ou contrato de IA alterado.
+- Fonte: [anúncio oficial](https://github.blog/changelog/2026-10-28-code-scanning-for-ai-applications-in-public-preview/).
+
+---
+
+
+## github#23 — Reachability nos alertas Dependabot *(🧪 Public preview; transversal condicional)*
+
+2026-10-28
+
+### Estado, valor e limites
+
+- Não registrado como adotado; configuração hospedada não inspecionada. Pode priorizar alertas JS/TypeScript com evidência de caminho até a função vulnerável, compatível com npm/lockfile atuais.
+- Preview restrito a Enterprise Cloud; gratuidade do preview não demonstra elegibilidade local. Análise gerenciada e recorrente exige decisão própria, sem ativação nesta rodada.
+- Prioridade condicional, horizonte indefinido. Gatilho: volume/ruído real na triagem, plano elegível e custo zero comprovados. Não adiar patch conhecido de `vercel#34` para instalar esse recurso.
+- Resultado indisponível não elimina risco; potencialmente alcançável deve ser tratado como alcançável. Alertas não são fechados automaticamente. Encerrar com adoção validada/ABC ou rejeição fundamentada.
+- Fonte: [anúncio oficial](https://github.blog/changelog/2026-10-28-prioritize-dependabot-alerts-with-reachability-analysis/).
+
+---
+
 
 ## Registro da rodada — GitHub Update — 10/08/2026
 
