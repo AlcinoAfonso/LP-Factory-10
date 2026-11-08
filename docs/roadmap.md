@@ -2439,7 +2439,7 @@
 
 23.7.1 Objetivo e status
 - Objetivo: corrigir vulnerabilidades aplicáveis sem mudança funcional ou custo incremental de plataforma.
-- Status: implementado; conclusão por ambiente e gates registrada no PR #1126.
+- Status: concluído.
 
 23.7.2 Registros do recorte
 - Repositório:
