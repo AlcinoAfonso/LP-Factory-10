@@ -2434,6 +2434,7 @@
 23.6.4 Diagnóstico delimitado da mudança TLS Supabase
 - Status: conferência única do Debate 18F concluída em 08/11/2026; incompatibilidade/correção não comprovadas; compatibilidade global permanece inconclusiva.
 - Conteúdo: provas PB 18D.1 reutilizadas e configuração/deploys atuais do Core Vercel conferidos (Node 22.x; Production READY SHA 3007a34067295ac260aae83481a08705d777ebf2; Preview READY SHA 944f94d183400baa31b3b2bf23ed09fa1b516405). Isso não prova TLS efetiva por Function/middleware, capacidade do fluxo Auth em navegador ou cobertura dos consumidores HTTP atuais. Detalhes, provas e gatilho em docs/supa-up.md — supa#73. A mudança limita-se a quatro cifras CBC nas APIs HTTP, não Postgres/pooler/Management API. Nenhuma alteração de produto; sem correção demonstrada.
+
 23.7 Atualização corretiva do Next.js — Debate 18E
 
 23.7.1 Objetivo e status
