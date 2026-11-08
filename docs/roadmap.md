@@ -2299,7 +2299,7 @@
 
 23. E23 — Segurança e governança transversal da plataforma
 - Objetivo: segurança/governança.
-- Status: E23.1–23.5 concluídas; E23.6 encerrada com incertezas, sem remediação presumida.
+- Status: E23.1–23.5 concluídas; E23.6 encerrada com incertezas; correção Next.js implementada na E23.7, com recibo operacional próprio.
 
 23.1 Atualização de segurança do Next.js
 
@@ -2434,6 +2434,27 @@
 23.6.4 Diagnóstico delimitado da mudança TLS Supabase
 - Status: levantamento concluído; compatibilidade só no Node local inspecionado, sem conclusão global.
 - Conteúdo: cobertura/gatilhos em docs/supa-up.md — supa#73 e provas 23.6.2; Vercel/browser/SO/integrações externas não demonstrados. Quatro cifras CBC nas APIs HTTP, não Postgres/pooler/Management API. Nenhuma incompatibilidade/correção comprovada, sem novas provas exigidas nesta rodada.
+
+23.7 Atualização corretiva do Next.js — Debate 18E
+
+23.7.1 Objetivo e status
+- Objetivo: corrigir vulnerabilidades aplicáveis sem mudança funcional ou custo incremental de plataforma.
+- Status: implementado; conclusão por ambiente e gates registrada no PR #1126.
+
+23.7.2 Registros do recorte
+- Repositório:
+  - Ajustados:
+    - `package.json`
+    - `package-lock.json`
+- Updates:
+  - Aplicados:
+    - `vercel#34`
+- Referências:
+  - Baseline e limites: `docs/vercel-up.md` — `vercel#34`.
+  - Contrato integral, V2 e recibo operacional: [PR #1126](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1126).
+
+23.7.3 Correção e preservação funcional
+- Conteúdo: Next.js/lint 16.4.5 e transitivas corretivas; Auth/sessões, SSR, Server Actions e imagens preservados. Sem recursos opcionais, refatoração, banco, TLS/18F ou mudança de IA.
 
 24. E24 — Governança e compatibilidade transversal de updates
 - Objetivo: governar updates sem custo incremental.
