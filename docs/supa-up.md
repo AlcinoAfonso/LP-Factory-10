@@ -2130,14 +2130,14 @@ Catalogado em 2026-10-14
 
 ### Status no Projeto
 
-- Estado atual: retirada anunciada a partir de 10/11/2026, no mínimo, nas APIs HTTP usadas pelo projeto; levantamento delimitado PB 18D.1 concluído, com incertezas de impacto preservadas.
-- Conclusão delimitada: capacidade compatível comprovada somente no processo local inspecionado; Vercel e browsers inconclusivos. Cobertura de integrações externas não confirmada; informação ausente não comprova ausência. Nenhuma incompatibilidade ou correção necessária comprovada.
-- Ação pendente: reavaliar e encaminhar o saldo diante do gatilho, usando a evidência disponível sem repetir buscas esgotadas; eventual correção exige recorte próprio. Sem coleta adicional ou consulta ao suporte nesta rodada.
-- Prioridade: temporal, antes de 10/11/2026.
-- Motivo da permanência: dependência das APIs HTTPS e capacidade efetiva não demonstrada para todos os consumidores conhecidos.
-- Gatilho: prazo anunciado (a partir de 10/11/2026, no mínimo), notificação específica de cliente afetado, identificação concreta de consumidor existente ou disponibilidade de nova prova efetiva de capacidade/configuração no fluxo autorizado.
-- Critério de encerramento do saldo: impacto delimitado sustentado por evidência suficiente e eventual correção aplicável validada em recorte próprio; concluir o levantamento não resolve este saldo.
-- Provas e limites: [PR #1067 — diagnóstico final e cobertura por ambiente](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6173085395).
+- Estado atual: conferência única do Debate 18F executada em 08/11/2026, antes do início mais cedo anunciado para 10/11, reutilizando as provas do PB 18D.1 e uma leitura read-only do projeto/deploys Vercel atuais.
+- Conclusão delimitada: INCONCLUSIVO para compatibilidade global. Nenhuma incompatibilidade ou correção necessária foi comprovada. Vercel confirma o projeto `lp-factory-10` configurado em Node 22.x e deployments Production/Preview READY, mas não a TLS efetiva por Function/middleware. Permanecem sem prova suficiente a capacidade/configuração TLS do fluxo Auth em navegador e a cobertura dos consumidores HTTP atuais. Capacidade local ou conexão isolada não demonstra compatibilidade global.
+- Ação pendente: nenhuma alteração de produto. O saldo permanece inconclusivo, sem repetir inventário ou buscas esgotadas. Retomar somente com nova prova efetiva de TLS dos consumidores atuais ou falha TLS concreta em consumidor existente; eventual correção exige recorte próprio.
+- Prioridade: temporal; a conferência foi concluída em 08/11/2026, antes da retirada anunciada para 10/11/2026, no mínimo.
+- Motivo da permanência: as APIs HTTPS do projeto são usadas, mas a configuração TLS efetiva dos consumidores atuais não está demonstrada em cobertura suficiente.
+- Gatilho: nova prova acessível da TLS efetiva das Functions/middleware de Preview e Production ou do fluxo Auth em navegador; ou notificação de falha TLS concreta em consumidor existente. Não reabrir por consumidor já conhecido nem ampliar para matriz de combinações.
+- Critério de encerramento do saldo: classificar afetado/corrigido somente com consumidor incompatível concreto e correção validada; classificar sem correção apenas com evidência suficiente para os consumidores atuais sob controle do projeto. Até lá, manter INCONCLUSIVO.
+- Provas e limites: [PR #1067 — diagnóstico final e cobertura por ambiente](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6173085395); configuração atual Node 22.x, Production READY `dpl_7zGzsuGH5TZteAs4EahjPTJNEc1M` (SHA `3007a34067295ac260aae83481a08705d777ebf2`) e Preview READY `dpl_Em4oQL81N3qwwJUp5rrpFEyzF6zH` (SHA `944f94d183400baa31b3b2bf23ed09fa1b516405`) ([Production](https://vercel.com/alcino-afonsos-projects/lp-factory-10/7zGzsuGH5TZteAs4EahjPTJNEc1M), [Preview](https://vercel.com/alcino-afonsos-projects/lp-factory-10/Em4oQL81N3qwwJUp5rrpFEyzF6zH)). Esses dados identificam a configuração do projeto/deploy, não a TLS efetiva por consumidor.
 
 ### Fontes oficiais
 
