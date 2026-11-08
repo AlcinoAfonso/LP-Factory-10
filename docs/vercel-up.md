@@ -795,20 +795,20 @@ No plano Hobby, a Vercel passou a preservar, além do deployment de produção a
 
 ---
 
-## 34 — Next.js setembro–novembro de 2026: correções upstream publicadas *(🟩 Correção 16.4.5 implementada)*
+## 34 — Next.js setembro–novembro de 2026: correções upstream publicadas *(🟩 Correção 16.4.5 concluída)*
 
 2026-09-22
 Catalogado em 2026-09-29
-Atualizado em 2026-11-07
+Atualizado em 2026-11-08
 
 ### Status no Projeto
 
 - Histórico preservado: sete correções de setembro aplicadas em `16.3.8` pelo PB 18B.1 / E23.4, PR [#1029](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1029), merge `bd3b8186501384945954be9fd255d9d6c5d42c8f`; instalação, checks, review, Preview e Production aprovados no recorte. O levantamento PB 18D.1 / E23.6 encerrou-se em 14/10 com fontes incompletas, sem remediação: [provas](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6173085395).
-- Estado implementado: Debate 18E / [PR #1126](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1126), Next.js/eslint-config-next `16.4.5`, `sharp 0.35.5` e libvips `1.3.4` no lockfile. React/React DOM `19.2.1` preservados; recibo de validação por ambiente no PR.
+- Estado final: Debate 18E / [PR #1126](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1126), Next.js/eslint-config-next `16.4.5`, `sharp 0.35.5` e libvips `1.3.4` no lockfile; React/React DOM `19.2.1` preservados. [Recibo final](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1126#issuecomment-6723149286).
 - Natureza: segurança transversal da dependência existente; horizonte Starter. Publicação completa removeu a trava informacional do 18D, sem reabrir seu contrato concluído.
-- Tratamento: atualização corretiva da dependência existente, sem opt-ins ou ajuste funcional. Instalação limpa, check, build hospedado e QA focal em Preview aprovados; conclusão exige recibo de review do HEAD e Production no PR. Custo incremental de plataforma zero, nos limites vigentes.
-- Prioridade: alta para encerramento operacional. Preservar o acompanhamento de advisories futuros, sem reabrir os contratos concluídos.
-- Gatilho: atendido pela publicação recuperada. Critério de encerramento: correção aplicável mergeada, verificada em Preview/Production e reconciliada documentalmente; catalogação não autoriza upgrade.
+- Tratamento concluído: atualização corretiva da dependência existente, sem opt-ins ou ajuste funcional; custo incremental de plataforma zero, nos limites vigentes.
+- Estado: encerrado em 08/11/2026; sem pendência ativa neste registro. Advisories futuros não reabrem os contratos concluídos.
+- Critério de encerramento atendido: correção mergeada e documentação reconciliada; a catalogação não autoriza updates adicionais.
 
 ### Aplicabilidade delimitada
 
@@ -826,7 +826,7 @@ Atualizado em 2026-11-07
 ### Valor e limites
 
 - Corrigir a dependência atual sem vincular Cache Components, Instant Navigations, React 19.3 ou outras novidades opcionais de `vercel#29/#35`.
-- Validar versões efetivamente resolvidas, compatibilidade, checks, build hospedado e smoke do fluxo existente; sem pesquisa ampla ou prova ofensiva para decidir o patch já indicado.
+- Validação focal concluída em Preview e Production; versões resolvidas, compatibilidade, checks, build hospedado e fluxos definidos foram verificados no PR #1126, sem teste ofensivo.
 - Security Checks do repositório não comprovam, isoladamente, remediação de dependências. Não declarar incidente, exploração ou segurança global.
 - A autorização deste delta é a Rodada 1 do Debate 18E; aprovações históricas 18B/18D permanecem preservadas. Pendências npm fora de Next.js não foram corrigidas por ampliação silenciosa.
 
