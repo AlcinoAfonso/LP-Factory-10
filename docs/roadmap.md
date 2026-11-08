@@ -2432,9 +2432,8 @@
 - Conteúdo: baseline/fontes/limites/gatilhos em docs/vercel-up.md — vercel#34 e provas 23.6.2; ausência de advisory acessível não prova inexistência, uso não prova exploração. Sem versão corretiva/upgrade autorizado.
 
 23.6.4 Diagnóstico delimitado da mudança TLS Supabase
-- Status: conferência única do Debate 18F concluída em 08/11/2026; incompatibilidade/correção não comprovadas; compatibilidade global permanece inconclusiva.
-- Conteúdo: provas PB 18D.1 reutilizadas e configuração/deploys atuais do Core Vercel conferidos (Node 22.x; Production READY SHA 3007a34067295ac260aae83481a08705d777ebf2; Preview READY SHA 944f94d183400baa31b3b2bf23ed09fa1b516405). Isso não prova TLS efetiva por Function/middleware, capacidade do fluxo Auth em navegador ou cobertura dos consumidores HTTP atuais. Detalhes, provas e gatilho em docs/supa-up.md — supa#73. A mudança limita-se a quatro cifras CBC nas APIs HTTP, não Postgres/pooler/Management API. Nenhuma alteração de produto; sem correção demonstrada.
-
+- Status: conferência 18F concluída; compatibilidade global inconclusiva; nenhuma incompatibilidade/correção comprovada.
+- Conteúdo: 18D.1 — levantamento e provas de base ([PR #1067 — resultado final](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6173085395); [provas TLS](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6170466774)). 18F — conferência curta dos ambientes atuais, reutilizando essas provas, com resultado inconclusivo ([PR #1128 — recibo final](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1128#issuecomment-6724249956)). Limites e gatilho: docs/supa-up.md — supa#73. O aviso abrange as APIs HTTP, não Postgres/pooler/Management API.
 23.7 Atualização corretiva do Next.js — Debate 18E
 
 23.7.1 Objetivo e status
