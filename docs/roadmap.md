@@ -2434,6 +2434,7 @@
 23.6.4 Diagnóstico delimitado da mudança TLS Supabase
 - Status: conferência 18F concluída; compatibilidade global inconclusiva; nenhuma incompatibilidade/correção comprovada.
 - Conteúdo: 18D.1 — levantamento e provas de base ([PR #1067 — resultado final](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6173085395); [provas TLS](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6170466774)). 18F — conferência curta dos ambientes atuais, reutilizando essas provas, com resultado inconclusivo ([PR #1128 — recibo final](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1128#issuecomment-6724249956)). Limites e gatilho: docs/supa-up.md — supa#73. O aviso abrange as APIs HTTP, não Postgres/pooler/Management API.
+
 23.7 Atualização corretiva do Next.js — Debate 18E
 
 23.7.1 Objetivo e status
