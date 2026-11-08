@@ -596,7 +596,7 @@ Atualizado em 2026-10-06
 
 ### Status no Projeto
 
-- Status: parcialmente implementado; o baseline operacional foi atualizado para `next` e `eslint-config-next` `16.3.8` na E23.4 / PR #1029, mas não há `instant()`, `next-cache-components-optimizer` nem Cache Components habilitado.
+- Status: recursos opt-in não adotados; baseline corretivo `16.4.5` no Debate 18E / PR #1126, conforme `vercel#34`. Sem `instant()`, `next-cache-components-optimizer` ou Cache Components habilitado.
 - Evidência: `package.json` e `package-lock.json` no SHA inicial, mais `docs/roadmap.md` 23.1 e 23.4 e PR #1029; instalação limpa, checks, Security Checks, build hospedado e Preview foram aprovados nos recortes correspondentes.
 - Mudança material: E23.4 atualizou a dependência existente para `16.3.8` e registrou sete correções de segurança; advisories upstream continuam em acompanhamento ativo em `vercel#34`. Permanecem condicionados os recursos opt-in que exigem rota-alvo e medição.
 - Natureza de uso: evolução direta da stack Next.js atual.
@@ -607,7 +607,7 @@ Atualizado em 2026-10-06
 
 Next.js 16.3 foi lançado de forma estável com redução de uso de memória em sessões longas de desenvolvimento, cache persistente para builds repetidos e melhorias de renderização e tooling. O release também consolida as ferramentas de Instant Navigations, incluindo prefetch parcial, teste `instant()` e o skill `next-cache-components-optimizer` para diagnosticar rotas lentas.
 
-O upgrade mínimo para `16.3.3` foi feito na E23.1; a versão operacional foi posteriormente atualizada para `16.3.8` na E23.4. Essas atualizações não autorizam habilitar Cache Components, mudar fetch/cache, introduzir prefetch customizado ou reescrever rotas. Recursos opt-in continuam exigindo uma navegação-alvo e medição próprias.
+O upgrade mínimo para `16.3.3` foi feito na E23.1, seguido de `16.3.8` na E23.4; o baseline corretivo do Debate 18E está em `vercel#34`. Essas atualizações não autorizam habilitar Cache Components, mudar fetch/cache, introduzir prefetch customizado ou reescrever rotas. Recursos opt-in continuam exigindo uma navegação-alvo e medição próprias.
 
 ### Valor para o Projeto
 
@@ -618,7 +618,7 @@ O upgrade mínimo para `16.3.3` foi feito na E23.1; a versão operacional foi po
 
 ### Gatilho de aplicação
 
-- Upgrade mínimo: concluído pela E23.1 em `16.3.3` e atualizado para `16.3.8` pela E23.4 / PR #1029; versões futuras seguem o fluxo normal de dependências e segurança.
+- Upgrade mínimo: histórico E23.1/E23.4 preservado; estado corretivo e evidências vigentes em `vercel#34`.
 - Instant Navigations: avaliar somente quando uma rota real apresentar atraso perceptível ou métrica insuficiente, começando pelos defaults do framework e por teste reproduzível.
 
 ### Dependências, riscos e limite
@@ -795,7 +795,7 @@ No plano Hobby, a Vercel passou a preservar, além do deployment de produção a
 
 ---
 
-## 34 — Next.js setembro–novembro de 2026: correções upstream publicadas *(🟨 Patch corretivo pendente)*
+## 34 — Next.js setembro–novembro de 2026: correções upstream publicadas *(🟩 Correção 16.4.5 implementada)*
 
 2026-09-22
 Catalogado em 2026-09-29
@@ -804,31 +804,31 @@ Atualizado em 2026-11-07
 ### Status no Projeto
 
 - Histórico preservado: sete correções de setembro aplicadas em `16.3.8` pelo PB 18B.1 / E23.4, PR [#1029](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1029), merge `bd3b8186501384945954be9fd255d9d6c5d42c8f`; instalação, checks, review, Preview e Production aprovados no recorte. O levantamento PB 18D.1 / E23.6 encerrou-se em 14/10 com fontes incompletas, sem remediação: [provas](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6173085395).
-- Estado atual: em 20/10 os três advisories de 14/10 foram recuperados; `package.json` e lockfile na base da rodada ainda resolvem Next.js/eslint-config-next `16.3.8`, React/React DOM `19.2.1` e `sharp 0.35.4`.
+- Estado implementado: Debate 18E / [PR #1126](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1126), Next.js/eslint-config-next `16.4.5`, `sharp 0.35.5` e libvips `1.3.4` no lockfile. React/React DOM `19.2.1` preservados; recibo de validação por ambiente no PR.
 - Natureza: segurança transversal da dependência existente; horizonte Starter. Publicação completa removeu a trava informacional do 18D, sem reabrir seu contrato concluído.
-- Ação pendente: propor atualização corretiva para `next 16.4.5` e alinhamento de dependências/lockfile no recorte próprio, com validação de Auth, SSR, Server Actions e imagens. Não exige novo plano ou serviço; custo incremental de plataforma zero, testes devem caber nos limites vigentes.
-- Prioridade: alta, ação recomendada agora. Motivo da permanência: baseline na faixa afetada e Server Actions em uso.
+- Tratamento: atualização corretiva da dependência existente, sem opt-ins ou ajuste funcional. Instalação limpa, check, build hospedado e QA focal em Preview aprovados; conclusão exige recibo de review do HEAD e Production no PR. Custo incremental de plataforma zero, nos limites vigentes.
+- Prioridade: alta para encerramento operacional. Preservar o acompanhamento de advisories futuros, sem reabrir os contratos concluídos.
 - Gatilho: atendido pela publicação recuperada. Critério de encerramento: correção aplicável mergeada, verificada em Preview/Production e reconciliada documentalmente; catalogação não autoriza upgrade.
 
 ### Aplicabilidade delimitada
 
 - `GHSA-p3m5-59mp-jv5r` (alta): DoS em App Router com Server Actions; faixa 16.0.0–16.4.0, corrigida em 16.4.1. Há ações `use server` em `app/auth/update-password/page.tsx`; os requisitos observáveis se aplicam, sem teste de exploração.
 - `GHSA-673q-mjm6-r5xr` (crítica): RCE em Cache Components com funções `use cache` que retornam múltiplos typed arrays; faixa 16.0.0–16.4.0, corrigida em 16.4.1. `next.config.js` não habilita Cache Components; esse caminho não foi demonstrado no projeto. O fornecedor recomenda atualizar mesmo sem funções semelhantes.
-- `GHSA-2464-fhr4-w9xw` / CVE-2026-96889 (crítica): Image Optimization/SVG em Linux glibc; linha 16 até 16.4.0, corrigida em 16.4.1; mitigação upstream `sharp >=0.35.5`. Lockfile contém 0.35.4, mas exploração, processamento SVG e biblioteca efetiva no deploy não foram demonstrados. Ausência de `next/og` não exclui este caminho.
+- `GHSA-2464-fhr4-w9xw` / CVE-2026-96889 (crítica): Image Optimization/SVG em Linux glibc; linha 16 até 16.4.0, corrigida em 16.4.1; mitigação upstream `sharp >=0.35.5`. O baseline anterior continha 0.35.4; o lockfile corretivo resolve 0.35.5. Exploração e processamento SVG no deploy não foram demonstrados. Ausência de `next/og` não exclui este caminho.
 
 ### Atualização de novembro — 07/11/2026
 
-- A release oficial de03/11 indica 16.4.5 para a linha16. O alvo corretivo foi atualizado; os requisitos observáveis do DoS de outubro continuam presentes, sem remediação implementada.
+- A [release oficial de 03/11](https://github.com/vercel/next.js/releases/tag/v16.4.5) e os advisories confirmam o alvo corretivo 16.4.5, implementado no Debate 18E; sem teste ofensivo ou declaração de segurança global.
 - Os novos avisos abrangem cache entre usuários/tenants, respostas em self-hosting, cookies em rotas Edge e rejeição de SVG. Não habilitar Cache Components nem equiparar middleware com cookies a um Edge Route Handler afetado.
 - Config não habilita Cache Components; condições de exploração de novembro não foram demonstradas. Conferir apenas consumidores pertinentes durante o patch, sem nova varredura ampla ou teste ofensivo.
-- Fontes: [release oficial](https://nextjs.org/blog/november-2026-security-release), [cache/root params](https://github.com/vercel/next.js/security/advisories/GHSA-mfr8-8qww-v76h), [cookies/Edge](https://github.com/vercel/next.js/security/advisories/GHSA-f3mh-rxg3-f5g2) e [SVG](https://github.com/vercel/next.js/security/advisories/GHSA-7qx7-33qx-rqx2). Prioridade alta mantida; atualizar a proposta existente no18E, sem novo Debate.
+- Fontes: [release oficial](https://nextjs.org/blog/november-2026-security-release), [cache/root params](https://github.com/vercel/next.js/security/advisories/GHSA-mfr8-8qww-v76h), [cookies/Edge](https://github.com/vercel/next.js/security/advisories/GHSA-f3mh-rxg3-f5g2) e [SVG](https://github.com/vercel/next.js/security/advisories/GHSA-7qx7-33qx-rqx2). Blog de novembro indisponível na execução; release GitHub e advisories usados como fontes oficiais equivalentes.
 
 ### Valor e limites
 
 - Corrigir a dependência atual sem vincular Cache Components, Instant Navigations, React 19.3 ou outras novidades opcionais de `vercel#29/#35`.
 - Validar versões efetivamente resolvidas, compatibilidade, checks, build hospedado e smoke do fluxo existente; sem pesquisa ampla ou prova ofensiva para decidir o patch já indicado.
 - Security Checks do repositório não comprovam, isoladamente, remediação de dependências. Não declarar incidente, exploração ou segurança global.
-- Aprovações históricas dos Debates 18B/18D não autorizam este novo delta; encaminhar proposta no fluxo competente da família 18.
+- A autorização deste delta é a Rodada 1 do Debate 18E; aprovações históricas 18B/18D permanecem preservadas. Pendências npm fora de Next.js não foram corrigidas por ampliação silenciosa.
 
 ### Fontes oficiais
 
@@ -847,7 +847,7 @@ Catalogado em 2026-10-14
 
 ### Status no Projeto
 
-- Status: não adotado; `package.json` mantém Next.js 16.3.8 e React/React DOM 19.2.1.
+- Status: recursos opcionais não adotados; Next.js 16.4.5 somente pelo patch `vercel#34`, com React/React DOM 19.2.1 preservados.
 - Evidência: manifesto no SHA inicial; sem configuração `cacheComponents` encontrada.
 - Natureza de uso: evolução transversal da stack; recursos opcionais dependem de recorte.
 - Relação com a stack: complementa `vercel#29`, sem substituir a prioridade de segurança de `vercel#34`.
