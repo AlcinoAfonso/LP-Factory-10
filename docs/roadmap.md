@@ -898,6 +898,7 @@
     - `lib/onboarding/pending-setup/attendance-coordinator.ts`
     - `lib/onboarding/pending-setup/attendance-provider.ts`
     - `lib/onboarding/pending-setup/attendance-validation-cases.ts`
+    - `lib/onboarding/pending-setup/attendance-validation-cases.ts`
     - `app/a/[account]/_components/PendingSetupConversation.tsx`
 - Referências:
   - Memória contextual e autoridades: `docs/base-tecnica.md` — seção 3.14.6.
@@ -928,7 +929,7 @@
 - Conflitos/atomicidade/pós-conclusão/Base em Base Técnica 3.14.6; sem continuidade assíncrona. Objeções/comparação/recomendação/contratação aprofundadas no D17 até absorção aprovada.
 
 10.12.7 Evolução transversal do agente — D15E
-- Status: Recorte 1 em implementação para avaliação humana; recortes seguintes aguardam autorização individual.
+- Status: Recorte 1 implementado para avaliação humana; comparação conversacional antes/depois pendente de fixture. Recortes seguintes aguardam autorização individual.
 - Sequência aprovada: 1. Inteligência comercial e naturalidade; 2. Identificação e confirmação de nichos AI-first; 3. Memória transversal — Diálogo e Summary; 4. Integração, compatibilidade e validação das jornadas afetadas.
 - Recorte 1: diálogo breve e específico ao negócio, apresentação institucional fundamentada no README e orientação ao próximo passo, sem inventar ofertas ou condições. Preserva identidade, catálogo, confirmação, persistência, propósito restrito D14D e autoridade comercial D17. O PR não autoriza merge nem início do próximo recorte.
 
