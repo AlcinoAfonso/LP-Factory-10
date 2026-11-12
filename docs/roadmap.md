@@ -927,6 +927,11 @@
 - Redirecionar desvio ocasional; persistência/repetição/circularidade/sem avanço → encerramento cordial com contexto/pendência no Resumo e retomada possível. Sem promessa de análise/prazo/retorno/contato, contador/tempo fixo/failsafe econômico.
 - Conflitos/atomicidade/pós-conclusão/Base em Base Técnica 3.14.6; sem continuidade assíncrona. Objeções/comparação/recomendação/contratação aprofundadas no D17 até absorção aprovada.
 
+10.12.7 Evolução transversal do agente — D15E
+- Status: Recorte 1 implementado para avaliação humana; resultados e pendências de validação em [#1130](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1130). Recortes seguintes aguardam autorização individual.
+- Sequência aprovada: 1. Inteligência comercial e naturalidade; 2. Identificação e confirmação de nichos AI-first; 3. Memória transversal — Diálogo e Summary; 4. Integração, compatibilidade e validação das jornadas afetadas.
+- Recorte 1: diálogo breve e específico ao negócio, apresentação institucional fundamentada no README e orientação ao próximo passo, sem inventar ofertas ou condições. Preserva identidade, catálogo, confirmação, persistência, propósito restrito D14D e autoridade comercial D17. O PR não autoriza merge nem início do próximo recorte.
+
 10.13 Cadastro inicial de taxonomia e inteligência de mercado
 
 10.13.1 Objetivo e status
