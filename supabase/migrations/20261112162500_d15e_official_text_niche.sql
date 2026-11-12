@@ -68,7 +68,7 @@ create function public.commit_account_pending_setup_turn_v4(p_conversation_id uu
   p_preferred_name_declined boolean default false,p_observed_primary_taxon_id uuid default null,p_observed_niche_revision bigint default 0)
 returns bigint language plpgsql security definer set search_path = '' as $$
 declare c public.account_pending_setup_conversations%rowtype; v_proposal jsonb; v_version bigint;
-  v_ordinal integer; v_stage text:=p_next_stage; v_confirm_kind text; v_primary uuid;
+  v_ordinal integer; v_stage text:=p_next_stage; v_confirm_kind text; v_primary uuid; v_legacy_name text;
   v_now timestamptz:=clock_timestamp(); v_niche public.account_official_niches%rowtype;
 begin
   select * into strict c from public.account_pending_setup_conversations
@@ -122,7 +122,15 @@ begin
         char_length(v_proposal->>'nicheDescription')>120 or v_proposal->>'nicheDescription' ~ '[[:cntrl:]<>]' then
         raise exception 'pending_setup_proposal_invalid' using errcode='23514';
       end if;
-      if v_niche.description is not null and v_niche.description is distinct from v_proposal->>'nicheDescription'
+      select b.name into v_legacy_name
+        from public.account_taxonomy t join public.business_taxons b on b.id=t.taxon_id
+        where t.account_id=p_account_id and t.is_primary and t.status='active' and b.is_active
+          and (t.source_type in ('manual','user_confirmed_ai') or t.user_confirmed_at is not null or exists(
+            select 1 from public.account_niche_resolutions r where r.account_id=p_account_id
+              and r.user_resolution_status='confirmed' and r.user_selected_taxon_id=t.taxon_id
+              and r.user_confirmed_at is not null));
+      if coalesce(v_niche.description,v_legacy_name) is not null
+        and coalesce(v_niche.description,v_legacy_name) is distinct from v_proposal->>'nicheDescription'
         and exists(select 1 from public.account_landing_pages where account_id=p_account_id) then
         raise exception 'niche_product_exists' using errcode='23514';
       end if;

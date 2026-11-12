@@ -123,6 +123,28 @@ try {
   console.log("PASS unconfirmed legacy primary does not invent official niche or block operational fallback; confirmed legacy CAS preserved");
 
 
+  for (const [n,source,confirmation] of [[80,"manual",null],[90,"user_confirmed_ai",null],[100,"taxonomy_match","timestamp"],[110,"taxonomy_match","resolution"]]) {
+    const productLegacy=await preparePending(n); productLegacy.legacyTaxonId=taxon;
+    await db.query("insert into account_taxonomy(account_id,taxon_id,is_primary,status,source_type,user_confirmed_at) values($1,$2,true,'active',$3,case when $4::boolean then clock_timestamp() else null end)",[productLegacy.a,taxon,source,confirmation==="timestamp"]);
+    if(confirmation==="resolution") await db.query("insert into account_niche_resolutions(account_id,user_resolution_status,user_selected_taxon_id,user_confirmed_at) values($1,'confirmed',$2,clock_timestamp())",[productLegacy.a,taxon]);
+    await db.query("insert into account_landing_pages values($1,$2)",[id(n+5),productLegacy.a]);
+    await turn(productLegacy,productLegacy.token,2,"niche_confirmation",semantic);
+    const token=await reserveConfirm(productLegacy);
+    const snapshot=await db.query("select version,attendance_proposal from account_pending_setup_conversations where id=$1",[productLegacy.c]);
+    await assert.rejects(turn(productLegacy,token,4,"ready_to_complete",null,true),/niche_product_exists/);
+    assert.deepEqual((await db.query("select version,attendance_proposal from account_pending_setup_conversations where id=$1",[productLegacy.c])).rows,snapshot.rows);
+    assert.equal((await db.query("select count(*) from account_official_niches where account_id=$1",[productLegacy.a])).rows[0].count,"0");
+    assert.equal((await db.query("select count(*) from account_pending_setup_messages where conversation_id=$1",[productLegacy.c])).rows[0].count,"1");
+    await db.query("update account_pending_setup_conversations set attendance_proposal=jsonb_set(attendance_proposal,'{nicheDescription}',to_jsonb('Serviços'::text)) where id=$1",[productLegacy.c]);
+    assert.equal((await turn(productLegacy,token,4,"ready_to_complete",null,true)).rows[0].version,"5");
+    assert.equal((await db.query("select description from account_official_niches where account_id=$1",[productLegacy.a])).rows[0].description,"Serviços");
+  }
+  const initialProduct=await preparePending(120);
+  await db.query("insert into account_landing_pages values($1,$2)",[id(125),initialProduct.a]);
+  await turn(initialProduct,initialProduct.token,2,"niche_confirmation",semantic);
+  assert.equal((await turn(initialProduct,await reserveConfirm(initialProduct),4,"ready_to_complete",null,true)).rows[0].version,"5");
+  console.log("PASS product guard covers every confirmed legacy provenance without partial effects; identical legacy description and initial niche remain allowed");
+
   const stale=await preparePending(70);
   await turn(stale,stale.token,2,"niche_confirmation",semantic);
   await db.query("insert into account_official_niches values($1,'Nicho confirmado em outra conversa',1,$2,clock_timestamp())",[stale.a,owner]);
