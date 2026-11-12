@@ -97,7 +97,7 @@ export function attendancePrompt(context: AttendanceContext) {
   const instructions = context.purpose === "account_niche"
     ? NICHE_ATTENDANCE_BASE_INSTRUCTIONS + "\n" + NICHE_ATTENDANCE_INSTRUCTIONS
     : ATTENDANCE_INSTRUCTIONS;
-  return { instructions: context.semanticNiches ? semanticNicheInstructions(instructions) : instructions, input: JSON.stringify({ data: context }), schema };
+  return { instructions: context.semanticNiches ? semanticNicheInstructions(instructions, context.purpose) : instructions, input: JSON.stringify({ data: context }), schema };
 }
 function escapeContactReferenceTokens(text: string): string {
   return text.replace(/\[?\bphone_\d+_\d+\b\]?/giu, "[referência de contato literal removida]");

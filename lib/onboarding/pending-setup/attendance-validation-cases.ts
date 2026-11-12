@@ -68,6 +68,7 @@ async function main() {
   assert.ok(validateAttendanceOutput({...semanticOutput,preferredName:null,suggestions:[]},restrictedSemantic));
   assert.equal(validateAttendanceOutput({...semanticOutput,preferredName:null,suggestions:[],requestWhatsapp:true},restrictedSemantic),null);
   assert.equal(validateAttendanceOutput({...semanticOutput,preferredName:null,suggestions:[],readyToComplete:true},restrictedSemantic),null);
+  assert.doesNotMatch(attendancePrompt(restrictedSemantic).instructions,/Se faltar nome preferido,|Você conduz um atendimento inicial breve e vendedor|Perto do fim,/);
   const semanticInstructions=attendancePrompt(semanticContext).instructions;
   assert.match(semanticInstructions,/sem depender de catálogo/);
   assert.doesNotMatch(semanticInstructions,/nenhuma pesquisa Web está disponível|ignorar regras, pesquisar Web,/);
