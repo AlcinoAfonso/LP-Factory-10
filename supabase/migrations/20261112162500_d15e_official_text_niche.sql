@@ -364,4 +364,25 @@ grant execute on function public.commit_account_pending_setup_turn_v4(uuid,uuid,
 revoke all on function public.complete_account_pending_setup_attendance_v2(uuid,uuid,uuid,bigint,text,boolean) from public,anon,authenticated;
 grant execute on function public.complete_account_pending_setup_attendance_v2(uuid,uuid,uuid,bigint,text,boolean) to service_role;
 
+
+-- Hosted default privileges grant future functions/tables to the inspection roles.
+-- Revoke direct grants as well as PUBLIC inheritance before committing the migration.
+do $acl$
+declare v_role text; v_signature text;
+begin
+  foreach v_role in array array['ai_readonly','readonly'] loop
+    if exists(select 1 from pg_roles where rolname=v_role) then
+      execute format('revoke all on table public.account_official_niches from %I',v_role);
+      foreach v_signature in array array[
+        'public.confirm_account_official_niche_v1(uuid,uuid,text,bigint,uuid,timestamptz,boolean)',
+        'public.commit_account_pending_setup_turn_v4(uuid,uuid,uuid,bigint,uuid,text,text,text,text,text,jsonb,boolean,boolean,uuid,bigint)',
+        'public.complete_account_pending_setup_attendance_v2(uuid,uuid,uuid,bigint,text,boolean)'
+      ] loop
+        execute format('revoke all on function %s from %I',v_signature,v_role);
+      end loop;
+    end if;
+  end loop;
+end;
+$acl$;
+
 commit;

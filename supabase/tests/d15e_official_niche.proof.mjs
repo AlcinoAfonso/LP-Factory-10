@@ -19,14 +19,17 @@ const read=p=>readFileSync(new URL(p,import.meta.url),"utf8");
 const fn=(p,n)=>{let s=read(p).replace(/\r\n/g,"\n");let i=s.indexOf("function public."+n+"(");assert.ok(i>=0,n);let start=s.lastIndexOf("create",i);return s.slice(start,s.indexOf("$$;",i)+3);};
 try {
   assert.match((await db.query("show server_version")).rows[0].server_version,/^17\./);
-  for(const role of ["anon","authenticated","service_role"]) {
+  for(const role of ["anon","authenticated","service_role","ai_readonly"]) {
     if(!(await admin.query("select 1 from pg_roles where rolname=$1",[role])).rowCount)
       await admin.query("create role "+role+(role==="service_role"?" bypassrls":""));
   }
+  await db.query("alter default privileges in schema public grant execute on functions to ai_readonly; alter default privileges in schema public grant select on tables to ai_readonly;");
   await db.query(DDL);
   await db.query(fn("../migrations/20261007153217_e10_12_account_context_attendance.sql","assert_pending_setup_actor_v2"));
   await db.query(fn("../migrations/20261009171607_e10_12_sales_attendance.sql","effect_pending_setup_taxonomy_v1"));
   await db.query(read("../migrations/20261112162500_d15e_official_text_niche.sql"));
+  assert.equal((await db.query("select has_table_privilege(\'ai_readonly\',\'account_official_niches\',\'select\') allowed")).rows[0].allowed,false);
+  assert.equal((await db.query("select has_function_privilege(\'ai_readonly\',\'commit_account_pending_setup_turn_v4(uuid,uuid,uuid,bigint,uuid,text,text,text,text,text,jsonb,boolean,boolean,uuid,bigint)\',\'execute\') allowed")).rows[0].allowed,false);
   const confirm=(actor,description,revision=0,legacy=null,time=null)=>db.query("select confirm_account_official_niche_v1($1,$2,$3,$4,$5,$6,true) revision",[account,actor,description,revision,legacy,time]);
   await db.query("insert into accounts values($1,'active');",[account]);
   await db.query("insert into account_users values($1,$2,'owner','active'),($1,$3,'viewer','active')",[account,owner,outsider]);
@@ -135,4 +138,3 @@ try {
   await admin.query("drop database "+name+" with (force)");
   await admin.end();
 }
-

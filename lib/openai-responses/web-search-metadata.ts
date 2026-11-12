@@ -24,4 +24,3 @@ export function webSearchMetadata(payload: unknown) {
   if (calls.length > 0 && sources.size === 0) return null;
   return { calls: calls.length, sources: [...sources.values()].slice(0,10) };
 }
-

@@ -4,4 +4,3 @@ export function AssistantMessageText({ text }: { text: string }) {
       ? <a key={index} href={part} target="_blank" rel="noopener noreferrer" className="break-all underline underline-offset-2">{part}</a>
       : part)}</>;
 }
-

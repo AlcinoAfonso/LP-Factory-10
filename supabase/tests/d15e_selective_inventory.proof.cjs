@@ -31,4 +31,3 @@ try {
   const resolved=path.resolve(dir),prefix=path.resolve(os.tmpdir())+path.sep+"d15e-inventory-";
   assert.ok(resolved.startsWith(prefix));fs.rmSync(resolved,{recursive:true,force:true});
 }
-
