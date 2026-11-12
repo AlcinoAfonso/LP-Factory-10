@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { useAccessContext } from "@/providers/AccessProvider";
+import Image from "next/image";
+import styles from "./CommunicationBase.module.css";
 export function CommunicationBaseTabs({stageOne,stageTwo,materials}:Readonly<{stageOne:ReactNode;stageTwo:ReactNode;materials?:ReactNode}>) {
   const [selected,setSelected]=useState(0);
   const tabs=useRef<(HTMLButtonElement|null)[]>([]);
@@ -83,15 +85,15 @@ export function CommunicationBaseIntroduction() {
       </span>
     </Button>
     <dialog ref={dialog} data-scroll-mode={needsOuterScroll ? "outer" : "body"} aria-labelledby="communication-introduction-title" onCancel={(event) => { event.preventDefault(); dismiss(); }}
-      className={`m-auto max-h-[calc(100dvh-1rem)] w-[calc(100%-2rem)] max-w-3xl [overflow-wrap:anywhere] rounded-xl border border-border bg-background p-0 text-foreground shadow-xl backdrop:bg-black/40 ${needsOuterScroll ? "overflow-y-auto" : "overflow-hidden open:flex open:flex-col"}`}>
-      <header ref={introductionHeader} className="shrink-0 px-4 pb-2 pt-3 sm:px-8 sm:pt-6">
-        <p className="mb-1 text-base font-bold text-brand-700 dark:text-primary">LP Factory</p>
-        <h2 ref={introductionTitle} tabIndex={-1} id="communication-introduction-title" className="text-xl font-semibold leading-tight focus:outline-none sm:text-2xl">Sua comunicação começa aqui</h2>
+      className={`${styles.introDialog} m-auto max-h-[calc(100dvh-1rem)] w-[calc(100%-2rem)] max-w-3xl [overflow-wrap:anywhere] rounded-xl border border-border bg-background p-0 text-foreground shadow-xl backdrop:bg-black/40 ${needsOuterScroll ? "overflow-y-auto" : "overflow-hidden open:flex open:flex-col"}`}>
+      <header ref={introductionHeader} className={`${styles.introHeader} shrink-0 px-4 pb-2 pt-3 sm:px-8 sm:pt-6`}>
+        <p className={`${styles.introBrand} mb-1 text-base font-bold text-brand-700 dark:text-primary`}>LP Factory</p>
+        <h2 ref={introductionTitle} tabIndex={-1} id="communication-introduction-title" className={`${styles.introTitle} text-xl font-semibold leading-tight focus:outline-none sm:text-2xl`}>Sua comunicação começa aqui</h2>
       </header>
-      <div ref={introductionBody} role="region" aria-label="Sobre a Base de Comunicação" tabIndex={0} className={`px-4 pb-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-8 ${needsOuterScroll ? "" : "min-h-0 overflow-y-auto overscroll-contain"}`}>
-      <div className="grid gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-x-6 sm:gap-y-4">
-        <p className="!text-[0.9375rem] leading-6 text-muted-foreground sm:col-start-2 sm:row-start-1">A Base de Comunicação reúne as informações, os materiais e os diferenciais do seu negócio para orientar uma comunicação mais clara e consistente.</p>
-        <div className="flex items-center justify-center sm:col-start-1 sm:row-start-1 sm:row-span-2 sm:border-r sm:border-border sm:pr-6">
+      <div ref={introductionBody} role="region" aria-label="Sobre a Base de Comunicação" tabIndex={0} className={`${styles.introBody} px-4 pb-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-8 ${needsOuterScroll ? "" : "min-h-0 overflow-y-auto overscroll-contain"}`}>
+      <div className={`${styles.introCopyLayout} grid gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-x-6 sm:gap-y-4`}>
+        <p className={`${styles.introCopy} !text-[0.9375rem] leading-6 text-muted-foreground sm:col-start-2 sm:row-start-1`}>A Base de Comunicação reúne as informações, os materiais e os diferenciais do seu negócio para orientar uma comunicação mais clara e consistente.</p>
+        <div className="flex items-center justify-center sm:col-start-1 sm:row-start-1 sm:row-span-2 sm:border-r sm:border-border sm:pr-6 lg:hidden">
           <svg viewBox="0 0 240 160" aria-hidden="true" className="h-20 w-36 max-w-full text-primary sm:h-36 sm:w-60" fill="none">
             <circle cx="114" cy="83" r="64" fill="currentColor" opacity=".07" />
             <g stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
@@ -109,10 +111,13 @@ export function CommunicationBaseIntroduction() {
             <g className="fill-background"><circle cx="149" cy="62" r="1.5" /><circle cx="155" cy="62" r="1.5" /><circle cx="161" cy="62" r="1.5" /></g>
           </svg>
         </div>
-        <p className="!text-[0.9375rem] leading-6 text-muted-foreground sm:col-start-2 sm:row-start-2">Comece com o que já tem. Você pode preencher aos poucos, revisar e complementar quando quiser. Cada seção é salva por você.</p>
+        <p className={`${styles.introCopy} !text-[0.9375rem] leading-6 text-muted-foreground sm:col-start-2 sm:row-start-2`}><strong className="font-normal lg:font-semibold">Comece com o que já tem.</strong> Você pode preencher aos poucos, revisar e complementar quando quiser. Cada seção é salva por você.</p>
       </div>
       </div>
-      <footer ref={introductionFooter} className="shrink-0 px-4 pb-3 pt-1 sm:px-8 sm:pb-6">
+      <div className={`${styles.introArtwork} hidden lg:flex`} aria-hidden="true">
+        <Image src="/images/communication-base/intro-editorial.png" width={1422} height={1106} sizes="360px" alt="" className="h-auto w-full object-contain dark:invert dark:hue-rotate-180 dark:mix-blend-screen" />
+      </div>
+      <footer ref={introductionFooter} className={`${styles.introFooter} shrink-0 px-4 pb-3 pt-1 sm:px-8 sm:pb-6`}>
       {storageKey ? <label className=" flex min-h-11 cursor-pointer items-center justify-center gap-2 text-xs font-normal text-muted-foreground">
         <input type="checkbox" checked={dontShowAgain} onChange={(event) => updatePreference(event.target.checked)} className="h-4 w-4 shrink-0 accent-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
         Não mostrar novamente
