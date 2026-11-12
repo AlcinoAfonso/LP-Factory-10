@@ -1,4 +1,5 @@
 import "server-only";
+import { webSearchMetadata } from "../../openai-responses/web-search-metadata";
 import { createHash, randomUUID } from "node:crypto";
 import { requestOpenAiResponses, type OpenAiResponsesDependencies } from "../../openai-responses/openAiResponsesAdapter";
 import { clientOpenAiCostContext, type OpenAiCostEconomicContext } from "../../openai-costs";
@@ -19,16 +20,18 @@ export async function requestAttendance(input: Readonly<{
     : await resolveOpenAiProductWorkload("pending_setup_conversation", environment);
   if (!resolved.ok) return { ok: false as const };
   const prompt = attendancePrompt(input.context);
+  const search = input.context.semanticNiches && !input.context.confirmedProposal && input.context.recent.some(message => message.role === "user") ? resolved.value.webSearch : null;
   const result = await requestOpenAiResponses<Readonly<{ output: AttendanceOutput }>>({
     apiKey: input.apiKey ?? process.env.OPENAI_API_KEY,
     environment, configuration: resolved.value, expectedWorkload: "pending_setup_conversation",
-    requestId: randomUUID(), promptVersion: input.context.purpose === "account_niche" ? NICHE_ATTENDANCE_PROMPT_VERSION : ATTENDANCE_PROMPT_VERSION, contractVersion: ATTENDANCE_CONTRACT_VERSION,
+    requestId: randomUUID(), promptVersion: input.context.semanticNiches ? input.context.purpose === "account_niche" ? "d15e_r2_account_niche_v1" : "d15e_r2_onboarding_v1" : input.context.purpose === "account_niche" ? NICHE_ATTENDANCE_PROMPT_VERSION : ATTENDANCE_PROMPT_VERSION, contractVersion: input.context.semanticNiches ? 13 : ATTENDANCE_CONTRACT_VERSION,
     financialContext: input.financialContext ?? clientOpenAiCostContext(input.accountId),
     executionOrigin: input.executionOrigin ?? "runtime", baselineReference: "e10_12_attendance",
     timeoutMs: 120_000,
     request: {
       instructions: prompt.instructions, input: prompt.input, store: false, background: false,
       max_output_tokens: 12_000,
+      ...(search ? { tools: [{ type: "web_search", external_web_access: search.externalWebAccess, search_context_size: search.searchContextSize }], tool_choice: "auto", max_tool_calls: search.maxToolCalls, include: ["web_search_call.action.sources"] } : {}),
       safety_identifier: createHash("sha256").update(input.accountId).digest("hex"),
       text: { format: { type: "json_schema", name: "pending_setup_attendance", strict: true, schema: prompt.schema } },
     },
@@ -43,11 +46,13 @@ export function parseAttendanceResponse(payload: unknown, context: AttendanceCon
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) return invalid;
   const data = payload as Record<string, unknown>;
   if (data.status === "incomplete" || data.error) return invalid;
+  const web = webSearchMetadata(payload);
+  if (!web || web.calls > 2 || (web.calls > 0 && (!context.semanticNiches || context.confirmedProposal))) return invalid;
   const chunks: string[] = [];
   for (const item of Array.isArray(data.output) ? data.output : []) {
     if (!item || typeof item !== "object") continue;
     const record = item as Record<string, unknown>;
-    if (record.type === "web_search_call") return invalid;
+    if (record.type === "web_search_call") continue;
     if (record.type !== "message") continue;
     for (const content of Array.isArray(record.content) ? record.content : []) {
       if (content.type === "refusal") return { ...invalid, kind: "refusal" as const, reason: "provider_refusal" };
@@ -57,6 +62,11 @@ export function parseAttendanceResponse(payload: unknown, context: AttendanceCon
   let output: unknown;
   try { output = JSON.parse(chunks.join("") || String(data.output_text ?? "")); } catch { return invalid; }
   const validated = validateAttendanceOutput(output, context);
+  if (validated && web.calls > 0) {
+    const footer = "\n\nFontes externas — consulta em " + new Date().toISOString().slice(0,10) + " (UTC):\n" + web.sources.map(source => source.url).join("\n");
+    if (validated.reply.length + footer.length > 4000) return invalid;
+    validated.reply += footer;
+  }
   if (!validated) {
     const parsed = attendanceOutputSchema.safeParse(output);
     console.warn("pending_setup_attendance_contract_failed", {
@@ -76,5 +86,5 @@ export function parseAttendanceResponse(payload: unknown, context: AttendanceCon
     });
   }
   return validated ? { ok: true as const, value: { output: validated },
-    telemetry: { webSearchCallCount: 0, webSearchSourceCount: 0 } } : invalid;
+    telemetry: { webSearchCallCount: web.calls, webSearchSourceCount: web.sources.length } } : invalid;
 }

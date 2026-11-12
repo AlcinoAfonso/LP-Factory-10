@@ -135,7 +135,7 @@ export type StageTwoDraft = Readonly<{
 const CREDENTIAL_PATTERN = /(?:\b(?:SUPABASE_DB_URL_READONLY|[A-Z][A-Z0-9_]*_(?:SECRET(?:_KEY)?|PASSWORD|TOKEN|API_KEY|ADMIN_KEY|SERVICE_ROLE_KEY)|password|senha|api[_ -]?key|secret)\b\s*[:=]\s*\S{8,}|sk-(?:proj-)?[A-Za-z0-9_-]{16,}|sb_secret_[A-Za-z0-9_-]{12,}|Bearer\s+[A-Za-z0-9._~+/=-]{16,})/i;
 
 
-export type OfficialNicheContext = Readonly<{ taxonId: string; name: string; confirmed: boolean; revision: string }>;
+export type OfficialNicheContext = Readonly<{ taxonId: string | null; name: string; confirmed: boolean; revision: string }>;
 
 export function confirmedCommunicationMaterials(base: CommunicationBase) {
   return Object.entries(base.sections).filter(([, section]) => section?.format === "material_items" && section.origin === "user_reviewed")
@@ -146,7 +146,7 @@ export function confirmedCommunicationMaterials(base: CommunicationBase) {
 }
 
 export function stageTwoPrompt(base: CommunicationBase, target: StageTwoTarget, requiresCurrentResearch: boolean, niche?: OfficialNicheContext) {
-  if (!niche?.confirmed || !isMaterialId(niche.taxonId) || !niche.name.trim()) return null;
+  if (!niche?.confirmed || !niche.revision || (niche.taxonId !== null && !isMaterialId(niche.taxonId)) || !niche.name.trim()) return null;
   const keys = targetKeys(target);
   if (!keys) return null;
   const confirmed = selectStageTwoInput(base, target)?.confirmed;
@@ -169,7 +169,7 @@ export function stageTwoPrompt(base: CommunicationBase, target: StageTwoTarget, 
     input: JSON.stringify({
       target: target.kind === "general" ? { kind: "general", keys } : { kind: "section", key: target.key },
       confirmed_business_data: confirmed,
-      official_niche: { taxon_id: niche.taxonId, name: niche.name },
+      official_niche: niche.taxonId ? { taxon_id: niche.taxonId, name: niche.name } : { description: niche.name, revision: niche.revision },
       communication_materials: materials,
       ...(Object.keys(existing).length > 0 ? { existing_stage_two_draft: existing } : {}),
       research_requirement: requiresCurrentResearch

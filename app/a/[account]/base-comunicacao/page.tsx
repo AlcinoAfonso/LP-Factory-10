@@ -7,7 +7,8 @@ import { notFound } from "next/navigation";
 import { requireCommunicationBaseAccess } from "../../../../lib/communication-base/access";
 import { readCommunicationBase, readPendingSetupInitialContext } from "../../../../lib/communication-base/adapters/communicationBaseAdapter";
 import { stageTwoInputStateKey } from "../../../../lib/communication-base/ui-state-keys";
-import { isAccountNicheEditingEnabled, readActivePrimaryAccountTaxon } from "../../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
+import { isAccountNicheEditingEnabled } from "../../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
+import { readOfficialNicheContext, isAiFirstNicheEnabled } from "../../../../lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter";
 import { loadAccountNicheEditorAction } from "../niche-resolution-actions";
 import { AccountNicheEditor } from "../_components/NicheResolutionCard";
 import { hasStageTwoContent } from "../../../../lib/communication-base/ai-core";
@@ -41,21 +42,21 @@ export default async function CommunicationBasePage({ params }: PageProps) {
   const structured = isCommunicationResourcesEnabled();
   const [result, taxonomy] = await Promise.all([
     definitions.ok ? readCommunicationBase(access.value.accountId, definitions.value) : Promise.resolve({ok:false as const,error:"read_failed" as const}),
-    readActivePrimaryAccountTaxon({ accountId: access.value.accountId }),
+    readOfficialNicheContext({ accountId: access.value.accountId }),
   ]);
   const base = result.ok ? result.value : null;
   const savedBusinessName = base?.sections.business_name?.value;
   const businessName = typeof savedBusinessName === "string" ? savedBusinessName.trim() : "";
   const nicheLabel = !taxonomy.ok
     ? "Não foi possível carregar o nicho agora."
-    : taxonomy.taxon?.name ?? "Nicho ainda não definido";
+    : taxonomy.niche?.name ?? "Nicho ainda não definido";
   const pendingSetupCandidate = result.ok && !base && access.value.canEdit
     ? await readPendingSetupInitialContext(access.value.accountId)
     : null;
 
   const showIntroduction = result.ok && (Boolean(base) || (access.value.canEdit && (!structured || taxonomy.ok)));
-  const nicheEditor = isAccountNicheEditingEnabled() ? await loadAccountNicheEditorAction(access.value.accountSubdomain) : null;
-  const canGenerate = Boolean(taxonomy.ok && taxonomy.taxon?.confirmed);
+  const nicheEditor = (isAccountNicheEditingEnabled() || isAiFirstNicheEnabled()) ? await loadAccountNicheEditorAction(access.value.accountSubdomain) : null;
+  const canGenerate = Boolean(taxonomy.ok && taxonomy.niche?.confirmed);
 
   return (
     <main className={`${styles.surface} mx-auto max-w-5xl px-4 py-4 sm:px-6 sm:py-6`}>
@@ -75,7 +76,7 @@ export default async function CommunicationBasePage({ params }: PageProps) {
           </div>
           {businessName ? <p className="text-sm font-medium text-foreground [overflow-wrap:anywhere]">{businessName}</p> : null}
           <p className="text-sm text-muted-foreground [overflow-wrap:anywhere]">
-            {taxonomy.ok && taxonomy.taxon ? `Nicho: ${nicheLabel}` : nicheLabel}
+            {taxonomy.ok && taxonomy.niche ? `Nicho: ${nicheLabel}` : nicheLabel}
           </p>
           {nicheEditor ? <AccountNicheEditor account={access.value.accountSubdomain} state={nicheEditor} hasIntelligence={base ? hasStageTwoContent(base) : false} /> : null}
         </header>
@@ -94,7 +95,7 @@ export default async function CommunicationBasePage({ params }: PageProps) {
                 account={access.value.accountSubdomain}
                 candidate={pendingSetupCandidate?.ok ? pendingSetupCandidate.value : null}
                 structured={structured}
-                niche={taxonomy.ok ? taxonomy.taxon : null}
+                niche={taxonomy.ok ? taxonomy.niche : null}
                 candidateReadFailed={pendingSetupCandidate !== null && !pendingSetupCandidate.ok}
               />
             )
@@ -110,7 +111,7 @@ export default async function CommunicationBasePage({ params }: PageProps) {
             ) : null}
             <CommunicationBaseTabs stageOne={<CommunicationStageOne account={access.value.accountSubdomain}
               base={base} canEdit={access.value.canEdit} structured={structured} nicheLabel={nicheLabel} definitions={definitions.ok ? definitions.value : []} />}
-              stageTwo={<CommunicationStageTwo key={`${stageTwoInputStateKey(base)}:${taxonomy.ok ? taxonomy.taxon?.taxonId ?? "" : "error"}:${taxonomy.ok ? taxonomy.taxon?.revision ?? "" : ""}`} account={access.value.accountSubdomain}
+              stageTwo={<CommunicationStageTwo key={`${stageTwoInputStateKey(base)}:${taxonomy.ok ? taxonomy.niche?.taxonId ?? "" : "error"}:${taxonomy.ok ? taxonomy.niche?.revision ?? "" : ""}`} account={access.value.accountSubdomain}
                 base={base} canEdit={access.value.canEdit} canGenerate={canGenerate} nicheControl={nicheEditor ? <AccountNicheEditor account={access.value.accountSubdomain} state={nicheEditor} hasIntelligence={hasStageTwoContent(base)} /> : undefined}
                 structured={structured} definitions={definitions.ok ? definitions.value : []} />}
               materials={structured ? <CommunicationMaterials account={access.value.accountSubdomain} base={base} canEdit={access.value.canEdit} definitions={definitions.ok ? definitions.value : []} /> : undefined} />

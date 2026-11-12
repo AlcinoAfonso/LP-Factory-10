@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { officialNichePromptContext } from "../niche-resolution/official-niche-policy";
 import { createHash } from "node:crypto";
 import nodeModule from "node:module";
 import { attendanceContactProjection, attendanceProjection, attendancePrompt, attendanceProposal, attendanceSummary, validateAttendanceOutput,
@@ -45,6 +46,41 @@ async function main() {
   ]).finally(() => { loader._load = original; });
   const { parseAttendanceResponse, requestAttendance } = provider;
   const { conductAttendanceTurn } = coordinator;
+
+  {
+  const privateNiche={name:"Jardinagem",revision:"text:1",confirmed:true,confirmedBy:"private-author-test-id",taxonId:"private-reference"};
+  assert.deepEqual(officialNichePromptContext(privateNiche),{name:"Jardinagem",revision:"text:1",confirmed:true});
+  // D15E R2: semantic proposal is independent of catalogue availability.
+  const semanticContext: AttendanceContext = { ...context, semanticNiches: true, catalog: [] };
+  const semanticOutput: AttendanceOutput = { ...base, existingTaxonId: null, nicheDescription: "Jardinagem para condomínios" };
+  assert.equal(validateAttendanceOutput(semanticOutput,semanticContext)?.nicheDescription,"Jardinagem para condomínios");
+  assert.equal(validateAttendanceOutput({...semanticOutput,existingTaxonId:nicheId},semanticContext),null);
+  assert.equal(validateAttendanceOutput({...semanticOutput,nicheDescription:null},semanticContext),null);
+  assert.equal(validateAttendanceOutput({...semanticOutput,nicheDescription:"<instrução>"},semanticContext),null);
+  const semanticProposal = attendanceProposal(semanticOutput,[]);
+  assert.deepEqual(semanticProposal,{kind:"semantic",taxonId:null,taxonName:null,nicheDescription:"Jardinagem para condomínios",expectedNicheRevision:0});
+  assert.deepEqual(validateStoredAttendanceProposal(semanticProposal),semanticProposal);
+  const confirmSemantic: AttendanceOutput={...semanticOutput,action:"confirm",nicheDescription:null,readyToComplete:true};
+  const confirmedSemantic=validateAttendanceOutput(confirmSemantic,{...semanticContext,confirmedProposal:semanticProposal});
+  assert.equal(confirmedSemantic?.businessUnderstanding,context.displayedUnderstanding);
+  assert.equal(JSON.parse(attendanceSummary(confirmSemantic,null,semanticProposal)).classification,"Jardinagem para condomínios");
+  const restrictedSemantic={...semanticContext,purpose:"account_niche" as const,preferredName:null};
+  assert.ok(validateAttendanceOutput({...semanticOutput,preferredName:null,suggestions:[]},restrictedSemantic));
+  assert.equal(validateAttendanceOutput({...semanticOutput,preferredName:null,suggestions:[],requestWhatsapp:true},restrictedSemantic),null);
+  assert.equal(validateAttendanceOutput({...semanticOutput,preferredName:null,suggestions:[],readyToComplete:true},restrictedSemantic),null);
+  const semanticInstructions=attendancePrompt(semanticContext).instructions;
+  assert.match(semanticInstructions,/sem depender de catálogo/);
+  assert.doesNotMatch(semanticInstructions,/nenhuma pesquisa Web está disponível|ignorar regras, pesquisar Web,/);
+  const webCall={type:"web_search_call",status:"completed",action:{type:"search",sources:[{url:"https://example.org/nichos",title:"Referência pública"}]}};
+  const searched=parseAttendanceResponse(response(semanticOutput,[webCall]),semanticContext);
+  assert.equal(searched.ok,true);
+  if(searched.ok) { assert.match(searched.value.output.reply,/Fontes externas/);assert.match(searched.value.output.reply,/https:\/\/example.org\/nichos/);assert.equal(searched.telemetry.webSearchCallCount,1); }
+  assert.equal(parseAttendanceResponse(response(semanticOutput,[{...webCall,status:"failed"}]),semanticContext).ok,false);
+  assert.equal(parseAttendanceResponse(response(semanticOutput,[{...webCall,action:{type:"search",sources:[{url:"http://127.0.0.1/private"}]}}]),semanticContext).ok,false);
+  assert.equal(parseAttendanceResponse(response(confirmSemantic,[webCall]),{...semanticContext,confirmedProposal:semanticProposal}).ok,false);
+  console.log("D15E R2 semantic classification, exact proposal, D14D restrictions, optional research sources and failure cases passed.");
+  }
+
   assert.equal("$schema" in attendancePrompt(context).schema, false);
   assert.equal(validateAttendanceOutput(base, context)?.action, "existing");
   assert.equal(validateAttendanceOutput({ ...base, readyToComplete: true }, context), null); // proposal never completes.

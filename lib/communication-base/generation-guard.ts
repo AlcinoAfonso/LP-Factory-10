@@ -3,8 +3,8 @@ export function isCurrentGenerationVersion(requestedVersion: number, currentVers
 }
 
 export function isCurrentGenerationNiche(
-  requested: Readonly<{ taxonId: string; revision: string }>,
-  current: Readonly<{ taxonId: string; revision: string; confirmed: boolean }> | null,
+  requested: Readonly<{ taxonId: string | null; revision: string }>,
+  current: Readonly<{ taxonId: string | null; revision: string; confirmed: boolean }> | null,
 ): boolean {
   return Boolean(current?.confirmed && requested.taxonId === current.taxonId && requested.revision === current.revision);
 }

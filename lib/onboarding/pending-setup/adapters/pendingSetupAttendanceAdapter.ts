@@ -1,4 +1,5 @@
 import "server-only";
+import { isAiFirstNicheEnabled } from "../../niche-resolution/official-niche-policy";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { PendingSetupConversation, PendingSetupWriteResult } from "../contracts";
 import type { AttendanceOutput, AttendanceProposal } from "../attendance-core";
@@ -36,15 +37,16 @@ export async function claimAttendanceTurn(input: AttendanceTurnIdentity & Readon
 }
 export async function commitAttendanceTurn(input: AttendanceTurnIdentity & Readonly<{
   output: AttendanceOutput; proposal: AttendanceProposal | null; confirm: boolean;
-  observedPrimaryTaxonId: string | null; summary: string;
+  observedPrimaryTaxonId: string | null; observedNicheRevision?: number; summary: string;
 }>) {
   const stage: PendingSetupConversation["stage"] = input.proposal ? "niche_confirmation"
     : input.output.readyToComplete ? "ready_to_complete"
     : input.output.preferredName || input.output.preferredNameDeclined || input.output.businessUnderstanding ? "business_understanding" : "identity";
-  const { data, error } = await createServiceClient().rpc("commit_account_pending_setup_turn_v3", {
+  const { data, error } = await createServiceClient().rpc(isAiFirstNicheEnabled() ? "commit_account_pending_setup_turn_v4" : "commit_account_pending_setup_turn_v3", {
     ...identity(input), p_assistant_content: input.output.reply,
     p_summary: input.summary, p_business_understanding: input.output.businessUnderstanding,
     p_preferred_name: input.output.preferredName, p_preferred_name_declined: input.output.preferredNameDeclined, p_next_stage: stage,
+    ...(isAiFirstNicheEnabled() ? { p_observed_niche_revision: input.observedNicheRevision ?? 0 } : {}),
     p_proposal: input.proposal, p_confirm: input.confirm, p_observed_primary_taxon_id: input.observedPrimaryTaxonId,
   });
   return result(data, error);

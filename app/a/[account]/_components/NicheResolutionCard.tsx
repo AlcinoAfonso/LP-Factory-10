@@ -1,4 +1,5 @@
 "use client";
+import { AssistantMessageText } from "./AssistantMessageText";
 
 import { useActionState, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -20,7 +21,7 @@ import {
 } from "../niche-resolution-actions";
 
 type NicheMessage = Readonly<{ role: "user" | "assistant"; content: string }>;
-type NicheChoice = Readonly<{ taxonId: string; name: string }>;
+type NicheChoice = Readonly<{ taxonId: string | null; name: string }>;
 
 export function AccountNicheEditor({ account, state, hasIntelligence = false }: Readonly<{
   account: string; state: AccountNicheEditorState; hasIntelligence?: boolean;
@@ -31,6 +32,7 @@ export function AccountNicheEditor({ account, state, hasIntelligence = false }: 
   const discard = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const expected = useRef<string | null>(null);
+  const expectedRevision = useRef<string | null>(null);
   const turnRevision = useRef(0);
   const historyEntry = useRef(false);
   const closeRequest = useRef<() => void>(() => undefined);
@@ -63,7 +65,7 @@ export function AccountNicheEditor({ account, state, hasIntelligence = false }: 
   if (!state.canEdit) return null;
   const taxon = state.taxon;
   const label = !taxon ? "Definir nicho" : !taxon.confirmed ? "Confirmar nicho" : "Redefinir nicho";
-  const changed = Boolean(chosen && chosen.taxonId !== taxon?.taxonId);
+  const changed = Boolean(chosen && (chosen.taxonId !== taxon?.taxonId || chosen.name !== taxon?.name));
   function close() {
     turnRevision.current += 1; setPending(null); discard.current?.close(); dialog.current?.close();
     if (historyEntry.current) { historyEntry.current = false; window.history.back(); }
@@ -77,7 +79,7 @@ export function AccountNicheEditor({ account, state, hasIntelligence = false }: 
     const revision = ++turnRevision.current;
     setPending("conversation"); setError(""); setChosen(null); setConfirmed(false);
     try {
-      const result = await converseAccountNicheAction({ account, expectedTaxonId: expected.current,
+      const result = await converseAccountNicheAction({ account, expectedTaxonId: expected.current, expectedRevision: expectedRevision.current,
         messages: nextMessages.slice(-8), understanding: currentUnderstanding });
       if (revision !== turnRevision.current) return;
       if (!result.ok) { setError(result.message); return; }
@@ -90,6 +92,7 @@ export function AccountNicheEditor({ account, state, hasIntelligence = false }: 
     {taxon?.confirmed && state.hasProducts ? <p className="text-xs text-muted-foreground">A redefinição não está disponível porque esta conta já possui produto desenvolvido.</p> : <Button
       ref={trigger} variant="secondary" className="min-h-11 px-0 underline underline-offset-4" onClick={() => {
         expected.current = taxon?.taxonId ?? null;
+        expectedRevision.current = taxon?.revision ?? null;
         setMessage(""); setMessages([]); setUnderstanding(""); setConfirmed(false); setError(""); setChosen(null);
         window.history.pushState({ ...window.history.state }, "", window.location.href); historyEntry.current = true;
         dialog.current?.showModal();
@@ -107,7 +110,7 @@ export function AccountNicheEditor({ account, state, hasIntelligence = false }: 
         <div role="log" aria-label="Conversa sobre o nicho" aria-live="polite" className="mt-3 space-y-3">
           {messages.map((entry, index) => <div key={index} className="rounded-lg border border-border bg-muted/30 p-3">
             <p className="text-xs font-medium text-muted-foreground">{entry.role === "user" ? "Você" : "LP Factory"}</p>
-            <p className="mt-1 whitespace-pre-wrap break-words text-sm">{entry.content}</p>
+            <p className="mt-1 whitespace-pre-wrap break-words text-sm">{entry.role === "assistant" ? <AssistantMessageText text={entry.content} /> : entry.content}</p>
           </div>)}
         </div>
         {pending === "conversation" ? <p role="status" className="mt-3 text-sm text-muted-foreground">Consultando o contexto e preparando a resposta...</p> : null}
@@ -134,7 +137,7 @@ export function AccountNicheEditor({ account, state, hasIntelligence = false }: 
           if (!chosen || !confirmed || pending || message.trim()) return;
           setPending("save"); setError("");
           try {
-            const result = await saveAccountNicheAction({ account, taxonId: chosen.taxonId, expectedTaxonId: expected.current, confirmed });
+            const result = await saveAccountNicheAction({ account, taxonId: chosen.taxonId, description: chosen.name, expectedTaxonId: expected.current, expectedRevision: expectedRevision.current, confirmed });
             if (!result.ok) { setError(result.message); return; }
             setNotice(hasIntelligence && changed ? "Nicho salvo. Revise os conteúdos de Inteligência e copy antes de reutilizá-los. Nenhum conteúdo foi alterado." : "Nicho confirmado e salvo.");
             close(); router.refresh();

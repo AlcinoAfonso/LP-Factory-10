@@ -1,6 +1,7 @@
 "use server";
 
 import "server-only";
+import { getAccountOfficialNiche, isAiFirstNicheEnabled } from "../../../lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter";
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
@@ -169,7 +170,7 @@ export async function continuePendingSetupConversationAction(
     const content = validated?.ok ? validated.value : intent === "confirm"
       ? conversation.attendanceProposal?.kind === "existing"
         ? `Sim, confirmo o entendimento exibido e a categoria ${conversation.attendanceProposal.taxonName}.`
-        : "Sim, confirmo o entendimento exibido como referência operacional." : intent === "clarify"
+        : conversation.attendanceProposal?.kind === "semantic" ? "Sim, confirmo o entendimento exibido e o nicho " + conversation.attendanceProposal.nicheDescription + "." : "Sim, confirmo o entendimento exibido como referência operacional." : intent === "clarify"
         ? conversation.stage === "niche_confirmation" && !conversation.attendanceProposal
           ? "Vamos retomar o atendimento a partir do contexto já informado." : "Quero explicar melhor." : null;
     const result = await conductAttendanceTurn({ accountId: actor.accountId, userId: actor.userId,
@@ -394,10 +395,10 @@ export async function completePendingSetupAction(
   }
 
   const [primaryTaxon, operationalLabel] = await Promise.all([
-    getActivePrimaryAccountTaxon({ accountId: actor.accountId }),
+    isAiFirstNicheEnabled() ? getAccountOfficialNiche({ accountId: actor.accountId }) : getActivePrimaryAccountTaxon({ accountId: actor.accountId }),
     getConfirmedOperationalNicheResolutionLabel({ accountId: actor.accountId }),
   ]);
-  const resolutionOutcome = primaryTaxon
+  const resolutionOutcome = primaryTaxon && (!isAiFirstNicheEnabled() || primaryTaxon.confirmed)
     ? "official" as const
     : operationalLabel
       ? "operational_fallback" as const

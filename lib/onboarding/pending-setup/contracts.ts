@@ -35,6 +35,7 @@ export type PendingSetupConversation = Readonly<{
   confirmationKind: PendingSetupConfirmationKind | null;
   resolutionOutcome: PendingSetupResolutionOutcome | null;
   attendanceEnabled?: boolean;
+  aiFirstNicheEnabled?: boolean;
   preferredNameDeclined?: boolean;
   attendanceProposal?: AttendanceProposal | null;
   accountContext?: PendingSetupAccountContext;

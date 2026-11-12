@@ -17,7 +17,7 @@ import { readCommunicationDefinitions } from "../../../../lib/communication-base
 import { getCommunicationSection } from "../../../../lib/communication-base/registry";
 import { selectStageTwoInput, type StageTwoDraft, type StageTwoTarget } from "../../../../lib/communication-base/ai-core";
 import { isCurrentGenerationNiche, isCurrentGenerationVersion } from "../../../../lib/communication-base/generation-guard";
-import { readActivePrimaryAccountTaxon } from "../../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
+import { readOfficialNicheContext } from "../../../../lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter";
 import { isE1011PassageEnabled } from "../../../../lib/onboarding/pending-setup/config";
 
 export type CommunicationActionState = Readonly<{
@@ -42,9 +42,9 @@ export async function startCommunicationBaseAction(
 
   if (isCommunicationResourcesEnabled()) {
     if (formData.get("confirm_base_context") !== "on") return failure("Confirme o nicho ou o entendimento apresentado antes de iniciar a Base.");
-    const taxonomy = await readActivePrimaryAccountTaxon({ accountId: access.value.accountId });
+    const taxonomy = await readOfficialNicheContext({ accountId: access.value.accountId });
     if (!taxonomy.ok) return failure("Não foi possível conferir o nicho. Atualize a página e tente novamente.");
-    if ((taxonomy.taxon?.taxonId ?? "") !== readFormString(formData, "base_niche")) return failure("O nicho mudou. Atualize a página e confirme o contexto atual antes de iniciar a Base.");
+    if ((taxonomy.niche?.revision ?? "") !== readFormString(formData, "base_niche")) return failure("O nicho mudou. Atualize a página e confirme o contexto atual antes de iniciar a Base.");
   }
 
   let initialSections: Record<string, unknown> = {};
@@ -128,9 +128,9 @@ export async function generateCommunicationIntelligenceAction(input: Readonly<{
   }
   const access = await requireCommunicationBaseAccess(input.account, true);
   if (!access.ok) return { ok: false, message: "A geração não está disponível para este acesso." };
-  const taxonomy = await readActivePrimaryAccountTaxon({ accountId: access.value.accountId });
+  const taxonomy = await readOfficialNicheContext({ accountId: access.value.accountId });
   if (!taxonomy.ok) return { ok: false, message: "Não foi possível conferir o nicho. Tente novamente." };
-  if (!taxonomy.taxon?.confirmed) return { ok: false, message: "Defina e confirme um nicho oficial antes de gerar sugestões com IA. A edição manual continua disponível." };
+  if (!taxonomy.niche?.confirmed) return { ok: false, message: "Defina e confirme um nicho oficial antes de gerar sugestões com IA. A edição manual continua disponível." };
   const base = await readCommunicationBase(access.value.accountId);
   if (!base.ok || !base.value || base.value.version !== input.version) {
     return { ok: false, message: "A Base mudou. Atualize a página antes de gerar sugestões." };
@@ -146,14 +146,14 @@ export async function generateCommunicationIntelligenceAction(input: Readonly<{
     base: base.value,
     target: input.target,
     requiresCurrentResearch: input.requiresCurrentResearch,
-    niche: taxonomy.taxon,
+    niche: taxonomy.niche,
   });
   if (!result.ok) {
     return { ok: false, message: result.reason === "configuration_incompatible" ? "A configuração ativa da IA é incompatível com a resposta da OpenAI. Nenhuma configuração alternativa foi usada." : "Não foi possível concluir a geração. Seus textos salvos continuam disponíveis." };
   }
   const latest = await readCommunicationBase(access.value.accountId);
-  const latestTaxonomy = await readActivePrimaryAccountTaxon({ accountId: access.value.accountId });
-  if (!latestTaxonomy.ok || !isCurrentGenerationNiche(taxonomy.taxon, latestTaxonomy.taxon)) {
+  const latestTaxonomy = await readOfficialNicheContext({ accountId: access.value.accountId });
+  if (!latestTaxonomy.ok || !isCurrentGenerationNiche(taxonomy.niche, latestTaxonomy.niche)) {
     return { ok: false, message: "O nicho mudou durante a geração. Confira o nicho atual antes de gerar sugestões novamente." };
   }
   if (!latest.ok || !latest.value || !isCurrentGenerationVersion(input.version, latest.value.version)) {
