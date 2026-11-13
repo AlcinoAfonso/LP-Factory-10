@@ -7,6 +7,8 @@ import { clientOpenAiCostContext } from "../../openai-costs";
 import { resolveOpenAiProductWorkload } from "../../openai-workloads";
 import {
   AGENT_BASE_RESEARCH_PROMPT_VERSION,
+  AGENT_BASE_QA_MODEL,
+  AGENT_BASE_QA_REASONING_EFFORT,
   buildAgentBaseResearchPrompt,
   parseAgentBaseResearchResponse,
   type AgentBaseResearchContext,
@@ -24,14 +26,19 @@ export async function runAgentBaseMarketResearchExperiment(input: Readonly<{
   const prompt = buildAgentBaseResearchPrompt(input.context);
   if (!prompt) return { ok: false as const, reason: "research_context_invalid" };
 
-  // Preview segue sua revisão ativa E21; Development conserva o baseline do registry.
-  // O experimento não admite Production nem muda a configuração operacional.
+  // Reutiliza apenas o contrato e a política Web Search E21, sem alterar a revisão ativa.
+  // Modelo/effort do QA são fixos conforme a decisão D14F, não herdados do workload.
   const environment = input.environment ?? "development";
   const resolved = await resolveOpenAiProductWorkload("communication_base_stage2_intelligence", environment);
   if (!resolved.ok || !resolved.value.webSearch) {
     return { ok: false as const, reason: "research_workload_unavailable" };
   }
-  const configuration = resolved.value;
+  const configuration = {
+    ...resolved.value,
+    model: AGENT_BASE_QA_MODEL,
+    reasoningEffort: AGENT_BASE_QA_REASONING_EFFORT,
+    serviceTier: null,
+  } as const;
   const webSearch = configuration.webSearch;
   if (!webSearch) return { ok: false as const, reason: "research_workload_unavailable" };
   const result = await requestOpenAiResponses({
