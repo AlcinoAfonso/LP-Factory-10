@@ -1168,6 +1168,7 @@
 - Uma Base atual por conta, independente de taxon, LP, conversa, pesquisa, produto, campanha ou canal.
 - account_id uuid primary key, FK para accounts(id) ON DELETE CASCADE; sections_json jsonb not null default objeto vazio; version integer positivo default 1; created_at e updated_at timestamptz not null default now().
 - sections_json exige objeto JSON. Chaves, formatos, proveniência e limites de cada seção são validados no boundary `lib/communication-base/`; nova chave em formato já suportado não reescreve as existentes.
+- Categoria 3 (inteligência): teto de 30.000 caracteres de conteúdo visível por seção. Em texto, mede o texto normalizado; em listas, a soma dos itens; em FAQ, a soma de perguntas e respostas. Não inclui caracteres da serialização JSON. Mantêm-se os formatos, até 20 itens por lista e até 15 pares no FAQ, sem truncamento automático. Categoria 1 e suas regras próprias permanecem inalteradas.
 
 1.38.2 Acesso e concorrência
 - RLS habilitado; authenticated possui apenas SELECT sob policy de membership ativo, conta ativa e entitlement comercial elegível; anon, public e ai_readonly sem grants.

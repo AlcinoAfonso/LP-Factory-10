@@ -42,6 +42,44 @@ const business = getCommunicationSection("business_context");
 const audience = getCommunicationSection("audience");
 const faq = getCommunicationSection("faq");
 assert.ok(business && audience && faq);
+
+// Contrato da Categoria 3: 30.000 caracteres por seção, independente do formato.
+// Quantidades estruturais (até 20 itens / 15 pares FAQ) permanecem preservadas.
+const maximumIntelligenceLength = 30_000;
+const intelligenceSections = communicationSections.filter((section) => section.stage === 2);
+assert.equal(intelligenceSections.length, 7);
+for (const section of intelligenceSections) {
+  if (section.format === "text") {
+    const full = "a".repeat(maximumIntelligenceLength);
+    assert.equal(parseSectionValue(section, full), full, section.key + " aceita 30 mil");
+    assert.equal(parseSectionValue(section, full + "a"), null, section.key + " rejeita 30.001");
+  } else if (section.format === "items") {
+    const full = Array.from({ length: 20 }, () => "i".repeat(1500));
+    assert.deepEqual(parseSectionValue(section, full), full, section.key + " aceita 30 mil distribuídos");
+    assert.equal(parseSectionValue(section, [...full.slice(0, 19), "i".repeat(1501)]), null,
+      section.key + " rejeita 30.001 somados");
+    assert.equal(parseSectionValue(section, Array.from({ length: 21 }, () => "i")), null,
+      section.key + " preserva máximo de 20 itens");
+  } else if (section.format === "faq") {
+    const full = Array.from({ length: 15 }, () => ({ question: "Q", answer: "r".repeat(1999) }));
+    assert.deepEqual(parseSectionValue(section, full), full, "FAQ aceita 30 mil distribuídos");
+    assert.equal(parseSectionValue(section, [...full.slice(0, 14), { question: "Q", answer: "r".repeat(2000) }]), null,
+      "FAQ rejeita 30.001 somados");
+    assert.equal(parseSectionValue(section, Array.from({ length: 16 }, () => ({ question: "Q", answer: "R" }))), null,
+      "FAQ preserva máximo de 15 pares");
+    assert.equal(parseSectionValue(section, [{ question: "Q", answer: "" }]), null,
+      "FAQ preserva integridade pergunta-resposta");
+  }
+}
+assert.equal(parseSectionValue(business, "a".repeat(30_000))?.length, 30_000,
+  "Categoria 1, campos longos, permanece em 30 mil");
+const businessNameDefinition = getCommunicationSection("business_name")!;
+assert.equal(parseSectionValue(businessNameDefinition, "a".repeat(4001)), null,
+  "Categoria 1, nome público, preserva limite de 4 mil");
+const reviewedLongStageTwo = withSection({}, "audience", "a".repeat(30_000), "user_reviewed");
+assert.ok(reviewedLongStageTwo, "Conteúdo de 30 mil pode passar pela validação de gravação da Categoria 3");
+assert.equal(withSection({}, "audience", "a".repeat(30_001), "user_reviewed"), null,
+  "Gravação continua falhando além do teto");
 assert.equal(parseSectionValue(business, "  Atuo em Recife.  "), "Atuo em Recife.");
 assert.equal(parseSectionValue(business, "x".repeat(30001)), null);
 assert.equal(parseSectionValue(faq, [{ question: "Quem atende?", answer: "" }]), null);
