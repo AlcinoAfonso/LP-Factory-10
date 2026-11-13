@@ -1,8 +1,19 @@
 // D14F — Agente Base: primeira capacidade experimental, sem escrita na Base.
+import type { ResolvedOpenAiProductWorkload } from "../../openai-workloads";
 export const AGENT_BASE_RESEARCH_PROMPT_VERSION = "d14f_base_market_research_v1";
 // Par aprovado exclusivamente para o QA D14F; não é configuração operacional E21.
 export const AGENT_BASE_QA_MODEL = "gpt-6.1-sol" as const;
 export const AGENT_BASE_QA_REASONING_EFFORT = "medium" as const;
+
+export function agentBaseQaConfiguration(active: ResolvedOpenAiProductWorkload) {
+  // Override local ao request QA: sem mutação do workload ativo no Supabase/E21.
+  return {
+    ...active,
+    model: AGENT_BASE_QA_MODEL,
+    reasoningEffort: AGENT_BASE_QA_REASONING_EFFORT,
+    serviceTier: null,
+  } as const satisfies ResolvedOpenAiProductWorkload;
+}
 
 export type AgentBaseResearchContext = Readonly<{
   businessName: string;
