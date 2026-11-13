@@ -222,12 +222,20 @@ export function CommunicationSectionEditor(props: Readonly<{
         {guidance && (!longText || !structured) ? <p className="text-sm text-muted-foreground">{guidance}</p> : null}
         {!longText ? <FormFieldHint id={hintId} className={structured && definition.key === "business_name" ? "sr-only" : "leading-5"}>
           {definition.format === "items"
-            ? structured ? "Até 20 itens de 400 caracteres. Preserve parágrafos e subtítulos dentro de cada item." : "Escreva um item por linha, até 20 itens de 400 caracteres."
+            ? definition.stage === 2
+              ? structured ? "Até 20 itens, somando até 30.000 caracteres na seção. Preserve parágrafos e subtítulos nos itens."
+                : "Escreva um item por linha; até 20 itens e 30.000 caracteres somados."
+              : structured ? "Até 20 itens de 400 caracteres. Preserve parágrafos e subtítulos dentro de cada item."
+                : "Escreva um item por linha, até 20 itens de 400 caracteres."
             : definition.format === "faq"
-              ? structured ? "Até 15 pares. Preencha a pergunta e a resposta nos campos correspondentes." : "Escreva uma pergunta e resposta por linha, separadas por |. Até 15 pares."
-              : "Até 4.000 caracteres. Você pode voltar e complementar depois."}
+              ? definition.stage === 2
+                ? structured ? "Até 15 pares; perguntas e respostas somadas até 30.000 caracteres."
+                  : "Escreva uma pergunta e resposta por linha, separadas por |. Até 15 pares e 30.000 caracteres somados."
+                : structured ? "Até 15 pares. Preencha a pergunta e a resposta nos campos correspondentes."
+                  : "Escreva uma pergunta e resposta por linha, separadas por |. Até 15 pares."
+              : `Até ${communicationTextLimit(definition).toLocaleString("pt-BR")} caracteres. Você pode voltar e complementar depois.`
         </FormFieldHint> : null}
-        {structured && definition.key === "business_name" ? <Textarea id={fieldId} name="value" rows={1} value={draft} maxLength={4000} readOnly={saveLocked} className="!min-h-11 resize-y" aria-describedby={hintId} onChange={(event) => setDraft(event.target.value)} /> : structured && (definition.format === "items" || definition.format === "faq") ? <StructuredSectionFields format={definition.format} draft={draft} onChange={setDraft} disabled={saveLocked} id={fieldId} /> : <Textarea
+        {structured && definition.key === "business_name" ? <Textarea id={fieldId} name="value" rows={1} value={draft} maxLength={4000} readOnly={saveLocked} className="!min-h-11 resize-y" aria-describedby={hintId} onChange={(event) => setDraft(event.target.value)} /> : structured && (definition.format === "items" || definition.format === "faq") ? <StructuredSectionFields format={definition.format} stage={definition.stage} draft={draft} onChange={setDraft} disabled={saveLocked} id={fieldId} /> : <Textarea
           id={fieldId}
           name="value"
           rows={definition.format === "text" ? 5 : 6}
@@ -240,7 +248,7 @@ export function CommunicationSectionEditor(props: Readonly<{
           aria-describedby={`${hintId}${!editState.valid ? ` ${fieldId}-error` : ""}${saveLocked ? ` ${saveLockHintId}` : ""}`}
           className={longText ? "min-h-[min(24rem,50dvh)] resize-y text-sm font-normal leading-6 placeholder:font-normal placeholder:text-muted-foreground" : "min-h-40 resize-y text-sm"}
         />}
-        {longText ? <FormFieldHint id={hintId} className="text-right font-normal tabular-nums">{draft.length.toLocaleString("pt-BR")} / {communicationTextLimit(definition).toLocaleString("pt-BR")}</FormFieldHint> : null}
+        {(longText || (definition.stage === 2 && definition.format === "text")) ? <FormFieldHint className="text-right font-normal tabular-nums">{draft.trim().length.toLocaleString("pt-BR")} / {communicationTextLimit(definition).toLocaleString("pt-BR")}</FormFieldHint> : null}
         {!editState.valid ? <FormFieldError id={`${fieldId}-error`}>Confira o formato e os limites indicados antes de salvar.</FormFieldError> : null}
         </FormField>
         {structured && definition.stage === 1 && definition.key === "business_name" ? <BusinessFactsFields draft={factsDraft} onChange={setFactsDraft} disabled={saveLocked} id={fieldId + "-facts"} identification /> : null}
