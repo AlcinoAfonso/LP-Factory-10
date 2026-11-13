@@ -5,7 +5,10 @@ import { requirePlatformAdmin } from "@/lib/access/guards";
 import { createServiceClient } from "@/lib/supabase/service";
 import { projectCommunicationBase } from "@/communication-base/policy";
 import { selectStageTwoInput } from "@/communication-base/ai-core";
-import { runAgentBaseMarketResearchExperiment } from "@/communication-base/agent-base/experiment";
+import {
+  runAgentBaseMarketResearchExperiment,
+  runAgentBaseTwoSectionsExperiment,
+} from "@/communication-base/agent-base/experiment";
 import { readOfficialNicheContext } from "@/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter";
 
 const QA_ACCOUNT_ID = "441628b4-fbb1-4351-8436-c7d3b1013af0";
@@ -15,7 +18,10 @@ const QA_PUBLIC_NAME = "João Imóveis QA";
 export type AgentBaseQaState = Readonly<{
   status: "idle" | "success" | "error";
   message: string;
+  mode: "research" | "sections" | null;
   report: string;
+  audience: string;
+  marketInsights: readonly string[];
   sources: readonly Readonly<{ title: string | null; url: string }>[];
   model: string | null;
   effort: string | null;
@@ -25,7 +31,7 @@ export type AgentBaseQaState = Readonly<{
 }>;
 
 const AGENT_BASE_QA_INITIAL_STATE: AgentBaseQaState = {
-  status: "idle", message: "", report: "", sources: [],
+  status: "idle", message: "", mode: null, report: "", audience: "", marketInsights: [], sources: [],
   model: null, effort: null, latencyMs: null, totalTokens: null, webCalls: null,
 };
 
@@ -44,6 +50,9 @@ export async function runAgentBaseQaAction(
   if (!access.allowed) return fail("Acesso administrativo não autorizado.");
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey?.trim()) return fail("A chave OpenAI do Preview está indisponível.");
+  // Apenas os dois modos de QA aprovados. Nenhum campo do cliente escolhe conta/modelo.
+  const mode = _formData.get("intent");
+  if (mode !== "research" && mode !== "sections") return fail("Modo de pesquisa inválido.");
 
   try {
     const service = createServiceClient();
@@ -77,19 +86,22 @@ export async function runAgentBaseQaAction(
     }
     const initialNicheRevision = nicheRead.niche.revision;
 
-    const result = await runAgentBaseMarketResearchExperiment({
+    const experimentalInput = {
       accountId: QA_ACCOUNT_ID,
       apiKey,
-      environment: "preview",
+      environment: "preview" as const,
       context: {
         businessName: QA_PUBLIC_NAME,
         officialNiche: nicheRead.niche.name,
         confirmedBusinessData,
         fictionalTestScenario: true,
       },
-    });
+    };
+    const result = mode === "sections"
+      ? await runAgentBaseTwoSectionsExperiment(experimentalInput)
+      : await runAgentBaseMarketResearchExperiment(experimentalInput);
     if (!result.ok) {
-      return fail("A pesquisa real não foi concluída. Verifique a configuração e os eventos sanitizados da OpenAI.");
+      return fail("A execução real não foi concluída. Verifique os eventos sanitizados da OpenAI antes de tentar novamente.");
     }
 
     // O resultado não é utilizável se os dados confirmados mudaram durante a pesquisa.
@@ -101,16 +113,33 @@ export async function runAgentBaseQaAction(
       return fail("A Base ou o nicho mudou durante a pesquisa. O resultado foi descartado.");
     }
 
-    return {
-      status: "success",
-      message: "Pesquisa real concluída com fontes verificáveis. Nada foi gravado na Base.",
-      report: result.value.text,
+    const common = {
+      status: "success" as const,
+      message: mode === "sections"
+        ? "Seções 3.2 e 3.3 produzidas para revisão humana. Nada foi gravado na Base."
+        : "Pesquisa real concluída com fontes verificáveis. Nada foi gravado na Base.",
       sources: result.value.sources,
       model: result.model,
       effort: result.reasoningEffort,
       latencyMs: result.latencyMs,
       totalTokens: result.usage.totalTokens,
       webCalls: result.value.webSearchCallCount,
+    };
+    if ("sections" in result.value) {
+      return {
+        ...common,
+        mode: "sections",
+        report: "",
+        audience: result.value.sections.audience,
+        marketInsights: result.value.sections.market_insights,
+      };
+    }
+    return {
+      ...common,
+      mode: "research",
+      report: result.value.text,
+      audience: "",
+      marketInsights: [],
     };
   } catch {
     return fail("Não foi possível concluir o teste. Nenhuma alteração foi realizada na Base.");
