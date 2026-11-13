@@ -578,6 +578,19 @@ async function main() {
     release: async () => { effects.push("release"); return { ok: true, version: 3 }; },
   };
   const input = { accountId, userId: accountId, conversationId: accountId, expectedVersion: 1, content: "Jardins", intent: "message" as const };
+  current = {...conversation,stage:"niche_confirmation",attendanceProposal:fallback};
+  assert.equal((await conductAttendanceTurn({...input,intent:"confirm",content:"Confirmo o entendimento operacional"},{
+    ...deps,primary:async()=>nicheId,
+    official:async()=>({ok:true as const,niche:{name:"Jardinagem",revision:"legacy:1",confirmed:false,textRevision:0,confirmedBy:null,confirmedAt:null,taxonId:nicheId,legacyUpdatedAt:"1"}}),
+    request:async({context:shown})=>({ok:true,output:validateAttendanceOutput(confirm,shown)!,responseId:"fallback",latencyMs:1}),
+    commit:async input=>{
+      const memory=JSON.parse(input.summary);
+      assert.equal(memory.classification,"Não identificada."); assert.equal(memory.pendingReason,"Nicho não identificado com segurança.");
+      assert.equal(memory.confirmedUnderstanding,conversation.businessContextText);
+      return {ok:true,version:3};
+    },
+  })).ok,true,"automatic legacy taxonomy never becomes an official Summary classification");
+  current={...conversation}; effects.length=0;
   assert.equal((await conductAttendanceTurn(input, deps)).ok, true);
   assert.deepEqual(effects, ["claim", "commit"]); // old lifetime call counter is irrelevant.
   current = { ...conversation, accountContext: { summary: closedSummary, updatedAt: conversation.updatedAt } };

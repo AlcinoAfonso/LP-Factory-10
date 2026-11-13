@@ -69,7 +69,7 @@ export async function conductAttendanceTurn(input: Readonly<{
       ...fence, output, confirm: confirmation, observedPrimaryTaxonId: currentPrimaryTaxonId,
       observedNicheRevision: official.niche?.textRevision ?? 0,
       proposal: confirmation ? null : attendanceProposal(output, catalog, official.niche?.textRevision ?? 0),
-      summary: attendanceSummary(output, official.niche?.confirmed ? official.niche.name : catalog.find(taxon => taxon.id === currentPrimaryTaxonId)?.name ?? null,
+      summary: attendanceSummary(output, official.niche?.confirmed ? official.niche.name : null,
         context.confirmedProposal, reserved.accountContext.summary, attendanceContactProjection(reserved.messages).contacts),
     });
     if (!written.ok) {

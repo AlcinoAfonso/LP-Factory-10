@@ -152,6 +152,24 @@ try {
   await assert.rejects(turn(stale,await reserveConfirm(stale),4,"ready_to_complete",null,true),/pending_setup_primary_conflict/);
   assert.equal((await db.query("select description from account_official_niches where account_id=$1",[stale.a])).rows[0].description,"Nicho confirmado em outra conversa");
 
+  for (const [n,nextStage] of [[130,"ready_to_complete"],[140,"business_understanding"]]) {
+    const acceptedLegacy=await preparePending(n); acceptedLegacy.legacyTaxonId=taxon;
+    await db.query("insert into account_taxonomy(account_id,taxon_id,is_primary,status,source_type) values($1,$2,true,'active','taxonomy_match')",[acceptedLegacy.a,taxon]);
+    await turn(acceptedLegacy,acceptedLegacy.token,2,"niche_confirmation",{kind:"existing",taxonId:taxon,taxonName:"Serviços"});
+    assert.equal((await turn(acceptedLegacy,await reserveConfirm(acceptedLegacy),4,nextStage,null,true)).rows[0].version,"5");
+    const recorded=(await db.query("select source_type,user_confirmed_at from account_taxonomy where account_id=$1",[acceptedLegacy.a])).rows[0];
+    assert.equal(recorded.source_type,"taxonomy_match"); assert.ok(recorded.user_confirmed_at);
+    let completionVersion=5;
+    if(nextStage==="business_understanding"){
+      const token=id(n+4);
+      await db.query("update account_pending_setup_conversations set version=6,pending_turn_token=$2,pending_turn_started_at=clock_timestamp(),pending_turn_intent='message' where id=$1",[acceptedLegacy.c,token]);
+      assert.equal((await turn(acceptedLegacy,token,6,"ready_to_complete",null)).rows[0].version,"7");
+      completionVersion=7;
+    }
+    assert.equal((await db.query("select complete_account_pending_setup_attendance_v2($1,$2,$3,$4,'official',false) done",[acceptedLegacy.c,acceptedLegacy.a,owner,completionVersion])).rows[0].done,true);
+  }
+  console.log("PASS legacy taxonomy_match proposal acceptance persists confirmation, preserves provenance and permits immediate or later completion");
+
   console.log("PASS Pending Setup exact persisted proposal, stale fence, idempotence, atomic rollback, operational fallback, legacy proposal, named completion and dialogue closure");
 
   console.log("PASS PostgreSQL17 integral migration, auth/ACL/RLS/CAS/product guard/idempotent same description/rollback/concurrent product fencing");

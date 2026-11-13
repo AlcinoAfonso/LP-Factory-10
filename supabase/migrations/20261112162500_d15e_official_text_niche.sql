@@ -149,6 +149,12 @@ begin
  on conflict(account_id) do update set user_resolution_status='confirmed',user_selected_taxon_id=null,user_rewrite_input=excluded.user_rewrite_input,user_confirmed_at=excluded.user_confirmed_at;
     else
       perform public.effect_pending_setup_taxonomy_v1(p_account_id,v_proposal,true,c.business_context_text);
+      if v_proposal->>'kind'='existing' then
+        update public.account_taxonomy set user_confirmed_at=v_now
+          where account_id=p_account_id and taxon_id=(v_proposal->>'taxonId')::uuid
+            and is_primary and status='active' and source_type='taxonomy_match'
+            and user_confirmed_at is null;
+      end if;
     end if;
     v_proposal:=null;
   elsif v_proposal is not null then
