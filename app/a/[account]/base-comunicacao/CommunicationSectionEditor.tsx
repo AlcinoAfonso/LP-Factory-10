@@ -248,7 +248,7 @@ export function CommunicationSectionEditor(props: Readonly<{
           aria-describedby={`${hintId}${!editState.valid ? ` ${fieldId}-error` : ""}${saveLocked ? ` ${saveLockHintId}` : ""}`}
           className={longText ? "min-h-[min(24rem,50dvh)] resize-y text-sm font-normal leading-6 placeholder:font-normal placeholder:text-muted-foreground" : "min-h-40 resize-y text-sm"}
         />}
-        {(longText || (definition.stage === 2 && definition.format === "text")) ? <FormFieldHint className="text-right font-normal tabular-nums">{draft.trim().length.toLocaleString("pt-BR")} / {communicationTextLimit(definition).toLocaleString("pt-BR")}</FormFieldHint> : null}
+        {longText ? <FormFieldHint id={hintId} className="text-right font-normal tabular-nums">{draft.length.toLocaleString("pt-BR")} / {communicationTextLimit(definition).toLocaleString("pt-BR")}</FormFieldHint> : definition.stage === 2 && definition.format === "text" ? <FormFieldHint className="text-right font-normal tabular-nums">{draft.trim().length.toLocaleString("pt-BR")} / {communicationTextLimit(definition).toLocaleString("pt-BR")}</FormFieldHint> : null}
         {!editState.valid ? <FormFieldError id={`${fieldId}-error`}>Confira o formato e os limites indicados antes de salvar.</FormFieldError> : null}
         </FormField>
         {structured && definition.stage === 1 && definition.key === "business_name" ? <BusinessFactsFields draft={factsDraft} onChange={setFactsDraft} disabled={saveLocked} id={fieldId + "-facts"} identification /> : null}
