@@ -553,7 +553,7 @@ async function main() {
   }
   assert.equal(ATTENDANCE_PROMPT_VERSION, "d15e_r3_onboarding_v1");
   assert.equal(ATTENDANCE_CONTRACT_VERSION, 14);
-  assert.equal(NICHE_ATTENDANCE_PROMPT_VERSION, "d15e_r3_account_niche_v2");
+  assert.equal(NICHE_ATTENDANCE_PROMPT_VERSION, "d15e_r3_account_niche_v3");
   assert.equal(wires[0].instructions, attendancePrompt(context).instructions);
   assert.ok(JSON.stringify(events).includes(ATTENDANCE_PROMPT_VERSION));
   const adversarialContext = { ...context, recent: [{ role: "user" as const,
@@ -590,6 +590,10 @@ async function main() {
   assert.equal(validateAttendanceOutput({ ...useful, whatsappReference: "untrusted-contact", requestWhatsapp: true },
     { ...memoryContext, purpose: undefined, preferredName: "Ana" }), null, "Pending Setup contact validation stays strict");
   assert.equal(validateAttendanceOutput({ ...useful, unexpectedAuthority: true }, memoryContext), null);
+  // Real QA: existing must actually display its exact structured proposal, not merely refer to Save.
+  assert.equal(validateAttendanceOutput({ ...useful, reply: "Preparei uma proposta incluindo alinhadores. Confirme em Salvar." }, memoryContext), null);
+  assert.equal(validateAttendanceOutput({ ...useful, reply: "A descrição proposta é: " + useful.nicheDescription + ". Confirme em Salvar." }, memoryContext)?.nicheDescription, useful.nicheDescription);
+  assert.match(attendancePrompt(nicheContext).instructions, /reply deve sempre apresentar integralmente a mesma descrição textual/);
   const emptyOpening: AttendanceContext = { ...nicheContext, recent: [], summary: null, displayedUnderstanding: "", officialNiche: null };
   const invalidOpening = { ...nicheOutput, action: "pending" as const, nicheDescription: null, businessUnderstanding: "",
     confirmedUnderstanding: null, sufficientUnderstanding: true, reply: "Não identifiquei uma classificação." };
