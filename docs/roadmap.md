@@ -962,6 +962,7 @@
 - Sequência aprovada: 1. Inteligência comercial e naturalidade; 2. Identificação e confirmação de nichos AI-first; 3. Memória transversal — Diálogo e Summary; 4. Integração, compatibilidade e validação das jornadas afetadas.
 - Recorte 1: diálogo breve e específico ao negócio, apresentação institucional fundamentada no README e orientação ao próximo passo, sem inventar ofertas ou condições; identidade, confirmação, persistência, finalidade D14D e autoridade D17 preservadas.
 - Recorte 2: nicho oficial textual exibido e confirmado, único por conta com autoria/data/revisão; proposta paramétrica independente de taxon/alias e Web Search nativo pontual, sem pesquisa rotineira ou oficialização por inferência. Preserva fallback operacional, Pending Setup e D14D transitório sem escrita em Diálogo/Resumo/Base.
+- Recorte 3: autorizado e em implementação; Diálogo atribuível e Summary empresarial progressivo nas jornadas com escrita autorizada, incluindo D14D antes ou sem confirmação. Confirmação textual e classificação no Summary atômicas; Base, consumidores legados e Recortes 1/2 preservados. Recorte 4 futuro.
 - Base e Header consomem a descrição confirmada com controle de revisão. E10.7 e vínculos legados permanecem sem sincronização; eventual divergência da copy taxonômica depende de D21/E10.7. Sem retirada física de taxons/aliases/pesquisas, backfill obrigatório de QA, contratação, trial, contato posterior ou nova infraestrutura.
 
 10.13 Cadastro inicial de taxonomia e inteligência de mercado
