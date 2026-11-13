@@ -16,6 +16,7 @@ export async function runAgentBaseMarketResearchExperiment(input: Readonly<{
   accountId: string;
   context: AgentBaseResearchContext;
   apiKey: string | undefined;
+  environment?: "development" | "preview";
 }>) {
   if (!/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(input.accountId) || !input.apiKey?.trim()) {
     return { ok: false as const, reason: "experiment_input_or_api_key_missing" };
@@ -23,8 +24,10 @@ export async function runAgentBaseMarketResearchExperiment(input: Readonly<{
   const prompt = buildAgentBaseResearchPrompt(input.context);
   if (!prompt) return { ok: false as const, reason: "research_context_invalid" };
 
-  // Development usa a configuração do registry, sem alterar as revisões ativas em Preview/Production.
-  const resolved = await resolveOpenAiProductWorkload("communication_base_stage2_intelligence", "development");
+  // Preview segue sua revisão ativa E21; Development conserva o baseline do registry.
+  // O experimento não admite Production nem muda a configuração operacional.
+  const environment = input.environment ?? "development";
+  const resolved = await resolveOpenAiProductWorkload("communication_base_stage2_intelligence", environment);
   if (!resolved.ok || !resolved.value.webSearch) {
     return { ok: false as const, reason: "research_workload_unavailable" };
   }
@@ -34,7 +37,7 @@ export async function runAgentBaseMarketResearchExperiment(input: Readonly<{
   return requestOpenAiResponses({
     apiKey: input.apiKey,
     configuration,
-    environment: "development",
+    environment,
     expectedWorkload: "communication_base_stage2_intelligence",
     financialContext: clientOpenAiCostContext(input.accountId),
     executionOrigin: "administrative_proof",
