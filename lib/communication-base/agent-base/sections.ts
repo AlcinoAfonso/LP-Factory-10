@@ -1,14 +1,14 @@
 // D14F — capacidade experimental 2: gera apenas as seções 3.2 e 3.3.
 // Reutiliza o contrato/limites da Categoria 3; nunca persiste sugestões.
 import { getCommunicationSection } from "../registry";
-import { parseSectionValue } from "../policy";
+import { COMMUNICATION_ITEM_MAX, COMMUNICATION_ITEMS_MAX, COMMUNICATION_TEXT_MAX, parseSectionValue } from "../policy";
 import {
   buildAgentBaseResearchPrompt,
   parseAgentBaseResearchResponse,
   type AgentBaseResearchContext,
 } from "./research";
 
-export const AGENT_BASE_TWO_SECTIONS_PROMPT_VERSION = "d14f_base_sections_32_33_v1";
+export const AGENT_BASE_TWO_SECTIONS_PROMPT_VERSION = "d14f_base_sections_32_33_v2";
 
 const TARGETS = [
   { key: "audience", label: "Público e contexto", format: "text" },
@@ -70,8 +70,8 @@ export function buildAgentBaseTwoSectionsPrompt(context: AgentBaseResearchContex
       "Primeiro compreenda o negócio e seu nicho oficial. Pesquise o mercado e, quando relevante, os bairros/municípios pela ferramenta Web Search: critérios de decisão, alternativas concorrentes, dores, desejos, crenças e objeções do público. Use evidência externa específica e compare fontes conflitantes.",
       "A Categoria 1 contém os únicos fatos particulares confirmados da empresa; em conta fictícia de QA, trate-os como premissas de teste. Nunca invente diferenciais, credenciais, preços, resultados, depoimentos, garantias ou características exclusivas do negócio.",
       "Diferencie fatos confirmados, evidências externas e hipóteses. O conteúdo estratégico dessas duas seções deve ter basis='strategic_hypothesis', sem apresentar inferências como informações comprovadas do negócio ou de seus clientes.",
-      "Seção 3.2 — Público e contexto (chave audience, formato texto): descreva segmentos prioritários distintos, seus contextos reais de decisão, necessidades, trade-offs, alternativas, ambiente competitivo e aspectos locais pertinentes. Explique como isso se relaciona com as ofertas informadas. Evite personas inventadas, generalidades e campanhas. Entregue um texto substantivo, coerente e com no máximo 4.000 caracteres.",
-      "Seção 3.3 — Dores, desejos, crenças e objeções (chave market_insights, formato lista): entregue de 6 a 12 itens específicos, diferentes e comercialmente úteis. Inclua ao menos uma entrada iniciada por cada marcador 'Dor:', 'Desejo:', 'Crença:' e 'Objeção:'. Explique, em cada item, o impacto na decisão e o contexto do segmento relevante; não invente falas ou estatísticas. Máximo de 400 caracteres por item.",
+      "Seção 3.2 — Público e contexto (chave audience, formato texto): descreva segmentos prioritários distintos, seus contextos reais de decisão, necessidades, trade-offs, alternativas, ambiente competitivo e aspectos locais pertinentes. Explique como isso se relaciona com as ofertas informadas. Evite personas inventadas, generalidades e campanhas. Entregue um texto substantivo e específico, com 1.600 a 2.400 caracteres; respeite o limite técnico absoluto de 4.000 caracteres.",
+      "Seção 3.3 — Dores, desejos, crenças e objeções (chave market_insights, formato lista): entregue de 8 a 10 itens específicos, diferentes e comercialmente úteis. Inclua ao menos uma entrada iniciada por cada marcador 'Dor:', 'Desejo:', 'Crença:' e 'Objeção:'. Explique, em cada item, o impacto na decisão e o contexto do segmento relevante; não invente falas ou estatísticas. Mantenha cada item entre 100 e 220 caracteres, com limite técnico absoluto de 400 caracteres. Evite parágrafos longos em um único item.",
       "Uma única investigação deve sustentar as duas seções. Evite redundância: a seção 3.2 define os públicos e seus contextos, enquanto a 3.3 aprofunda suas motivações e resistências. Se uma informação empresarial for insuficiente, mantenha a inferência como hipótese e não a transforme em diferencial confirmado.",
       "Responda somente com JSON no esquema fornecido: sections.audience e sections.market_insights, com value no formato previsto e basis='strategic_hypothesis'. Não gere outras cinco seções, diagnóstico separado, copies por canal, nem altere ou salve a Base.",
       "As fontes serão exibidas separadamente pelo Preview: não polua o texto das seções com listas de URLs. Baseie afirmações externas em pesquisa efetiva; não simule pesquisas ou documentos não acessados.",
@@ -131,16 +131,31 @@ export function parseAgentBaseTwoSectionsResponse(payload: unknown) {
   const audienceDefinition = getCommunicationSection("audience");
   const insightsDefinition = getCommunicationSection("market_insights");
   if (!audienceDefinition || !insightsDefinition) return invalid("two_sections_definitions_missing");
-  const audience = parseSectionValue(audienceDefinition, audienceRecord.value);
-  const validatedItems = parseSectionValue(insightsDefinition, insightsRecord.value);
-  // 6–12 é a meta qualitativa do prompt, não um motivo para descartar uma
-  // proposta com as quatro categorias presentes e válida no contrato da Base.
-  // O limite técnico do formato `items` continua sendo aplicado por parseSectionValue.
-  if (typeof audience !== "string" || audience.length === 0 ||
-      !Array.isArray(validatedItems) || validatedItems.length < 4 || validatedItems.length > 12 ||
+
+  // Diagnóstico sem conteúdo da resposta: o QA identifica exatamente o campo
+  // incompatível com o contrato existente, sem relaxar limites ou truncar texto.
+  const audienceRaw = audienceRecord.value;
+  if (typeof audienceRaw !== "string") return invalid("audience_not_text");
+  if (!audienceRaw.trim()) return invalid("audience_empty");
+  if (audienceRaw.trim().length > COMMUNICATION_TEXT_MAX) return invalid("audience_too_long");
+
+  const insightsRaw = insightsRecord.value;
+  if (!Array.isArray(insightsRaw)) return invalid("market_insights_not_items");
+  if (insightsRaw.length > COMMUNICATION_ITEMS_MAX) return invalid("market_insights_too_many");
+  if (insightsRaw.some((item) => typeof item !== "string")) return invalid("market_insights_item_not_text");
+  if (insightsRaw.some((item) => (item as string).trim().length > COMMUNICATION_ITEM_MAX)) {
+    return invalid("market_insights_item_too_long");
+  }
+
+  const audience = parseSectionValue(audienceDefinition, audienceRaw);
+  const validatedItems = parseSectionValue(insightsDefinition, insightsRaw);
+  if (typeof audience !== "string" || !Array.isArray(validatedItems) ||
       !validatedItems.every((item: unknown) => typeof item === "string")) {
     return invalid("two_sections_value_invalid");
   }
+  // 6–12 itens é meta editorial; o contrato existente admite até 20.
+  // Quatro entradas não vazias são o mínimo para cobrir todas as categorias.
+  if (validatedItems.length < 4) return invalid("market_insights_too_few");
   const items: readonly string[] = validatedItems as readonly string[];
   // Aceita rótulos singulares/plurais e pequenas variações tipográficas.
   // Não acrescenta nem altera o texto gerado pelo modelo.
