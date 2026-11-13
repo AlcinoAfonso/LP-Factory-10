@@ -3,12 +3,17 @@
 import { useActionState } from "react";
 
 import {
-  AGENT_BASE_QA_INITIAL_STATE,
   runAgentBaseQaAction,
+  type AgentBaseQaState,
 } from "../agent-base-qa-action";
 
+const INITIAL_STATE: AgentBaseQaState = {
+  status: "idle", message: "", report: "", sources: [],
+  model: null, effort: null, latencyMs: null, totalTokens: null, webCalls: null,
+};
+
 export function AgentBaseQaPanel() {
-  const [state, formAction, pending] = useActionState(runAgentBaseQaAction, AGENT_BASE_QA_INITIAL_STATE);
+  const [state, formAction, pending] = useActionState(runAgentBaseQaAction, INITIAL_STATE);
 
   return (
     <section className="rounded-lg border border-border bg-card p-4 shadow-card sm:p-5"
@@ -38,6 +43,7 @@ export function AgentBaseQaPanel() {
             <div><dt className="inline font-semibold">Esforço: </dt><dd className="inline">{state.effort}</dd></div>
             <div><dt className="inline font-semibold">Duração: </dt><dd className="inline">{state.latencyMs == null ? "indisponível" : `${Math.round(state.latencyMs / 1000)} s`}</dd></div>
             <div><dt className="inline font-semibold">Tokens: </dt><dd className="inline">{state.totalTokens ?? "indisponível"}</dd></div>
+            <div><dt className="inline font-semibold">Consultas Web: </dt><dd className="inline">{state.webCalls ?? "indisponível"}</dd></div>
           </dl>
           <h3 className="text-base font-semibold text-foreground">Análise produzida pelo Agente Base</h3>
           <div className="max-h-[60vh] overflow-auto whitespace-pre-wrap break-words rounded-md border border-border bg-background p-4 text-sm leading-6 text-foreground">
