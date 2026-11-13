@@ -86,6 +86,24 @@ export async function runAgentBaseQaAction(
     }
     const initialNicheRevision = nicheRead.niche.revision;
 
+    if (mode === "sections") {
+      // As duas identidades e formatos vêm do catálogo global existente.
+      // Os critérios qualitativos são instruções experimentais em sections.ts.
+      const { data: targets, error: targetsError } = await service.from("communication_base_sections")
+        .select("section_key,category,format,label")
+        .in("section_key", ["audience", "market_insights"]);
+      const expected = [
+        { section_key: "audience", category: "intelligence", format: "text", label: "Público e contexto" },
+        { section_key: "market_insights", category: "intelligence", format: "items", label: "Dores, desejos, crenças e objeções" },
+      ];
+      if (targetsError || !targets || targets.length !== expected.length ||
+          expected.some((section) => !targets.some((row) =>
+            row.section_key === section.section_key && row.category === section.category &&
+            row.format === section.format && row.label === section.label))) {
+        return fail("As seções 3.2 e 3.3 divergem do catálogo da Base. Teste interrompido sem gerar conteúdo.");
+      }
+    }
+
     const experimentalInput = {
       accountId: QA_ACCOUNT_ID,
       apiKey,
