@@ -98,7 +98,8 @@ export async function converseAccountNicheAction(raw: z.input<typeof nicheTurnIn
     const output = result.output;
     const reply = output?.reply ?? "Confirme o nicho atual: " + current.taxon!.name + ".";
     const proposal = output ? (output.action === "existing" ? output.nicheDescription : null) : current.taxon!.name;
-    const summary = output && (output.businessUnderstanding || output.suggestions.length)
+    // Opening only reads existing context; no submitted company information can justify a memory write.
+    const summary = input.content !== null && output && (output.businessUnderstanding || output.suggestions.length)
       ? attendanceSummary(output,current.taxon?.confirmed ? current.taxon.name : null,null,reserved.summary)
       : null;
     const written = await commitAccountNicheTurn({ ...fence, reply, proposal,
