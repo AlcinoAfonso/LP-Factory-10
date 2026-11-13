@@ -591,7 +591,13 @@ async function main() {
     { ...memoryContext, purpose: undefined, preferredName: "Ana" }), null, "Pending Setup contact validation stays strict");
   assert.equal(validateAttendanceOutput({ ...useful, unexpectedAuthority: true }, memoryContext), null);
   // Real QA: existing must actually display its exact structured proposal, not merely refer to Save.
-  assert.equal(validateAttendanceOutput({ ...useful, reply: "Preparei uma proposta incluindo alinhadores. Confirme em Salvar." }, memoryContext), null);
+  const usefulReply = "Preparei uma proposta incluindo alinhadores. Confirme em Salvar.";
+  const displayed = validateAttendanceOutput({ ...useful, reply: usefulReply }, memoryContext)!;
+  assert.ok(displayed.reply.startsWith(usefulReply)); assert.ok(displayed.reply.includes(useful.nicheDescription));
+  assert.equal(displayed.nicheDescription, useful.nicheDescription); assert.equal(displayed.action, "existing");
+  assert.equal(validateAttendanceOutput({ ...useful, reply: usefulReply }, { ...memoryContext, purpose: undefined, preferredName: "Ana" }), null, "Pending Setup exact-proposal validation is unchanged");
+  assert.equal(validateAttendanceOutput({ ...useful, reply: "x".repeat(4000) }, memoryContext), null, "presentation never truncates or exceeds reply capacity");
+  assert.equal(validateAttendanceOutput({ ...useful, reply: usefulReply, nicheDescription: "<forged>" }, memoryContext), null);
   assert.equal(validateAttendanceOutput({ ...useful, reply: "A descrição proposta é: " + useful.nicheDescription + ". Confirme em Salvar." }, memoryContext)?.nicheDescription, useful.nicheDescription);
   assert.match(attendancePrompt(nicheContext).instructions, /reply deve sempre apresentar integralmente a mesma descrição textual/);
   const emptyOpening: AttendanceContext = { ...nicheContext, recent: [], summary: null, displayedUnderstanding: "", officialNiche: null };
@@ -624,7 +630,7 @@ async function main() {
   assert.equal(nicheWires[0].model, wires[0].model); assert.equal(nicheWires[0].tool_choice, "auto");
   assert.equal(nicheWires[0].store, false); assert.equal(nicheWires[0].background, false);
   assert.ok(JSON.stringify(nicheEvents).includes(NICHE_ATTENDANCE_PROMPT_VERSION));
-  assert.ok(JSON.stringify(nicheEvents).includes('"contractVersion":15'));
+  assert.ok(JSON.stringify(nicheEvents).includes('"contractVersion":16'));
   assert.ok(JSON.stringify(events).includes('"contractVersion":14'));
   await (await import("../niche-resolution/niche-conversation-validation-cases")).validateNicheConversationActions();
   const effects: string[] = [];

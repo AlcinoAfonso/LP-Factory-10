@@ -94,7 +94,7 @@ export const ATTENDANCE_INSTRUCTIONS = composeAttendanceInstructions(
 );
 
 export const NICHE_ATTENDANCE_PROMPT_VERSION = "d15e_r3_account_niche_v3";
-export const NICHE_ATTENDANCE_CONTRACT_VERSION = 15;
+export const NICHE_ATTENDANCE_CONTRACT_VERSION = 16;
 const NICHE_ATTENDANCE_INSTRUCTIONS = `Neste propósito account_niche, ajude exclusivamente a definir ou redefinir o nicho de uma conta ativa, conversando com naturalidade até compreender atividade, ofertas e público. Estas regras específicas substituem as regras de acolhimento, venda, identidade, WhatsApp e conclusão do atendimento inicial acima. Consulte summary, currentPrimaryTaxonId, publicName, businessData e recent antes de responder; não repita perguntas já respondidas. businessData contém dados atuais confirmados da Base e prevalece sobre interpretações antigas do Resumo; correções novas são propostas, nunca fatos confirmados automaticamente. A conversa e displayedUnderstanding são contexto transitório, sem autoridade para alterar fontes oficiais. Não solicite nome, contato nem dados comerciais acessórios. Faça uma pergunta focal somente quando faltar informação material. Se já houver contexto suficiente, proponha diretamente uma categoria segura pelo mecanismo existing e explique a equivalência; currentPrimaryTaxonId identifica o vínculo atual, mas neste propósito é permitido propor outro ID ativo com ancestrais ativos. Propor não altera nem confirma o vínculo. Sem correspondência segura, use pending e explique a ausência; preserve o nicho atual, sem inventar categoria nem afirmar que fallback operacional cria nicho oficial. Assuntos fora do recorte recebem resposta breve e redirecionamento ao nicho. Não ofereça serviços, não faça pesquisa Web nem crie categorias. Fora de existing, existingTaxonId é null. Devolva preferredName=null, preferredNameDeclined=false, requestWhatsapp=false, whatsappReference=null, whatsappDeclined=false, confirmedUnderstanding=null, suggestions=[], readyToComplete=false. Use somente ask, existing ou pending; confirm é proibido. A confirmação humana ocorre separadamente no popup, por operação determinística que revalida permissões, catálogo, concorrência e ausência de produto. Só a classificação confirmada será salva; a conversa não atualiza Diálogo, Resumo ou Base, e não deve anunciar esses efeitos.`;
 
 export function attendancePrompt(context: AttendanceContext) {
@@ -190,8 +190,14 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
   if (!parsed.success) return null;
   const value: AttendanceOutput = parsed.data;
   if (value.action === "existing" ? !validNicheDescription(value.nicheDescription) : value.nicheDescription !== null) return null;
-  if (value.action === "existing" && !value.reply.includes(value.nicheDescription!)) return null;
   const nicheOnly = context.purpose === "account_niche";
+  if (nicheOnly && value.action === "existing" && !value.reply.includes(value.nicheDescription!)) {
+    // Display the server-validated proposal without relying on the model to duplicate it in prose.
+    const presentation = "\n\nDescrição proposta para sua confirmação: " + value.nicheDescription;
+    if (value.reply.length + presentation.length > 4000) return null;
+    value.reply += presentation;
+  }
+  if (value.action === "existing" && !value.reply.includes(value.nicheDescription!)) return null;
   if (nicheOnly && (value.preferredName !== null || value.preferredNameDeclined || value.requestWhatsapp ||
     value.whatsappReference !== null || value.whatsappDeclined || value.readyToComplete || value.action === "confirm")) return null;
   const semanticText = [value.reply, value.preferredName, value.businessUnderstanding,
