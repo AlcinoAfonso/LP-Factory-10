@@ -103,7 +103,7 @@ Com impacto no banco:
 - migration aplicada é imutável; corrija/reverta por nova migration incremental. Apply só após merge na `main`, via workflow seletivo autorizado;
 - se o plano exigir aplicação remota pré-merge ou ela tiver ocorrido fora do fluxo, pare somente o ponto em fail-closed, registre operação/estado e use autoridade competente; não infira rollback, repair ou mutação corretiva.
 
-Ambiente/confirmação externos ausentes são pendências; mantenha feature flag aplicável desligada, continue artefatos e atividades independentes. Pare a definição apenas se não puder implementar com segurança; prova obrigatória pendente impede prontidão para merge.
+Pendência externa: mantenha flag aplicável desligada; siga no independente, pare se inseguro e não libere merge sem prova obrigatória. Flag nova só por risco concreto: pré-comercial admite breve indisponibilidade autorizada; comercial protege continuidade.
 
 ## 6. Validação e QA comum
 
