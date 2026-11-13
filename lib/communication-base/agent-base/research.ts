@@ -55,6 +55,7 @@ export function buildAgentBaseResearchPrompt(context: AgentBaseResearchContext) 
 export type AgentBaseResearchFinding = Readonly<{
   text: string;
   sources: readonly Readonly<{ title: string | null; url: string }>[];
+  webSearchCallCount: number;
 }>;
 
 function asObject(value: unknown): Record<string, unknown> | null {
@@ -111,7 +112,7 @@ export function parseAgentBaseResearchResponse(payload: unknown) {
   }
   return {
     ok: true as const,
-    value: { text, sources: [...sources.values()] } satisfies AgentBaseResearchFinding,
+    value: { text, sources: [...sources.values()], webSearchCallCount: calls.length } satisfies AgentBaseResearchFinding,
     telemetry: { webSearchCallCount: calls.length, webSearchSourceCount: sources.size },
   };
 }
