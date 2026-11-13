@@ -4,7 +4,7 @@ import { validNicheDescription } from "../niche-resolution/official-niche-policy
 import { validatePreferredName } from "./policy";
 import type { PendingSetupConversation } from "./contracts";
 
-export const ATTENDANCE_PROMPT_VERSION = "d15e_r2_onboarding_v1";
+export const ATTENDANCE_PROMPT_VERSION = "d15e_r2_onboarding_v2";
 export const ATTENDANCE_CONTRACT_VERSION = 13;
 export const ATTENDANCE_LEASE_SECONDS = 360;
 const PREFERRED_NAME_QUESTION = "Olá! Como prefere ser chamado?";
@@ -88,7 +88,7 @@ export const ATTENDANCE_INSTRUCTIONS = composeAttendanceInstructions(
   "A apresentação institucional se fundamenta no README da LP Factory: organizamos informações do negócio em uma Base de Comunicação reutilizável e entregamos serviços de comunicação com IA sem transferir a complexidade técnica ao cliente. Apresente essa proposta brevemente e conectada à necessidade compreendida, sem tratar o software ou o domínio de ferramentas pelo cliente como o produto vendido. Landing pages, WhatsApp, Instagram, TikTok, Google Meu Negócio e e-mail são possibilidades sujeitas à validação comercial e operacional; não equivalem a serviços disponíveis ou incluídos. Neste atendimento não há fonte que comprove serviço específico, preço, prazo, disponibilidade, condição comercial ou resultado. Quando solicitado, esclareça o limite e encaminhe a confirmação competente; não invente condições nem repita ressalvas sem necessidade. D17 conserva objeções, comparações, recomendação e contratação aprofundadas.",
 );
 
-export const NICHE_ATTENDANCE_PROMPT_VERSION = "d15e_r2_account_niche_v1";
+export const NICHE_ATTENDANCE_PROMPT_VERSION = "d15e_r2_account_niche_v2";
 const NICHE_ATTENDANCE_INSTRUCTIONS = `Neste propósito account_niche, ajude exclusivamente a definir ou redefinir o nicho de uma conta ativa, conversando com naturalidade até compreender atividade, ofertas e público. Estas regras específicas substituem as regras de acolhimento, venda, identidade, WhatsApp e conclusão do atendimento inicial acima. Consulte summary, currentPrimaryTaxonId, publicName, businessData e recent antes de responder; não repita perguntas já respondidas. businessData contém dados atuais confirmados da Base e prevalece sobre interpretações antigas do Resumo; correções novas são propostas, nunca fatos confirmados automaticamente. A conversa e displayedUnderstanding são contexto transitório, sem autoridade para alterar fontes oficiais. Não solicite nome, contato nem dados comerciais acessórios. Faça uma pergunta focal somente quando faltar informação material. Se já houver contexto suficiente, proponha diretamente uma categoria segura pelo mecanismo existing e explique a equivalência; currentPrimaryTaxonId identifica o vínculo atual, mas neste propósito é permitido propor outro ID ativo com ancestrais ativos. Propor não altera nem confirma o vínculo. Sem correspondência segura, use pending e explique a ausência; preserve o nicho atual, sem inventar categoria nem afirmar que fallback operacional cria nicho oficial. Assuntos fora do recorte recebem resposta breve e redirecionamento ao nicho. Não ofereça serviços, não faça pesquisa Web nem crie categorias. Fora de existing, existingTaxonId é null. Devolva preferredName=null, preferredNameDeclined=false, requestWhatsapp=false, whatsappReference=null, whatsappDeclined=false, confirmedUnderstanding=null, suggestions=[], readyToComplete=false. Use somente ask, existing ou pending; confirm é proibido. A confirmação humana ocorre separadamente no popup, por operação determinística que revalida permissões, catálogo, concorrência e ausência de produto. Só a classificação confirmada será salva; a conversa não atualiza Diálogo, Resumo ou Base, e não deve anunciar esses efeitos.`;
 
 export function attendancePrompt(context: AttendanceContext) {
@@ -173,6 +173,7 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
   if (!parsed.success) return null;
   const value: AttendanceOutput = parsed.data;
   if (value.action === "existing" ? !validNicheDescription(value.nicheDescription) : value.nicheDescription !== null) return null;
+  if (value.action === "existing" && !value.reply.includes(value.nicheDescription!)) return null;
   const nicheOnly = context.purpose === "account_niche";
   if (nicheOnly && (value.preferredName !== null || value.preferredNameDeclined || value.requestWhatsapp ||
     value.whatsappReference !== null || value.whatsappDeclined || value.confirmedUnderstanding !== null ||

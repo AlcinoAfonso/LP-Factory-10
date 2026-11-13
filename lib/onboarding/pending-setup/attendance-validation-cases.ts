@@ -53,10 +53,11 @@ async function main() {
   assert.deepEqual(officialNichePromptContext(privateNiche),{name:"Jardinagem",revision:"text:1",confirmed:true});
   // D15E R2: semantic proposal is independent of catalogue availability.
   const semanticContext: AttendanceContext = { ...context, catalog: [] };
-  const semanticOutput: AttendanceOutput = { ...base, existingTaxonId: null, nicheDescription: "Jardinagem para condomínios" };
+  const semanticOutput: AttendanceOutput = { ...base, reply:"Proponho Jardinagem para condomínios. Confirma esse nicho?", existingTaxonId: null, nicheDescription: "Jardinagem para condomínios" };
   assert.equal(validateAttendanceOutput(semanticOutput,semanticContext)?.nicheDescription,"Jardinagem para condomínios");
   assert.equal(validateAttendanceOutput({...semanticOutput,existingTaxonId:nicheId},semanticContext),null);
   assert.equal(validateAttendanceOutput({...semanticOutput,nicheDescription:null},semanticContext),null);
+  assert.equal(validateAttendanceOutput({...semanticOutput,reply:"Uma proposta diferente da descrição estruturada."},semanticContext),null);
   assert.equal(validateAttendanceOutput({...semanticOutput,nicheDescription:"<instrução>"},semanticContext),null);
   const semanticProposal = attendanceProposal(semanticOutput,[]);
   assert.deepEqual(semanticProposal,{kind:"semantic",taxonId:null,taxonName:null,nicheDescription:"Jardinagem para condomínios",expectedNicheRevision:0});
@@ -77,6 +78,14 @@ async function main() {
   const searched=parseAttendanceResponse(response(semanticOutput,[webCall]),semanticContext);
   assert.equal(searched.ok,true);
   if(searched.ok) { assert.match(searched.value.output.reply,/Fontes externas/);assert.match(searched.value.output.reply,/https:\/\/example.org\/nichos/);assert.equal(searched.telemetry.webSearchCallCount,1); }
+  const cited = parseAttendanceResponse(response({...semanticOutput,reply: semanticOutput.reply + " ([Referência](https://example.org/nichos?utm_source=openai))"},[webCall]),semanticContext);
+  assert.equal(cited.ok,true);
+  if (cited.ok) {
+    assert.match(cited.value.output.reply,/\(Referência\)/);
+    assert.doesNotMatch(cited.value.output.reply,/\]\(|utm_source/);
+    assert.ok(cited.value.output.reply.includes(semanticOutput.nicheDescription!));
+    assert.match(cited.value.output.reply,/Fontes externas[\s\S]*https:\/\/example.org\/nichos/);
+  }
   assert.equal(parseAttendanceResponse(response(semanticOutput,[{...webCall,status:"failed"}]),semanticContext).ok,false);
   assert.equal(parseAttendanceResponse(response(semanticOutput,[{...webCall,action:{type:"search",sources:[{url:"http://127.0.0.1/private"}]}}]),semanticContext).ok,false);
   assert.equal(parseAttendanceResponse(response(confirmSemantic,[webCall]),{...semanticContext,confirmedProposal:semanticProposal}).ok,false);
@@ -537,9 +546,9 @@ async function main() {
   const nicheOutput = { ...base, preferredName: null, suggestions: [] };
   assert.match(attendancePrompt(context).instructions, /sem depender de catálogo/);
   assert.equal(JSON.stringify(attendancePrompt(nicheContext).schema), JSON.stringify(attendancePrompt(context).schema));
-  assert.equal(ATTENDANCE_PROMPT_VERSION, "d15e_r2_onboarding_v1");
+  assert.equal(ATTENDANCE_PROMPT_VERSION, "d15e_r2_onboarding_v2");
   assert.equal(ATTENDANCE_CONTRACT_VERSION, 13);
-  assert.equal(NICHE_ATTENDANCE_PROMPT_VERSION, "d15e_r2_account_niche_v1");
+  assert.equal(NICHE_ATTENDANCE_PROMPT_VERSION, "d15e_r2_account_niche_v2");
   assert.equal(wires[0].instructions, attendancePrompt(context).instructions);
   assert.ok(JSON.stringify(events).includes(ATTENDANCE_PROMPT_VERSION));
   const adversarialContext = { ...context, recent: [{ role: "user" as const,
