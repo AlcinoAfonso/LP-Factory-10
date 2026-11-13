@@ -29,6 +29,8 @@ export async function runAgentBaseMarketResearchExperiment(input: Readonly<{
     return { ok: false as const, reason: "research_workload_unavailable" };
   }
   const configuration = resolved.value;
+  const webSearch = configuration.webSearch;
+  if (!webSearch) return { ok: false as const, reason: "research_workload_unavailable" };
   return requestOpenAiResponses({
     apiKey: input.apiKey,
     configuration,
@@ -50,11 +52,11 @@ export async function runAgentBaseMarketResearchExperiment(input: Readonly<{
       safety_identifier: createHash("sha256").update(input.accountId).digest("hex"),
       tools: [{
         type: "web_search",
-        external_web_access: configuration.webSearch.externalWebAccess,
-        search_context_size: configuration.webSearch.searchContextSize,
+        external_web_access: webSearch.externalWebAccess,
+        search_context_size: webSearch.searchContextSize,
       }],
       tool_choice: "required",
-      max_tool_calls: configuration.webSearch.maxToolCalls,
+      max_tool_calls: webSearch.maxToolCalls,
       include: ["web_search_call.action.sources"],
     },
     parseResponse: parseAgentBaseResearchResponse,
