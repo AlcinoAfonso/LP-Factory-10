@@ -23,7 +23,7 @@ assert.ok(prompt);
 assert.match(prompt.instructions, /Público e contexto/);
 assert.match(prompt.instructions, /Dores, desejos, crenças e objeções/);
 assert.match(prompt.instructions, /Web Search/);
-assert.match(prompt.instructions, /sem salvar/);
+assert.match(prompt.instructions, /nem altere ou salve a Base/);
 const expected = JSON.parse(prompt.input);
 assert.deepEqual(expected.target_sections.map((section: { key: string }) => section.key), [
   "audience", "market_insights",
