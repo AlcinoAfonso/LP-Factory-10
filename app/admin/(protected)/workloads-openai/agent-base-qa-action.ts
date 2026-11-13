@@ -24,7 +24,7 @@ export type AgentBaseQaState = Readonly<{
   webCalls: number | null;
 }>;
 
-export const AGENT_BASE_QA_INITIAL_STATE: AgentBaseQaState = {
+const AGENT_BASE_QA_INITIAL_STATE: AgentBaseQaState = {
   status: "idle", message: "", report: "", sources: [],
   model: null, effort: null, latencyMs: null, totalTokens: null, webCalls: null,
 };
