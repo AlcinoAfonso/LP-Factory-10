@@ -3,10 +3,10 @@
 // D14F: QA temporário exclusivamente no Preview e para a conta fictícia autorizada.
 import { requirePlatformAdmin } from "@/lib/access/guards";
 import { createServiceClient } from "@/lib/supabase/service";
-import { projectCommunicationBase } from "@/lib/communication-base/policy";
-import { selectStageTwoInput } from "@/lib/communication-base/ai-core";
-import { runAgentBaseMarketResearchExperiment } from "@/lib/communication-base/agent-base/experiment";
-import { readOfficialNicheContext } from "@/lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter";
+import { projectCommunicationBase } from "@/communication-base/policy";
+import { selectStageTwoInput } from "@/communication-base/ai-core";
+import { runAgentBaseMarketResearchExperiment } from "@/communication-base/agent-base/experiment";
+import { readOfficialNicheContext } from "@/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter";
 
 const QA_ACCOUNT_ID = "441628b4-fbb1-4351-8436-c7d3b1013af0";
 const QA_INTERNAL_NAME = "QA E10.12 Comercial Preview Corretor 20261014";
