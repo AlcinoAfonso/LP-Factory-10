@@ -78,6 +78,14 @@ async function main() {
   const searched=parseAttendanceResponse(response(semanticOutput,[webCall]),semanticContext);
   assert.equal(searched.ok,true);
   if(searched.ok) { assert.match(searched.value.output.reply,/Fontes externas/);assert.match(searched.value.output.reply,/https:\/\/example.org\/nichos/);assert.equal(searched.telemetry.webSearchCallCount,1); }
+  const cited = parseAttendanceResponse(response({...semanticOutput,reply: semanticOutput.reply + " ([Referência](https://example.org/nichos?utm_source=openai))"},[webCall]),semanticContext);
+  assert.equal(cited.ok,true);
+  if (cited.ok) {
+    assert.match(cited.value.output.reply,/\(Referência\)/);
+    assert.doesNotMatch(cited.value.output.reply,/\]\(|utm_source/);
+    assert.ok(cited.value.output.reply.includes(semanticOutput.nicheDescription!));
+    assert.match(cited.value.output.reply,/Fontes externas[\s\S]*https:\/\/example.org\/nichos/);
+  }
   assert.equal(parseAttendanceResponse(response(semanticOutput,[{...webCall,status:"failed"}]),semanticContext).ok,false);
   assert.equal(parseAttendanceResponse(response(semanticOutput,[{...webCall,action:{type:"search",sources:[{url:"http://127.0.0.1/private"}]}}]),semanticContext).ok,false);
   assert.equal(parseAttendanceResponse(response(confirmSemantic,[webCall]),{...semanticContext,confirmedProposal:semanticProposal}).ok,false);
