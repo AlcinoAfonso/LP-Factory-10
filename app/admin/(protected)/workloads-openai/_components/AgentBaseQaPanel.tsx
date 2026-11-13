@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { AGENT_BASE_QA_MODEL, AGENT_BASE_QA_REASONING_EFFORT } from "@/communication-base/agent-base/research";
 
 import {
   runAgentBaseQaAction,
@@ -24,7 +25,8 @@ export function AgentBaseQaPanel() {
       </h2>
       <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
         Caso: João Imóveis QA. A execução consulta a Categoria 1 e o nicho oficial salvos,
-        usa o modelo ativo da Base em Preview e realiza pesquisa Web pela OpenAI.
+        executa {AGENT_BASE_QA_MODEL} com esforço {AGENT_BASE_QA_REASONING_EFFORT}, exclusivamente
+        neste experimento, e realiza pesquisa Web pela OpenAI.
         Não gera as sete seções, não salva na Base nem altera configurações de outros agentes.
       </p>
       <form action={formAction} className="mt-4">
