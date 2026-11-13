@@ -85,6 +85,12 @@ export function parseAttendanceResponse(payload: unknown, context: AttendanceCon
       contactDeclined: parsed.success && parsed.data.whatsappDeclined,
       hasContactReference: parsed.success && parsed.data.whatsappReference !== null,
       hasConfirmedUnderstanding: parsed.success && parsed.data.confirmedUnderstanding !== null,
+      proposalInReply: parsed.success && (parsed.data.nicheDescription === null || parsed.data.reply.includes(parsed.data.nicheDescription)),
+      hasInvalidDescriptionCharacters: parsed.success && /[\u0000-\u001f\u007f<>]/u.test(parsed.data.nicheDescription ?? ""),
+      hasClosureReason: parsed.success && parsed.data.closureReason !== null,
+      hasOpaqueContactToken: parsed.success && [parsed.data.reply, parsed.data.preferredName, parsed.data.businessUnderstanding,
+        parsed.data.confirmedUnderstanding, parsed.data.closureReason, ...parsed.data.suggestions]
+        .some(text => text !== null && /\bphone_\d+_\d+\b/i.test(text)),
     });
   }
   return validated ? { ok: true as const, value: { output: validated },
