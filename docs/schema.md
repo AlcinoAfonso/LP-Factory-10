@@ -386,7 +386,7 @@
 - Prova PostgreSQL isolada: `supabase/tests/d15e_official_niche.proof.mjs`. Apply remoto confirmado por ledger e inspeção de RLS/ACLs; recibos de validação nos PRs #1132–#1133.
 
 1.13.7 Diálogo e memória do nicho na conta ativa
-- Extensão versionada em `supabase/migrations/20261113111515_d15e_transversal_memory.sql`, validada em PostgreSQL isolado por `supabase/tests/d15e_transversal_memory.proof.mjs`; aplicação remota pendente. Os contratos desta extensão não representam estado já aplicado.
+- Extensão versionada em `supabase/migrations/20261113111515_d15e_transversal_memory.sql`, validada em PostgreSQL isolado por `supabase/tests/d15e_transversal_memory.proof.mjs` e aplicada em 13/11/2026 pelo escopo `d15e_memory_only`, [run 43429444373](https://github.com/AlcinoAfonso/LP-Factory-10/actions/runs/43429444373), após merge do PR #1135 (`29b4916daa3774aa74116c82e62e0486ffb6133c`). Ledger e ACLs conferidos após apply.
 - `assert_account_niche_actor_v1(uuid,uuid) → void`: exige conta active e membership ativa owner/admin/editor; bloqueia conta e vínculo antes da escrita.
 - `account_niche_snapshot_v1(uuid) → jsonb`: projeta descrição/revisão textual ou vínculo legado observado e distingue classificação confirmada de ausência de confirmação.
 - `claim_account_niche_turn_v1(uuid,uuid,uuid,bigint,uuid,uuid,text,text) → jsonb`: abre ou reserva Diálogo account_niche da mesma conta/participante; valida versão, revisão observada e reserva concorrente. Persiste somente a mensagem submetida antes da IA; requestId permite retry sem duplicação. Retorna estado persistido, projeção recente e Summary observado.

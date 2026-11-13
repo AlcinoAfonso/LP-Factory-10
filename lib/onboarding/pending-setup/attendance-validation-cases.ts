@@ -68,7 +68,7 @@ async function main() {
   assert.equal(JSON.parse(attendanceSummary(confirmSemantic,null,semanticProposal)).classification,"Jardinagem para condomínios");
   const restrictedSemantic={...semanticContext,purpose:"account_niche" as const,preferredName:null};
   assert.ok(validateAttendanceOutput({...semanticOutput,preferredName:null,suggestions:[]},restrictedSemantic));
-  assert.equal(validateAttendanceOutput({...semanticOutput,preferredName:null,suggestions:[],requestWhatsapp:true},restrictedSemantic),null);
+  assert.equal(validateAttendanceOutput({...semanticOutput,preferredName:null,suggestions:[],requestWhatsapp:true},restrictedSemantic)?.requestWhatsapp,false);
   assert.equal(validateAttendanceOutput({...semanticOutput,preferredName:null,suggestions:[],readyToComplete:true},restrictedSemantic),null);
   assert.doesNotMatch(attendancePrompt(restrictedSemantic).instructions,/Se faltar nome preferido,|Você conduz um atendimento inicial breve e vendedor|Perto do fim,/);
   const semanticInstructions=attendancePrompt(semanticContext).instructions;
@@ -545,10 +545,15 @@ async function main() {
     currentPrimaryTaxonId: segmentId, businessData: { business_context: "Agora faço jardins para condomínios." } };
   const nicheOutput = { ...base, preferredName: null, suggestions: [] };
   assert.match(attendancePrompt(context).instructions, /sem depender de catálogo/);
-  assert.equal(JSON.stringify(attendancePrompt(nicheContext).schema), JSON.stringify(attendancePrompt(context).schema));
+  const nicheSchema = attendancePrompt(nicheContext).schema as { properties: Record<string, unknown>; required: string[] };
+  const pendingSchema = attendancePrompt(context).schema as { properties: Record<string, unknown>; required: string[] };
+  for (const field of ["requestWhatsapp", "whatsappReference", "whatsappDeclined"]) {
+    assert.equal(field in nicheSchema.properties, false); assert.equal(nicheSchema.required.includes(field), false);
+    assert.equal(field in pendingSchema.properties, true); assert.equal(pendingSchema.required.includes(field), true);
+  }
   assert.equal(ATTENDANCE_PROMPT_VERSION, "d15e_r3_onboarding_v1");
   assert.equal(ATTENDANCE_CONTRACT_VERSION, 14);
-  assert.equal(NICHE_ATTENDANCE_PROMPT_VERSION, "d15e_r3_account_niche_v1");
+  assert.equal(NICHE_ATTENDANCE_PROMPT_VERSION, "d15e_r3_account_niche_v3");
   assert.equal(wires[0].instructions, attendancePrompt(context).instructions);
   assert.ok(JSON.stringify(events).includes(ATTENDANCE_PROMPT_VERSION));
   const adversarialContext = { ...context, recent: [{ role: "user" as const,
@@ -560,10 +565,59 @@ async function main() {
   assert.match(attendancePrompt(nicheContext).instructions, /prevalecem sobre memória/);
   assert.equal(validateAttendanceOutput(nicheOutput, nicheContext)?.nicheDescription, "Jardinagem");
   assert.equal(validateAttendanceOutput({ ...nicheOutput, nicheDescription: null, action: "pending", existingTaxonId: null }, nicheContext)?.action, "pending");
-  for (const patch of [{ preferredName: "Ana" }, { requestWhatsapp: true },
+  for (const patch of [{ preferredName: "Ana" },
     { readyToComplete: true }, { nicheDescription: null, action: "confirm", existingTaxonId: null }, { existingTaxonId: accountId }])
     assert.equal(validateAttendanceOutput({ ...nicheOutput, ...patch }, nicheContext), null);
   assert.ok(validateAttendanceOutput(nicheOutput, { ...nicheContext, catalog: [] }));
+  // Real QA regressions: an irrelevant inherited refusal cannot invalidate useful company knowledge.
+  const contactMemory = JSON.stringify({ contextualUnderstanding: "Clínica oferece clareamento e implantes.",
+    confirmedUnderstanding: "Clínica oferece clareamento e implantes.", classification: "Odontologia", suggestions: [],
+    pendingReason: null, whatsapp: "+12025550123", whatsappDeclined: true });
+  const memoryContext: AttendanceContext = { ...nicheContext, summary: projectAttendanceSummary(contactMemory), displayedUnderstanding: "" };
+  const useful = { ...nicheOutput, confirmedUnderstanding: "Clínica oferece clareamento e implantes.",
+    reply: "Proponho Odontologia com alinhadores. Confirma?", nicheDescription: "Odontologia com alinhadores",
+    businessUnderstanding: "Declaração atual: clínica oferece clareamento, implantes e alinhadores para adultos." };
+  for (const contact of [{ whatsappDeclined: true }, { requestWhatsapp: true, whatsappReference: "phone_99_99", whatsappDeclined: true },
+    { requestWhatsapp: "unexpected", whatsappReference: { injected: true }, whatsappDeclined: "unexpected" }]) {
+    const raw = { ...useful, ...contact }; const before = JSON.stringify(raw);
+    const normalized = validateAttendanceOutput(raw, memoryContext)!; assert.ok(normalized);
+    assert.equal(normalized.requestWhatsapp, false); assert.equal(normalized.whatsappReference, null); assert.equal(normalized.whatsappDeclined, false);
+    const saved = JSON.parse(attendanceSummary(normalized, "Odontologia", null, contactMemory));
+    assert.equal(saved.whatsapp, "+12025550123"); assert.equal(saved.whatsappDeclined, true);
+    assert.equal(saved.classification, "Odontologia"); assert.match(saved.contextualUnderstanding, /alinhadores/);
+    assert.equal(JSON.stringify(raw), before, "projection must not mutate the response object");
+  }
+  assert.equal(validateAttendanceOutput({ ...useful, whatsappReference: "untrusted-contact", requestWhatsapp: true },
+    { ...memoryContext, purpose: undefined, preferredName: "Ana" }), null, "Pending Setup contact validation stays strict");
+  assert.equal(validateAttendanceOutput({ ...useful, unexpectedAuthority: true }, memoryContext), null);
+  // Real QA: existing must actually display its exact structured proposal, not merely refer to Save.
+  const usefulReply = "Preparei uma proposta incluindo alinhadores. Confirme em Salvar.";
+  const displayed = validateAttendanceOutput({ ...useful, reply: usefulReply }, memoryContext)!;
+  assert.ok(displayed.reply.startsWith(usefulReply)); assert.ok(displayed.reply.includes(useful.nicheDescription));
+  assert.equal(displayed.nicheDescription, useful.nicheDescription); assert.equal(displayed.action, "existing");
+  assert.equal(validateAttendanceOutput({ ...useful, reply: usefulReply }, { ...memoryContext, purpose: undefined, preferredName: "Ana" }), null, "Pending Setup exact-proposal validation is unchanged");
+  assert.equal(validateAttendanceOutput({ ...useful, reply: "x".repeat(4000) }, memoryContext), null, "presentation never truncates or exceeds reply capacity");
+  assert.equal(validateAttendanceOutput({ ...useful, reply: usefulReply, nicheDescription: "<forged>" }, memoryContext), null);
+  assert.equal(validateAttendanceOutput({ ...useful, reply: "A descrição proposta é: " + useful.nicheDescription + ". Confirme em Salvar." }, memoryContext)?.nicheDescription, useful.nicheDescription);
+  assert.match(attendancePrompt(nicheContext).instructions, /reply deve sempre apresentar integralmente a mesma descrição textual/);
+  const emptyOpening: AttendanceContext = { ...nicheContext, recent: [], summary: null, displayedUnderstanding: "", officialNiche: null };
+  const invalidOpening = { ...nicheOutput, action: "pending" as const, nicheDescription: null, businessUnderstanding: "",
+    confirmedUnderstanding: null, sufficientUnderstanding: true, reply: "Não identifiquei uma classificação." };
+  const opening = validateAttendanceOutput(invalidOpening, emptyOpening)!;
+  assert.equal(opening.action, "ask"); assert.equal(opening.sufficientUnderstanding, false);
+  assert.equal(opening.nicheDescription, null); assert.equal(opening.businessUnderstanding, ""); assert.match(opening.reply, /oferece e para quem/);
+  assert.equal(attendanceProposal(opening, []), null);
+  assert.equal(validateAttendanceOutput(invalidOpening, { ...emptyOpening, recent: [{ role: "user", content: "Oi" }] }), null,
+    "the opening fallback cannot invent understanding for a submitted turn");
+  const contextualOpening = validateAttendanceOutput({ ...invalidOpening, confirmedUnderstanding: "Clínica oferece clareamento e implantes." },
+    { ...memoryContext, recent: [] })!;
+  assert.ok(contextualOpening); assert.equal(contextualOpening.businessUnderstanding, "", "memory is context, not automatic novelty");
+  const nativeNiche = { ...useful }; const nativeRaw: Record<string, unknown> = { ...nativeNiche };
+  for (const field of ["requestWhatsapp", "whatsappReference", "whatsappDeclined"]) delete nativeRaw[field];
+  assert.ok(parseAttendanceResponse(response(nativeRaw), memoryContext).ok, "provider accepts the purpose-specific native schema");
+  assert.ok(parseAttendanceResponse(response({ ...useful, whatsappDeclined: true }), memoryContext).ok, "recorded useful response no longer fails for contact metadata");
+  assert.ok(parseAttendanceResponse(response(invalidOpening), emptyOpening).ok, "recorded empty opening becomes a safe clarification");
+
   const summaryForNiche = attendanceSummary(base, "Serviços", null);
   assert.deepEqual(projectAttendanceSummary(summaryForNiche), attendanceProjection({ ...conversation,
     accountContext: { summary: summaryForNiche, updatedAt: conversation.updatedAt } }, context.catalog).summary);
@@ -576,6 +630,8 @@ async function main() {
   assert.equal(nicheWires[0].model, wires[0].model); assert.equal(nicheWires[0].tool_choice, "auto");
   assert.equal(nicheWires[0].store, false); assert.equal(nicheWires[0].background, false);
   assert.ok(JSON.stringify(nicheEvents).includes(NICHE_ATTENDANCE_PROMPT_VERSION));
+  assert.ok(JSON.stringify(nicheEvents).includes('"contractVersion":16'));
+  assert.ok(JSON.stringify(events).includes('"contractVersion":14'));
   await (await import("../niche-resolution/niche-conversation-validation-cases")).validateNicheConversationActions();
   const effects: string[] = [];
   let current = { ...conversation };

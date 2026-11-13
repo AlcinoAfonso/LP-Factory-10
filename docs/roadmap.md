@@ -971,7 +971,7 @@
 - Conflitos/atomicidade/pós-conclusão/Base em Base Técnica 3.14.6; sem continuidade assíncrona. Objeções/comparação/recomendação/contratação aprofundadas no D17 até absorção aprovada.
 
 10.12.7 Evolução transversal do agente — D15E
-- Status: Recortes 1 e 2 operacionais; Recorte 3 autorizado e em implementação, com aplicação remota e validação hospedada pendentes. Recorte 4 futuro, sem execução autorizada.
+- Status: Recortes 1 e 2 operacionais; Recorte 3 publicado pelo PR #1135 e migration aplicada pelo run 43429444373. Correções das falhas do QA hospedado seguem no PR #1137; conclusão funcional condicionada à validação e publicação desse delta. Recorte 4 futuro, sem execução autorizada.
 - Sequência aprovada: 1. Inteligência comercial e naturalidade; 2. Identificação e confirmação de nichos AI-first; 3. Memória transversal — Diálogo e Summary; 4. Integração, compatibilidade e validação das jornadas afetadas.
 - Recorte 1: diálogo breve e específico ao negócio, apresentação institucional fundamentada no README e orientação ao próximo passo, sem inventar ofertas ou condições; identidade, confirmação, persistência, finalidade D14D e autoridade D17 preservadas.
 - Recorte 2: nicho oficial textual exibido e confirmado, único por conta com autoria/data/revisão; proposta paramétrica independente de taxon/alias e Web Search nativo pontual, sem pesquisa rotineira ou oficialização por inferência. Preserva fallback operacional, Pending Setup, finalidade restrita do D14D e autoridade da Base; memória autorizada no Recorte 3.

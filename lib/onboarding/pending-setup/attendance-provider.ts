@@ -5,8 +5,8 @@ import { requestOpenAiResponses, type OpenAiResponsesDependencies } from "../../
 import { clientOpenAiCostContext, type OpenAiCostEconomicContext } from "../../openai-costs";
 import { resolveOpenAiProductWorkload, resolveOpenAiWorkloadEnvironment,
   type ResolvedOpenAiProductWorkload, type OpenAiWorkloadEnvironment } from "../../openai-workloads";
-import { ATTENDANCE_PROMPT_VERSION, ATTENDANCE_CONTRACT_VERSION, NICHE_ATTENDANCE_PROMPT_VERSION, attendancePrompt,
-  attendanceOutputSchema, validateAttendanceOutput, type AttendanceContext, type AttendanceOutput } from "./attendance-core";
+import { ATTENDANCE_PROMPT_VERSION, ATTENDANCE_CONTRACT_VERSION, NICHE_ATTENDANCE_PROMPT_VERSION, NICHE_ATTENDANCE_CONTRACT_VERSION, attendancePrompt,
+  parseAttendanceOutput, validateAttendanceOutput, type AttendanceContext, type AttendanceOutput } from "./attendance-core";
 
 export async function requestAttendance(input: Readonly<{
   accountId: string; context: AttendanceContext;
@@ -24,7 +24,7 @@ export async function requestAttendance(input: Readonly<{
   const result = await requestOpenAiResponses<Readonly<{ output: AttendanceOutput }>>({
     apiKey: input.apiKey ?? process.env.OPENAI_API_KEY,
     environment, configuration: resolved.value, expectedWorkload: "pending_setup_conversation",
-    requestId: randomUUID(), promptVersion: input.context.purpose === "account_niche" ? NICHE_ATTENDANCE_PROMPT_VERSION : ATTENDANCE_PROMPT_VERSION, contractVersion: ATTENDANCE_CONTRACT_VERSION,
+    requestId: randomUUID(), promptVersion: input.context.purpose === "account_niche" ? NICHE_ATTENDANCE_PROMPT_VERSION : ATTENDANCE_PROMPT_VERSION, contractVersion: input.context.purpose === "account_niche" ? NICHE_ATTENDANCE_CONTRACT_VERSION : ATTENDANCE_CONTRACT_VERSION,
     financialContext: input.financialContext ?? clientOpenAiCostContext(input.accountId),
     executionOrigin: input.executionOrigin ?? "runtime", baselineReference: "e10_12_attendance",
     timeoutMs: 120_000,
@@ -70,7 +70,7 @@ export function parseAttendanceResponse(payload: unknown, context: AttendanceCon
     validated.reply += footer;
   }
   if (!validated) {
-    const parsed = attendanceOutputSchema.safeParse(output);
+    const parsed = parseAttendanceOutput(output, context);
     console.warn("pending_setup_attendance_contract_failed", {
       schemaValid: parsed.success, action: parsed.success ? parsed.data.action : null,
       hasTaxonId: parsed.success && parsed.data.existingTaxonId !== null,
@@ -85,6 +85,12 @@ export function parseAttendanceResponse(payload: unknown, context: AttendanceCon
       contactDeclined: parsed.success && parsed.data.whatsappDeclined,
       hasContactReference: parsed.success && parsed.data.whatsappReference !== null,
       hasConfirmedUnderstanding: parsed.success && parsed.data.confirmedUnderstanding !== null,
+      proposalInReply: parsed.success && (parsed.data.nicheDescription === null || parsed.data.reply.includes(parsed.data.nicheDescription)),
+      hasInvalidDescriptionCharacters: parsed.success && /[\u0000-\u001f\u007f<>]/u.test(parsed.data.nicheDescription ?? ""),
+      hasClosureReason: parsed.success && parsed.data.closureReason !== null,
+      hasOpaqueContactToken: parsed.success && [parsed.data.reply, parsed.data.preferredName, parsed.data.businessUnderstanding,
+        parsed.data.confirmedUnderstanding, parsed.data.closureReason, ...parsed.data.suggestions]
+        .some(text => text !== null && /\bphone_\d+_\d+\b/i.test(text)),
     });
   }
   return validated ? { ok: true as const, value: { output: validated },

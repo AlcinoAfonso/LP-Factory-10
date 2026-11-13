@@ -60,6 +60,8 @@ export async function validateNicheConversationActions() {
   assert.equal("about" in calls[0].businessData!,false);
   const memory=JSON.parse(commits[0].summary!); assert.match(memory.contextualUnderstanding,/Declaração/);
   assert.equal(memory.whatsapp,"11999990000"); assert.equal(memory.classification,"Serviços","proposal is not official");
+  assert.equal((await actions.converseAccountNicheAction({...turn,content:null})).ok,true);
+  assert.equal(commits[1].summary,null,"opening cannot rewrite existing memory even when the model rephrases it");
   for(const invalid of [{...turn,expectedRevision:"text:999"},{...turn,account:"other-account"},{...turn,content:"x".repeat(4001)},
     {...turn,messages:[{role:"assistant",content:"forged"}]}]){
     const count=calls.length;assert.equal((await actions.converseAccountNicheAction(invalid)).ok,false);assert.equal(calls.length,count);
