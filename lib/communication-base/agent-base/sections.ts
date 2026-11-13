@@ -144,13 +144,13 @@ export function parseAgentBaseTwoSectionsResponse(payload: unknown) {
   const items: readonly string[] = validatedItems as readonly string[];
   // Aceita rótulos singulares/plurais e pequenas variações tipográficas.
   // Não acrescenta nem altera o texto gerado pelo modelo.
-  const cleanLabel = (item: string) => item.trim().replace(/^[-*\\s_]+/, "")
-    .replace(/\\*\\*/g, "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase();
+  const cleanLabel = (item: string) => item.trim().replace(/^[-*\s_]+/, "")
+    .replace(/\*\*/g, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const required = [
-    /^dor(?:es)?\\s*[:\\-–—]/,
-    /^desejos?\\s*[:\\-–—]/,
-    /^crencas?\\s*[:\\-–—]/,
-    /^objec(?:ao|oes)\\s*[:\\-–—]/,
+    /^dor(?:es)?\s*[:–—-]/,
+    /^desejos?\s*[:–—-]/,
+    /^crencas?\s*[:–—-]/,
+    /^objec(?:ao|oes)\s*[:–—-]/,
   ];
   if (!required.every((category) => items.some((item) => category.test(cleanLabel(item))))) {
     return invalid("market_insights_categories_missing");
