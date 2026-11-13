@@ -900,6 +900,7 @@
     - `supabase/tests/d15e_selective_inventory.proof.cjs`
     - `lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter.ts`
     - `lib/onboarding/niche-resolution/official-niche-policy.ts`
+    - `lib/onboarding/niche-resolution/official-niche-validation-cases.ts`
     - `lib/onboarding/pending-setup/semantic-niche-instructions.ts`
     - `lib/openai-responses/web-search-metadata.ts`
     - `app/a/[account]/_components/AssistantMessageText.tsx`

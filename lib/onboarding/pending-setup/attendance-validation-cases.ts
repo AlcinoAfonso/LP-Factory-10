@@ -37,6 +37,8 @@ function response(output: unknown, extra: unknown[] = []) {
     output: [...extra, { type: "message", content: [{ type: "output_text", text: JSON.stringify(output) }] }] };
 }
 async function main() {
+  const { execFileSync } = await import("node:child_process");
+  execFileSync(process.execPath, ["--import", "tsx", "lib/onboarding/niche-resolution/official-niche-validation-cases.ts"], { stdio: "inherit" });
   const loader = nodeModule as unknown as { _load: (name: string, parent: unknown, isMain: boolean) => unknown };
   const original = loader._load;
   loader._load = function(name, parent, isMain) { return name === "server-only" ? {} : original.call(this, name, parent, isMain); };
