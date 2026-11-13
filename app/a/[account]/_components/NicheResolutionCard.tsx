@@ -31,21 +31,21 @@ export function AccountNicheEditor({ account, state, hasIntelligence = false }: 
   const dialog = useRef<HTMLDialogElement>(null);
   const discard = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
-  const expected = useRef<string | null>(null);
+  const dialogueId = useRef("");
+  const dialogueVersion = useRef(0);
+  const request = useRef<{ id: string; content: string | null } | null>(null);
   const expectedRevision = useRef<string | null>(null);
   const turnRevision = useRef(0);
   const historyEntry = useRef(false);
   const closeRequest = useRef<() => void>(() => undefined);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<readonly NicheMessage[]>([]);
-  const [understanding, setUnderstanding] = useState("");
   const [chosen, setChosen] = useState<NicheChoice | null>(null);
   const [confirmed, setConfirmed] = useState(false);
   const [pending, setPending] = useState<"conversation" | "save" | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const dirty = Boolean(message.trim() || messages.some(entry => entry.role === "user") ||
-    (chosen && (chosen.taxonId !== expected.current || confirmed)));
+  const dirty = Boolean(message.trim() || chosen);
   useLayoutEffect(() => { closeRequest.current = requestClose; });
   useEffect(() => {
     function beforeUnload(event: BeforeUnloadEvent) {
@@ -75,29 +75,32 @@ export function AccountNicheEditor({ account, state, hasIntelligence = false }: 
     if (pending === "save") return;
     if (dirty) { if (!discard.current?.open) discard.current?.showModal(); } else close();
   }
-  async function converse(nextMessages: readonly NicheMessage[], currentUnderstanding: string) {
+  async function converse(content: string | null) {
     const revision = ++turnRevision.current;
     setPending("conversation"); setError(""); setChosen(null); setConfirmed(false);
+    if (!request.current || request.current.content !== content) request.current = { id: crypto.randomUUID(), content };
     try {
-      const result = await converseAccountNicheAction({ account, expectedTaxonId: expected.current, expectedRevision: expectedRevision.current,
-        messages: nextMessages.slice(-8), understanding: currentUnderstanding });
+      const result = await converseAccountNicheAction({ account, dialogueId: dialogueId.current,
+        requestId: request.current.id, expectedVersion: dialogueVersion.current,
+        expectedRevision: expectedRevision.current, content });
       if (revision !== turnRevision.current) return;
+      if ("version" in result && result.version !== undefined) dialogueVersion.current = result.version;
       if (!result.ok) { setError(result.message); return; }
-      setMessages([...nextMessages, { role: "assistant", content: result.reply }]);
-      setUnderstanding(result.understanding); setChosen(result.proposal); setMessage("");
-    } catch { if (revision === turnRevision.current) setError("Não foi possível conversar agora. Sua mensagem foi preservada; tente novamente."); }
+      setMessages(previous => [...previous, ...(content ? [{ role: "user" as const, content }] : []),
+        { role: "assistant", content: result.reply }]);
+      setChosen(result.proposal); setMessage(""); request.current = null;
+    } catch { if (revision === turnRevision.current) setError("Não foi possível concluir a resposta. O texto continua disponível para tentar novamente."); }
     finally { if (revision === turnRevision.current) setPending(null); }
   }
   return <div className="text-sm">
     {taxon?.confirmed && state.hasProducts ? <p className="text-xs text-muted-foreground">A redefinição não está disponível porque esta conta já possui produto desenvolvido.</p> : <Button
       ref={trigger} variant="secondary" className="min-h-11 px-0 underline underline-offset-4" onClick={() => {
-        expected.current = taxon?.taxonId ?? null;
+        dialogueId.current = crypto.randomUUID(); dialogueVersion.current = 0; request.current = null;
         expectedRevision.current = taxon?.revision ?? null;
-        setMessage(""); setMessages([]); setUnderstanding(""); setConfirmed(false); setError(""); setChosen(null);
+        setMessage(""); setMessages([]); setConfirmed(false); setError(""); setChosen(null);
         window.history.pushState({ ...window.history.state }, "", window.location.href); historyEntry.current = true;
         dialog.current?.showModal();
-        if (taxon && state.hasProducts) setChosen(taxon);
-        else void converse([], "");
+        void converse(null);
       }}>{label}</Button>}
     {notice ? <FeedbackMessage tone="success">{notice}</FeedbackMessage> : null}
     <dialog ref={dialog} aria-labelledby={id + "-title"} onCancel={event => { event.preventDefault(); requestClose(); }}
@@ -106,7 +109,7 @@ export function AccountNicheEditor({ account, state, hasIntelligence = false }: 
       <h2 id={id + "-title"} className="text-lg font-semibold">{label}</h2>
       {taxon ? <p className="mt-2 break-words text-sm">Nicho atual: <strong>{taxon.name}</strong></p> : null}
       {taxon && state.hasProducts ? <p className="mt-2 text-sm text-muted-foreground">Você pode confirmar o nicho atual. A redefinição não está disponível porque esta conta já possui produto desenvolvido.</p> : <>
-        <p className="mt-2 text-xs text-muted-foreground">Vamos conversar sobre seu negócio para identificar o nicho. Só o nicho confirmado será salvo; esta conversa não atualiza automaticamente a Base ou o Resumo da conta.</p>
+        <p className="mt-2 text-xs text-muted-foreground">As mensagens enviadas ficam no histórico e ajudam a atualizar o contexto do negócio. O nicho só muda após sua confirmação em Salvar; a Base de Comunicação permanece preservada.</p>
         <div role="log" aria-label="Conversa sobre o nicho" aria-live="polite" className="mt-3 space-y-3">
           {messages.map((entry, index) => <div key={index} className="rounded-lg border border-border bg-muted/30 p-3">
             <p className="text-xs font-medium text-muted-foreground">{entry.role === "user" ? "Você" : "LP Factory"}</p>
@@ -116,13 +119,13 @@ export function AccountNicheEditor({ account, state, hasIntelligence = false }: 
         {pending === "conversation" ? <p role="status" className="mt-3 text-sm text-muted-foreground">Consultando o contexto e preparando a resposta...</p> : null}
         <form className="mt-3 space-y-2" onSubmit={event => {
           event.preventDefault(); if (pending || !message.trim()) return;
-          void converse([...messages, { role: "user", content: message.trim() }], understanding);
+          void converse(message.trim());
         }}>
           <FormField><FormFieldLabel htmlFor={id + "-message"}>Conte sobre seu negócio ou o que mudou</FormFieldLabel>
             <Textarea id={id + "-message"} autoFocus maxLength={4000} rows={3} value={message} disabled={pending !== null}
               onChange={event => { setMessage(event.target.value); setConfirmed(false); }} /></FormField>
           <Button type="submit" className="min-h-11" disabled={pending !== null || !message.trim()}>Enviar mensagem</Button>
-          {error && !message.trim() && !messages.length ? <Button variant="secondary" className="min-h-11 ml-2" disabled={pending !== null} onClick={() => void converse([], "")}>Tentar novamente</Button> : null}
+          {error && !message.trim() && !messages.length ? <Button variant="secondary" className="min-h-11 ml-2" disabled={pending !== null} onClick={() => void converse(null)}>Tentar novamente</Button> : null}
         </form>
       </>}
       {chosen ? <label className="mt-3 flex min-h-11 items-start gap-2 text-sm">
@@ -137,9 +140,9 @@ export function AccountNicheEditor({ account, state, hasIntelligence = false }: 
           if (!chosen || !confirmed || pending || message.trim()) return;
           setPending("save"); setError("");
           try {
-            const result = await saveAccountNicheAction({ account, taxonId: chosen.taxonId, description: chosen.name, expectedTaxonId: expected.current, expectedRevision: expectedRevision.current, confirmed });
+            const result = await saveAccountNicheAction({ account, dialogueId: dialogueId.current, expectedVersion: dialogueVersion.current, confirmed: true });
             if (!result.ok) { setError(result.message); return; }
-            setNotice(hasIntelligence && changed ? "Nicho salvo. Revise os conteúdos de Inteligência e copy antes de reutilizá-los. Nenhum conteúdo foi alterado." : "Nicho confirmado e salvo.");
+            setNotice(hasIntelligence && changed ? "Nicho confirmado e contexto atualizado. Revise os conteúdos de Inteligência e copy antes de reutilizá-los." : "Nicho confirmado e contexto do negócio atualizado.");
             close(); router.refresh();
           } catch { setError("Não foi possível salvar o nicho agora. Tente novamente."); }
           finally { setPending(null); }
@@ -148,10 +151,10 @@ export function AccountNicheEditor({ account, state, hasIntelligence = false }: 
     </dialog>
     <dialog ref={discard} aria-labelledby={id + "-discard"} onCancel={event => { event.preventDefault(); discard.current?.close(); }}
       className="m-auto w-[calc(100%-2rem)] max-w-md rounded-xl border border-border bg-background p-4 text-foreground shadow-xl backdrop:bg-black/40">
-      <h2 id={id + "-discard"} className="font-semibold">Descartar a escolha do nicho?</h2>
-      <p className="mt-2 text-sm">A conversa e a escolha ainda não foram salvas.</p>
-      <div className="mt-3 flex flex-wrap gap-2"><Button className="min-h-11" onClick={() => discard.current?.close()}>Continuar editando</Button>
-        <Button className="min-h-11" variant="secondary" onClick={close}>Descartar alterações</Button></div>
+      <h2 id={id + "-discard"} className="font-semibold">Encerrar sem confirmar o nicho?</h2>
+      <p className="mt-2 text-sm">As mensagens já enviadas permanecem no histórico. {message.trim() ? "O texto não enviado e a escolha pendente serão descartados;" : "A escolha pendente será descartada;"} o nicho atual será mantido.</p>
+      <div className="mt-3 flex flex-wrap gap-2"><Button className="min-h-11" onClick={() => discard.current?.close()}>Continuar conversa</Button>
+        <Button className="min-h-11" variant="secondary" onClick={close}>Encerrar sem confirmar</Button></div>
     </dialog>
   </div>;
 }

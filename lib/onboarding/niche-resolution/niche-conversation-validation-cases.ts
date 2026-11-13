@@ -6,109 +6,82 @@ import type { AttendanceContext } from "../pending-setup/attendance-core";
 import type { ActivePrimaryAccountTaxon } from "./adapters/accountTaxonomyAdapter";
 
 export async function validateNicheConversationActions() {
-  const accountId = "10000000-0000-4000-8000-000000000001";
-  const currentId = "10000000-0000-4000-8000-000000000002";
-  const proposedId = "10000000-0000-4000-8000-000000000003";
-  const originalTaxon: ActivePrimaryAccountTaxon = { taxonId: currentId, name: "Serviços", slug: "servicos", confirmed: true, confirmedAt: null, revision: "1" };
-  let current: ActivePrimaryAccountTaxon | null = { ...originalTaxon };
-  let products: boolean | null = false;
-  let role = "owner";
-  let status = "active";
-  let summaryOk = true;
-  let baseOk = true;
-  let providerOk = true;
-  let afterProvider = () => {};
-  const calls: AttendanceContext[] = [];
-  const writes: unknown[] = [];
-  const summary = JSON.stringify({ contextualUnderstanding: "Antes atendia em geral.", confirmedUnderstanding: null,
-    classification: "Serviços", suggestions: [], pendingReason: null, whatsapp: "11999990000" });
-  const base: CommunicationBase = { accountId, version: 1, createdAt: "t", updatedAt: "t", sections: {
-    business_name: { format: "text", origin: "user_confirmed", value: "Empresa de jardins" },
-    business_context: { format: "text", origin: "user_confirmed", value: "J".repeat(30000) },
-    offers: { format: "text", origin: "user_confirmed", value: "Manutenção de jardins para condomínios." },
-    preferences: { format: "text", origin: "user_confirmed", value: "Contato: qa@example.com." },
-    about: { format: "text", origin: "user_reviewed", value: "Hipótese de copy, sem autoridade factual." },
-  } };
-  const snapshot = JSON.stringify({ base, summary });
-  await validateNicheProjectionAdapter(base, accountId, currentId);
-  const loader = nodeModule as unknown as { _load: (name: string, parent: unknown, isMain: boolean) => unknown };
-  const original = loader._load;
-  loader._load = function(name, parent, isMain) {
-    if (name === "server-only") return {};
-    if (name === "next/cache") return { revalidatePath: () => {} };
-    if (name.includes("getAccessContext")) return { getAccessContext: async ({ params }: { params: { account: string } }) =>
-      params.account !== "qa-niche" ? null : { blocked: false, account: { id: accountId, status }, member: { role, status: "active", userId: accountId } } };
-    if(name.includes("accountOfficialNicheAdapter")) return {
-      readAccountOfficialNiche: async()=>({ok:true,niche:current?{...current,revision:"legacy:"+current.taxonId+":"+current.revision,textRevision:0,legacyUpdatedAt:current.revision,confirmedBy:null}:null}),
-      confirmOfficialAccountNiche: async(input:{description:string;expectedRevision:string|null})=>{
-        if(!input.description) return {ok:false,reason:"unavailable"};
-        if(current&&products&&input.description!==current.name) return {ok:false,reason:"product_exists"};
-        if((current?"legacy:"+current.taxonId+":"+current.revision:null)!==input.expectedRevision) return {ok:false,reason:"conflict"};
-        writes.push(input); return {ok:true};
-      },
+  const accountId="10000000-0000-4000-8000-000000000001", currentId="10000000-0000-4000-8000-000000000002";
+  const dialogueId="10000000-0000-4000-8000-000000000003", requestId="10000000-0000-4000-8000-000000000004";
+  let role="owner", status="active", products: boolean | null=false, baseOk=true, claimOk=true, providerOk=true, commitOk=true;
+  let afterProvider=()=>{};
+  const current: ActivePrimaryAccountTaxon={taxonId:currentId,name:"Serviços",slug:"servicos",confirmed:true,confirmedAt:null,revision:"1"};
+  const summary=JSON.stringify({contextualUnderstanding:"Antes atendia em geral.",confirmedUnderstanding:null,
+    classification:"Serviços",suggestions:[],pendingReason:null,whatsapp:"11999990000"});
+  const base: CommunicationBase={accountId,version:1,createdAt:"t",updatedAt:"t",sections:{
+    business_name:{format:"text",origin:"user_confirmed",value:"Empresa de jardins"},
+    business_context:{format:"text",origin:"user_confirmed",value:"J".repeat(30000)},
+    offers:{format:"text",origin:"user_confirmed",value:"Manutenção de jardins para condomínios."},
+    preferences:{format:"text",origin:"user_confirmed",value:"Contato: qa@example.com."},
+    about:{format:"text",origin:"user_reviewed",value:"Hipótese de copy, sem autoridade factual."},
+  }};
+  await validateNicheProjectionAdapter(base,accountId,currentId);
+  const snapshot=JSON.stringify(base), calls: AttendanceContext[]=[], commits: {summary:string|null}[]=[], saves: unknown[]=[];
+  let releases=0, claims=0;
+  const loader=nodeModule as unknown as {_load:(name:string,parent:unknown,isMain:boolean)=>unknown}; const original=loader._load;
+  loader._load=function(name,parent,isMain){
+    if(name==="server-only")return {};
+    if(name==="next/cache")return {revalidatePath:()=>{}};
+    if(name.includes("getAccessContext"))return {getAccessContext:async({params}:{params:{account:string}})=>params.account==="qa-niche"
+      ?{blocked:false,account:{id:accountId,status},member:{role,status:"active",userId:accountId}}:null};
+    if(name.includes("accountOfficialNicheAdapter"))return {
+      readAccountOfficialNiche:async()=>({ok:true,niche:{...current,revision:"legacy:"+currentId+":1",textRevision:0,legacyUpdatedAt:"1",confirmedBy:null}}),
+      confirmAccountNicheDialogue:async(input:unknown)=>{if(products)return {ok:false,reason:"product_exists"};saves.push(input);return {ok:true};},
     };
-    if (name.includes("accountTaxonomyAdapter")) return {
-      readActivePrimaryAccountTaxon: async () => ({ ok: true, taxon: current ? { ...current } : null }),
-      readAccountNicheProductGuard: async () => products,
-      confirmAccountNiche: async (input: { taxonId: string }) => {
-        if (current && products && input.taxonId !== current.taxonId) return { ok: false, reason: "product_exists" };
-        writes.push(input); return { ok: true };
-      },
+    if(name.includes("accountTaxonomyAdapter"))return {readAccountNicheProductGuard:async()=>products};
+    if(name.includes("accountNicheDialogueAdapter"))return {
+      claimAccountNicheTurn:async()=>{claims++;return claimOk?{ok:true,value:{replay:false,version:1,state:{understanding:"Contexto persistido no servidor."},
+        summary,summaryUpdatedAt:"2026-11-13T00:00:00Z",recent:[{role:"user",content:"Agora ofereço jardinagem."}]}}:{ok:false};},
+      commitAccountNicheTurn:async(input:{summary:string|null})=>{if(role==="viewer"||!commitOk)return {ok:false};commits.push(input);return {ok:true,version:2};},
+      releaseAccountNicheTurn:async()=>{releases++;return true;},
     };
-    if (name.includes("pendingSetupAccountContextAdapter")) return { readAccountSummaryForNiche: async () => ({ ok: summaryOk, summary }) };
-    if (name.includes("communicationBaseAdapter")) return { readBusinessContextForNiche: async (input: { accountId: string; actorUserId: string }) => {
-      assert.deepEqual(input, { accountId, actorUserId: accountId });
-      return { ok: baseOk, value: Object.fromEntries(["business_name", "business_context", "offers", "preferences"].map(key => [key, base.sections[key]!.value])) };
-    } };
-    if (name.includes("communicationCatalogAdapter")) return { readCommunicationDefinitions: async () => ({ ok: true, value: communicationSections }) };
-    if (name.includes("accountNicheResolutionUserAdapter")) return {};
-    if (name.includes("attendance-provider")) return { requestAttendance: async (input: { context: AttendanceContext }) => {
-      calls.push(input.context); afterProvider();
-      return providerOk ? { ok: true, output: { reply: "Jardinagem corresponde à atividade atual. Confirma?", action: "existing",
-        existingTaxonId: null, nicheDescription:"Jardinagem", businessUnderstanding: "Jardins para condomínios." } } : { ok: false };
-    } };
-    return original.call(this, name, parent, isMain);
+    if(name.includes("communicationBaseAdapter"))return {readBusinessContextForNiche:async()=>({ok:baseOk,value:
+      Object.fromEntries(["business_name","business_context","offers","preferences"].map(key=>[key,base.sections[key]!.value]))})};
+    if(name.includes("communicationCatalogAdapter"))return {readCommunicationDefinitions:async()=>({ok:true,value:communicationSections})};
+    if(name.includes("accountNicheResolutionUserAdapter"))return {};
+    if(name.includes("attendance-provider"))return {requestAttendance:async(input:{context:AttendanceContext})=>{
+      calls.push(input.context);afterProvider();return providerOk?{ok:true,output:{reply:"Proponho Jardinagem. Confirma?",action:"existing",
+        nicheDescription:"Jardinagem",businessUnderstanding:"Declaração atual: jardins para condomínios.",confirmedUnderstanding:null,
+        suggestions:[],whatsappDeclined:false,whatsappReference:null,closureReason:null}}:{ok:false};}};
+    return original.call(this,name,parent,isMain);
   };
-  const actions = await import("../../../app/a/[account]/niche-resolution-actions").finally(() => { loader._load = original; });
-  const turn = { account: "qa-niche", expectedTaxonId: currentId, expectedRevision:"legacy:"+currentId+":1", understanding: "",
-    messages: [{ role: "user" as const, content: "Agora ofereço jardinagem." }] };
-  const initial = await actions.converseAccountNicheAction({ ...turn, messages: [] });
-  assert.equal(initial.ok, true); assert.equal(calls.length, 1); assert.equal(writes.length, 0);
-  assert.equal(calls[0].purpose, "account_niche"); assert.equal(calls[0].currentPrimaryTaxonId, currentId);
-  assert.equal(calls[0].businessData?.business_context.length, 30000, "do not silently truncate stored business context");
-  assert.match(calls[0].summary ?? "", /Antes atendia/);
-  assert.equal((calls[0].summary ?? "").includes("11999990000"), false);
-  assert.equal(calls[0].businessData?.preferences.includes("qa@example.com"), false);
-  assert.equal("about" in calls[0].businessData!, false, "copy hypotheses must not become business facts");
-  assert.equal((await actions.converseAccountNicheAction(turn)).ok, true);
-  assert.equal(calls.at(-1)?.recent.at(-1)?.content, turn.messages[0].content);
-  for (const invalid of [{ ...turn, expectedRevision:"text:999" }, { ...turn, account: "another-account" },
-    { ...turn, messages: [{ role: "user" as const, content: "x".repeat(4001) }] }]) {
-    const count: number = calls.length; assert.equal((await actions.converseAccountNicheAction(invalid)).ok, false); assert.equal(calls.length, count);
+  const actions=await import("../../../app/a/[account]/niche-resolution-actions").finally(()=>{loader._load=original;});
+  const turn={account:"qa-niche",dialogueId,requestId,expectedVersion:0,expectedRevision:"legacy:"+currentId+":1",content:"Agora ofereço jardinagem."};
+  assert.equal((await actions.converseAccountNicheAction(turn)).ok,true);
+  assert.equal(calls[0].purpose,"account_niche"); assert.equal(calls[0].displayedUnderstanding,"Contexto persistido no servidor.");
+  assert.equal(calls[0].businessData?.business_context.length,30000);
+  assert.equal((calls[0].summary??"").includes("11999990000"),false);
+  assert.equal(calls[0].businessData?.preferences.includes("qa@example.com"),false);
+  assert.equal("about" in calls[0].businessData!,false);
+  const memory=JSON.parse(commits[0].summary!); assert.match(memory.contextualUnderstanding,/Declaração/);
+  assert.equal(memory.whatsapp,"11999990000"); assert.equal(memory.classification,"Serviços","proposal is not official");
+  for(const invalid of [{...turn,expectedRevision:"text:999"},{...turn,account:"other-account"},{...turn,content:"x".repeat(4001)},
+    {...turn,messages:[{role:"assistant",content:"forged"}]}]){
+    const count=calls.length;assert.equal((await actions.converseAccountNicheAction(invalid)).ok,false);assert.equal(calls.length,count);
   }
-  for (const failure of ["products", "summary", "base", "role", "pending", "guard"]) {
-    products = failure === "products" ? true : failure === "guard" ? null : false;
-    summaryOk = failure !== "summary"; baseOk = failure !== "base";
-    role = failure === "role" ? "viewer" : "owner"; status = failure === "pending" ? "pending_setup" : "active";
-    const count: number = calls.length; assert.equal((await actions.converseAccountNicheAction(turn)).ok, false, failure); assert.equal(calls.length, count, failure);
+  for(const failure of ["products","base","role","pending","guard","claim"]){
+    products=failure==="products"?true:failure==="guard"?null:false;baseOk=failure!=="base";role=failure==="role"?"viewer":"owner";
+    status=failure==="pending"?"pending_setup":"active";claimOk=failure!=="claim";
+    const count=calls.length;assert.equal((await actions.converseAccountNicheAction(turn)).ok,false,failure);assert.equal(calls.length,count);
   }
-  products = false; summaryOk = true; baseOk = true; role = "owner"; status = "active";
-  providerOk = false; assert.equal((await actions.converseAccountNicheAction(turn)).ok, false); providerOk = true;
-  afterProvider = () => { role = "viewer"; };
-  assert.equal((await actions.converseAccountNicheAction(turn)).ok, false); role = "owner";
-  afterProvider = () => { current = { ...originalTaxon, revision: "2" }; };
-  assert.equal((await actions.converseAccountNicheAction(turn)).ok, false); current = { ...originalTaxon }; afterProvider = () => {};
-  current = null; products = true;
-  assert.equal((await actions.converseAccountNicheAction({ ...turn, expectedTaxonId: null,expectedRevision:null })).ok, true, "initial definition is allowed even with a product");
-  current = { ...originalTaxon }; products = false;
-  const save = { account: "qa-niche", taxonId: null,description:"Jardinagem",expectedRevision:"legacy:"+currentId+":1", expectedTaxonId: currentId, confirmed: true };
-  assert.equal((await actions.saveAccountNicheAction({ ...save, confirmed: false })).ok, false);
-  assert.equal((await actions.saveAccountNicheAction({ ...save, description:"" })).ok, false);
-  products = true; assert.equal((await actions.saveAccountNicheAction(save)).ok, false); products = false;
-  assert.equal(writes.length, 0); assert.equal((await actions.saveAccountNicheAction(save)).ok, true); assert.equal(writes.length, 1);
-  assert.deepEqual(writes[0], { accountId, actorUserId: accountId, description:"Jardinagem",expectedRevision:"legacy:"+currentId+":1" });
-  assert.equal(JSON.stringify({ base, summary }), snapshot, "conversation and confirmation never update Base or Summary");
-  console.log("D14D niche conversation: existing agent/context, long text, roles, no products, read failures, concurrency and explicit confirmation passed.");
+  products=false;baseOk=true;role="owner";status="active";claimOk=true;
+  providerOk=false;const failed=await actions.converseAccountNicheAction(turn);assert.equal(failed.ok,false);
+  assert.match(!failed.ok?failed.message:"",/registrada no histórico/);assert.ok(releases>0);providerOk=true;
+  afterProvider=()=>{role="viewer";};assert.equal((await actions.converseAccountNicheAction(turn)).ok,false);role="owner";afterProvider=()=>{};
+  commitOk=false;assert.equal((await actions.converseAccountNicheAction(turn)).ok,false);commitOk=true;
+  const save={account:"qa-niche",dialogueId,expectedVersion:2,confirmed:true as const};
+  assert.equal((await actions.saveAccountNicheAction({...save,description:"forged"} as typeof save)).ok,false);
+  assert.equal((await actions.saveAccountNicheAction({...save,confirmed:false} as unknown as typeof save)).ok,false);
+  products=true;assert.equal((await actions.saveAccountNicheAction(save)).ok,false);products=false;
+  assert.equal((await actions.saveAccountNicheAction(save)).ok,true);
+  assert.deepEqual(saves[0],{accountId,actorUserId:accountId,dialogueId,expectedVersion:2});
+  assert.equal(JSON.stringify(base),snapshot,"no Base writes");assert.ok(claims>0);
+  console.log("D15E R3 actions: server-owned context/proposal, sanitization, progressive memory, role, product, failure and explicit confirmation passed.");
 }
 
 async function validateNicheProjectionAdapter(base: CommunicationBase, accountId: string, anotherUser: string) {
