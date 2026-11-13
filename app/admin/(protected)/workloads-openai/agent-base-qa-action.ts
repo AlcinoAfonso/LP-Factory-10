@@ -115,7 +115,7 @@ export async function runAgentBaseQaAction(
       effort: result.reasoningEffort,
       latencyMs: result.latencyMs,
       totalTokens: result.usage.totalTokens,
-      webCalls: result.value.sources.length > 0 ? result.value.sources.length : null,
+      webCalls: result.value.webSearchCallCount,
     };
   } catch {
     return fail("Não foi possível concluir o teste. Nenhuma alteração foi realizada na Base.");
