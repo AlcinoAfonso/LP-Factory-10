@@ -34,7 +34,7 @@ export async function runAgentBaseMarketResearchExperiment(input: Readonly<{
   const configuration = resolved.value;
   const webSearch = configuration.webSearch;
   if (!webSearch) return { ok: false as const, reason: "research_workload_unavailable" };
-  return requestOpenAiResponses({
+  const result = await requestOpenAiResponses({
     apiKey: input.apiKey,
     configuration,
     environment,
@@ -64,4 +64,5 @@ export async function runAgentBaseMarketResearchExperiment(input: Readonly<{
     },
     parseResponse: parseAgentBaseResearchResponse,
   });
+  return { ...result, model: configuration.model, reasoningEffort: configuration.reasoningEffort };
 }
