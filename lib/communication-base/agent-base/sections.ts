@@ -133,14 +133,26 @@ export function parseAgentBaseTwoSectionsResponse(payload: unknown) {
   if (!audienceDefinition || !insightsDefinition) return invalid("two_sections_definitions_missing");
   const audience = parseSectionValue(audienceDefinition, audienceRecord.value);
   const validatedItems = parseSectionValue(insightsDefinition, insightsRecord.value);
+  // 6–12 é a meta qualitativa do prompt, não um motivo para descartar uma
+  // proposta com as quatro categorias presentes e válida no contrato da Base.
+  // O limite técnico do formato `items` continua sendo aplicado por parseSectionValue.
   if (typeof audience !== "string" || audience.length === 0 ||
-      !Array.isArray(validatedItems) || validatedItems.length < 6 || validatedItems.length > 12 ||
+      !Array.isArray(validatedItems) || validatedItems.length < 4 || validatedItems.length > 12 ||
       !validatedItems.every((item: unknown) => typeof item === "string")) {
     return invalid("two_sections_value_invalid");
   }
   const items: readonly string[] = validatedItems as readonly string[];
-  if (!["Dor:", "Desejo:", "Crença:", "Objeção:"].every((marker) =>
-    items.some((item) => item.startsWith(marker)))) {
+  // Aceita rótulos singulares/plurais e pequenas variações tipográficas.
+  // Não acrescenta nem altera o texto gerado pelo modelo.
+  const cleanLabel = (item: string) => item.trim().replace(/^[-*\\s_]+/, "")
+    .replace(/\\*\\*/g, "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase();
+  const required = [
+    /^dor(?:es)?\\s*[:\\-–—]/,
+    /^desejos?\\s*[:\\-–—]/,
+    /^crencas?\\s*[:\\-–—]/,
+    /^objec(?:ao|oes)\\s*[:\\-–—]/,
+  ];
+  if (!required.every((category) => items.some((item) => category.test(cleanLabel(item))))) {
     return invalid("market_insights_categories_missing");
   }
   return {
