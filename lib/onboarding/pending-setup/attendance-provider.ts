@@ -20,11 +20,11 @@ export async function requestAttendance(input: Readonly<{
     : await resolveOpenAiProductWorkload("pending_setup_conversation", environment);
   if (!resolved.ok) return { ok: false as const };
   const prompt = attendancePrompt(input.context);
-  const search = input.context.semanticNiches && !input.context.confirmedProposal && input.context.recent.some(message => message.role === "user") ? resolved.value.webSearch : null;
+  const search = !input.context.confirmedProposal && input.context.recent.some(message => message.role === "user") ? resolved.value.webSearch : null;
   const result = await requestOpenAiResponses<Readonly<{ output: AttendanceOutput }>>({
     apiKey: input.apiKey ?? process.env.OPENAI_API_KEY,
     environment, configuration: resolved.value, expectedWorkload: "pending_setup_conversation",
-    requestId: randomUUID(), promptVersion: input.context.semanticNiches ? input.context.purpose === "account_niche" ? "d15e_r2_account_niche_v1" : "d15e_r2_onboarding_v1" : input.context.purpose === "account_niche" ? NICHE_ATTENDANCE_PROMPT_VERSION : ATTENDANCE_PROMPT_VERSION, contractVersion: input.context.semanticNiches ? 13 : ATTENDANCE_CONTRACT_VERSION,
+    requestId: randomUUID(), promptVersion: input.context.purpose === "account_niche" ? NICHE_ATTENDANCE_PROMPT_VERSION : ATTENDANCE_PROMPT_VERSION, contractVersion: ATTENDANCE_CONTRACT_VERSION,
     financialContext: input.financialContext ?? clientOpenAiCostContext(input.accountId),
     executionOrigin: input.executionOrigin ?? "runtime", baselineReference: "e10_12_attendance",
     timeoutMs: 120_000,
@@ -47,7 +47,7 @@ export function parseAttendanceResponse(payload: unknown, context: AttendanceCon
   const data = payload as Record<string, unknown>;
   if (data.status === "incomplete" || data.error) return invalid;
   const web = webSearchMetadata(payload);
-  if (!web || web.calls > 2 || (web.calls > 0 && (!context.semanticNiches || context.confirmedProposal))) return invalid;
+  if (!web || web.calls > 2 || (web.calls > 0 && context.confirmedProposal)) return invalid;
   const chunks: string[] = [];
   for (const item of Array.isArray(data.output) ? data.output : []) {
     if (!item || typeof item !== "object") continue;

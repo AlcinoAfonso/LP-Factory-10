@@ -14,9 +14,7 @@ export async function validateNicheConversationActions() {
   let products: boolean | null = false;
   let role = "owner";
   let status = "active";
-  let gate = true;
   let summaryOk = true;
-  let catalogOk = true;
   let baseOk = true;
   let providerOk = true;
   let afterProvider = () => {};
@@ -33,10 +31,6 @@ export async function validateNicheConversationActions() {
   } };
   const snapshot = JSON.stringify({ base, summary });
   await validateNicheProjectionAdapter(base, accountId, currentId);
-  const catalog = [
-    { id: currentId, name: "Serviços", level: "segment", parentId: null, active: true, aliases: [] },
-    { id: proposedId, name: "Jardinagem", level: "niche", parentId: currentId, active: true, aliases: [] },
-  ];
   const loader = nodeModule as unknown as { _load: (name: string, parent: unknown, isMain: boolean) => unknown };
   const original = loader._load;
   loader._load = function(name, parent, isMain) {
@@ -44,8 +38,16 @@ export async function validateNicheConversationActions() {
     if (name === "next/cache") return { revalidatePath: () => {} };
     if (name.includes("getAccessContext")) return { getAccessContext: async ({ params }: { params: { account: string } }) =>
       params.account !== "qa-niche" ? null : { blocked: false, account: { id: accountId, status }, member: { role, status: "active", userId: accountId } } };
+    if(name.includes("accountOfficialNicheAdapter")) return {
+      readAccountOfficialNiche: async()=>({ok:true,niche:current?{...current,revision:"legacy:"+current.taxonId+":"+current.revision,textRevision:0,legacyUpdatedAt:current.revision,confirmedBy:null}:null}),
+      confirmOfficialAccountNiche: async(input:{description:string;expectedRevision:string|null})=>{
+        if(!input.description) return {ok:false,reason:"unavailable"};
+        if(current&&products&&input.description!==current.name) return {ok:false,reason:"product_exists"};
+        if((current?"legacy:"+current.taxonId+":"+current.revision:null)!==input.expectedRevision) return {ok:false,reason:"conflict"};
+        writes.push(input); return {ok:true};
+      },
+    };
     if (name.includes("accountTaxonomyAdapter")) return {
-      isAccountNicheEditingEnabled: () => gate,
       readActivePrimaryAccountTaxon: async () => ({ ok: true, taxon: current ? { ...current } : null }),
       readAccountNicheProductGuard: async () => products,
       confirmAccountNiche: async (input: { taxonId: string }) => {
@@ -54,7 +56,6 @@ export async function validateNicheConversationActions() {
       },
     };
     if (name.includes("pendingSetupAccountContextAdapter")) return { readAccountSummaryForNiche: async () => ({ ok: summaryOk, summary }) };
-    if (name.includes("pendingSetupCatalogContextAdapter")) return { readAttendanceCatalog: async () => catalogOk ? catalog : null };
     if (name.includes("communicationBaseAdapter")) return { readBusinessContextForNiche: async (input: { accountId: string; actorUserId: string }) => {
       assert.deepEqual(input, { accountId, actorUserId: accountId });
       return { ok: baseOk, value: Object.fromEntries(["business_name", "business_context", "offers", "preferences"].map(key => [key, base.sections[key]!.value])) };
@@ -64,12 +65,12 @@ export async function validateNicheConversationActions() {
     if (name.includes("attendance-provider")) return { requestAttendance: async (input: { context: AttendanceContext }) => {
       calls.push(input.context); afterProvider();
       return providerOk ? { ok: true, output: { reply: "Jardinagem corresponde à atividade atual. Confirma?", action: "existing",
-        existingTaxonId: proposedId, businessUnderstanding: "Jardins para condomínios." } } : { ok: false };
+        existingTaxonId: null, nicheDescription:"Jardinagem", businessUnderstanding: "Jardins para condomínios." } } : { ok: false };
     } };
     return original.call(this, name, parent, isMain);
   };
   const actions = await import("../../../app/a/[account]/niche-resolution-actions").finally(() => { loader._load = original; });
-  const turn = { account: "qa-niche", expectedTaxonId: currentId, understanding: "",
+  const turn = { account: "qa-niche", expectedTaxonId: currentId, expectedRevision:"legacy:"+currentId+":1", understanding: "",
     messages: [{ role: "user" as const, content: "Agora ofereço jardinagem." }] };
   const initial = await actions.converseAccountNicheAction({ ...turn, messages: [] });
   assert.equal(initial.ok, true); assert.equal(calls.length, 1); assert.equal(writes.length, 0);
@@ -81,31 +82,31 @@ export async function validateNicheConversationActions() {
   assert.equal("about" in calls[0].businessData!, false, "copy hypotheses must not become business facts");
   assert.equal((await actions.converseAccountNicheAction(turn)).ok, true);
   assert.equal(calls.at(-1)?.recent.at(-1)?.content, turn.messages[0].content);
-  for (const invalid of [{ ...turn, expectedTaxonId: proposedId }, { ...turn, account: "another-account" },
+  for (const invalid of [{ ...turn, expectedRevision:"text:999" }, { ...turn, account: "another-account" },
     { ...turn, messages: [{ role: "user" as const, content: "x".repeat(4001) }] }]) {
     const count: number = calls.length; assert.equal((await actions.converseAccountNicheAction(invalid)).ok, false); assert.equal(calls.length, count);
   }
-  for (const failure of ["products", "summary", "catalog", "base", "role", "pending", "gate", "guard"]) {
+  for (const failure of ["products", "summary", "base", "role", "pending", "guard"]) {
     products = failure === "products" ? true : failure === "guard" ? null : false;
-    summaryOk = failure !== "summary"; catalogOk = failure !== "catalog"; baseOk = failure !== "base";
-    role = failure === "role" ? "viewer" : "owner"; status = failure === "pending" ? "pending_setup" : "active"; gate = failure !== "gate";
+    summaryOk = failure !== "summary"; baseOk = failure !== "base";
+    role = failure === "role" ? "viewer" : "owner"; status = failure === "pending" ? "pending_setup" : "active";
     const count: number = calls.length; assert.equal((await actions.converseAccountNicheAction(turn)).ok, false, failure); assert.equal(calls.length, count, failure);
   }
-  products = false; summaryOk = true; catalogOk = true; baseOk = true; role = "owner"; status = "active"; gate = true;
+  products = false; summaryOk = true; baseOk = true; role = "owner"; status = "active";
   providerOk = false; assert.equal((await actions.converseAccountNicheAction(turn)).ok, false); providerOk = true;
   afterProvider = () => { role = "viewer"; };
   assert.equal((await actions.converseAccountNicheAction(turn)).ok, false); role = "owner";
   afterProvider = () => { current = { ...originalTaxon, revision: "2" }; };
   assert.equal((await actions.converseAccountNicheAction(turn)).ok, false); current = { ...originalTaxon }; afterProvider = () => {};
   current = null; products = true;
-  assert.equal((await actions.converseAccountNicheAction({ ...turn, expectedTaxonId: null })).ok, true, "initial definition is allowed even with a product");
+  assert.equal((await actions.converseAccountNicheAction({ ...turn, expectedTaxonId: null,expectedRevision:null })).ok, true, "initial definition is allowed even with a product");
   current = { ...originalTaxon }; products = false;
-  const save = { account: "qa-niche", taxonId: proposedId, expectedTaxonId: currentId, confirmed: true };
+  const save = { account: "qa-niche", taxonId: null,description:"Jardinagem",expectedRevision:"legacy:"+currentId+":1", expectedTaxonId: currentId, confirmed: true };
   assert.equal((await actions.saveAccountNicheAction({ ...save, confirmed: false })).ok, false);
-  assert.equal((await actions.saveAccountNicheAction({ ...save, taxonId: accountId })).ok, false);
+  assert.equal((await actions.saveAccountNicheAction({ ...save, description:"" })).ok, false);
   products = true; assert.equal((await actions.saveAccountNicheAction(save)).ok, false); products = false;
   assert.equal(writes.length, 0); assert.equal((await actions.saveAccountNicheAction(save)).ok, true); assert.equal(writes.length, 1);
-  assert.deepEqual(writes[0], { accountId, actorUserId: accountId, taxonId: proposedId, expectedTaxonId: currentId });
+  assert.deepEqual(writes[0], { accountId, actorUserId: accountId, description:"Jardinagem",expectedRevision:"legacy:"+currentId+":1" });
   assert.equal(JSON.stringify({ base, summary }), snapshot, "conversation and confirmation never update Base or Summary");
   console.log("D14D niche conversation: existing agent/context, long text, roles, no products, read failures, concurrency and explicit confirmation passed.");
 }

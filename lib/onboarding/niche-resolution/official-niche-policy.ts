@@ -1,7 +1,4 @@
 export const OFFICIAL_NICHE_MAX_LENGTH = 120;
-export function isAiFirstNicheEnabled() {
-  return process.env.D15E_AI_FIRST_NICHE_ENABLED === "true";
-}
 export function validNicheDescription(value: unknown): value is string {
   return typeof value === "string" && value === value.trim() &&
     value.length > 0 && value.length <= OFFICIAL_NICHE_MAX_LENGTH &&

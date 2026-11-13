@@ -1,5 +1,4 @@
 import "server-only";
-import { isAiFirstNicheEnabled } from "../../niche-resolution/official-niche-policy";
 
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -70,7 +69,6 @@ function mapConversation(
     confirmationKind: row.confirmation_kind,
     resolutionOutcome: row.resolution_outcome,
     attendanceEnabled: isE1012AttendanceEnabled(),
-    aiFirstNicheEnabled: isAiFirstNicheEnabled(),
     preferredNameDeclined: row.preferred_name_declined ?? false,
     attendanceProposal: row.attendance_proposal ?? null,
     attendanceTurnIntent: row.pending_turn_intent ?? null,
@@ -319,7 +317,7 @@ export async function completePendingSetup(input: {
   resolutionOutcome: PendingSetupResolutionOutcome;
 }): Promise<PendingSetupWriteResult> {
   const service = createServiceClient();
-  const completionRpc = isE1012AttendanceEnabled() ? isAiFirstNicheEnabled() ? "complete_account_pending_setup_attendance_v2" : "complete_account_pending_setup_attendance_v1"
+  const completionRpc = isE1012AttendanceEnabled() ? "complete_account_pending_setup_attendance_v2"
     : isE1011PassageEnabled() ? "complete_account_pending_setup_v2"
     : "complete_account_pending_setup_v1";
   const { data, error } = await service.rpc(completionRpc, {

@@ -1,7 +1,7 @@
 "use server";
 
 import "server-only";
-import { getAccountOfficialNiche, isAiFirstNicheEnabled } from "../../../lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter";
+import { getAccountOfficialNiche } from "../../../lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter";
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
@@ -395,10 +395,10 @@ export async function completePendingSetupAction(
   }
 
   const [primaryTaxon, operationalLabel] = await Promise.all([
-    isAiFirstNicheEnabled() ? getAccountOfficialNiche({ accountId: actor.accountId }) : getActivePrimaryAccountTaxon({ accountId: actor.accountId }),
+    getAccountOfficialNiche({ accountId: actor.accountId }),
     getConfirmedOperationalNicheResolutionLabel({ accountId: actor.accountId }),
   ]);
-  const resolutionOutcome = primaryTaxon && (!isAiFirstNicheEnabled() || primaryTaxon.confirmed)
+  const resolutionOutcome = primaryTaxon?.confirmed
     ? "official" as const
     : operationalLabel
       ? "operational_fallback" as const

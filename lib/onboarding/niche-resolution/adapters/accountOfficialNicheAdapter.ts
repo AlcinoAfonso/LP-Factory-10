@@ -1,12 +1,10 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { readActivePrimaryAccountTaxon } from "./accountTaxonomyAdapter";
-import { isAiFirstNicheEnabled, validNicheDescription, type OfficialAccountNiche } from "../official-niche-policy";
-export { isAiFirstNicheEnabled };
+import { validNicheDescription, type OfficialAccountNiche } from "../official-niche-policy";
 export type OfficialNicheRead = { ok: true; niche: OfficialAccountNiche | null } | { ok: false };
 export async function readAccountOfficialNiche(accountId: string): Promise<OfficialNicheRead> {
   try {
-    if (isAiFirstNicheEnabled()) {
       const { data, error } = await createServiceClient().from("account_official_niches")
         .select("description,revision,confirmed_at,confirmed_by").eq("account_id", accountId).maybeSingle();
       if (error) return { ok: false };
@@ -17,7 +15,6 @@ export async function readAccountOfficialNiche(accountId: string): Promise<Offic
           textRevision: revision, confirmed: true, confirmedAt: data.confirmed_at,
           confirmedBy: data.confirmed_by, taxonId: null, legacyUpdatedAt: null } };
       }
-    }
     const legacy = await readActivePrimaryAccountTaxon({ accountId });
     if (!legacy.ok) return { ok: false };
     return { ok: true, niche: legacy.taxon ? {
@@ -29,7 +26,7 @@ export async function readAccountOfficialNiche(accountId: string): Promise<Offic
 export async function confirmOfficialAccountNiche(input: {
   accountId: string; actorUserId: string; description: string; expectedRevision: string | null;
 }) {
-  if (!isAiFirstNicheEnabled() || !validNicheDescription(input.description)) return { ok: false as const, reason: "unavailable" };
+  if (!validNicheDescription(input.description)) return { ok: false as const, reason: "unavailable" };
   const current = await readAccountOfficialNiche(input.accountId);
   if (!current.ok) return { ok: false as const, reason: "unavailable" };
   if ((current.niche?.revision ?? null) !== input.expectedRevision) return { ok: false as const, reason: "conflict" };

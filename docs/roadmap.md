@@ -939,9 +939,9 @@
 - Definido: acolher, pedir nome e nome do negócio, colher só informações essenciais e apresentar brevemente o valor real da LP Factory, sem insistência. Solicitar WhatsApp opcional perto do fim, se ainda não informado; preservar exatamente o número informado no Diálogo e no Resumo existentes, mesmo incompleto ou incorreto; correção posterior substitui o contato. O agente pode alertar brevemente e oferecer correção, sem insistência, formato obrigatório ou bloqueio de avanço. Recusa não bloqueia avanço; fornecimento não autoriza contato posterior.
 
 10.12.4 Identificação de nicho
-- Status: modo legado operacional; modo semântico preparado por 10.12.7, condicionado à ativação.
-- Conteúdo: no modo semântico, propor descrição fiel pelas informações do negócio e conhecimento paramétrico, sem catálogo obrigatório; esclarecer ambiguidade material sem impor enquadramento aproximado. Web Search pontual e confirmação seguem Base Técnica 3.14.6. Catálogo/repertório D21 permanecem disponíveis, sem manutenção pelo atendimento.
-- Legado: comparar atividade, ofertas e público com catálogo/aliases, explicar equivalências e confirmar somente categoria segura, sem Web classificatória. Sem compreensão segura em qualquer modo, preservar entendimento operacional, dados comerciais relevantes e pendência no Resumo, além do Diálogo integral, para uso futuro autorizado pelo D17.
+- Status: identificação semântica definida como fluxo único; aplicação da migration e prova hospedada pendentes por 10.12.7.
+- Conteúdo: propor descrição fiel pelas informações do negócio e conhecimento paramétrico, sem catálogo obrigatório; esclarecer ambiguidade material sem impor enquadramento aproximado. Web Search pontual e confirmação seguem Base Técnica 3.14.6. Catálogo/repertório D21 permanecem disponíveis, sem manutenção pelo atendimento.
+- Sem compreensão segura, preservar entendimento operacional, dados comerciais relevantes e pendência no Resumo, além do Diálogo integral, para uso futuro autorizado pelo D17. Persistência taxonômica e consumidores legados permanecem compatíveis, sem alternância para classificação por catálogo.
 
 10.12.5 Repertório do nicho e apoio à venda
 - Status: operacional.
@@ -957,7 +957,7 @@
 - Conflitos/atomicidade/pós-conclusão/Base em Base Técnica 3.14.6; sem continuidade assíncrona. Objeções/comparação/recomendação/contratação aprofundadas no D17 até absorção aprovada.
 
 10.12.7 Evolução transversal do agente — D15E
-- Status: Recorte 1 integrado; Recorte 2 implementado sob gate fechado por padrão, com migration, ativação e prova hospedada com provider pendentes. Recortes 3 e 4 não iniciados e sujeitos a autorização individual.
+- Status: Recorte 1 integrado; Recorte 2 com fluxo semântico único autorizado, sem flag ou alternância de classificação. Merge, aplicação seletiva, QA real e Production autorizados; migration e prova hospedada com provider ainda pendentes. Recortes 3 e 4 não iniciados e sujeitos a autorização individual.
 - Sequência aprovada: 1. Inteligência comercial e naturalidade; 2. Identificação e confirmação de nichos AI-first; 3. Memória transversal — Diálogo e Summary; 4. Integração, compatibilidade e validação das jornadas afetadas.
 - Recorte 1: diálogo breve e específico ao negócio, apresentação institucional fundamentada no README e orientação ao próximo passo, sem inventar ofertas ou condições; identidade, confirmação, persistência, finalidade D14D e autoridade D17 preservadas.
 - Recorte 2: nicho oficial textual exibido e confirmado, único por conta com autoria/data/revisão; proposta paramétrica independente de taxon/alias e Web Search nativo pontual, sem pesquisa rotineira ou oficialização por inferência. Preserva fallback operacional, Pending Setup e D14D transitório sem escrita em Diálogo/Resumo/Base.
@@ -2701,6 +2701,6 @@
 
 25.3.6 Nicho e continuidade da Base
 - Status: merge, aplicação seletiva e Production autorizados em 06/11/2026, condicionados aos gates técnicos; conclusão funcional depende do teste humano.
-- Conteúdo: conta ativa pode definir nicho antes ou depois de iniciar a Base; redefinição exige confirmação humana e ausência de qualquer produto, inclusive rascunho. Reutiliza o agente conversacional do Pending Setup com propósito restrito e confirmação separada, sem reabrir o fluxo. Modo semântico textual por 10.12.7; taxonomia E10.5 e catálogo preservados no legado. Antes de responder, consulta Resumo, nicho oficial e dados confirmados pertinentes da Base, sem repetir perguntas respondidas. Conversa transitória não atualiza Diálogo/Resumo/Base; limite de 6.000 e memória de longo prazo fora do recorte. Categorias 1/2 e edição manual da categoria 3 disponíveis sem nicho.
+- Conteúdo: conta ativa pode definir nicho antes ou depois de iniciar a Base; redefinição exige confirmação humana e ausência de qualquer produto, inclusive rascunho. Reutiliza o agente conversacional do Pending Setup com propósito restrito e confirmação separada, sem reabrir o fluxo. Identificação semântica textual por 10.12.7; persistência taxonômica E10.5 e consumidores legados permanecem compatíveis. Antes de responder, consulta Resumo, nicho oficial e dados confirmados pertinentes da Base, sem repetir perguntas respondidas. Conversa transitória não atualiza Diálogo/Resumo/Base; limite de 6.000 e memória de longo prazo fora do recorte. Categorias 1/2 e edição manual da categoria 3 disponíveis sem nicho.
 - Troca não altera a Base; havendo inteligência, orienta revisão antes da reutilização. Geração exige nicho oficial confirmado e descarta resposta se o vínculo mudar durante a execução; mudança nos materiais usados invalida sugestões transitórias, sem afetar conteúdos persistidos. Revisão humana permanece obrigatória.
 - Banco/ativação: `docs/schema.md` — 1.13.5–1.13.6; `docs/platform-config.md` — 3.5. Redefinição com produto e nova metodologia D14F pertencem a outra rodada.

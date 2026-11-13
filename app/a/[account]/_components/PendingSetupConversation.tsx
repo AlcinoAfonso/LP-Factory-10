@@ -167,7 +167,7 @@ export function PendingSetupConversation({
             ) : null}
             {conversation.attendanceProposal.kind === "operational_fallback" ? (
               <p className="text-sm leading-6 text-ink-900">
-                {conversation.aiFirstNicheEnabled ? "Não identificamos um nicho com segurança. Podemos continuar com o entendimento do seu negócio." : "Não identificamos uma categoria segura no catálogo. Podemos continuar com o entendimento do seu negócio."}
+                Não identificamos um nicho com segurança. Podemos continuar com o entendimento do seu negócio.
               </p>
             ) : null}
         </div>

@@ -225,8 +225,8 @@ async function proveAttendance(
       latencyMs += result.latencyMs ?? 0;
       providerRequestId = result.responseId;
       if (turn === 0) {
-        if (output.action !== (identified ? "existing" : "pending") ||
-          (identified && output.existingTaxonId !== nicheId) || !output.businessUnderstanding || output.readyToComplete) return { ok: false, code: "contract" };
+        if (!["existing","pending"].includes(output.action) ||
+          (identified && (output.action !== "existing" || !output.nicheDescription)) || !output.businessUnderstanding || output.readyToComplete) return { ok: false, code: "contract" };
         const proposedSummary = JSON.parse(attendanceSummary(output, null, null));
         if (proposedSummary.confirmedUnderstanding !== null || !proposedSummary.contextualUnderstanding ||
           (identified && /flamenguista/i.test(proposedSummary.contextualUnderstanding))) return { ok: false, code: "contract" };
@@ -241,8 +241,9 @@ async function proveAttendance(
           context.confirmedProposal, context.summary));
         if (acceptedSummary.confirmedUnderstanding !== context.displayedUnderstanding) return { ok: false, code: "contract" };
         context = { ...context, confirmedProposal: null,
+          officialNiche: context.confirmedProposal?.kind === "semantic" ? {name:context.confirmedProposal.nicheDescription,revision:"text:1",confirmed:true}:null,
           currentPrimaryTaxonId: identified ? nicheId : null,
-          confirmedOperationalUnderstanding: !identified,
+          confirmedOperationalUnderstanding: context.confirmedProposal?.kind === "operational_fallback",
           summary: attendanceSummary(output, identified ? "Manutenção de jardins" : null, context.confirmedProposal ?? null, context.summary),
           recent: [...context.recent, { role: "assistant", content: output.reply },
             { role: "user", content: "Minha necessidade é apresentar claramente meu serviço ao público informado. A orientação de organizar o conhecimento e apoiar a comunicação já me ajudou. Entendi que serviços, preços e prazos específicos precisam de confirmação. Prefiro não informar WhatsApp. Não tenho mais dúvidas; quero seguir à etapa comercial." }] };
@@ -255,6 +256,7 @@ async function proveAttendance(
   const runSemanticClosure = async (): Promise<ProofAttempt> => {
     const understanding = "Manutenção de jardins para condomínios; quer comunicar o diferencial do serviço.";
     let context: AttendanceContext = { preferredName: "Ana", catalog, currentPrimaryTaxonId: nicheId,
+      officialNiche:{name:"Manutenção de jardins",revision:"legacy:"+nicheId+":1",confirmed:true},
       displayedUnderstanding: understanding,
       summary: JSON.stringify({ contextualUnderstanding: understanding, confirmedUnderstanding: understanding,
         classification: "Manutenção de jardins", suggestions: [] }),
@@ -324,7 +326,7 @@ async function proveAttendance(
       const memory = JSON.parse(summary);
       if (/flamenguista|flamengo|futebol/i.test(JSON.stringify(memory))) return contractFailure("social");
       if (turn === 0) {
-        if (output.preferredName !== "João" || output.action !== "existing" || output.existingTaxonId !== dentistryId
+        if (output.preferredName !== "João" || output.action !== "existing" || !output.nicheDescription
           || !/clínica sorriso/i.test(output.businessUnderstanding) || !/clareamento/i.test(output.businessUnderstanding)
           || !/canal/i.test(output.businessUnderstanding) || !/implant/i.test(output.businessUnderstanding)
           || memory.confirmedUnderstanding !== null) return contractFailure("initial");
@@ -334,7 +336,7 @@ async function proveAttendance(
             { role: "user", content: "Sim, confirmo esse entendimento e essa categoria. Ainda preciso de orientação comercial." }] };
       } else if (turn === 1) {
         if (output.action !== "confirm" || memory.confirmedUnderstanding !== context.displayedUnderstanding) return contractFailure("confirmation");
-        context = { ...context, summary, confirmedProposal: null, currentPrimaryTaxonId: dentistryId,
+        context = { ...context, summary, officialNiche: context.confirmedProposal?.kind === "semantic" ? {name:context.confirmedProposal.nicheDescription,revision:"text:1",confirmed:true}:null, confirmedProposal: null, currentPrimaryTaxonId: dentistryId,
           recent: [...context.recent, { role: "assistant", content: output.reply },
             { role: "user", content: "Correção: não fazemos mais canal. Continuamos com clareamento e implantes, atendemos adultos e queremos comunicar essas ofertas. Ainda tenho dúvidas sobre como apresentá-las." }] };
       } else if (turn === 2) {
@@ -398,7 +400,7 @@ async function proveAttendance(
         id: test.id, name: test.name, level: "niche", parentId: segmentId, active: true, aliases: [],
       }];
       let context: AttendanceContext = { preferredName: "Ana", catalog: commercialCatalog,
-        currentPrimaryTaxonId: test.id, displayedUnderstanding: test.understanding,
+        currentPrimaryTaxonId: test.id, officialNiche:{name:test.name,revision:"legacy:"+test.id+":1",confirmed:true}, displayedUnderstanding: test.understanding,
         summary: JSON.stringify({ contextualUnderstanding: test.understanding, confirmedUnderstanding: test.understanding,
           classification: test.name, suggestions: [], pendingReason: null }),
         marketContext: [{ taxonId: test.id, researchId: segmentId, version: 1, updatedAt: "2026-10-01",

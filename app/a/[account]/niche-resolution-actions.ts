@@ -1,17 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { readAccountOfficialNiche, confirmOfficialAccountNiche, isAiFirstNicheEnabled } from "../../../lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter";
+import { readAccountOfficialNiche, confirmOfficialAccountNiche } from "../../../lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter";
 import { officialNichePromptContext, type OfficialAccountNiche } from "../../../lib/onboarding/niche-resolution/official-niche-policy";
 import { z } from "zod";
-import { readAttendanceCatalog } from "../../../lib/onboarding/pending-setup/adapters/pendingSetupCatalogContextAdapter";
 import { readAccountSummaryForNiche } from "../../../lib/onboarding/pending-setup/adapters/pendingSetupAccountContextAdapter";
-import { activeAncestors, projectAttendanceSummary, projectAttendanceText, type AttendanceContext } from "../../../lib/onboarding/pending-setup/attendance-core";
+import { projectAttendanceSummary, projectAttendanceText, type AttendanceContext } from "../../../lib/onboarding/pending-setup/attendance-core";
 import { requestAttendance } from "../../../lib/onboarding/pending-setup/attendance-provider";
 import { readBusinessContextForNiche } from "../../../lib/communication-base/adapters/communicationBaseAdapter";
 import { getAccessContext } from "@/lib/access/getAccessContext";
 import type { MemberInfo } from "@/lib/access/adapters/accountAdapter";
-import { confirmAccountNiche, isAccountNicheEditingEnabled, readAccountNicheProductGuard, readActivePrimaryAccountTaxon, type ActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
+import { readAccountNicheProductGuard } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import {
   confirmAiOptionForAccount,
   confirmAiSuggestedTaxonForAccount,
@@ -27,17 +26,16 @@ export type NicheResolutionActionState = {
 const GENERIC_ERROR = "Não foi possível registrar sua resposta agora. Tente novamente.";
 
 export type AccountNicheEditorState =
-  | { ok: true; taxon: ActivePrimaryAccountTaxon | OfficialAccountNiche | null; hasProducts: boolean; canEdit: boolean }
+  | { ok: true; taxon: OfficialAccountNiche | null; hasProducts: boolean; canEdit: boolean }
   | { ok: false; message: string };
 
 async function readNicheForEditor(input: { accountId: string }) {
-  if (!isAiFirstNicheEnabled()) return readActivePrimaryAccountTaxon(input);
   const read = await readAccountOfficialNiche(input.accountId);
   return read.ok ? { ok: true as const, taxon: read.niche } : { ok: false as const };
 }
 
 async function nicheEditorContext(account: string) {
-  if ((!isAccountNicheEditingEnabled() && !isAiFirstNicheEnabled()) || !/^[a-z0-9][a-z0-9-]{0,62}$/.test(account) || account === "home") return null;
+  if (!/^[a-z0-9][a-z0-9-]{0,62}$/.test(account) || account === "home") return null;
   const ctx = await getAccessContext({ params: { account }, throwOnReadError: true });
   const member = ctx?.member as MemberInfo | null | undefined;
   return ctx && !ctx.blocked && ctx.account?.status === "active" && member?.status === "active" && member.userId
@@ -68,20 +66,20 @@ export async function converseAccountNicheAction(raw: z.input<typeof nicheTurnIn
     const input = parsed.data;
     const ctx = await nicheEditorContext(input.account);
     if (!ctx?.account || !ctx.member || !["owner", "admin", "editor"].includes(ctx.member.role)) return { ok: false as const, message: GENERIC_ERROR };
-    const [current, products, summary, catalog] = await Promise.all([
+    const [current, products, summary] = await Promise.all([
       readNicheForEditor({ accountId: ctx.account.id }), readAccountNicheProductGuard(ctx.account.id),
-      readAccountSummaryForNiche(ctx.account.id), isAiFirstNicheEnabled() ? Promise.resolve([]) : readAttendanceCatalog(),
+      readAccountSummaryForNiche(ctx.account.id),
     ]);
-    if (!current.ok || products === null || !summary.ok || !catalog) return { ok: false as const, message: "Não foi possível consultar o contexto do negócio agora. Tente novamente." };
-    if (isAiFirstNicheEnabled() ? (current.taxon?.revision ?? null) !== (input.expectedRevision ?? null) : (current.taxon?.taxonId ?? null) !== input.expectedTaxonId) return { ok: false as const, message: "O nicho mudou. Reabra a conversa para conferir o vínculo atual." };
+    if (!current.ok || products === null || !summary.ok) return { ok: false as const, message: "Não foi possível consultar o contexto do negócio agora. Tente novamente." };
+    if ((current.taxon?.revision ?? null) !== (input.expectedRevision ?? null)) return { ok: false as const, message: "O nicho mudou. Reabra a conversa para conferir o vínculo atual." };
     if (current.taxon && products) return { ok: false as const, message: "A redefinição não está disponível porque esta conta já possui produto desenvolvido." };
     const savedContext = await readBusinessContextForNiche({ accountId: ctx.account.id, actorUserId: ctx.member.userId });
     if (!savedContext.ok) return { ok: false as const, message: "Não foi possível consultar a Base agora. Tente novamente." };
     const businessData = Object.fromEntries(Object.entries(savedContext.value).map(([key, value]) => [key, projectAttendanceText(value)]));
     const context: AttendanceContext = { purpose: "account_niche", preferredName: null,
-      semanticNiches: isAiFirstNicheEnabled(), officialNiche: officialNichePromptContext(current.taxon),
+      officialNiche: officialNichePromptContext(current.taxon),
       summary: projectAttendanceSummary(summary.summary), currentPrimaryTaxonId: current.taxon?.taxonId ?? null,
-      publicName: businessData.business_name ?? null, businessData, catalog,
+      publicName: businessData.business_name ?? null, businessData, catalog: [],
       displayedUnderstanding: projectAttendanceText(input.understanding),
       recent: input.messages.map(message => ({ ...message, content: projectAttendanceText(message.content) })),
     };
@@ -93,11 +91,10 @@ export async function converseAccountNicheAction(raw: z.input<typeof nicheTurnIn
     if (!authorized?.member || !["owner", "admin", "editor"].includes(authorized.member.role) || !latest?.ok ||
       latest.taxon?.taxonId !== current.taxon?.taxonId || latest.taxon?.revision !== current.taxon?.revision)
       return { ok: false as const, message: "O acesso ou o nicho mudou durante a conversa. Reabra o popup antes de confirmar." };
-    const candidate = result.output.action === "existing" ? catalog.find(taxon => taxon.id === result.output.existingTaxonId) : null;
     return { ok: true as const, reply: result.output.reply,
       understanding: result.output.businessUnderstanding || input.understanding,
-      proposal: isAiFirstNicheEnabled() && result.output.action === "existing" && result.output.nicheDescription
-        ? { taxonId: null, name: result.output.nicheDescription } : candidate ? { taxonId: candidate.id, name: candidate.name } : null };
+      proposal: result.output.action === "existing" && result.output.nicheDescription
+        ? { taxonId: null, name: result.output.nicheDescription } : null };
   } catch { return { ok: false as const, message: GENERIC_ERROR }; }
 }
 
@@ -108,26 +105,10 @@ export async function saveAccountNicheAction(input: Readonly<{
   try {
     const ctx = await nicheEditorContext(input.account);
     if (!ctx?.account || !ctx.member || !["owner", "admin", "editor"].includes(ctx.member.role) || input.confirmed !== true) return { ok: false as const, message: GENERIC_ERROR };
-    if (isAiFirstNicheEnabled()) {
-      const saved = await confirmOfficialAccountNiche({ accountId: ctx.account.id, actorUserId: ctx.member.userId,
-        description: input.description ?? "", expectedRevision: input.expectedRevision ?? null });
-      if (!saved.ok) return { ok: false as const, message: saved.reason === "product_exists" ? "A redefinição não está disponível porque esta conta já possui produto desenvolvido." : saved.reason === "conflict" ? "O nicho mudou. Reabra a conversa e confirme novamente." : GENERIC_ERROR };
-      revalidatePath("/a/" + input.account, "layout");
-      return { ok: true as const };
-    }
-    if (!input.taxonId) return { ok: false as const, message: GENERIC_ERROR };
-    const current = await readNicheForEditor({ accountId: ctx.account.id });
-    if (!current.ok || (current.taxon?.taxonId ?? null) !== input.expectedTaxonId) return { ok: false as const, message: "O nicho mudou. Atualize a página e confira antes de confirmar novamente." };
-    // Human confirmation is authority; validate the official catalog independently of conversation text.
-    const catalog = await readAttendanceCatalog();
-    const selected = catalog?.find(taxon => taxon.id === input.taxonId);
-    if (!catalog || !selected || !activeAncestors(selected, catalog)) return { ok: false as const, message: "O nicho proposto não está mais disponível. Reabra a conversa." };
-    const saved = await confirmAccountNiche({ accountId: ctx.account.id, actorUserId: ctx.member.userId,
-      taxonId: input.taxonId, expectedTaxonId: input.expectedTaxonId });
-    if (!saved.ok) return { ok: false as const, message: saved.reason === "product_exists"
-      ? "A redefinição não está disponível porque esta conta já possui produto desenvolvido."
-      : saved.reason === "conflict" ? "O nicho mudou. Atualize a página e confira antes de confirmar novamente." : GENERIC_ERROR };
-    revalidatePath(`/a/${input.account}`, "layout");
+    const saved = await confirmOfficialAccountNiche({ accountId: ctx.account.id, actorUserId: ctx.member.userId,
+      description: input.description ?? "", expectedRevision: input.expectedRevision ?? null });
+    if (!saved.ok) return { ok: false as const, message: saved.reason === "product_exists" ? "A redefinição não está disponível porque esta conta já possui produto desenvolvido." : saved.reason === "conflict" ? "O nicho mudou. Reabra a conversa e confirme novamente." : GENERIC_ERROR };
+    revalidatePath("/a/" + input.account, "layout");
     return { ok: true as const };
   } catch { return { ok: false as const, message: GENERIC_ERROR }; }
 }

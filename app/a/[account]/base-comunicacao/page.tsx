@@ -7,8 +7,7 @@ import { notFound } from "next/navigation";
 import { requireCommunicationBaseAccess } from "../../../../lib/communication-base/access";
 import { readCommunicationBase, readPendingSetupInitialContext } from "../../../../lib/communication-base/adapters/communicationBaseAdapter";
 import { stageTwoInputStateKey } from "../../../../lib/communication-base/ui-state-keys";
-import { isAccountNicheEditingEnabled } from "../../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
-import { readOfficialNicheContext, isAiFirstNicheEnabled } from "../../../../lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter";
+import { readOfficialNicheContext } from "../../../../lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter";
 import { loadAccountNicheEditorAction } from "../niche-resolution-actions";
 import { AccountNicheEditor } from "../_components/NicheResolutionCard";
 import { hasStageTwoContent } from "../../../../lib/communication-base/ai-core";
@@ -55,7 +54,7 @@ export default async function CommunicationBasePage({ params }: PageProps) {
     : null;
 
   const showIntroduction = result.ok && (Boolean(base) || (access.value.canEdit && (!structured || taxonomy.ok)));
-  const nicheEditor = (isAccountNicheEditingEnabled() || isAiFirstNicheEnabled()) ? await loadAccountNicheEditorAction(access.value.accountSubdomain) : null;
+  const nicheEditor = await loadAccountNicheEditorAction(access.value.accountSubdomain);
   const canGenerate = Boolean(taxonomy.ok && taxonomy.niche?.confirmed);
 
   return (

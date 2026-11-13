@@ -1,6 +1,6 @@
 import "server-only";
 import { officialNichePromptContext } from "../niche-resolution/official-niche-policy";
-import { readAccountOfficialNiche, isAiFirstNicheEnabled } from "../niche-resolution/adapters/accountOfficialNicheAdapter";
+import { readAccountOfficialNiche } from "../niche-resolution/adapters/accountOfficialNicheAdapter";
 import { attendanceContactProjection, attendanceProjection, attendanceProposal, attendanceSummary } from "./attendance-core";
 import { requestAttendance } from "./attendance-provider";
 import { loadPendingSetupConversation } from "./adapters/pendingSetupConversationAdapter";
@@ -40,15 +40,14 @@ export async function conductAttendanceTurn(input: Readonly<{
     if (!reserved || reserved.version !== claimed.version) throw new Error("reserved_turn_read_failed");
     if (!reserved.accountContext) throw new Error("account_context_read_failed");
     // Independent SELECTs; the reserved conversation and commit fence remain ordered.
-    const semantic = isAiFirstNicheEnabled();
-    const official = semantic ? await (dependencies.official ?? readAccountOfficialNiche)(input.accountId) : { ok: true as const, niche: null };
+    const official = await (dependencies.official ?? readAccountOfficialNiche)(input.accountId);
     if (!official.ok) throw new Error("official_niche_read_failed");
     const [catalogRead, currentPrimaryTaxonId, operational] = await Promise.all([
       dependencies.catalog(),
       dependencies.primary(input.accountId),
       dependencies.operational({ accountId: input.accountId, throwOnReadError: true }),
     ]);
-    const catalog = catalogRead ?? (semantic && reserved.attendanceProposal?.kind !== "existing" ? [] : null);
+    const catalog = catalogRead ?? (reserved.attendanceProposal?.kind !== "existing" ? [] : null);
     if (!catalog) throw new Error("catalog_unavailable");
     if (currentPrimaryTaxonId === undefined) throw new Error("primary_read_failed");
     const confirmation = intent === "confirm";
@@ -56,8 +55,7 @@ export async function conductAttendanceTurn(input: Readonly<{
     const marketQuery = [latestAnswer, reserved.businessContextText].filter(Boolean).join("\n");
     const marketContext = await dependencies.market(marketQuery, catalog,
       currentPrimaryTaxonId ?? reserved.attendanceProposal?.taxonId ?? null);
-    if (marketContext === null && !semantic) throw new Error("market_context_read_failed");
-    const context = { ...attendanceProjection(reserved, catalog), marketContext: marketContext ?? [], semanticNiches: semantic, officialNiche: officialNichePromptContext(official.niche),
+    const context = { ...attendanceProjection(reserved, catalog), marketContext: marketContext ?? [], officialNiche: officialNichePromptContext(official.niche),
       confirmedOperationalUnderstanding: Boolean(operational),
       confirmedProposal: confirmation ? reserved.attendanceProposal ?? null : null, currentPrimaryTaxonId };
     if (confirmation && (!context.confirmedProposal || !reserved.businessContextText?.trim())) throw new Error("confirmation_proposal_missing");
@@ -72,7 +70,7 @@ export async function conductAttendanceTurn(input: Readonly<{
       observedNicheRevision: official.niche?.textRevision ?? 0,
       proposal: confirmation ? null : attendanceProposal(output, catalog, official.niche?.textRevision ?? 0),
       summary: attendanceSummary(output, official.niche?.confirmed ? official.niche.name : catalog.find(taxon => taxon.id === currentPrimaryTaxonId)?.name ?? null,
-        context.confirmedProposal, reserved.accountContext.summary, attendanceContactProjection(reserved.messages).contacts, semantic),
+        context.confirmedProposal, reserved.accountContext.summary, attendanceContactProjection(reserved.messages).contacts),
     });
     if (!written.ok) {
       if (written.reason === "primary_conflict" || (confirmation && written.reason === "invalid")) {
