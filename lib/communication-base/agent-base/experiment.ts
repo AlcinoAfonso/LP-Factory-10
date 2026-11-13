@@ -7,8 +7,7 @@ import { clientOpenAiCostContext } from "../../openai-costs";
 import { resolveOpenAiProductWorkload } from "../../openai-workloads";
 import {
   AGENT_BASE_RESEARCH_PROMPT_VERSION,
-  AGENT_BASE_QA_MODEL,
-  AGENT_BASE_QA_REASONING_EFFORT,
+  agentBaseQaConfiguration,
   buildAgentBaseResearchPrompt,
   parseAgentBaseResearchResponse,
   type AgentBaseResearchContext,
@@ -33,12 +32,7 @@ export async function runAgentBaseMarketResearchExperiment(input: Readonly<{
   if (!resolved.ok || !resolved.value.webSearch) {
     return { ok: false as const, reason: "research_workload_unavailable" };
   }
-  const configuration = {
-    ...resolved.value,
-    model: AGENT_BASE_QA_MODEL,
-    reasoningEffort: AGENT_BASE_QA_REASONING_EFFORT,
-    serviceTier: null,
-  } as const;
+  const configuration = agentBaseQaConfiguration(resolved.value);
   const webSearch = configuration.webSearch;
   if (!webSearch) return { ok: false as const, reason: "research_workload_unavailable" };
   const result = await requestOpenAiResponses({
