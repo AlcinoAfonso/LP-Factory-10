@@ -27,6 +27,11 @@ export const attendanceOutputSchema = z.object({
   nicheDescription: z.string().trim().min(1).max(120).nullable(),
 }).strict();
 export type AttendanceOutput = z.infer<typeof attendanceOutputSchema>;
+// Active-account niche dialogue has no contact collection or contact mutation contract.
+export const nicheAttendanceOutputSchema = attendanceOutputSchema.omit({
+  requestWhatsapp: true, whatsappReference: true, whatsappDeclined: true,
+}).extend({ preferredName: z.null(), preferredNameDeclined: z.literal(false),
+  readyToComplete: z.literal(false), action: z.enum(["ask", "existing", "pending"]) }).strict();
 export type AttendanceTaxon = Readonly<{
   id: string; name: string; level: "segment" | "niche" | "ultra_niche";
   parentId: string | null; active: boolean; aliases: readonly string[];
@@ -88,11 +93,12 @@ export const ATTENDANCE_INSTRUCTIONS = composeAttendanceInstructions(
   "A apresentação institucional se fundamenta no README da LP Factory: organizamos informações do negócio em uma Base de Comunicação reutilizável e entregamos serviços de comunicação com IA sem transferir a complexidade técnica ao cliente. Apresente essa proposta brevemente e conectada à necessidade compreendida, sem tratar o software ou o domínio de ferramentas pelo cliente como o produto vendido. Landing pages, WhatsApp, Instagram, TikTok, Google Meu Negócio e e-mail são possibilidades sujeitas à validação comercial e operacional; não equivalem a serviços disponíveis ou incluídos. Neste atendimento não há fonte que comprove serviço específico, preço, prazo, disponibilidade, condição comercial ou resultado. Quando solicitado, esclareça o limite e encaminhe a confirmação competente; não invente condições nem repita ressalvas sem necessidade. D17 conserva objeções, comparações, recomendação e contratação aprofundadas.",
 );
 
-export const NICHE_ATTENDANCE_PROMPT_VERSION = "d15e_r3_account_niche_v1";
+export const NICHE_ATTENDANCE_PROMPT_VERSION = "d15e_r3_account_niche_v2";
+export const NICHE_ATTENDANCE_CONTRACT_VERSION = 15;
 const NICHE_ATTENDANCE_INSTRUCTIONS = `Neste propósito account_niche, ajude exclusivamente a definir ou redefinir o nicho de uma conta ativa, conversando com naturalidade até compreender atividade, ofertas e público. Estas regras específicas substituem as regras de acolhimento, venda, identidade, WhatsApp e conclusão do atendimento inicial acima. Consulte summary, currentPrimaryTaxonId, publicName, businessData e recent antes de responder; não repita perguntas já respondidas. businessData contém dados atuais confirmados da Base e prevalece sobre interpretações antigas do Resumo; correções novas são propostas, nunca fatos confirmados automaticamente. A conversa e displayedUnderstanding são contexto transitório, sem autoridade para alterar fontes oficiais. Não solicite nome, contato nem dados comerciais acessórios. Faça uma pergunta focal somente quando faltar informação material. Se já houver contexto suficiente, proponha diretamente uma categoria segura pelo mecanismo existing e explique a equivalência; currentPrimaryTaxonId identifica o vínculo atual, mas neste propósito é permitido propor outro ID ativo com ancestrais ativos. Propor não altera nem confirma o vínculo. Sem correspondência segura, use pending e explique a ausência; preserve o nicho atual, sem inventar categoria nem afirmar que fallback operacional cria nicho oficial. Assuntos fora do recorte recebem resposta breve e redirecionamento ao nicho. Não ofereça serviços, não faça pesquisa Web nem crie categorias. Fora de existing, existingTaxonId é null. Devolva preferredName=null, preferredNameDeclined=false, requestWhatsapp=false, whatsappReference=null, whatsappDeclined=false, confirmedUnderstanding=null, suggestions=[], readyToComplete=false. Use somente ask, existing ou pending; confirm é proibido. A confirmação humana ocorre separadamente no popup, por operação determinística que revalida permissões, catálogo, concorrência e ausência de produto. Só a classificação confirmada será salva; a conversa não atualiza Diálogo, Resumo ou Base, e não deve anunciar esses efeitos.`;
 
 export function attendancePrompt(context: AttendanceContext) {
-  const schema = z.toJSONSchema(attendanceOutputSchema, { target: "draft-7" });
+  const schema = z.toJSONSchema(context.purpose === "account_niche" ? nicheAttendanceOutputSchema : attendanceOutputSchema, { target: "draft-7" });
   delete schema.$schema;
   const instructions = context.purpose === "account_niche"
     ? NICHE_ATTENDANCE_BASE_INSTRUCTIONS + "\n" + NICHE_ATTENDANCE_INSTRUCTIONS
@@ -168,8 +174,19 @@ export function activeAncestors(taxon: AttendanceTaxon, catalog: readonly Attend
   return Boolean(parent?.active && parent.level === (taxon.level === "niche" ? "segment" : "niche")
     && activeAncestors(parent, catalog));
 }
+export function parseAttendanceOutput(raw: unknown, context: Pick<AttendanceContext, "purpose">) {
+  if (context.purpose === "account_niche") {
+    // Ignore obsolete contact controls, including forged values; never carry them into persistence.
+    const projected = raw && typeof raw === "object" && !Array.isArray(raw)
+      ? Object.fromEntries(Object.entries(raw).filter(([key]) => !["requestWhatsapp", "whatsappReference", "whatsappDeclined"].includes(key))) : raw;
+    const niche = nicheAttendanceOutputSchema.safeParse(projected);
+    return attendanceOutputSchema.safeParse(niche.success ? { ...niche.data,
+      requestWhatsapp: false, whatsappReference: null, whatsappDeclined: false } : null);
+  }
+  return attendanceOutputSchema.safeParse(raw);
+}
 export function validateAttendanceOutput(raw: unknown, context: AttendanceContext) {
-  const parsed = attendanceOutputSchema.safeParse(raw);
+  const parsed = parseAttendanceOutput(raw, context);
   if (!parsed.success) return null;
   const value: AttendanceOutput = parsed.data;
   if (value.action === "existing" ? !validNicheDescription(value.nicheDescription) : value.nicheDescription !== null) return null;
@@ -181,6 +198,15 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
     value.confirmedUnderstanding, value.closureReason, ...value.suggestions];
   if (semanticText.some(text => text !== null && /\bphone_\d+_\d+\b/i.test(text))) return null;
   const prior = readProjectedAccountSummary(context.summary);
+  const hasNicheUnderstanding = nicheOnly && Boolean(prior?.contextualUnderstanding || prior?.confirmedUnderstanding);
+  // A first turn without business context asks for clarification; it cannot invent a pending classification.
+  if (nicheOnly && context.recent.length === 0 && !value.businessUnderstanding && !context.displayedUnderstanding && !hasNicheUnderstanding) {
+    if (value.action !== "ask") value.reply = context.officialNiche?.confirmed
+      ? "O nicho confirmado é “" + context.officialNiche.name + "”. Qual mudança no negócio deseja refletir no nicho?"
+      : "Conte brevemente o que seu negócio oferece e para quem, para identificarmos o nicho.";
+    value.action = "ask"; value.nicheDescription = null; value.sufficientUnderstanding = false;
+    value.confirmedUnderstanding = null; value.suggestions = []; value.closureReason = null;
+  }
   if (value.requestWhatsapp && (!["ask", "confirm"].includes(value.action) || value.readyToComplete || value.whatsappDeclined || value.whatsappReference !== null
     || context.whatsappProvided || prior?.whatsappDeclined)) return null;
   if (value.whatsappReference !== null && (value.whatsappDeclined ||
@@ -188,7 +214,7 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
   if (value.action !== "confirm" && value.confirmedUnderstanding !== null && !prior?.confirmedUnderstanding) return null;
   if (!nicheOnly && !value.businessUnderstanding) value.confirmedUnderstanding = prior?.confirmedUnderstanding ?? null;
   if (value.closureReason !== null && (value.action !== "ask" || value.readyToComplete)) return null;
-  if (!value.businessUnderstanding && (value.action !== "ask" || value.readyToComplete || value.requestWhatsapp))
+  if (!nicheOnly && !value.businessUnderstanding && (value.action !== "ask" || value.readyToComplete || value.requestWhatsapp))
     value.businessUnderstanding = context.displayedUnderstanding ?? "";
   if (value.preferredName !== null && (!validatePreferredName(value.preferredName, null).ok || value.preferredNameDeclined)) return null;
   if (context.preferredNameDeclined && !value.preferredNameDeclined && value.preferredName === null) return null;
@@ -200,7 +226,7 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
     && (value.reply !== PREFERRED_NAME_QUESTION || value.action !== "ask" || value.readyToComplete)) return null;
   if (value.action !== "existing" && value.existingTaxonId !== null) return null;
   if (["existing", "pending", "confirm"].includes(value.action) &&
-    (!value.sufficientUnderstanding || (!value.businessUnderstanding && !context.displayedUnderstanding))) return null;
+    (!value.sufficientUnderstanding || (!value.businessUnderstanding && !context.displayedUnderstanding && !hasNicheUnderstanding))) return null;
   if (Boolean(context.confirmedProposal) !== (value.action === "confirm")) return null;
   if (!nicheOnly && value.action === "pending" && (context.officialNiche?.confirmed || context.confirmedOperationalUnderstanding)) return null;
   if (value.action === "confirm") {
