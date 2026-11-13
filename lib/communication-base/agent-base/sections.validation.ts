@@ -159,9 +159,9 @@ assert.equal(invalidCase({
   market_insights: { value: Array.from({ length: 21 }, (_, i) =>
     [ "Dor: A", "Desejo: B", "Crença: C", "Objeção: D" ][i % 4]!), basis: "strategic_hypothesis" },
 }), "market_insights_too_many");
-assert.equal(invalidCase({
+assert.equal(parseAgentBaseTwoSectionsResponse(makePayload({ sections: {
   ...valid.sections,
   market_insights: { value: [ ...insights, ...insights, "Dor: Outro contexto"], basis: "strategic_hypothesis" },
-}).ok, true, "Mais de 12 itens válidos não devem falhar fora do limite técnico de 20.");
+} })).ok, true, "Mais de 12 itens válidos não devem falhar fora do limite técnico de 20.");
 
 console.log("Agente Base — seções 3.2 e 3.3, pesquisa e contrato: PASS");
