@@ -119,6 +119,27 @@ export async function runAgentBaseQaAction(
       ? await runAgentBaseTwoSectionsExperiment(experimentalInput)
       : await runAgentBaseMarketResearchExperiment(experimentalInput);
     if (!result.ok) {
+      // Diagnóstico estritamente sanitizado: não registrar resposta, prompt nem dados da conta.
+      // Os códigos abaixo são produzidos pelo parser local e não contêm texto do modelo.
+      const knownValidationReasons = [
+        "agent_base_research_or_sources_missing",
+        "two_sections_invalid_json",
+        "two_sections_missing_or_extra",
+        "two_sections_basis_invalid",
+        "two_sections_definitions_missing",
+        "two_sections_value_invalid",
+        "market_insights_categories_missing",
+        "category3_contract_changed",
+      ] as const;
+      const validationReason = knownValidationReasons.find((reason) => reason === result.reason);
+      console.warn("agent_base_qa_failure", {
+        mode,
+        kind: "kind" in result ? result.kind : "precondition",
+        validationReason: validationReason ?? null,
+      });
+      if (validationReason) {
+        return fail(`A OpenAI respondeu, mas a validação local rejeitou a entrega (código: ${validationReason}). Não execute novamente antes da análise.`);
+      }
       return fail("A execução real não foi concluída. Verifique os eventos sanitizados da OpenAI antes de tentar novamente.");
     }
 
