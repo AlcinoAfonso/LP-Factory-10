@@ -17,7 +17,7 @@ const sample = {
   },
   fictionalTestScenario: true,
 };
-assert.equal(AGENT_BASE_TWO_SECTIONS_PROMPT_VERSION, "d14f_base_sections_32_33_v1");
+assert.equal(AGENT_BASE_TWO_SECTIONS_PROMPT_VERSION, "d14f_base_sections_32_33_v2");
 const prompt = buildAgentBaseTwoSectionsPrompt(sample);
 assert.ok(prompt);
 assert.match(prompt.instructions, /Público e contexto/);
@@ -135,5 +135,29 @@ assert.equal(parseAgentBaseTwoSectionsResponse(makePayload({ sections: {
   ...valid.sections,
   audience: { value: "a".repeat(4001), basis: "strategic_hypothesis" },
 } })).ok, false, "Respeitar o limite atual da seção 3.2.");
+
+// Regressões: expor somente o motivo de violação do contrato, sem guardar texto bruto.
+const invalidCase = (sections: unknown) => parseAgentBaseTwoSectionsResponse(makePayload({ sections }));
+assert.equal(invalidCase({
+  ...valid.sections,
+  audience: { value: "a".repeat(4001), basis: "strategic_hypothesis" },
+}).reason, "audience_too_long");
+assert.equal(invalidCase({
+  ...valid.sections,
+  market_insights: { value: [...insights, "Dor: " + "x".repeat(401)], basis: "strategic_hypothesis" },
+}).reason, "market_insights_item_too_long");
+assert.equal(invalidCase({
+  ...valid.sections,
+  market_insights: { value: ["Dor: A", "Desejo: B", "Crença: C"], basis: "strategic_hypothesis" },
+}).reason, "market_insights_too_few");
+assert.equal(invalidCase({
+  ...valid.sections,
+  market_insights: { value: Array.from({ length: 21 }, (_, i) =>
+    [ "Dor: A", "Desejo: B", "Crença: C", "Objeção: D" ][i % 4]!), basis: "strategic_hypothesis" },
+}).reason, "market_insights_too_many");
+assert.equal(invalidCase({
+  ...valid.sections,
+  market_insights: { value: [ ...insights, ...insights, "Dor: Outro contexto"], basis: "strategic_hypothesis" },
+}).ok, true, "Mais de 12 itens válidos não devem falhar fora do limite técnico de 20.");
 
 console.log("Agente Base — seções 3.2 e 3.3, pesquisa e contrato: PASS");
