@@ -546,9 +546,9 @@ async function main() {
   const nicheOutput = { ...base, preferredName: null, suggestions: [] };
   assert.match(attendancePrompt(context).instructions, /sem depender de catálogo/);
   assert.equal(JSON.stringify(attendancePrompt(nicheContext).schema), JSON.stringify(attendancePrompt(context).schema));
-  assert.equal(ATTENDANCE_PROMPT_VERSION, "d15e_r2_onboarding_v2");
-  assert.equal(ATTENDANCE_CONTRACT_VERSION, 13);
-  assert.equal(NICHE_ATTENDANCE_PROMPT_VERSION, "d15e_r2_account_niche_v2");
+  assert.equal(ATTENDANCE_PROMPT_VERSION, "d15e_r3_onboarding_v1");
+  assert.equal(ATTENDANCE_CONTRACT_VERSION, 14);
+  assert.equal(NICHE_ATTENDANCE_PROMPT_VERSION, "d15e_r3_account_niche_v1");
   assert.equal(wires[0].instructions, attendancePrompt(context).instructions);
   assert.ok(JSON.stringify(events).includes(ATTENDANCE_PROMPT_VERSION));
   const adversarialContext = { ...context, recent: [{ role: "user" as const,
@@ -560,7 +560,7 @@ async function main() {
   assert.match(attendancePrompt(nicheContext).instructions, /prevalecem sobre memória/);
   assert.equal(validateAttendanceOutput(nicheOutput, nicheContext)?.nicheDescription, "Jardinagem");
   assert.equal(validateAttendanceOutput({ ...nicheOutput, nicheDescription: null, action: "pending", existingTaxonId: null }, nicheContext)?.action, "pending");
-  for (const patch of [{ preferredName: "Ana" }, { suggestions: ["Vender serviços"] }, { requestWhatsapp: true },
+  for (const patch of [{ preferredName: "Ana" }, { requestWhatsapp: true },
     { readyToComplete: true }, { nicheDescription: null, action: "confirm", existingTaxonId: null }, { existingTaxonId: accountId }])
     assert.equal(validateAttendanceOutput({ ...nicheOutput, ...patch }, nicheContext), null);
   assert.ok(validateAttendanceOutput(nicheOutput, { ...nicheContext, catalog: [] }));
