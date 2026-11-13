@@ -1,6 +1,33 @@
 import assert from "node:assert/strict";
 
-import { buildAgentBaseResearchPrompt, parseAgentBaseResearchResponse } from "./research";
+import { agentBaseQaConfiguration, buildAgentBaseResearchPrompt, parseAgentBaseResearchResponse } from "./research";
+import type { ResolvedOpenAiProductWorkload } from "../../openai-workloads";
+
+// Protege o par aprovado mesmo que a configuração E21 da Categoria 3 seja outra.
+const active = {
+  id: "communication_base_stage2_intelligence",
+  displayName: "Inteligência da Base",
+  classification: "product_runtime",
+  configurationKind: "effective",
+  apiKind: "responses_text",
+  consumer: "Inteligência da Base",
+  fallback: "Preservar a Base",
+  model: "gpt-6-luna",
+  reasoningEffort: "max",
+  serviceTier: "fast",
+  source: "supabase_operational",
+  revision: "3",
+  effectiveConfigurationVerified: true,
+  webSearch: { externalWebAccess: true, searchContextSize: "medium", maxToolCalls: 2, contextWindowTokenBudget: 128000 },
+} as const satisfies ResolvedOpenAiProductWorkload;
+const snapshot = JSON.stringify(active);
+const qaConfiguration = agentBaseQaConfiguration(active);
+assert.equal(qaConfiguration.model, "gpt-6.1-sol");
+assert.equal(qaConfiguration.reasoningEffort, "medium");
+assert.equal(qaConfiguration.serviceTier, null);
+assert.equal(qaConfiguration.id, "communication_base_stage2_intelligence");
+assert.deepEqual(qaConfiguration.webSearch, active.webSearch);
+assert.equal(JSON.stringify(active), snapshot, "A configuração E21 ativa deve permanecer imutável");
 
 const sample = {
   businessName: "João Imóveis QA",
