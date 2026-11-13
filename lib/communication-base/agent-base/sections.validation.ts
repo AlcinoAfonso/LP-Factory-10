@@ -137,24 +137,28 @@ assert.equal(parseAgentBaseTwoSectionsResponse(makePayload({ sections: {
 } })).ok, false, "Respeitar o limite atual da seção 3.2.");
 
 // Regressões: expor somente o motivo de violação do contrato, sem guardar texto bruto.
-const invalidCase = (sections: unknown) => parseAgentBaseTwoSectionsResponse(makePayload({ sections }));
+const invalidCase = (sections: unknown): string | null => {
+  const result = parseAgentBaseTwoSectionsResponse(makePayload({ sections }));
+  assert.equal(result.ok, false);
+  return result.ok ? null : result.reason;
+};
 assert.equal(invalidCase({
   ...valid.sections,
   audience: { value: "a".repeat(4001), basis: "strategic_hypothesis" },
-}).reason, "audience_too_long");
+}), "audience_too_long");
 assert.equal(invalidCase({
   ...valid.sections,
   market_insights: { value: [...insights, "Dor: " + "x".repeat(401)], basis: "strategic_hypothesis" },
-}).reason, "market_insights_item_too_long");
+}), "market_insights_item_too_long");
 assert.equal(invalidCase({
   ...valid.sections,
   market_insights: { value: ["Dor: A", "Desejo: B", "Crença: C"], basis: "strategic_hypothesis" },
-}).reason, "market_insights_too_few");
+}), "market_insights_too_few");
 assert.equal(invalidCase({
   ...valid.sections,
   market_insights: { value: Array.from({ length: 21 }, (_, i) =>
     [ "Dor: A", "Desejo: B", "Crença: C", "Objeção: D" ][i % 4]!), basis: "strategic_hypothesis" },
-}).reason, "market_insights_too_many");
+}), "market_insights_too_many");
 assert.equal(invalidCase({
   ...valid.sections,
   market_insights: { value: [ ...insights, ...insights, "Dor: Outro contexto"], basis: "strategic_hypothesis" },
