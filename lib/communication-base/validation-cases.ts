@@ -1,4 +1,5 @@
 import "./resource-validation-cases";
+import "./agent-base/research.validation";
 import assert from "node:assert/strict";
 
 import { communicationSections, getCommunicationSection } from "./registry";
