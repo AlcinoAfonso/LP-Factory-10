@@ -79,6 +79,35 @@ if (result.ok) {
   assert.equal(result.value.sources.length, 1);
   assert.equal(result.value.webSearchCallCount, 1);
 }
+// As quatro categorias precisam existir; 6–12 itens é alvo qualitativo, não
+// limitação do formato da Categoria 3 que descarte uma entrega útil.
+const fourCategories = [
+  "Dor: Incerteza sobre custos.",
+  "Desejo: Encontrar opção compatível.",
+  "Crença: Anúncios podem não refletir o total de despesas.",
+  "Objeção: Preciso entender o financiamento antes de visitar.",
+];
+assert.equal(parseAgentBaseTwoSectionsResponse(makePayload({
+  sections: { ...valid.sections, market_insights: {
+    value: fourCategories, basis: "strategic_hypothesis",
+  } },
+})).ok, true, "Aceitar quatro categorias válidas no formato existente.");
+assert.equal(parseAgentBaseTwoSectionsResponse(makePayload({
+  sections: { ...valid.sections, market_insights: {
+    value: [
+      "**Dores:** Processo confuso.",
+      "**Desejos:** Comparar alternativas.",
+      "**Crenças:** Valor anunciado não é o custo total.",
+      "**Objeções:** Tenho receio de iniciar a negociação.",
+    ],
+    basis: "strategic_hypothesis",
+  } },
+})).ok, true, "Aceitar variações tipográficas sem alterar o conteúdo.");
+const sourceOnlyInSearch = makePayload(valid);
+sourceOnlyInSearch.output[1].content[0].annotations = [];
+assert.equal(parseAgentBaseTwoSectionsResponse(sourceOnlyInSearch).ok, true,
+  "Fontes de Web Search no action.sources bastam sem anotações no JSON estruturado.");
+
 assert.equal(parseAgentBaseResearchResponse(makePayload(valid)).ok, true,
   "A capacidade de pesquisa do primeiro experimento deve continuar funcional.");
 assert.equal(parseAgentBaseTwoSectionsResponse(makePayload(valid, false)).ok, false,
