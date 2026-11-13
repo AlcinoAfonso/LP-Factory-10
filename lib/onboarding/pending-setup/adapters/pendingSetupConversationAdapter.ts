@@ -317,7 +317,7 @@ export async function completePendingSetup(input: {
   resolutionOutcome: PendingSetupResolutionOutcome;
 }): Promise<PendingSetupWriteResult> {
   const service = createServiceClient();
-  const completionRpc = isE1012AttendanceEnabled() ? "complete_account_pending_setup_attendance_v1"
+  const completionRpc = isE1012AttendanceEnabled() ? "complete_account_pending_setup_attendance_v2"
     : isE1011PassageEnabled() ? "complete_account_pending_setup_v2"
     : "complete_account_pending_setup_v1";
   const { data, error } = await service.rpc(completionRpc, {

@@ -52,7 +52,7 @@ export async function readActivePrimaryAccountTaxon(input: {
     const supabase = createServiceClient();
     const { data: primary, error: primaryError } = await supabase
       .from("account_taxonomy")
-      .select(isAccountNicheEditingEnabled() ? "taxon_id,source_type,updated_at,user_confirmed_at" : "taxon_id,source_type,updated_at")
+      .select("taxon_id,source_type,updated_at,user_confirmed_at")
       .eq("account_id", input.accountId)
       .eq("is_primary", true)
       .eq("status", ACCOUNT_TAXONOMY_STATUS)

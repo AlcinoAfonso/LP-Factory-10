@@ -1,4 +1,5 @@
 "use client";
+import { AssistantMessageText } from "./AssistantMessageText";
 
 import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -131,7 +132,7 @@ export function PendingSetupConversation({
                     : "max-w-[88%] rounded-2xl rounded-bl-md bg-surface-muted px-4 py-3 text-sm break-words whitespace-pre-wrap leading-6 text-ink-900 sm:max-w-[75%]"
                 }
               >
-                {message.content}
+                {message.role === "assistant" ? <AssistantMessageText text={message.content} /> : message.content}
               </div>
             </div>
           ))}
@@ -157,6 +158,7 @@ export function PendingSetupConversation({
               <p className="font-semibold">Entendimento proposto do negócio</p>
               <p className="mt-1 whitespace-pre-wrap break-words">{conversation.businessContextText}</p>
             </div>
+            {conversation.attendanceProposal.kind === "semantic" ? <div className="text-sm leading-6 text-ink-900"><p className="font-semibold">Nicho proposto</p><p className="mt-1 break-words">{conversation.attendanceProposal.nicheDescription}</p></div> : null}
             {conversation.attendanceProposal.kind === "existing" ? (
               <div className="text-sm leading-6 text-ink-900">
                 <p className="font-semibold">Classificação proposta</p>
@@ -165,7 +167,7 @@ export function PendingSetupConversation({
             ) : null}
             {conversation.attendanceProposal.kind === "operational_fallback" ? (
               <p className="text-sm leading-6 text-ink-900">
-                Não identificamos uma categoria segura no catálogo. Podemos continuar com o entendimento do seu negócio.
+                Não identificamos um nicho com segurança. Podemos continuar com o entendimento do seu negócio.
               </p>
             ) : null}
         </div>
@@ -282,7 +284,7 @@ export function PendingSetupConversation({
             ) : null}
 
             {conversation.attendanceEnabled && conversation.attendanceProposal ? (
-              <p className="mb-3 text-sm text-ink-900">{conversation.attendanceProposal.kind === "existing" ? "Esse entendimento e essa categoria correspondem ao seu negócio?" : "Esse entendimento descreve seu negócio?"}</p>
+              <p className="mb-3 text-sm text-ink-900">{conversation.attendanceProposal.kind === "semantic" ? "Esse entendimento e esse nicho correspondem ao seu negócio?" : conversation.attendanceProposal.kind === "existing" ? "Esse entendimento e essa categoria correspondem ao seu negócio?" : "Esse entendimento descreve seu negócio?"}</p>
             ) : null}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <Button
@@ -296,7 +298,7 @@ export function PendingSetupConversation({
                   ? needsAttendanceProposal ? "Atendendo…" : "Confirmando…"
                   : needsAttendanceProposal ? "Retomar atendimento" : conversation.confirmationKind === "operational_fallback"
                     ? conversation.attendanceEnabled ? "Sim, confirmar entendimento" : "Usar minha descrição"
-                    : conversation.attendanceEnabled ? "Sim, confirmar entendimento e categoria" : "Sim, está correto"}
+                    : conversation.attendanceProposal?.kind === "semantic" ? "Sim, confirmar entendimento e nicho" : conversation.attendanceEnabled ? "Sim, confirmar entendimento e categoria" : "Sim, está correto"}
               </Button>
               {!isTerminalFallback && !needsAttendanceProposal ? (
                 <Button

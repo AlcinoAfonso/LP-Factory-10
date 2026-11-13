@@ -11,7 +11,7 @@ import { selectStageTwoSectionPresentation, stageTwoBasisLabel } from "./stage-t
 import { sectionStateKey, stageOneStateKey } from "./ui-state-keys";
 import { formatEditorValue, parseEditorValue } from "./editor-value";
 import { isCommunicationSectionSaveLocked } from "./editor-save-guard";
-import { canInstallGeneralSuggestion, canStartGeneralGeneration, createStageTwoGenerationGate, isCurrentGenerationVersion } from "./generation-guard";
+import { isCurrentGenerationNiche, canInstallGeneralSuggestion, canStartGeneralGeneration, createStageTwoGenerationGate, isCurrentGenerationVersion } from "./generation-guard";
 import { requestOpenAiResponses } from "../openai-responses/openAiResponsesAdapter";
 import { calculateOpenAiOperationCost, type OpenAiCostOperationTerminal, type OpenAiCostRecorder } from "../openai-costs";
 import { resolveOpenAiProductWorkload } from "../openai-workloads";
@@ -390,6 +390,17 @@ assert.equal(parseStageTwoResponse({ ...stageTwoPayload, output_text: JSON.strin
 assert.equal(stageTwoPrompt(projected, { kind: "section", key: "business_context" }, false), null);
 assert.equal(parseStageTwoResponse(stageTwoPayload, { kind: "section", key: "business_context" }, false).ok, false);
 assert.equal("future_section" in projected.sections, false);
+
+{
+  const textualNiche={taxonId:null,name:"Jardinagem para condomínios",confirmed:true,revision:"text:1"};
+  const textPrompt=stageTwoPrompt(projected,generalTarget,false,textualNiche);
+  assert.ok(textPrompt);
+  assert.deepEqual(JSON.parse(textPrompt.input).official_niche,{description:textualNiche.name,revision:"text:1"});
+  assert.equal(stageTwoPrompt(projected,generalTarget,false,{...textualNiche,confirmed:false}),null);
+  assert.equal(isCurrentGenerationNiche(textualNiche,{...textualNiche,revision:"text:2"}),false);
+  assert.equal(isCurrentGenerationNiche(textualNiche,{...textualNiche}),true);
+}
+
 assert.equal(projectCommunicationBase({
   account_id: "00000000-0000-4000-8000-000000000001",
   version: 3,

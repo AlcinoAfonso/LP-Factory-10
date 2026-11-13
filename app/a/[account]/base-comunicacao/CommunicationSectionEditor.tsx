@@ -46,7 +46,7 @@ export function StartCommunicationBaseForm({ account, candidate, candidateReadFa
   account: string;
   candidate: { businessName: string | null; businessContext: string | null } | null;
   candidateReadFailed: boolean;
-  niche: { taxonId: string; name: string } | null;
+  niche: { taxonId: string | null; name: string; revision: string } | null;
   structured?: boolean;
 }>) {
   const [state, action] = useActionState(startCommunicationBaseAction, INITIAL_STATE);
@@ -84,7 +84,7 @@ export function StartCommunicationBaseForm({ account, candidate, candidateReadFa
         </p>
       ) : null}
       {structured ? <div className="mt-4 space-y-2 rounded-lg border border-border p-4">
-        <input type="hidden" name="base_niche" value={niche?.taxonId ?? ""} />
+        <input type="hidden" name="base_niche" value={niche?.revision ?? ""} />
         <p className="text-sm">{niche ? <>Nicho identificado: <strong>{niche.name}</strong>. Ele aparece apenas para consulta e não poderá ser alterado na seção Atuação.</> : "Nenhum nicho oficial foi identificado. Você pode iniciar a Base com o entendimento disponível do negócio e complementá-la depois."}</p>
         <label className="flex min-h-11 items-center gap-3 text-sm">
           <input type="checkbox" name="confirm_base_context" required className="h-5 w-5 shrink-0 accent-brand-700" />

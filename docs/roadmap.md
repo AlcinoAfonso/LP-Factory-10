@@ -882,6 +882,11 @@
 
 10.12.2 Registros do recorte
 - Banco:
+  - Criados:
+    - `public.account_official_niches`
+    - `public.confirm_account_official_niche_v1`
+    - `public.commit_account_pending_setup_turn_v4`
+    - `public.complete_account_pending_setup_attendance_v2`
   - Ajustados:
     - `public.account_context_summaries`
     - `public.commit_account_pending_setup_turn_v3`
@@ -890,6 +895,15 @@
     - `supabase/migrations/20261011121811_e10_12_summary_capacity.sql`
     - `supabase/rollbacks/20261011121811_e10_12_summary_capacity.rollback.sql`
     - `supabase/tests/e10_12_summary_capacity.test.sql`
+    - `supabase/migrations/20261112162500_d15e_official_text_niche.sql`
+    - `supabase/tests/d15e_official_niche.proof.mjs`
+    - `supabase/tests/d15e_selective_inventory.proof.cjs`
+    - `lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter.ts`
+    - `lib/onboarding/niche-resolution/official-niche-policy.ts`
+    - `lib/onboarding/niche-resolution/official-niche-validation-cases.ts`
+    - `lib/onboarding/pending-setup/semantic-niche-instructions.ts`
+    - `lib/openai-responses/web-search-metadata.ts`
+    - `app/a/[account]/_components/AssistantMessageText.tsx`
   - Ajustados:
     - `.github/workflows/e10-11-sql-proof.yml`
     - `.github/workflows/pipeline-supabase-apply-migrations.yml`
@@ -899,20 +913,36 @@
     - `lib/onboarding/pending-setup/attendance-provider.ts`
     - `lib/onboarding/pending-setup/attendance-validation-cases.ts`
     - `app/a/[account]/_components/PendingSetupConversation.tsx`
+    - `app/a/[account]/_components/NicheResolutionCard.tsx`
+    - `app/a/[account]/base-comunicacao/CommunicationSectionEditor.tsx`
+    - `app/a/[account]/base-comunicacao/actions.ts`
+    - `app/a/[account]/base-comunicacao/page.tsx`
+    - `app/a/[account]/layout.tsx`
+    - `app/a/[account]/niche-resolution-actions.ts`
+    - `app/a/[account]/pending-setup-actions.ts`
+    - `lib/communication-base/adapters/communicationAiAdapter.ts`
+    - `lib/communication-base/ai-core.ts`
+    - `lib/communication-base/generation-guard.ts`
+    - `lib/communication-base/validation-cases.ts`
+    - `lib/onboarding/pending-setup/adapters/pendingSetupAttendanceAdapter.ts`
+    - `lib/onboarding/pending-setup/adapters/pendingSetupConversationAdapter.ts`
+    - `lib/onboarding/pending-setup/contracts.ts`
+    - `lib/openai-workloads/registry.ts`
 - Referências:
   - Memória contextual e autoridades: `docs/base-tecnica.md` — seção 3.14.6.
   - Contrato de banco aplicado: `docs/schema.md` — seções 1.19D e 3.1.3.
+  - Nicho textual versionado, não aplicado: `docs/schema.md` — seção 1.13.6.
   - Apply, reversão e configuração operacional: `docs/platform-config.md` — seções 2.3 e 3.5.
 
 10.12.3 Atendimento, Diálogo da conta e Resumo da conta
 - Status: operacional; refinamentos do Pending Setup básico validados em Preview.
-- Conteúdo: mensagem/nomes/Diálogo/Resumo, distinções de aceite/proposta, compactação/confirmação e falhas em docs/base-tecnica.md — 3.14.6; sem autoridade/versionamento funcional próprios. Resumo 6.000 caracteres sem meta, entendimento 4.000; demais limites mantidos. Sem teto de três chamadas/tabela/estado/memória/parser por frase/formulário/infraestrutura novos.
+- Conteúdo: mensagem/nomes/Diálogo/Resumo, distinções de aceite/proposta, compactação/confirmação e falhas em docs/base-tecnica.md — 3.14.6; sem autoridade/versionamento funcional próprios. Resumo 6.000 caracteres sem meta, entendimento 4.000; demais limites mantidos. Sem teto de três chamadas, nova memória, parser por frase, formulário ou infraestrutura antecipada.
 - Definido: acolher, pedir nome e nome do negócio, colher só informações essenciais e apresentar brevemente o valor real da LP Factory, sem insistência. Solicitar WhatsApp opcional perto do fim, se ainda não informado; preservar exatamente o número informado no Diálogo e no Resumo existentes, mesmo incompleto ou incorreto; correção posterior substitui o contato. O agente pode alertar brevemente e oferecer correção, sem insistência, formato obrigatório ou bloqueio de avanço. Recusa não bloqueia avanço; fornecimento não autoriza contato posterior.
 
-10.12.4 Identificação pelo catálogo
-- Status: operacional; refinamentos do Pending Setup básico validados em Preview.
-- Conteúdo: classificação/ausência e vínculo em Base Técnica 3.14.6; catálogo/repertório D21, comparação semântica/pergunta focal. Sem Web classificatória/manutenção de taxons/aliases.
-- Definido: comparar atividade, ofertas e público com catálogo/aliases usando conhecimento paramétrico; explicar equivalências e confirmar só classificação segura, sem impor categoria incorreta. Sem correspondência, esclarecer oferta/público; persistindo a ausência, informá-la e preservar no Resumo apenas dados comerciais relevantes e pendência, além do Diálogo integral, para uso futuro autorizado pelo D17.
+10.12.4 Identificação de nicho
+- Status: identificação semântica definida como fluxo único; aplicação da migration e prova hospedada pendentes por 10.12.7.
+- Conteúdo: propor descrição fiel pelas informações do negócio e conhecimento paramétrico, sem catálogo obrigatório; esclarecer ambiguidade material sem impor enquadramento aproximado. Web Search pontual e confirmação seguem Base Técnica 3.14.6. Catálogo/repertório D21 permanecem disponíveis, sem manutenção pelo atendimento.
+- Sem compreensão segura, preservar entendimento operacional, dados comerciais relevantes e pendência no Resumo, além do Diálogo integral, para uso futuro autorizado pelo D17. Persistência taxonômica e consumidores legados permanecem compatíveis, sem alternância para classificação por catálogo.
 
 10.12.5 Repertório do nicho e apoio à venda
 - Status: operacional.
@@ -923,14 +953,16 @@
 10.12.6 Conclusão e experiência
 - Status: operacional; refinamentos do Pending Setup básico validados em Preview.
 - Conteúdo: negócio/necessidades compreendidos, orientação/próximo passo claros, categoria confirmada ou ausência explícita; categoria sozinha não conclui. Identidade/E10.11 obrigatórios; WhatsApp opcional conforme 10.12.3. Sem taxon não bloqueia comercial/Base com entendimento suficiente, nem concede entitlement/trial/contratação.
-- Definido: conduzir à página comercial mesmo sem nicho identificado, preservando entendimento operacional confirmado e pendência de classificação no Resumo; encerrar sem prolongar a conversa. D15B preservado; sem consulta à Base de Comunicação, pesquisa ou contato posterior com leads, nem promessa de pesquisa/retorno sem capacidade e autorização do D17.
+- Definido: conduzir à página comercial mesmo sem nicho identificado, preservando entendimento operacional confirmado e pendência de classificação no Resumo; encerrar sem prolongar a conversa. D15B preservado; sem consulta à Base de Comunicação, pesquisa de leads ou contato posterior, nem promessa de pesquisa/retorno sem capacidade e autorização do D17. Pesquisa pontual restrita à identificação de nicho segue 10.12.4.
 - Redirecionar desvio ocasional; persistência/repetição/circularidade/sem avanço → encerramento cordial com contexto/pendência no Resumo e retomada possível. Sem promessa de análise/prazo/retorno/contato, contador/tempo fixo/failsafe econômico.
 - Conflitos/atomicidade/pós-conclusão/Base em Base Técnica 3.14.6; sem continuidade assíncrona. Objeções/comparação/recomendação/contratação aprofundadas no D17 até absorção aprovada.
 
 10.12.7 Evolução transversal do agente — D15E
-- Status: Recorte 1 implementado para avaliação humana; resultados e pendências de validação em [#1130](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1130). Recortes seguintes aguardam autorização individual.
+- Status: Recorte 1 integrado; Recorte 2 com fluxo semântico único autorizado, sem flag ou alternância de classificação. Merge, aplicação seletiva, QA real e Production autorizados; migration e prova hospedada com provider ainda pendentes. Recortes 3 e 4 não iniciados e sujeitos a autorização individual.
 - Sequência aprovada: 1. Inteligência comercial e naturalidade; 2. Identificação e confirmação de nichos AI-first; 3. Memória transversal — Diálogo e Summary; 4. Integração, compatibilidade e validação das jornadas afetadas.
-- Recorte 1: diálogo breve e específico ao negócio, apresentação institucional fundamentada no README e orientação ao próximo passo, sem inventar ofertas ou condições. Preserva identidade, catálogo, confirmação, persistência, propósito restrito D14D e autoridade comercial D17. O PR não autoriza merge nem início do próximo recorte.
+- Recorte 1: diálogo breve e específico ao negócio, apresentação institucional fundamentada no README e orientação ao próximo passo, sem inventar ofertas ou condições; identidade, confirmação, persistência, finalidade D14D e autoridade D17 preservadas.
+- Recorte 2: nicho oficial textual exibido e confirmado, único por conta com autoria/data/revisão; proposta paramétrica independente de taxon/alias e Web Search nativo pontual, sem pesquisa rotineira ou oficialização por inferência. Preserva fallback operacional, Pending Setup e D14D transitório sem escrita em Diálogo/Resumo/Base.
+- Base e Header consomem a descrição confirmada com controle de revisão. E10.7 e vínculos legados permanecem sem sincronização; eventual divergência da copy taxonômica depende de D21/E10.7. Sem retirada física de taxons/aliases/pesquisas, backfill obrigatório de QA, contratação, trial, contato posterior ou nova infraestrutura.
 
 10.13 Cadastro inicial de taxonomia e inteligência de mercado
 
@@ -2670,6 +2702,6 @@
 
 25.3.6 Nicho e continuidade da Base
 - Status: merge, aplicação seletiva e Production autorizados em 06/11/2026, condicionados aos gates técnicos; conclusão funcional depende do teste humano.
-- Conteúdo: conta ativa pode definir nicho antes ou depois de iniciar a Base; redefinição exige confirmação humana e ausência de qualquer produto, inclusive rascunho. Reutiliza o agente conversacional do Pending Setup com propósito restrito, taxonomia E10.5, catálogo e confirmação, sem reabrir o fluxo. Antes de responder, consulta Resumo, nicho oficial e dados confirmados pertinentes da Base, sem repetir perguntas respondidas. Conversa transitória não atualiza Diálogo/Resumo/Base; limite de 6.000 e memória de longo prazo fora do recorte. Categorias 1/2 e edição manual da categoria 3 disponíveis sem nicho.
+- Conteúdo: conta ativa pode definir nicho antes ou depois de iniciar a Base; redefinição exige confirmação humana e ausência de qualquer produto, inclusive rascunho. Reutiliza o agente conversacional do Pending Setup com propósito restrito e confirmação separada, sem reabrir o fluxo. Identificação semântica textual por 10.12.7; persistência taxonômica E10.5 e consumidores legados permanecem compatíveis. Antes de responder, consulta Resumo, nicho oficial e dados confirmados pertinentes da Base, sem repetir perguntas respondidas. Conversa transitória não atualiza Diálogo/Resumo/Base; limite de 6.000 e memória de longo prazo fora do recorte. Categorias 1/2 e edição manual da categoria 3 disponíveis sem nicho.
 - Troca não altera a Base; havendo inteligência, orienta revisão antes da reutilização. Geração exige nicho oficial confirmado e descarta resposta se o vínculo mudar durante a execução; mudança nos materiais usados invalida sugestões transitórias, sem afetar conteúdos persistidos. Revisão humana permanece obrigatória.
-- Banco/ativação: `docs/schema.md` — 1.13.5; `docs/platform-config.md` — 3.5. Redefinição com produto e nova metodologia D14F pertencem a outra rodada.
+- Banco/ativação: `docs/schema.md` — 1.13.5–1.13.6; `docs/platform-config.md` — 3.5. Redefinição com produto e nova metodologia D14F pertencem a outra rodada.

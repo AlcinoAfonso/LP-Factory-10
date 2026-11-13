@@ -49,7 +49,7 @@ export async function generateCommunicationIntelligence(input: Readonly<{
     environment: input.environment,
     expectedWorkload: "communication_base_stage2_intelligence",
     requestId: randomUUID(),
-    promptVersion: COMMUNICATION_AI_PROMPT_VERSION,
+    promptVersion: input.niche.taxonId === null ? COMMUNICATION_AI_PROMPT_VERSION + "_d15e_text_niche_v1" : COMMUNICATION_AI_PROMPT_VERSION,
     contractVersion: COMMUNICATION_AI_CONTRACT_VERSION,
     financialContext: input.financialContext ?? clientOpenAiCostContext(input.accountId),
     executionOrigin: input.executionOrigin ?? "runtime",
