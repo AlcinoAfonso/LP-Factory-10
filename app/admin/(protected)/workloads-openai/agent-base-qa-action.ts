@@ -65,13 +65,8 @@ export async function runAgentBaseQaAction(
 
     const confirmedBusinessData: Record<string, string> = {};
     for (const [key, entry] of Object.entries(selection.confirmed)) {
-      if (typeof entry === "string") {
-        confirmedBusinessData[key] = entry;
-      } else {
-        const facts = entry.facts.map(fact => `${fact.label}: ${fact.value}`).join("\n");
-        confirmedBusinessData[key] = [typeof entry.value === "string" ? entry.value : "", facts]
-          .filter(Boolean).join("\n");
-      }
+      // Preserva também fatos estruturados como dados, sem interpretar sua origem como instrução.
+      confirmedBusinessData[key] = typeof entry === "string" ? entry : JSON.stringify(entry);
     }
     if (confirmedBusinessData.business_name !== QA_PUBLIC_NAME) {
       return fail("O nome público confirmado não corresponde à conta QA.");
