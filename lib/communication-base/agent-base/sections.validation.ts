@@ -44,7 +44,7 @@ const insights = [
   "Crença: Anúncios semelhantes podem ocultar diferenças de condomínio.",
   "Objeção: Receio de comprometer a renda sem entender despesas extras.",
 ];
-const makePayload = (sections: unknown, web = true) => ({
+const makePayload = (sections: unknown, web = true, withAnnotations = true) => ({
   output: [
     ...(web ? [{
       type: "web_search_call",
@@ -59,7 +59,7 @@ const makePayload = (sections: unknown, web = true) => ({
       content: [{
         type: "output_text",
         text: JSON.stringify(sections),
-        annotations: [{ type: "url_citation", title: "Indicadores locais", url: "https://example.org/mercado" }],
+        annotations: withAnnotations ? [{ type: "url_citation", title: "Indicadores locais", url: "https://example.org/mercado" }] : [],
       }],
     },
   ],
@@ -103,9 +103,7 @@ assert.equal(parseAgentBaseTwoSectionsResponse(makePayload({
     basis: "strategic_hypothesis",
   } },
 })).ok, true, "Aceitar variações tipográficas sem alterar o conteúdo.");
-const sourceOnlyInSearch = makePayload(valid);
-sourceOnlyInSearch.output[1].content[0].annotations = [];
-assert.equal(parseAgentBaseTwoSectionsResponse(sourceOnlyInSearch).ok, true,
+assert.equal(parseAgentBaseTwoSectionsResponse(makePayload(valid, true, false)).ok, true,
   "Fontes de Web Search no action.sources bastam sem anotações no JSON estruturado.");
 
 assert.equal(parseAgentBaseResearchResponse(makePayload(valid)).ok, true,
