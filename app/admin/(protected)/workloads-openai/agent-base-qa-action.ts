@@ -8,6 +8,7 @@ import { selectStageTwoInput } from "@/communication-base/ai-core";
 import {
   runAgentBaseMarketResearchExperiment,
   runAgentBaseTwoSectionsExperiment,
+  runAgentBaseInsightsBExperiment,
 } from "@/communication-base/agent-base/experiment";
 import { readOfficialNicheContext } from "@/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter";
 
@@ -18,7 +19,7 @@ const QA_PUBLIC_NAME = "João Imóveis QA";
 export type AgentBaseQaState = Readonly<{
   status: "idle" | "success" | "error";
   message: string;
-  mode: "research" | "sections" | null;
+  mode: "research" | "sections" | "insights_b" | null;
   report: string;
   audience: string;
   marketInsights: readonly string[];
@@ -50,9 +51,11 @@ export async function runAgentBaseQaAction(
   if (!access.allowed) return fail("Acesso administrativo não autorizado.");
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey?.trim()) return fail("A chave OpenAI do Preview está indisponível.");
-  // Apenas os dois modos de QA aprovados. Nenhum campo do cliente escolhe conta/modelo.
+  // Somente modos QA aprovados: o navegador não escolhe conta nem modelo.
   const mode = _formData.get("intent");
-  if (mode !== "research" && mode !== "sections") return fail("Modo de pesquisa inválido.");
+  if (mode !== "research" && mode !== "sections" && mode !== "insights_b") {
+    return fail("Modo de pesquisa inválido.");
+  }
 
   try {
     const service = createServiceClient();
@@ -86,16 +89,17 @@ export async function runAgentBaseQaAction(
     }
     const initialNicheRevision = nicheRead.niche.revision;
 
-    if (mode === "sections") {
-      // As duas identidades e formatos vêm do catálogo global existente.
-      // Os critérios qualitativos são instruções experimentais em sections.ts.
-      const { data: targets, error: targetsError } = await service.from("communication_base_sections")
-        .select("section_key,category,format,label")
-        .in("section_key", ["audience", "market_insights"]);
+    if (mode === "sections" || mode === "insights_b") {
+      // A validação usa as identidades e os formatos do catálogo existente.
       const expected = [
-        { section_key: "audience", category: "intelligence", format: "text", label: "Público e contexto" },
+        ...(mode === "sections" ? [
+          { section_key: "audience", category: "intelligence", format: "text", label: "Público e contexto" },
+        ] : []),
         { section_key: "market_insights", category: "intelligence", format: "items", label: "Dores, desejos, crenças e objeções" },
       ];
+      const { data: targets, error: targetsError } = await service.from("communication_base_sections")
+        .select("section_key,category,format,label")
+        .in("section_key", expected.map((item) => item.section_key));
       if (targetsError || !targets || targets.length !== expected.length ||
           expected.some((section) => !targets.some((row) =>
             row.section_key === section.section_key && row.category === section.category &&
@@ -117,7 +121,9 @@ export async function runAgentBaseQaAction(
     };
     const result = mode === "sections"
       ? await runAgentBaseTwoSectionsExperiment(experimentalInput)
-      : await runAgentBaseMarketResearchExperiment(experimentalInput);
+      : mode === "insights_b"
+        ? await runAgentBaseInsightsBExperiment(experimentalInput)
+        : await runAgentBaseMarketResearchExperiment(experimentalInput);
     if (!result.ok) {
       // Diagnóstico estritamente sanitizado: não registrar resposta, prompt nem dados da conta.
       // Os códigos abaixo são produzidos pelo parser local e não contêm texto do modelo.
@@ -137,6 +143,11 @@ export async function runAgentBaseQaAction(
         "market_insights_total_too_long",
         "market_insights_too_few",
         "market_insights_categories_missing",
+        "insights_b_invalid_json",
+        "insights_b_structure_invalid",
+        "insights_b_group_invalid",
+        "insights_b_too_many",
+        "insights_b_section_invalid",
         "category3_contract_changed",
       ] as const;
       const validationReason = knownValidationReasons.find((reason) => reason === result.reason);
@@ -164,7 +175,9 @@ export async function runAgentBaseQaAction(
       status: "success" as const,
       message: mode === "sections"
         ? "Seções 3.2 e 3.3 produzidas para revisão humana. Nada foi gravado na Base."
-        : "Pesquisa real concluída com fontes verificáveis. Nada foi gravado na Base.",
+        : mode === "insights_b"
+          ? "Modelo B: seção 3.3 organizada em quatro listas para revisão humana. Nada foi gravado na Base."
+          : "Pesquisa real concluída com fontes verificáveis. Nada foi gravado na Base.",
       sources: result.value.sources,
       model: result.model,
       effort: result.reasoningEffort,
@@ -175,9 +188,9 @@ export async function runAgentBaseQaAction(
     if ("sections" in result.value) {
       return {
         ...common,
-        mode: "sections",
+        mode: mode === "insights_b" ? "insights_b" : "sections",
         report: "",
-        audience: result.value.sections.audience,
+        audience: "audience" in result.value.sections ? result.value.sections.audience : "",
         marketInsights: result.value.sections.market_insights,
       };
     }
