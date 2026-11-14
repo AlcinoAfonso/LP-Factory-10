@@ -134,7 +134,7 @@ export async function runAgentBaseQaAction(
         "market_insights_not_items",
         "market_insights_too_many",
         "market_insights_item_not_text",
-        "market_insights_item_too_long",
+        "market_insights_total_too_long",
         "market_insights_too_few",
         "market_insights_categories_missing",
         "category3_contract_changed",
