@@ -17,13 +17,15 @@ const sample = {
   },
   fictionalTestScenario: true,
 };
-assert.equal(AGENT_BASE_TWO_SECTIONS_PROMPT_VERSION, "d14f_base_sections_32_33_v2");
+assert.equal(AGENT_BASE_TWO_SECTIONS_PROMPT_VERSION, "d14f_base_sections_32_33_v3");
 const prompt = buildAgentBaseTwoSectionsPrompt(sample);
 assert.ok(prompt);
 assert.match(prompt.instructions, /Público e contexto/);
 assert.match(prompt.instructions, /Dores, desejos, crenças e objeções/);
 assert.match(prompt.instructions, /Web Search/);
 assert.match(prompt.instructions, /nem altere ou salve a Base/);
+assert.match(prompt.instructions, /30\.000 caracteres/);
+assert.doesNotMatch(prompt.instructions, /limite técnico absoluto de 4\.000|400 caracteres por item/);
 const expected = JSON.parse(prompt.input);
 assert.deepEqual(expected.target_sections.map((section: { key: string }) => section.key), [
   "audience", "market_insights",
@@ -134,7 +136,11 @@ assert.equal(parseAgentBaseTwoSectionsResponse(makePayload({ sections: {
 assert.equal(parseAgentBaseTwoSectionsResponse(makePayload({ sections: {
   ...valid.sections,
   audience: { value: "a".repeat(4001), basis: "strategic_hypothesis" },
-} })).ok, false, "Respeitar o limite atual da seção 3.2.");
+} })).ok, true, "Texto com 4.001 caracteres deve ser aceito no contrato atualizado.");
+assert.equal(parseAgentBaseTwoSectionsResponse(makePayload({ sections: {
+  ...valid.sections,
+  audience: { value: "a".repeat(30_000), basis: "strategic_hypothesis" },
+} })).ok, true, "Seção 3.2 deve aceitar exatamente 30.000 caracteres.");
 
 // Regressões: expor somente o motivo de violação do contrato, sem guardar texto bruto.
 const invalidCase = (sections: unknown): string | null => {
@@ -144,12 +150,22 @@ const invalidCase = (sections: unknown): string | null => {
 };
 assert.equal(invalidCase({
   ...valid.sections,
-  audience: { value: "a".repeat(4001), basis: "strategic_hypothesis" },
+  audience: { value: "a".repeat(30_001), basis: "strategic_hypothesis" },
 }), "audience_too_long");
+// Categoria 3: limite é a SOMA do conteúdo, sem teto individual de 400 caracteres.
+const otherLabels = ["Desejo: identificar oportunidades.", "Crença: comparar alternativas.", "Objeção: esclarecer custos."];
+const longFirstItem = "Dor: " + "x".repeat(30_000 - "Dor: ".length -
+  otherLabels.reduce((total, item) => total + item.length, 0));
+const longInsightsAtLimit = [longFirstItem, ...otherLabels];
+assert.equal(longInsightsAtLimit.reduce((total, item) => total + item.length, 0), 30_000);
+assert.equal(parseAgentBaseTwoSectionsResponse(makePayload({ sections: {
+  ...valid.sections,
+  market_insights: { value: longInsightsAtLimit, basis: "strategic_hypothesis" },
+} })).ok, true, "Aceitar soma de 30 mil, mesmo com item acima dos antigos 400 caracteres.");
 assert.equal(invalidCase({
   ...valid.sections,
-  market_insights: { value: [...insights, "Dor: " + "x".repeat(401)], basis: "strategic_hypothesis" },
-}), "market_insights_item_too_long");
+  market_insights: { value: [longFirstItem + "x", ...otherLabels], basis: "strategic_hypothesis" },
+}), "market_insights_total_too_long");
 assert.equal(invalidCase({
   ...valid.sections,
   market_insights: { value: ["Dor: A", "Desejo: B", "Crença: C"], basis: "strategic_hypothesis" },
