@@ -18,12 +18,16 @@ const b2b = {
 };
 const prompt = buildAgentBaseInsightsBPrompt(b2b);
 assert.ok(prompt);
-assert.equal(AGENT_BASE_INSIGHTS_B_PROMPT_VERSION, "d14f_base_insights_33_b_v1");
+assert.equal(AGENT_BASE_INSIGHTS_B_PROMPT_VERSION, "d14f_base_insights_33_b_v2");
 assert.equal(prompt.schemaName, "agent_base_market_insights_33_b_v1");
 assert.match(prompt.instructions, /Web Search/);
 assert.match(prompt.instructions, /B2B, B2C/);
 assert.match(prompt.instructions, /quatro listas/);
-assert.match(prompt.instructions, /frase curta/);
+assert.match(prompt.instructions, /frase breve/);
+assert.match(prompt.instructions, /mais de um segmento relevante/);
+assert.match(prompt.instructions, /expectativa de crença/);
+assert.match(prompt.instructions, /fontes primárias e setoriais/);
+assert.match(prompt.instructions, /links clicáveis compactos/);
 assert.match(prompt.instructions, /não salve|Não salve/);
 assert.doesNotMatch(prompt.instructions, /imóveis|corretores|financiamento|bairros\/municípios/i);
 const input = JSON.parse(prompt.input);
@@ -74,7 +78,47 @@ if (success.ok) {
   ]);
   assert.equal(success.value.sources.length, 1);
   assert.equal(success.value.webSearchCallCount, 1);
+  assert.equal(success.value.itemSources.length, 8);
+  assert.deepEqual(success.value.itemSources[0], []);
 }
+}
+// URLs citadas no fim dos itens saem do texto, mas viram links clicáveis por item.
+const cited = {
+  ...fourGroups,
+  dores: [
+    "Dificuldade para comparar processos. ([Pesquisa](https://example.org/pesquisa))",
+    "Demora na aprovação interna. (https://example.org/pesquisa)",
+  ],
+  crencas: [
+    "Trocar o sistema pode interromper a operação. [Pesquisa](https://example.org/pesquisa)",
+    fourGroups.crencas[1],
+  ],
+};
+const parsedCited = parseAgentBaseInsightsBResponse(payload(envelope(cited)));
+assert.equal(parsedCited.ok, true);
+if (parsedCited.ok) {
+  assert.equal(parsedCited.value.sections.market_insights[0],
+    "Dor: Dificuldade para comparar processos.");
+  assert.equal(parsedCited.value.sections.market_insights[1],
+    "Dor: Demora na aprovação interna.");
+  assert.equal(parsedCited.value.sections.market_insights[4],
+    "Crença: Trocar o sistema pode interromper a operação.");
+  assert.equal(parsedCited.value.itemSources[0][0]?.url, "https://example.org/pesquisa");
+  assert.equal(parsedCited.value.itemSources[1][0]?.url, "https://example.org/pesquisa");
+  assert.equal(parsedCited.value.itemSources[4][0]?.url, "https://example.org/pesquisa");
+}
+const multipleCitations = parseAgentBaseInsightsBResponse(payload(envelope({
+  ...fourGroups,
+  dores: ["Dificuldade para comparar processos. ([Pesquisa](https://example.org/pesquisa)) ([Outra](https://example.org/segunda))",
+    fourGroups.dores[1]],
+})));
+assert.equal(multipleCitations.ok, true);
+if (multipleCitations.ok) {
+  assert.equal(multipleCitations.value.itemSources[0].length, 2);
+  assert.equal(multipleCitations.value.sections.market_insights[0],
+    "Dor: Dificuldade para comparar processos.");
+}
+
 const reason = (value: unknown) => {
   const result = parseAgentBaseInsightsBResponse(payload(value));
   assert.equal(result.ok, false);
@@ -90,6 +134,12 @@ assert.equal(reason(envelope({ ...fourGroups, crencas: undefined })), "insights_
 assert.equal(reason(envelope({ ...fourGroups, crencas: [] })), "insights_b_group_invalid");
 assert.equal(reason(envelope({ ...fourGroups, dores: [null] })), "insights_b_group_invalid");
 assert.equal(reason(envelope({ ...fourGroups, desejos: ["  "] })), "insights_b_group_invalid");
+assert.equal(reason(envelope({
+  ...fourGroups, dores: ["Uma [fonte](https://example.org/pesquisa) no meio do item.", fourGroups.dores[1]],
+})), "insights_b_citation_invalid", "Não apagar links internos sacrificando conteúdo.");
+assert.equal(reason(envelope({
+  ...fourGroups, dores: ["Texto. (http://example.org/insegura)", fourGroups.dores[1]],
+})), "insights_b_citation_invalid", "Não aceitar HTTP inseguro no conteúdo.");
 assert.equal(reason(envelope({
   ...fourGroups, dores: Array.from({ length: 18 }, (_, n) => `Dor número ${n}`),
 })), "insights_b_too_many");
