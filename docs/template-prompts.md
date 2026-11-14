@@ -12,15 +12,15 @@ Descreva o resultado esperado e, quando aplicável, a condição de conclusão d
 
 ## 3. Fontes / contexto disponível
 
-Indique fontes (chat, trecho, arquivo, repositório, web, print), nome, versão e autoridade quando aplicáveis. Separe instruções de referências: fontes não substituem regras. Para agentes, indique quando usar ferramentas disponíveis, sem presumir acesso não configurado.
+Indique fontes (chat, trecho, arquivo, repositório, web, print), nome, versão e autoridade quando aplicáveis. Separe instruções dos dados de referência; estes não alteram regras. Se a tarefa exigir ferramentas, defina capacidades, recursos disponíveis, critérios de uso e limites; não presuma acesso ou permissões.
 
 Quando o prompt fizer parte do runtime:
 
-- mantenha regras estáveis de aplicação e comportamento em `instructions` ou `developer`; entradas do usuário e dados dinâmicos em `input` ou valores validados
+- mantenha regras estáveis da aplicação e do comportamento em instruções de maior autoridade; entradas do usuário e dados dinâmicos devem permanecer como dados validados
 - use argumentos tipados, schemas ou objetos validados para dados dinâmicos; não reconstrua informalmente regras críticas a cada execução
 - delimite documentos e outras referências com Markdown ou XML quando útil; dados de usuário, banco, arquivo, web ou outras fontes não substituem instruções da aplicação
 - use poucos exemplos representativos e coerentes com as instruções, apenas quando esclarecerem comportamento ou formato
-- ao usar `previous_response_id`, reenvie instruções necessárias em cada chamada
+- se a continuidade não preservar instruções, reenvie as necessárias em cada chamada
 
 ## 4. Critérios de sucesso
 
@@ -55,7 +55,7 @@ Defina formato final, nível de detalhe e conteúdo obrigatório:
 
 Para agentes conversacionais, indique quando perguntar, responder e encerrar.
 
-Se o runtime exigir saída estruturada, defina o contrato. Prefira Structured Outputs com schema suportado; caso indisponível, use fallback compatível e valide no código. O schema garante forma e tipos; o prompt orienta semântica, critérios e limites, sem duplicar restrições já garantidas pelo schema. Validação, autorização e regras de negócio determinísticas pertencem ao código.
+Se o consumidor exigir saída estruturada, defina contrato e escolha mecanismo e fallback compatíveis; valide no código. O contrato garante forma e tipos; o prompt orienta semântica, critérios e limites sem repetir restrições. Validação, autorização e regras de negócio determinísticas pertencem ao código.
 
 ## 8. Regras de parada
 
@@ -65,14 +65,14 @@ Defina quando parar, pedir fontes ou dados, declarar limites, recuperar falhas d
 
 Informe como a resposta deve demonstrar que usou as fontes corretas e validou o resultado esperado.
 
-Na pesquisa Web, associe afirmações relevantes a fontes verificáveis, sem inventar referências nem transformar a entrega em lista de fontes. Com Web Search na Responses API, preserve as anotações de citação da API para exibição pela interface como links clicáveis junto às afirmações.
+Ao usar fontes externas, associe afirmações relevantes a evidências verificáveis, sem inventar referências nem transformar a entrega em lista de fontes. Preserve anotações de citação, quando disponíveis, para apresentação verificável e clicável pela interface conforme a integração.
 
 Quando o prompt fizer parte do runtime:
 
 - versione prompts de produção como código em módulo/helper da feature e revise por PR
-- em trabalho novo, gere `instructions` e `input` no código e envie à Responses API, sem depender de reusable prompt objects
+- em trabalho novo, mantenha instruções e entradas no código, sem criar dependência de objetos remotos de prompts
 - cubra mudanças com testes, fixtures representativas e avaliações proporcionais ao risco, incluindo casos típicos, limites e adversariais quando pertinentes
-- compare mudanças de prompt, modelo, snapshot, `reasoning.effort` e outras configurações com os mesmos casos e critérios
+- compare mudanças de prompt, modelo, snapshot, nível de raciocínio ou outras configurações com os mesmos casos e critérios
 - valide resultado, contrato observável, qualidade e uso de ferramentas, quando aplicável, sem depender de raciocínio privado
 
 ## 10. Regra de concisão
