@@ -55,7 +55,7 @@ Defina formato final, nível de detalhe e conteúdo obrigatório:
 
 Para agentes conversacionais, indique quando perguntar, responder e encerrar.
 
-Se o consumidor exigir saída estruturada, defina contrato e escolha mecanismo e fallback compatíveis; valide no código. O contrato garante forma e tipos; o prompt orienta semântica, critérios e limites sem repetir restrições. Validação, autorização e regras de negócio determinísticas pertencem ao código.
+Se o consumidor exigir saída estruturada, defina contrato e escolha mecanismo e fallback compatíveis; valide no código. Em integrações programáticas, valide forma e tipos no código; o prompt orienta semântica, critérios e limites sem repetir restrições. Validação, autorização e regras de negócio determinísticas pertencem ao código.
 
 ## 8. Regras de parada
 
