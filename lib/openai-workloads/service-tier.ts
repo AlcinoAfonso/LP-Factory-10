@@ -4,6 +4,7 @@ import type { OpenAiServiceTier } from "./contracts";
 export function listOpenAiServiceTiers(model: string): readonly OpenAiServiceTier[] {
   if (model === "gpt-6-luna") return ["default", "fast"];
   if (model === "gpt-6.1-sol") return ["default", "fast", "ultrafast"];
+  if (model === "gpt-6.1-terra") return ["default", "fast"];
   return [];
 }
 
