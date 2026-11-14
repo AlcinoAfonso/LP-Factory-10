@@ -95,10 +95,10 @@ function separateTrailingSources(text: string, known: ReadonlyMap<string, Source
   let clean = text.trim();
   const links: SourceLink[] = [];
   const patterns = [
-    /\\s*\\(\\[([^\\]\\n]+)\\]\\((https:\\/\\/[^\\s)]+)\\)\\)\\s*$/u,
-    /\\s*\\[([^\\]\\n]+)\\]\\((https:\\/\\/[^\\s)]+)\\)\\s*$/u,
-    /\\s*\\((https:\\/\\/[^\\s)]+)\\)\\s*$/u,
-    /\\s+(https:\\/\\/[^\\s]+)\\s*$/u,
+    /\s*\(\[([^\]\n]+)\]\((https:\/\/[^\s)]+)\)\)\s*$/u,
+    /\s*\[([^\]\n]+)\]\((https:\/\/[^\s)]+)\)\s*$/u,
+    /\s*\((https:\/\/[^\s)]+)\)\s*$/u,
+    /\s+(https:\/\/[^\s]+)\s*$/u,
   ];
   for (let index = 0; index < 8; index++) {
     const match = patterns.map((pattern) => clean.match(pattern)).find(Boolean);
@@ -118,7 +118,7 @@ function separateTrailingSources(text: string, known: ReadonlyMap<string, Source
     links.unshift(known.get(normalized) ?? { title: null, url: normalized });
     clean = clean.slice(0, match.index).trimEnd();
   }
-  if (!clean || /https?:\\/\\/|www\\.|\\[[^\\]]+\\]\\(/i.test(clean)) return null;
+  if (!clean || /https?:\/\/|www\.|\[[^\]]+\]\(/i.test(clean)) return null;
   return { text: clean, sources: [...new Map(links.map((link) => [link.url, link])).values()] };
 }
 
