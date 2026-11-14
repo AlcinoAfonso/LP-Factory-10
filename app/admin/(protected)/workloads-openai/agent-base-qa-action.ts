@@ -23,6 +23,7 @@ export type AgentBaseQaState = Readonly<{
   report: string;
   audience: string;
   marketInsights: readonly string[];
+  itemSources: readonly (readonly Readonly<{ title: string | null; url: string }>[])[]; 
   sources: readonly Readonly<{ title: string | null; url: string }>[];
   model: string | null;
   effort: string | null;
@@ -32,7 +33,7 @@ export type AgentBaseQaState = Readonly<{
 }>;
 
 const AGENT_BASE_QA_INITIAL_STATE: AgentBaseQaState = {
-  status: "idle", message: "", mode: null, report: "", audience: "", marketInsights: [], sources: [],
+  status: "idle", message: "", mode: null, report: "", audience: "", marketInsights: [], itemSources: [], sources: [],
   model: null, effort: null, latencyMs: null, totalTokens: null, webCalls: null,
 };
 
@@ -148,6 +149,7 @@ export async function runAgentBaseQaAction(
         "insights_b_group_invalid",
         "insights_b_too_many",
         "insights_b_section_invalid",
+        "insights_b_citation_invalid",
         "category3_contract_changed",
       ] as const;
       const validationReason = knownValidationReasons.find((reason) => reason === result.reason);
@@ -192,6 +194,7 @@ export async function runAgentBaseQaAction(
         report: "",
         audience: "audience" in result.value.sections ? result.value.sections.audience : "",
         marketInsights: result.value.sections.market_insights,
+        itemSources: "itemSources" in result.value ? result.value.itemSources : [],
       };
     }
     return {
@@ -200,6 +203,7 @@ export async function runAgentBaseQaAction(
       report: result.value.text,
       audience: "",
       marketInsights: [],
+      itemSources: [],
     };
   } catch {
     return fail("Não foi possível concluir o teste. Nenhuma alteração foi realizada na Base.");
