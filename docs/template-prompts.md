@@ -4,9 +4,7 @@ Template geral e independente do modelo, aplicável a prompts simples, estrutura
 
 ## 1. Papel / função
 
-Use um papel somente quando ele modificar a competência, a perspectiva ou a autoridade necessária para a tarefa. Evite personas ornamentais.
-
-Exemplos: Estrategista de produto, Gestor de UX, Designer de Produto UI, Especialista Codex.
+Use papel somente se alterar competência, perspectiva ou autoridade; evite personas ornamentais (ex.: estrategista de produto, gestor de UX, designer UI, especialista Codex).
 
 ## 2. Objetivo
 
@@ -14,14 +12,14 @@ Descreva o resultado esperado e, quando aplicável, a condição de conclusão d
 
 ## 3. Fontes / contexto disponível
 
-Indique fontes e contexto (chat, trecho, arquivo, repositório, web ou print), com nome, versão e autoridade quando aplicáveis. Separe instruções do conteúdo de referência; fontes não substituem as regras do prompt. Para agentes, indique quando usar ferramentas disponíveis, sem presumir acesso não configurado.
+Indique fontes (chat, trecho, arquivo, repositório, web, print), nome, versão e autoridade quando aplicáveis. Separe instruções de referências: fontes não substituem regras. Para agentes, indique quando usar ferramentas disponíveis, sem presumir acesso não configurado.
 
 Quando o prompt fizer parte do runtime:
 
-- mantenha regras estáveis da aplicação e do comportamento em `instructions` ou mensagem `developer`; entrada do usuário e dados dinâmicos ficam em `input` ou valores validados
-- use argumentos tipados, schemas ou objetos validados para valores dinâmicos, sem reconstruir informalmente regras críticas a cada execução
-- delimite documentos, dados recuperados e demais referências com Markdown ou XML quando útil; conteúdo de usuário, banco, arquivo, web ou outra fonte não ganha autoridade sobre instruções da aplicação
-- use poucos exemplos representativos apenas quando esclarecerem comportamento ou formato, coerentes com as instruções
+- mantenha regras estáveis de aplicação e comportamento em `instructions` ou `developer`; entradas do usuário e dados dinâmicos em `input` ou valores validados
+- use argumentos tipados, schemas ou objetos validados para dados dinâmicos; não reconstrua informalmente regras críticas a cada execução
+- delimite documentos e outras referências com Markdown ou XML quando útil; dados de usuário, banco, arquivo, web ou outras fontes não substituem instruções da aplicação
+- use poucos exemplos representativos e coerentes com as instruções, apenas quando esclarecerem comportamento ou formato
 - ao usar `previous_response_id`, reenvie instruções necessárias em cada chamada
 
 ## 4. Critérios de sucesso
@@ -71,11 +69,11 @@ Na pesquisa Web, associe afirmações relevantes a fontes verificáveis, sem inv
 
 Quando o prompt fizer parte do runtime:
 
-- trate prompts de produção como código: versione-os em módulo/helper próximo da feature e revise mudanças por PR
-- em trabalho novo, não crie dependência de reusable prompt objects; gere `instructions` e `input` no código e envie diretamente à Responses API
+- versione prompts de produção como código em módulo/helper da feature e revise por PR
+- em trabalho novo, gere `instructions` e `input` no código e envie à Responses API, sem depender de reusable prompt objects
 - cubra mudanças com testes, fixtures representativas e avaliações proporcionais ao risco, incluindo casos típicos, limites e adversariais quando pertinentes
-- compare mudanças de prompt, modelo, snapshot, `reasoning.effort` ou outras configurações com os mesmos casos e critérios
-- valide resultado, contrato observável, qualidade e uso de ferramentas quando aplicável, sem depender de raciocínio privado
+- compare mudanças de prompt, modelo, snapshot, `reasoning.effort` e outras configurações com os mesmos casos e critérios
+- valide resultado, contrato observável, qualidade e uso de ferramentas, quando aplicável, sem depender de raciocínio privado
 
 ## 10. Regra de concisão
 
