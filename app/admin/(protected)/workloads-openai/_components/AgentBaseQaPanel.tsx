@@ -27,8 +27,17 @@ function copyableText(state: AgentBaseQaState): string {
   return state.report;
 }
 
+function sourceLabel(source: Readonly<{ title: string | null; url: string }>): string {
+  if (source.title?.trim()) return source.title.trim();
+  try {
+    return new URL(source.url).hostname.replace(/^www\./, "");
+  } catch {
+    return "Fonte externa";
+  }
+}
+
 const INITIAL_STATE: AgentBaseQaState = {
-  status: "idle", message: "", mode: null, report: "", audience: "", marketInsights: [], sources: [],
+  status: "idle", message: "", mode: null, report: "", audience: "", marketInsights: [], itemSources: [], sources: [],
   model: null, effort: null, latencyMs: null, totalTokens: null, webCalls: null,
 };
 
@@ -124,9 +133,20 @@ export function AgentBaseQaPanel() {
                   <div key={group.label} className="space-y-1">
                     <h4 className="text-sm font-semibold text-foreground">{group.label}</h4>
                     <ul className="list-disc space-y-1 pl-5 text-sm leading-6 text-foreground">
-                      {state.marketInsights.filter((item) => item.startsWith(group.prefix)).map((item, index) => (
-                        <li key={index}>{item.slice(group.prefix.length)}</li>
-                      ))}
+                      {state.marketInsights.map((item, index) => ({ item, index }))
+                        .filter(({ item }) => item.startsWith(group.prefix))
+                        .map(({ item, index }) => (
+                          <li key={index}>
+                            {item.slice(group.prefix.length)}
+                            {state.itemSources[index]?.map((source, sourceIndex) => (
+                              <a key={source.url} href={source.url} target="_blank"
+                                rel="noopener noreferrer" title={sourceLabel(source)}
+                                className="ml-2 inline-block text-xs text-brand-700 underline underline-offset-2">
+                                {state.itemSources[index].length > 1 ? `Fonte ${sourceIndex + 1}` : "Fonte"}
+                              </a>
+                            ))}
+                          </li>
+                        ))}
                     </ul>
                   </div>
                 ))}
@@ -140,15 +160,38 @@ export function AgentBaseQaPanel() {
               </div>
             </>
           )}
-          <h3 className="text-base font-semibold text-foreground">Fontes identificadas na resposta OpenAI</h3>
-          <ul className="space-y-2">
-            {state.sources.map((source) => (
-              <li key={source.url} className="break-all text-sm">
-                <a className="text-brand-700 underline underline-offset-2" href={source.url} target="_blank"
-                  rel="noopener noreferrer">{source.title || source.url}</a>
-              </li>
-            ))}
-          </ul>
+          {state.mode === "insights_b" ? (
+            <details className="rounded-md border border-border px-3 py-2">
+              <summary className="cursor-pointer text-sm font-semibold text-foreground">
+                Fontes da pesquisa ({state.sources.length}) — ver lista completa
+              </summary>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Lista completa de referências coletadas na pesquisa; nem todas sustentam os itens selecionados.
+              </p>
+              <ul className="mt-2 space-y-2">
+                {state.sources.map((source) => (
+                  <li key={source.url} className="break-words text-sm">
+                    <a className="text-brand-700 underline underline-offset-2" href={source.url}
+                      title={source.url} target="_blank" rel="noopener noreferrer">
+                      {sourceLabel(source)}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ) : (
+            <>
+              <h3 className="text-base font-semibold text-foreground">Fontes identificadas na resposta OpenAI</h3>
+              <ul className="space-y-2">
+                {state.sources.map((source) => (
+                  <li key={source.url} className="break-all text-sm">
+                    <a className="text-brand-700 underline underline-offset-2" href={source.url} target="_blank"
+                      rel="noopener noreferrer">{source.title || source.url}</a>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </div>
       ) : null}
     </section>
