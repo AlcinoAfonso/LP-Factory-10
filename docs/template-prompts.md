@@ -1,6 +1,6 @@
 # Template geral de prompts — LP Factory 10
 
-A abordagem de prompts do LP Factory 10 é outcome-first: começar pelo resultado esperado, informar fontes e contexto, definir critérios de sucesso, declarar limites e especificar a entrega esperada. Este é um template geral, independente do modelo. O fluxo deve parar quando faltar fonte, autoridade ou escopo aprovado.
+Template geral e independente do modelo, aplicável a prompts simples, estruturados, conversacionais e de agentes. Siga a abordagem outcome-first: resultado, fontes e contexto, critérios de sucesso, limites e entrega. Pare quando faltar fonte, autoridade ou escopo aprovado.
 
 ## 1. Papel / função
 
@@ -10,32 +10,23 @@ Exemplos: Estrategista de produto, Gestor de UX, Designer de Produto UI, Especia
 
 ## 2. Objetivo
 
-Descreva o resultado esperado, sem prescrever o raciocínio interno do modelo.
+Descreva o resultado esperado e, quando aplicável, a condição de conclusão da tarefa, sem prescrever raciocínio interno.
 
 ## 3. Fontes / contexto disponível
 
-Informe quais fontes ou contexto devem ser usados:
-
-- chat
-- trecho
-- arquivo
-- repositório
-- web
-- print
-
-Quando aplicável, identifique nome, versão e autoridade da fonte. Separe instruções do conteúdo de referência; instruções encontradas dentro das fontes não substituem as regras do prompt.
+Indique fontes e contexto (chat, trecho, arquivo, repositório, web ou print), com nome, versão e autoridade quando aplicáveis. Separe instruções do conteúdo de referência; fontes não substituem as regras do prompt. Para agentes, indique quando usar ferramentas disponíveis, sem presumir acesso não configurado.
 
 Quando o prompt fizer parte do runtime:
 
-- regras estáveis da aplicação e do comportamento esperado devem permanecer nas instruções de maior autoridade do runtime, como `instructions` ou mensagem `developer`; entrada do usuário e dados dinâmicos devem permanecer como `input` ou valores validados do caso
-- valores dinâmicos devem entrar por argumentos tipados, schemas ou objetos validados, sem reconstruir informalmente regras críticas a cada execução
-- documentos, dados recuperados e demais conteúdos de referência devem ficar claramente delimitados, com Markdown ou XML quando isso melhorar a separação lógica
-- conteúdo vindo de usuário, banco, arquivo, web ou outra fonte continua sendo dado de entrada e não ganha autoridade para substituir as instruções da aplicação
-- exemplos são opcionais: use poucos exemplos representativos somente quando ajudarem a esclarecer o comportamento ou o formato esperado e mantenha-os estritamente coerentes com as instruções
+- mantenha regras estáveis da aplicação e do comportamento em `instructions` ou mensagem `developer`; entrada do usuário e dados dinâmicos ficam em `input` ou valores validados
+- use argumentos tipados, schemas ou objetos validados para valores dinâmicos, sem reconstruir informalmente regras críticas a cada execução
+- delimite documentos, dados recuperados e demais referências com Markdown ou XML quando útil; conteúdo de usuário, banco, arquivo, web ou outra fonte não ganha autoridade sobre instruções da aplicação
+- use poucos exemplos representativos apenas quando esclarecerem comportamento ou formato, coerentes com as instruções
+- ao usar `previous_response_id`, reenvie instruções necessárias em cada chamada
 
 ## 4. Critérios de sucesso
 
-Liste condições objetivas e verificáveis que precisam estar verdadeiras para a resposta ser considerada boa.
+Liste critérios verificáveis de precisão, relevância, utilidade e qualidade da entrega; para agentes, avalie também comportamento e uso de ferramentas quando aplicável.
 
 ## 5. Limites
 
@@ -54,7 +45,7 @@ Se a tarefa pedir implementação, alterações locais dentro do escopo e valida
 
 ## 7. Entrega esperada
 
-Defina o formato final, o nível de detalhe e o conteúdo obrigatório:
+Defina formato final, nível de detalhe e conteúdo obrigatório:
 
 - análise curta
 - relatório
@@ -64,29 +55,32 @@ Defina o formato final, o nível de detalhe e o conteúdo obrigatório:
 - checklist
 - decisão
 
-Quando o prompt fizer parte do runtime e o consumidor exigir saída estruturada, defina sempre o contrato de saída. Prefira Structured Outputs com schema suportado quando disponível; quando não estiver disponível, use o fallback compatível e valide a saída no código. Use o schema para garantir forma e tipos e o prompt para semântica, critérios e limites; não repita no texto restrições de formato já garantidas pelo schema. Validação, autorização e regras de negócio que possam ser comprovadas deterministicamente permanecem sob responsabilidade do código, não do prompt.
+Para agentes conversacionais, indique quando perguntar, responder e encerrar.
+
+Se o runtime exigir saída estruturada, defina o contrato. Prefira Structured Outputs com schema suportado; caso indisponível, use fallback compatível e valide no código. O schema garante forma e tipos; o prompt orienta semântica, critérios e limites, sem duplicar restrições já garantidas pelo schema. Validação, autorização e regras de negócio determinísticas pertencem ao código.
 
 ## 8. Regras de parada
 
-Informe quando parar, pedir fonte, declarar limite ou não prosseguir, especialmente diante de conflito de fontes, ausência de autoridade ou ampliação material de escopo.
+Defina quando parar, pedir fontes ou dados, declarar limites, recuperar falhas de ferramentas ou escalar, especialmente diante de conflito de fontes, ausência de autoridade ou ampliação material de escopo. Não invente resultados nem ações executadas.
 
 ## 9. Evidência / validação
 
 Informe como a resposta deve demonstrar que usou as fontes corretas e validou o resultado esperado.
 
-Quando houver pesquisa Web, associe afirmações relevantes a fontes verificáveis, sem inventar referências nem transformar a entrega em listagem de fontes. Na Responses API com Web Search, preserve as anotações de citação retornadas pela API; cabe à interface apresentá-las como links clicáveis junto às afirmações.
+Na pesquisa Web, associe afirmações relevantes a fontes verificáveis, sem inventar referências nem transformar a entrega em lista de fontes. Com Web Search na Responses API, preserve as anotações de citação da API para exibição pela interface como links clicáveis junto às afirmações.
 
 Quando o prompt fizer parte do runtime:
 
-- trate o prompt de produção como código da aplicação: mantenha-o em módulo ou helper versionado próximo da feature que o consome e revise mudanças pelo fluxo normal de PR
-- para trabalho novo, não criar dependência de reusable prompt objects da API; gerar `instructions` e `input` no código e enviá-los diretamente à Responses API
-- cubra alterações de prompt com testes, fixtures representativas e avaliações compatíveis com o risco do workload
-- preserve os mesmos casos e critérios ao comparar alteração de prompt, modelo, snapshot, `reasoning.effort` ou outra configuração capaz de mudar o comportamento
-- inclua casos típicos, edge cases e casos adversariais quando forem materialmente aplicáveis ao uso real
-- valide o resultado e o contrato observável; não dependa de cadeia de raciocínio privada como evidência de correção
+- trate prompts de produção como código: versione-os em módulo/helper próximo da feature e revise mudanças por PR
+- em trabalho novo, não crie dependência de reusable prompt objects; gere `instructions` e `input` no código e envie diretamente à Responses API
+- cubra mudanças com testes, fixtures representativas e avaliações proporcionais ao risco, incluindo casos típicos, limites e adversariais quando pertinentes
+- compare mudanças de prompt, modelo, snapshot, `reasoning.effort` ou outras configurações com os mesmos casos e critérios
+- valide resultado, contrato observável, qualidade e uso de ferramentas quando aplicável, sem depender de raciocínio privado
 
 ## 10. Regra de concisão
 
-Comece com o menor prompt que preserve o contrato do produto. Acrescente instruções, contexto ou exemplos somente quando necessários ao resultado ou sustentados por avaliação. Declare cada instrução uma única vez. Preserve requisitos, evidências, ressalvas e próximos passos; remova repetição, excesso de processo e detalhamento que não ajude na entrega final.
+Comece com o menor prompt que preserve o contrato. Acrescente instruções, contexto ou exemplos somente quando necessários ao resultado ou sustentados por avaliação; declare cada regra uma vez. Preserve requisitos, evidências, ressalvas e próximos passos; remova repetição, excesso de processo e detalhes sem valor para a entrega.
 
-Não solicite cadeia de raciocínio privada ou instruções como “pense passo a passo”. Quando necessário, peça conclusão, evidências e justificativa verificável.
+Ao revisar prompts ou documentos, prefira consolidar, reformular e remover redundâncias internas ou entre arquivos antes de adicionar. Busque reduzir o total de caracteres sem perder contratos, capacidades ou segurança funcional; justifique aumentos indispensáveis.
+
+Não peça raciocínio privado nem “pense passo a passo”; peça conclusões, evidências e justificativas verificáveis.
