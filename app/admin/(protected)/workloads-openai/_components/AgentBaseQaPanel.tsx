@@ -8,6 +8,13 @@ import {
   type AgentBaseQaState,
 } from "../agent-base-qa-action";
 
+const B_GROUPS = [
+  { label: "Dores", prefix: "Dor: " },
+  { label: "Desejos", prefix: "Desejo: " },
+  { label: "Crenças", prefix: "Crença: " },
+  { label: "Objeções", prefix: "Objeção: " },
+] as const;
+
 const INITIAL_STATE: AgentBaseQaState = {
   status: "idle", message: "", mode: null, report: "", audience: "", marketInsights: [], sources: [],
   model: null, effort: null, latencyMs: null, totalTokens: null, webCalls: null,
@@ -26,14 +33,18 @@ export function AgentBaseQaPanel() {
       <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
         Caso: João Imóveis QA. A execução consulta a Categoria 1 e o nicho oficial salvos,
         executa {AGENT_BASE_QA_MODEL} com esforço {AGENT_BASE_QA_REASONING_EFFORT}, exclusivamente
-        neste experimento, e realiza pesquisa Web pela OpenAI. O novo teste produz apenas as
-        seções 3.2 e 3.3, em formato estruturado. A pesquisa exploratória anterior continua disponível.
-        Nenhum resultado é salvo na Base e os outros agentes não são alterados.
+        neste experimento, e realiza pesquisa Web pela OpenAI. O Modelo A gera as seções 3.2 e 3.3;
+        o Modelo B testa apenas a seção 3.3 com quatro listas objetivas. O diagnóstico anterior continua
+        disponível. Nenhum resultado é salvo na Base e os outros agentes não são alterados.
       </p>
       <form action={formAction} className="mt-4 flex flex-wrap gap-3">
         <button type="submit" name="intent" value="sections" disabled={pending}
           className="min-h-11 rounded-md bg-brand-700 px-4 py-2 text-sm font-semibold text-white outline-none hover:bg-brand-800 focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:cursor-not-allowed disabled:opacity-60">
           {pending ? "Executando o Agente Base..." : "Gerar seções 3.2 e 3.3"}
+        </button>
+        <button type="submit" name="intent" value="insights_b" disabled={pending}
+          className="min-h-11 rounded-md bg-brand-700 px-4 py-2 text-sm font-semibold text-white outline-none hover:bg-brand-800 focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:cursor-not-allowed disabled:opacity-60">
+          Testar Modelo B — seção 3.3
         </button>
         <button type="submit" name="intent" value="research" disabled={pending}
           className="min-h-11 rounded-md border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground outline-none hover:bg-muted focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:cursor-not-allowed disabled:opacity-60">
@@ -74,6 +85,25 @@ export function AgentBaseQaPanel() {
                 </ul>
               </section>
             </div>
+          ) : state.mode === "insights_b" ? (
+            <section aria-labelledby="agent-base-section-b" className="space-y-3">
+              <p className="text-sm text-muted-foreground">Hipóteses estratégicas para revisão humana.</p>
+              <h3 id="agent-base-section-b" className="text-base font-semibold text-foreground">
+                3.3 Dores, desejos, crenças e objeções — Modelo B
+              </h3>
+              <div className="space-y-4 rounded-md border border-border bg-background p-4">
+                {B_GROUPS.map((group) => (
+                  <div key={group.label} className="space-y-1">
+                    <h4 className="text-sm font-semibold text-foreground">{group.label}</h4>
+                    <ul className="list-disc space-y-1 pl-5 text-sm leading-6 text-foreground">
+                      {state.marketInsights.filter((item) => item.startsWith(group.prefix)).map((item, index) => (
+                        <li key={index}>{item.slice(group.prefix.length)}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </section>
           ) : (
             <>
               <h3 className="text-base font-semibold text-foreground">Diagnóstico de mercado</h3>
