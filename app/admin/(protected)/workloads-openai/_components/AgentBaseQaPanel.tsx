@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { AGENT_BASE_QA_MODEL, AGENT_BASE_QA_REASONING_EFFORT } from "@/communication-base/agent-base/research";
 
 import {
@@ -15,6 +15,18 @@ const B_GROUPS = [
   { label: "Objeções", prefix: "Objeção: " },
 ] as const;
 
+function copyableText(state: AgentBaseQaState): string {
+  if (state.mode === "sections") {
+    return `3.2 Público e contexto\n${state.audience}\n\n3.3 Dores, desejos, crenças e objeções\n${state.marketInsights.map((item) => "- " + item).join("\n")}`;
+  }
+  if (state.mode === "insights_b") {
+    return B_GROUPS.map((group) => `${group.label}\n${state.marketInsights
+      .filter((item) => item.startsWith(group.prefix))
+      .map((item) => "- " + item.slice(group.prefix.length)).join("\n")}`).join("\n\n");
+  }
+  return state.report;
+}
+
 const INITIAL_STATE: AgentBaseQaState = {
   status: "idle", message: "", mode: null, report: "", audience: "", marketInsights: [], sources: [],
   model: null, effort: null, latencyMs: null, totalTokens: null, webCalls: null,
@@ -22,6 +34,7 @@ const INITIAL_STATE: AgentBaseQaState = {
 
 export function AgentBaseQaPanel() {
   const [state, formAction, pending] = useActionState(runAgentBaseQaAction, INITIAL_STATE);
+  const [copyFeedback, setCopyFeedback] = useState("");
 
   return (
     <section className="rounded-lg border border-border bg-card p-4 shadow-card sm:p-5"
@@ -37,7 +50,7 @@ export function AgentBaseQaPanel() {
         o Modelo B testa apenas a seção 3.3 com quatro listas objetivas. O diagnóstico anterior continua
         disponível. Nenhum resultado é salvo na Base e os outros agentes não são alterados.
       </p>
-      <form action={formAction} className="mt-4 flex flex-wrap gap-3">
+      <form action={formAction} onSubmit={() => setCopyFeedback("")} className="mt-4 flex flex-wrap gap-3">
         <button type="submit" name="intent" value="sections" disabled={pending}
           className="min-h-11 rounded-md bg-brand-700 px-4 py-2 text-sm font-semibold text-white outline-none hover:bg-brand-800 focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:cursor-not-allowed disabled:opacity-60">
           {pending ? "Executando o Agente Base..." : "Gerar seções 3.2 e 3.3"}
@@ -63,6 +76,21 @@ export function AgentBaseQaPanel() {
             <div><dt className="inline font-semibold">Tokens: </dt><dd className="inline">{state.totalTokens ?? "indisponível"}</dd></div>
             <div><dt className="inline font-semibold">Consultas Web: </dt><dd className="inline">{state.webCalls ?? "indisponível"}</dd></div>
           </dl>
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" className="min-h-11 rounded-md border border-border px-3 py-2 text-sm font-medium"
+              onClick={() => {
+                if (!navigator.clipboard?.writeText) {
+                  setCopyFeedback("Cópia indisponível neste navegador; selecione o texto manualmente.");
+                  return;
+                }
+                void navigator.clipboard.writeText(copyableText(state))
+                  .then(() => setCopyFeedback("Resultado copiado."))
+                  .catch(() => setCopyFeedback("Não foi possível copiar; selecione o texto manualmente."));
+              }}>
+              Copiar resultado
+            </button>
+            <span role="status" className="text-xs text-muted-foreground">{copyFeedback}</span>
+          </div>
           {state.mode === "sections" ? (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
