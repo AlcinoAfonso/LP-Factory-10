@@ -74,6 +74,8 @@ Informe quando parar, pedir fonte, declarar limite ou não prosseguir, especialm
 
 Informe como a resposta deve demonstrar que usou as fontes corretas e validou o resultado esperado.
 
+Quando houver pesquisa Web, associe afirmações relevantes a fontes verificáveis, sem inventar referências nem transformar a entrega em listagem de fontes. Na Responses API com Web Search, preserve as anotações de citação retornadas pela API; cabe à interface apresentá-las como links clicáveis junto às afirmações.
+
 Quando o prompt fizer parte do runtime:
 
 - trate o prompt de produção como código da aplicação: mantenha-o em módulo ou helper versionado próximo da feature que o consome e revise mudanças pelo fluxo normal de PR
