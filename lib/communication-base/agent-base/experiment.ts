@@ -20,6 +20,11 @@ import {
   buildAgentBaseTwoSectionsPrompt,
   parseAgentBaseTwoSectionsResponse,
 } from "./sections";
+import {
+  AGENT_BASE_INSIGHTS_B_PROMPT_VERSION,
+  buildAgentBaseInsightsBPrompt,
+  parseAgentBaseInsightsBResponse,
+} from "./insights-b";
 
 export type AgentBaseExperimentInput = Readonly<{
   accountId: string;
@@ -46,10 +51,20 @@ export async function runAgentBaseTwoSectionsExperiment(input: AgentBaseExperime
   );
 }
 
+export async function runAgentBaseInsightsBExperiment(input: AgentBaseExperimentInput) {
+  return runExperiment(
+    input,
+    buildAgentBaseInsightsBPrompt(input.context),
+    parseAgentBaseInsightsBResponse,
+    AGENT_BASE_INSIGHTS_B_PROMPT_VERSION,
+  );
+}
+
 type ExperimentalPrompt = Readonly<{
   instructions: string;
   input: string;
   schema?: Readonly<Record<string, unknown>>;
+  schemaName?: string;
 }>;
 
 async function runExperiment<T>(
@@ -104,7 +119,7 @@ async function runExperiment<T>(
       ...(prompt.schema ? {
         text: { format: {
           type: "json_schema",
-          name: "agent_base_sections_32_33_v1",
+          name: prompt.schemaName ?? "agent_base_sections_32_33_v1",
           strict: true,
           schema: prompt.schema,
         } },
