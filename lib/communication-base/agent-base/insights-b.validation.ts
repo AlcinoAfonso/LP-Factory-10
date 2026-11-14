@@ -81,7 +81,6 @@ if (success.ok) {
   assert.equal(success.value.itemSources.length, 8);
   assert.deepEqual(success.value.itemSources[0], []);
 }
-}
 // URLs citadas no fim dos itens saem do texto, mas viram links clicáveis por item.
 const cited = {
   ...fourGroups,
