@@ -385,6 +385,16 @@
 - `complete_account_pending_setup_attendance_v2(uuid,uuid,uuid,bigint,text,boolean) → boolean`: SECURITY DEFINER, search_path vazio e EXECUTE somente service_role/postgres. Conserva autorização, CAS, nome público exigido pela passagem, ausência de turno pendente, encerramento do Diálogo e promoção transacional/idempotente para active. Resultado official admite nicho textual ou confirmação taxonômica comprovada; fallback exige entendimento operacional confirmado e ausência de nicho oficial. Não concede entitlement.
 - Prova PostgreSQL isolada: `supabase/tests/d15e_official_niche.proof.mjs`. Apply remoto confirmado por ledger e inspeção de RLS/ACLs; recibos de validação nos PRs #1132–#1133.
 
+1.13.7 Diálogo e memória do nicho na conta ativa
+- Extensão versionada em `supabase/migrations/20261113111515_d15e_transversal_memory.sql`, validada em PostgreSQL isolado por `supabase/tests/d15e_transversal_memory.proof.mjs` e aplicada em 13/11/2026 pelo escopo `d15e_memory_only`, [run 43429444373](https://github.com/AlcinoAfonso/LP-Factory-10/actions/runs/43429444373), após merge do PR #1135 (`29b4916daa3774aa74116c82e62e0486ffb6133c`). Ledger e ACLs conferidos após apply.
+- `assert_account_niche_actor_v1(uuid,uuid) → void`: exige conta active e membership ativa owner/admin/editor; bloqueia conta e vínculo antes da escrita.
+- `account_niche_snapshot_v1(uuid) → jsonb`: projeta descrição/revisão textual ou vínculo legado observado e distingue classificação confirmada de ausência de confirmação.
+- `claim_account_niche_turn_v1(uuid,uuid,uuid,bigint,uuid,uuid,text,text) → jsonb`: abre ou reserva Diálogo account_niche da mesma conta/participante; valida versão, revisão observada e reserva concorrente. Persiste somente a mensagem submetida antes da IA; requestId permite retry sem duplicação. Retorna estado persistido, projeção recente e Summary observado.
+- `commit_account_niche_turn_v1(uuid,uuid,uuid,bigint,uuid,text,text,text,text,text,timestamptz) → bigint`: reautoriza e confere versão/token, lease de seis minutos, nicho observado e guarda de produto. Compara conteúdo e updated_at do Summary observado; conflito impede sobrescrita. Grava resposta, entendimento e proposta exibida, atualiza Summary somente quando diferente e libera a reserva na mesma transação. A classificação permanece a oficial observada; mensagem/entendimento até 4.000 caracteres, proposta até 120 e Summary até 6.000.
+- `release_account_niche_turn_v1(uuid,uuid,uuid,bigint,uuid) → void`: reautoriza e libera somente a reserva exata; conserva mensagens e requestId para retomada.
+- `confirm_account_niche_dialogue_v1(uuid,uuid,uuid,bigint,boolean) → bigint`: exige confirmação explícita, Diálogo/participante/versão válidos e proposta persistida sem turno pendente. Consome a descrição exibida, chama confirm_account_official_niche_v1 e atualiza a mesma descrição em classification, ou c no formato compacto, do Summary atual sob lock. Preserva seus demais campos; escrita material atualiza proveniência. Falha de capacidade, concorrência ou persistência reverte também o efeito oficial. Sucesso encerra o Diálogo; repetição reconhecida é idempotente. Não altera Base, taxonomia ou consumidores legados.
+- As seis funções são SECURITY INVOKER com search_path vazio. A migration concede EXECUTE a service_role e revoga PUBLIC, anon, authenticated, ai_readonly e readonly quando existentes; não altera RLS/policies das tabelas privadas nem cria trigger ou backfill.
+
 1.14 content_templates
 
 1.14.1 Chaves, constraints e relacionamentos
@@ -643,9 +653,10 @@
 1.19B account_pending_setup_messages
 
 1.19B.1 Chaves, constraints e relacionamentos
-- PK: id uuid; UNIQUE: (conversation_id, ordinal); ordinal >= 1.
-- FK: conversation_id → account_pending_setup_conversations(id) ON UPDATE CASCADE ON DELETE RESTRICT.
-- role: user | assistant; content: 1–4.000 caracteres após trim.
+- A extensão versionada de 1.13.7 está pendente de apply remoto.
+- PK: id uuid; ordinal >= 1. Preserva UNIQUE (conversation_id, ordinal) e acrescenta UNIQUE (dialogue_id, ordinal).
+- conversation_id passa a nullable, preservando FK → account_pending_setup_conversations(id) ON UPDATE CASCADE ON DELETE RESTRICT. dialogue_id nullable referencia account_dialogues(id), com ON UPDATE NO ACTION e ON DELETE RESTRICT. CHECK exige exatamente um dos dois vínculos.
+- role: user | assistant; content: 1–4.000 caracteres após trim; created_at: timestamptz NOT NULL DEFAULT now(). O participante e a jornada vêm do Diálogo account_niche ou da conversa Pending Setup correspondente.
 
 1.19B.2 Segurança
 - Append-only operacional; Trigger Hub: não; sem update/delete de conteúdo ou auditoria row-level.
@@ -657,9 +668,12 @@
 1.19C.1 Chaves, campos e relacionamentos
 - PK: id uuid, sem default; UNIQUE auxiliar: (id, account_id, user_id).
 - account_id e user_id: uuid NOT NULL; FK composta → account_users(account_id, user_id) ON UPDATE CASCADE ON DELETE RESTRICT.
-- origin: text NOT NULL, CHECK restrito a pending_setup.
+- A extensão versionada de 1.13.7 está pendente de apply remoto.
+- origin: text NOT NULL, CHECK admite pending_setup ou account_niche.
 - started_at: timestamptz NOT NULL DEFAULT now(); ended_at: timestamptz nullable, com CHECK ended_at IS NULL OR ended_at >= started_at.
-- O atendimento utiliza o mesmo id da conversa; as mensagens permanecem em account_pending_setup_messages vinculadas à conversa, sem nova tabela de mensagens ou FK para account_dialogues.
+- version: bigint NOT NULL DEFAULT 0, entre 0 e 9007199254740991. niche_state: jsonb NOT NULL DEFAULT {}, restrito a objeto; conserva contexto, revisão observada, requestId, resposta e proposta persistidas do nicho.
+- pending_turn_token: uuid nullable; pending_turn_started_at: timestamptz nullable; CHECK exige ambos nulos ou ambos preenchidos.
+- Pending Setup mantém o mesmo id da conversa e suas mensagens por conversation_id. A conta ativa usa Diálogo próprio account_niche e o vínculo alternativo dialogue_id em account_pending_setup_messages, sem nova tabela de mensagens.
 - Índice account_dialogues_account_user_started_idx em (account_id, user_id, started_at).
 
 1.19C.2 Segurança
@@ -676,6 +690,7 @@
 - source_dialogue_id e source_user_id: uuid nullable; CHECK exige ambos nulos ou ambos preenchidos.
 - FK composta (source_dialogue_id, account_id, source_user_id) → account_dialogues(id, account_id, user_id) ON UPDATE CASCADE ON DELETE RESTRICT.
 - updated_at: timestamptz NOT NULL DEFAULT now(), atualizado explicitamente pela RPC; sem trigger próprio.
+- A extensão pendente de 1.13.7 acrescenta o consumidor account_niche às escritas autorizadas; estrutura, singleton, teto de 6.000 caracteres, FK de proveniência e RLS permanecem iguais.
 
 1.19D.2 Segurança
 - RLS ativo, sem policies; PUBLIC, anon, authenticated e ai_readonly sem grants.
@@ -1153,6 +1168,7 @@
 - Uma Base atual por conta, independente de taxon, LP, conversa, pesquisa, produto, campanha ou canal.
 - account_id uuid primary key, FK para accounts(id) ON DELETE CASCADE; sections_json jsonb not null default objeto vazio; version integer positivo default 1; created_at e updated_at timestamptz not null default now().
 - sections_json exige objeto JSON. Chaves, formatos, proveniência e limites de cada seção são validados no boundary `lib/communication-base/`; nova chave em formato já suportado não reescreve as existentes.
+- Categoria 3 (inteligência): teto de 30.000 caracteres de conteúdo visível por seção. Em texto, mede o texto normalizado; em listas, a soma dos itens; em FAQ, a soma de perguntas e respostas. Não inclui caracteres da serialização JSON. Mantêm-se os formatos, até 20 itens por lista e até 15 pares no FAQ, sem truncamento automático. Categoria 1 e suas regras próprias permanecem inalteradas.
 
 1.38.2 Acesso e concorrência
 - RLS habilitado; authenticated possui apenas SELECT sob policy de membership ativo, conta ativa e entitlement comercial elegível; anon, public e ai_readonly sem grants.

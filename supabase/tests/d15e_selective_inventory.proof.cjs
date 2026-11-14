@@ -20,13 +20,16 @@ try {
   const migration="20261112162500_d15e_official_text_niche.sql";
   const staged=run("d15e_niche_only",source).trim().split("\n");
   assert.equal(staged.length,71);assert.ok(staged.includes(migration));assert.ok(!staged.some(name=>name.includes("_e10_10_")));
+  const memory=run("d15e_memory_only",source).trim().split("\n");
+  assert.equal(memory.length,72);assert.ok(memory.includes("20261113111515_d15e_transversal_memory.sql"));assert.ok(memory.includes(migration));assert.ok(!memory.some(name=>name.includes("_e10_10_")));
+  assert.ok(!staged.includes("20261113111515_d15e_transversal_memory.sql"));
   const legacy=run("d14d_niche_only",source).trim().split("\n");
   assert.equal(legacy.length,70);assert.ok(!legacy.includes(migration));
   const unexpected=path.join(dir,"unexpected");fs.mkdirSync(unexpected);
   for(const name of fs.readdirSync(source))if(name.endsWith(".sql"))fs.copyFileSync(path.join(source,name),path.join(unexpected,name));
   fs.writeFileSync(path.join(unexpected,"20261113000000_unapproved.sql"),"-- unapproved proof fixture");
   assert.throws(()=>run("d15e_niche_only",unexpected),/Command failed/);
-  console.log("PASS Bash syntax, D15E exact selective inventory71, legacy70 preserved, E10.10 exclusion and unexpected migration fail-closed; no Supabase/network calls");
+  console.log("PASS Bash syntax, D15E memory72, textual71 and legacy70 selective inventories preserved, E10.10 exclusion and unexpected migration fail-closed; no Supabase/network calls");
 } finally {
   const resolved=path.resolve(dir),prefix=path.resolve(os.tmpdir())+path.sep+"d15e-inventory-";
   assert.ok(resolved.startsWith(prefix));fs.rmSync(resolved,{recursive:true,force:true});

@@ -887,8 +887,16 @@
     - `public.confirm_account_official_niche_v1`
     - `public.commit_account_pending_setup_turn_v4`
     - `public.complete_account_pending_setup_attendance_v2`
+    - `public.assert_account_niche_actor_v1`
+    - `public.account_niche_snapshot_v1`
+    - `public.claim_account_niche_turn_v1`
+    - `public.commit_account_niche_turn_v1`
+    - `public.release_account_niche_turn_v1`
+    - `public.confirm_account_niche_dialogue_v1`
   - Ajustados:
     - `public.account_context_summaries`
+    - `public.account_dialogues`
+    - `public.account_pending_setup_messages`
     - `public.commit_account_pending_setup_turn_v3`
 - Repositório:
   - Criados:
@@ -897,6 +905,9 @@
     - `supabase/tests/e10_12_summary_capacity.test.sql`
     - `supabase/migrations/20261112162500_d15e_official_text_niche.sql`
     - `supabase/tests/d15e_official_niche.proof.mjs`
+    - `supabase/migrations/20261113111515_d15e_transversal_memory.sql`
+    - `supabase/tests/d15e_transversal_memory.proof.mjs`
+    - `lib/onboarding/niche-resolution/adapters/accountNicheDialogueAdapter.ts`
     - `supabase/tests/d15e_selective_inventory.proof.cjs`
     - `lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter.ts`
     - `lib/onboarding/niche-resolution/official-niche-policy.ts`
@@ -909,6 +920,7 @@
     - `.github/workflows/pipeline-supabase-apply-migrations.yml`
     - `app/admin/(protected)/workloads-openai/_proof.ts`
     - `lib/onboarding/pending-setup/attendance-core.ts`
+    - `lib/onboarding/niche-resolution/niche-conversation-validation-cases.ts`
     - `lib/onboarding/pending-setup/attendance-coordinator.ts`
     - `lib/onboarding/pending-setup/attendance-provider.ts`
     - `lib/onboarding/pending-setup/attendance-validation-cases.ts`
@@ -932,6 +944,7 @@
   - Memória contextual e autoridades: `docs/base-tecnica.md` — seção 3.14.6.
   - Contrato de banco aplicado: `docs/schema.md` — seções 1.19D e 3.1.3.
   - Nicho textual aplicado: `docs/schema.md` — seção 1.13.6.
+  - Extensão de memória da conta ativa: `docs/schema.md` — seções 1.13.7 e 1.19B–1.19D.
   - Apply, reversão e configuração operacional: `docs/platform-config.md` — seções 2.3 e 3.5.
 
 10.12.3 Atendimento, Diálogo da conta e Resumo da conta
@@ -958,10 +971,11 @@
 - Conflitos/atomicidade/pós-conclusão/Base em Base Técnica 3.14.6; sem continuidade assíncrona. Objeções/comparação/recomendação/contratação aprofundadas no D17 até absorção aprovada.
 
 10.12.7 Evolução transversal do agente — D15E
-- Status: Recortes 1 e 2 implementados; Recorte 2 sem flag ou alternância, migration aplicada pelo pipeline seletivo e QA real com provider/confirmação/Web Search e passagem legada registrados em [#1132](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1132) e [#1133](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1133). Recortes 3 e 4 não iniciados e sujeitos a autorização individual.
+- Status: Recortes 1 e 2 operacionais; Recorte 3 publicado pelo PR #1135 e migration aplicada pelo run 43429444373. Correções das falhas do QA hospedado seguem no PR #1137; conclusão funcional condicionada à validação e publicação desse delta. Recorte 4 futuro, sem execução autorizada.
 - Sequência aprovada: 1. Inteligência comercial e naturalidade; 2. Identificação e confirmação de nichos AI-first; 3. Memória transversal — Diálogo e Summary; 4. Integração, compatibilidade e validação das jornadas afetadas.
 - Recorte 1: diálogo breve e específico ao negócio, apresentação institucional fundamentada no README e orientação ao próximo passo, sem inventar ofertas ou condições; identidade, confirmação, persistência, finalidade D14D e autoridade D17 preservadas.
-- Recorte 2: nicho oficial textual exibido e confirmado, único por conta com autoria/data/revisão; proposta paramétrica independente de taxon/alias e Web Search nativo pontual, sem pesquisa rotineira ou oficialização por inferência. Preserva fallback operacional, Pending Setup e D14D transitório sem escrita em Diálogo/Resumo/Base.
+- Recorte 2: nicho oficial textual exibido e confirmado, único por conta com autoria/data/revisão; proposta paramétrica independente de taxon/alias e Web Search nativo pontual, sem pesquisa rotineira ou oficialização por inferência. Preserva fallback operacional, Pending Setup, finalidade restrita do D14D e autoridade da Base; memória autorizada no Recorte 3.
+- Recorte 3: Diálogo atribuível ao participante, data e jornada, preservando mensagens submetidas mesmo sem confirmação; rascunho não enviado não é mensagem. Summary empresarial compartilhado recebe novidade material, preserva conhecimento válido e distingue declarações, fatos aceitos, hipóteses e fontes externas. Na conta ativa, confirmação explícita da proposta persistida grava nicho oficial e a mesma classificação no Summary atomicamente, sem edição textual direta ou alteração da Base; permissões, revisão e guarda de produto preservadas.
 - Base e Header consomem a descrição confirmada com controle de revisão. E10.7 e vínculos legados permanecem sem sincronização; eventual divergência da copy taxonômica depende de D21/E10.7. Sem retirada física de taxons/aliases/pesquisas, backfill obrigatório de QA, contratação, trial, contato posterior ou nova infraestrutura.
 
 10.13 Cadastro inicial de taxonomia e inteligência de mercado
@@ -2701,7 +2715,7 @@
 - Inclusão global: prova isolada/rollback/projeção antiga/vazia aceita, sem inclusão autenticada persistente; SQL não substitui Auth/Storage/UI. Gate desligado mantém runtime anterior; progressão autorizada, apply integral continua suspenso.
 
 25.3.6 Nicho e continuidade da Base
-- Status: merge, aplicação seletiva e Production autorizados em 06/11/2026, condicionados aos gates técnicos; conclusão funcional depende do teste humano.
-- Conteúdo: conta ativa pode definir nicho antes ou depois de iniciar a Base; redefinição exige confirmação humana e ausência de qualquer produto, inclusive rascunho. Reutiliza o agente conversacional do Pending Setup com propósito restrito e confirmação separada, sem reabrir o fluxo. Identificação semântica textual por 10.12.7; persistência taxonômica E10.5 e consumidores legados permanecem compatíveis. Antes de responder, consulta Resumo, nicho oficial e dados confirmados pertinentes da Base, sem repetir perguntas respondidas. Conversa transitória não atualiza Diálogo/Resumo/Base; limite de 6.000 e memória de longo prazo fora do recorte. Categorias 1/2 e edição manual da categoria 3 disponíveis sem nicho.
+- Status: experiência de nicho operacional; extensão de memória em implementação por 10.12.7, com aplicação remota e validação hospedada pendentes.
+- Conteúdo: conta ativa pode definir nicho antes ou depois de iniciar a Base; redefinição exige confirmação humana e ausência de qualquer produto, inclusive rascunho. Reutiliza o agente conversacional do Pending Setup com propósito restrito e confirmação separada, sem reabrir o fluxo. Identificação semântica textual por 10.12.7; persistência taxonômica E10.5 e consumidores legados permanecem compatíveis. Antes de responder, consulta Resumo, nicho oficial e dados confirmados pertinentes da Base, sem repetir perguntas respondidas. A memória autorizada segue 10.12.7 e Base Técnica 3.14.6; mensagens enviadas e novidade empresarial permanecem mesmo sem confirmação, sem alterar automaticamente a Base. Categorias 1/2 e edição manual da categoria 3 disponíveis sem nicho.
 - Troca não altera a Base; havendo inteligência, orienta revisão antes da reutilização. Geração exige nicho oficial confirmado e descarta resposta se o vínculo mudar durante a execução; mudança nos materiais usados invalida sugestões transitórias, sem afetar conteúdos persistidos. Revisão humana permanece obrigatória.
 - Banco/ativação: `docs/schema.md` — 1.13.5–1.13.6; `docs/platform-config.md` — 3.5. Redefinição com produto e nova metodologia D14F pertencem a outra rodada.

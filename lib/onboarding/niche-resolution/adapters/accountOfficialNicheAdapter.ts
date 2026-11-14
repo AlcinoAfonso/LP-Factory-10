@@ -49,3 +49,16 @@ export async function getAccountOfficialNiche(input: { accountId: string }) {
   const result = await readAccountOfficialNiche(input.accountId);
   return result.ok ? result.niche : null;
 }
+
+// The active-account flow confirms the server-owned displayed proposal, never client text.
+export async function confirmAccountNicheDialogue(input: Readonly<{
+  accountId: string; actorUserId: string; dialogueId: string; expectedVersion: number;
+}>) {
+  const { data, error } = await createServiceClient().rpc("confirm_account_niche_dialogue_v1", {
+    p_account_id: input.accountId, p_user_id: input.actorUserId, p_dialogue_id: input.dialogueId,
+    p_expected_version: input.expectedVersion, p_confirmed: true,
+  });
+  if (error || !Number.isSafeInteger(Number(data)) || Number(data)<1) return { ok: false as const,
+    reason: error?.message === "niche_product_exists" ? "product_exists" : error?.code === "40001" ? "conflict" : "unavailable" };
+  return { ok: true as const };
+}
