@@ -22,7 +22,7 @@ export const AGENT_BASE_MARKET_INSIGHTS_PROMPT = `# Prompt especializado — 3.3
   - **Crenças:** percepções, pressupostos e convicções que influenciam suas escolhas, inclusive concepções equivocadas que precisam ser compreendidas, não endossadas.
   - **Objeções:** dúvidas, receios e barreiras que podem levar à hesitação, ao adiamento ou à recusa da compra.
 - Identifique o público-alvo associado a cada descoberta quando essa distinção for relevante. Considere diferenças entre segmentos e situações de compra, sem presumir que todos compartilham as mesmas características.
-- Priorize descobertas específicas, comercialmente relevantes e sustentadas nas informações disponíveis. Evite repetições entre categorias e não imponha quantidade artificial de itens.
+- Priorize descobertas específicas, comercialmente relevantes e sustentadas pelas informações disponíveis. Evite repetições entre categorias e não imponha quantidade artificial de itens.
 
 ## 4. Qualidade e entrega
 
