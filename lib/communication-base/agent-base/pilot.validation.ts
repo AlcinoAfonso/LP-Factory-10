@@ -26,6 +26,13 @@ assert.equal(agentBasePilotOrder([...definitions, definitions[7]]), null);
 assert.equal(agentBasePilotOrder(definitions.map(section => section.key === "about" ? { ...section, format: "items" } : section)), null);
 const selected = selectAgentBasePilotInput(base, definitions)!;
 assert.ok(selected.confirmed.materials, "confirmed institutional references remain available");
+const customKey = "custom_00000000-0000-4000-8000-000000000002";
+const customDefinitions = [...definitions, { key: customKey, label: "Regiões não atendidas", stage: 1 as const, format: "text" as const, group: "Negócio" }];
+const customInput = selectAgentBasePilotInput({ ...base, sections: { ...base.sections,
+  [customKey]: { format: "text", value: "São Paulo", origin: "user_confirmed" },
+} }, customDefinitions)!;
+assert.deepEqual(customInput.confirmed[customKey], { label: "Regiões não atendidas", value: "São Paulo", facts: [], origin: "user_confirmed" }, "opaque custom keys retain their confirmed semantic label");
+
 assert.ok(!Object.hasOwn(selected.confirmed, "audience"), "AI drafts never become confirmed business data");
 const empty = selectAgentBasePilotInput({ ...base, sections: {} }, definitions)!;
 assert.deepEqual(empty.confirmed, {});

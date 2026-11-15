@@ -41,7 +41,7 @@ export function selectAgentBasePilotInput(base: CommunicationBase, definitions: 
     if (value === null || facts === null) return null;
     if (typeof value === "string" && value.length > COMMUNICATION_ASSISTANCE_TEXT_MAX) { excluded.push(definition.label); continue; }
     if ((typeof value === "string" ? value.trim() : value.length) || facts.length) {
-      confirmed[definition.key] = { value, facts, origin: stored.origin };
+      confirmed[definition.key] = { label: definition.label, value, facts, origin: stored.origin };
     }
   }
   if (CREDENTIAL_PATTERN.test(JSON.stringify(confirmed))) return null;
