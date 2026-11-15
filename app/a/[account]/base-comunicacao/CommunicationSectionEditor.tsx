@@ -337,26 +337,27 @@ export function CommunicationStageOne({ account, base, canEdit, structured = fal
       current={base.sections[definition.key as CommunicationSectionKey]} canEdit={canEdit} structured={structured} nicheLabel={nicheLabel} />} />;
 }
 
-export function CommunicationStageTwo({ account, base, canEdit, canGenerate = false, nicheControl, structured = false, definitions = communicationSections, pilotEnabled = false }: Readonly<{
+export function CommunicationStageTwo({ account, base, canEdit, canGenerate = false, nicheControl, structured = false, definitions = communicationSections, pilotEnabled = false, pilotCatalogKey = "" }: Readonly<{
   account: string;
   base: CommunicationBase;
   canEdit: boolean;
   canGenerate?: boolean;
   nicheControl?: ReactNode;
   pilotEnabled?: boolean;
+  pilotCatalogKey?: string;
   structured?: boolean;
   definitions?: readonly CommunicationSectionDefinition[];
 }>) {
   const [pilotPending, startPilotTransition] = useTransition();
-  const [pilot, setPilot] = useState<Readonly<{ version: number; sections: readonly AgentBasePilotSection[] }> | null>(null);
+  const [pilot, setPilot] = useState<Readonly<{ version: number; catalogKey: string; sections: readonly AgentBasePilotSection[] }> | null>(null);
   const [pilotMessage, setPilotMessage] = useState("");
   const [pilotError, setPilotError] = useState(false);
   useEffect(() => {
-    if (pilot && pilot.version !== base.version) {
+    if (pilot && (pilot.version !== base.version || pilot.catalogKey !== pilotCatalogKey)) {
       setPilot(null); setPilotError(false);
       setPilotMessage("A Base mudou. Os resultados do piloto foram descartados. Execute novamente com o contexto atual.");
     }
-  }, [base.version, pilot]);
+  }, [base.version, pilot, pilotCatalogKey]);
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState("");
   const [messageIsError, setMessageIsError] = useState(false);
@@ -368,6 +369,7 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
   const [generationInFlight, setGenerationInFlight] = useState(false);
   const generationGateRef = useRef(createStageTwoGenerationGate());
   const currentVersionRef = useRef(base.version);
+  const currentCatalogKeyRef = useRef(pilotCatalogKey);
   const saveRevisionRef = useRef(0);
   const pendingSavesRef = useRef(0);
   const tryStartStageTwoGeneration = () => {
@@ -379,9 +381,9 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
     generationGateRef.current.finish();
     setGenerationInFlight(false);
   };
-  useLayoutEffect(() => { currentVersionRef.current = base.version; }, [base.version]);
+  useLayoutEffect(() => { currentVersionRef.current = base.version; currentCatalogKeyRef.current = pilotCatalogKey; }, [base.version, pilotCatalogKey]);
   const stageTwo = definitions.filter((section) => section.stage === 2);
-  const pilotSections = pilot?.version === base.version ? pilot.sections : [];
+  const pilotSections = pilot?.version === base.version && pilot.catalogKey === pilotCatalogKey ? pilot.sections : [];
   return (
     <section aria-label="Inteligência de comunicação" className="space-y-2">
       <div className="space-y-2">
@@ -462,11 +464,11 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
               setPilotMessage(""); setPilotError(false);
               try {
                 const result = await runAgentBasePilotAction({ account, version: requestedVersion });
-                if (!canInstallGeneralSuggestion(requestedVersion, currentVersionRef.current, requestSaveRevision, saveRevisionRef.current)) {
+                if (!canInstallGeneralSuggestion(requestedVersion, currentVersionRef.current, requestSaveRevision, saveRevisionRef.current) || pilotCatalogKey !== currentCatalogKeyRef.current) {
                   setPilot(null); setPilotError(true); setPilotMessage("A Base mudou durante o piloto. Os resultados foram descartados. Atualize a página."); return;
                 }
                 if (result.ok) {
-                  setPilot({ version: requestedVersion, sections: result.sections });
+                  setPilot({ version: requestedVersion, catalogKey: pilotCatalogKey, sections: result.sections });
                   setPilotMessage(["Resultados disponíveis nas três seções para avaliação. Nada foi salvo.", result.notice].filter(Boolean).join(" "));
                 } else {
                   if (result.invalidated) setPilot(null);

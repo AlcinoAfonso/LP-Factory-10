@@ -26,7 +26,10 @@ export function agentBasePilotOrder(definitions: readonly CommunicationSectionDe
 }
 
 export function agentBasePilotCatalogState(definitions: readonly CommunicationSectionDefinition[]) {
-  return JSON.stringify(agentBasePilotOrder(definitions)?.map(({ key, label, format }) => ({ key, label, format })) ?? null);
+  return JSON.stringify({
+    business: definitions.filter(section => section.stage === 1).map(({ key, label, format }) => ({ key, label, format })),
+    targets: agentBasePilotOrder(definitions)?.map(({ key, label, format }) => ({ key, label, format })) ?? null,
+  });
 }
 
 export function selectAgentBasePilotInput(base: CommunicationBase, definitions: readonly CommunicationSectionDefinition[]) {

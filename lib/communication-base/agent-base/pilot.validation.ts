@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { agentBasePilotOrder, buildAgentBasePilotPrompt, parseAgentBasePilotResponse, selectAgentBasePilotInput } from "./pilot";
+import { agentBasePilotOrder, agentBasePilotCatalogState, buildAgentBasePilotPrompt, parseAgentBasePilotResponse, selectAgentBasePilotInput } from "./pilot";
 import { AGENT_BASE_PROMPT } from "./base-prompt";
 import { AGENT_BASE_ABOUT_PROMPT } from "./about-prompt";
 import { AGENT_BASE_AUDIENCE_PROMPT } from "./audience-prompt";
@@ -24,6 +24,10 @@ assert.deepEqual(agentBasePilotOrder([...definitions].reverse())?.map(section =>
 assert.equal(agentBasePilotOrder(definitions.filter(section => section.key !== "about")), null);
 assert.equal(agentBasePilotOrder([...definitions, definitions[7]]), null);
 assert.equal(agentBasePilotOrder(definitions.map(section => section.key === "about" ? { ...section, format: "items" } : section)), null);
+const snapshot = agentBasePilotCatalogState(definitions);
+assert.notEqual(agentBasePilotCatalogState(definitions.map(section => section.key === "business_context" ? { ...section, label: "Regiões não atendidas" } : section)), snapshot, "renaming a confirmed input invalidates results without a Base version change");
+assert.notEqual(agentBasePilotCatalogState([...definitions].reverse()), snapshot, "catalog order changes invalidate the execution snapshot");
+assert.equal(agentBasePilotCatalogState([...definitions, { key: "custom_material", label: "Referência", stage: 3, format: "material_items", group: "Materiais" }]), snapshot, "unconsumed Category 2 definitions do not invalidate the pilot");
 const selected = selectAgentBasePilotInput(base, definitions)!;
 assert.ok(selected.confirmed.materials, "confirmed institutional references remain available");
 const customKey = "custom_00000000-0000-4000-8000-000000000002";
