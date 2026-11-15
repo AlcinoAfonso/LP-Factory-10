@@ -76,11 +76,7 @@ export async function runAgentBaseQaAction(
       return fail("Não há dados confirmados e válidos para a pesquisa.");
     }
 
-    const confirmedBusinessData: Record<string, string> = {};
-    for (const [key, entry] of Object.entries(selection.confirmed)) {
-      // Preserva também fatos estruturados como dados, sem interpretar sua origem como instrução.
-      confirmedBusinessData[key] = typeof entry === "string" ? entry : JSON.stringify(entry);
-    }
+    const confirmedBusinessData = selection.confirmed;
     if (base.sections.business_name?.value !== QA_PUBLIC_NAME) {
       return fail("O nome público confirmado não corresponde à conta QA.");
     }

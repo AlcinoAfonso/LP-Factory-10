@@ -1,4 +1,5 @@
 // D14F — Agente Base: primeira capacidade experimental, sem escrita na Base.
+import { parseCommunicationFacts } from "../policy";
 import type { ResolvedOpenAiProductWorkload } from "../../openai-workloads";
 export const AGENT_BASE_RESEARCH_PROMPT_VERSION = "d14f_base_market_research_v1";
 // Par aprovado exclusivamente para o QA D14F; não é configuração operacional E21.
@@ -18,7 +19,7 @@ export function agentBaseQaConfiguration(active: ResolvedOpenAiProductWorkload) 
 export type AgentBaseResearchContext = Readonly<{
   businessName: string;
   officialNiche: string;
-  confirmedBusinessData: Readonly<Record<string, string>>;
+  confirmedBusinessData: Readonly<Record<string, unknown>>;
   fictionalTestScenario: boolean;
 }>;
 
@@ -33,11 +34,20 @@ export function buildAgentBaseResearchPrompt(context: AgentBaseResearchContext) 
       !context.confirmedBusinessData ||
       typeof context.confirmedBusinessData !== "object" ||
       Object.keys(context.confirmedBusinessData).length === 0) return null;
-  const facts: Record<string, string> = {};
-  for (const [key, value] of Object.entries(context.confirmedBusinessData)) {
-    if (!CONFIRMED_KEYS.has(key) || typeof value !== "string" ||
-        value.length > 10_000) return null;
-    if (value.trim()) facts[key] = value;
+  const facts: Record<string, unknown> = {};
+  for (const [key, entry] of Object.entries(context.confirmedBusinessData)) {
+    if (!CONFIRMED_KEYS.has(key)) return null;
+    if (typeof entry === "string") {
+      if (entry.length > 10_000) return null;
+      if (entry.trim()) facts[key] = entry;
+      continue;
+    }
+    if (!entry || typeof entry !== "object" || Array.isArray(entry) ||
+        !("value" in entry) || typeof entry.value !== "string" || entry.value.length > 10_000 ||
+        !("facts" in entry)) return null;
+    const structuredFacts = parseCommunicationFacts(entry.facts);
+    if (structuredFacts === null) return null;
+    if (entry.value.trim() || structuredFacts.length) facts[key] = { value: entry.value, facts: structuredFacts };
   }
   if (Object.keys(facts).length === 0) return null;
 

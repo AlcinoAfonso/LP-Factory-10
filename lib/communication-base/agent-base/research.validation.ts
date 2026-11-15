@@ -51,6 +51,16 @@ assert.equal(buildAgentBaseResearchPrompt({
   ...sample, confirmedBusinessData: { unexpected_key: "injetado" },
 }), null);
 
+const structured = { value: "o".repeat(9_900), facts: [{ label: "Oferta", value: "f".repeat(100) }] };
+const structuredPrompt = buildAgentBaseResearchPrompt({ ...sample, confirmedBusinessData: { offers: structured } });
+assert.ok(structuredPrompt, "JSON overhead does not consume the confirmed text allowance");
+assert.deepEqual(JSON.parse(structuredPrompt.input).experimental_case.confirmed_business_data.offers, structured);
+assert.equal(buildAgentBaseResearchPrompt({ ...sample, confirmedBusinessData: {
+  offers: { ...structured, value: "o".repeat(10_001) },
+} }), null);
+assert.equal(buildAgentBaseResearchPrompt({ ...sample, confirmedBusinessData: {
+  offers: { value: "Oferta", facts: [{ label: "Inválido", value: "" }] },
+} }), null);
 const parsed = parseAgentBaseResearchResponse({
   output: [
     { type: "web_search_call", action: {
