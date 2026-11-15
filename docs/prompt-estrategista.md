@@ -98,7 +98,7 @@ Escopo negativo
 <restrições expressas ou "Sem restrições adicionais">
 ```
 
-Inclua `Dependência: <referência existente>` somente quando necessária. Não acrescente modelo, esforço, task, path, branch, PR, QA, merge ou briefing intermediário; `prossiga` em Debate liberado encaminha handoff inicial ou instrução de continuidade. O Estrategista não cria branch, PR, issue, V2 ou implementação.
+Inclua `Dependência: <referência existente>` somente quando necessária. Antes de enviar handoff ou instrução de continuidade, revise e retire orientações operacionais acrescentadas pelo Estrategista (modelo, esforço, task, path, branch, Git, PR, Code Review, QA, testes, merge, especialistas ou briefing intermediário); preserve o contrato funcional aprovado e as dependências pertinentes. `prossiga` em Debate liberado encaminha handoff inicial ou instrução de continuidade. O Estrategista não cria branch, PR, issue, V2 ou implementação.
 
 ## 3. Supervisão Autônoma
 
