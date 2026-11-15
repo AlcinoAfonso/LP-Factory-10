@@ -89,6 +89,15 @@ async function main() {
       assert.equal(nicheSearched.telemetry.webSearchCallCount,Number(withWeb));
       assert.equal(nicheSearched.telemetry.webSearchSourceCount,Number(withWeb));
     }
+    const proposalOnly=parseAttendanceResponse(response({...semanticOutput,preferredName:null,suggestions:[],
+      reply:"Preparei a proposta. Confirme em Salvar.\nFontes:\n- IBGE — CNAE 8130-3/00 (2025)\n- Sebrae, 2025"},
+      withWeb ? [webCall] : []),restrictedSemantic);
+    assert.equal(proposalOnly.ok,true);
+    if(proposalOnly.ok) {
+      assert.doesNotMatch(proposalOnly.value.output.reply,/Fontes:|IBGE|Sebrae/);
+      assert.ok(proposalOnly.value.output.reply.includes(semanticOutput.nicheDescription!),
+        "server presentation must restore the complete niche after source removal");
+    }
   }
   const cited = parseAttendanceResponse(response({...semanticOutput,reply: semanticOutput.reply + " ([Referência](https://example.org/nichos?utm_source=openai))"},[webCall]),semanticContext);
   assert.equal(cited.ok,true);

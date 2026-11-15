@@ -61,12 +61,14 @@ export function parseAttendanceResponse(payload: unknown, context: AttendanceCon
   }
   let output: unknown;
   try { output = JSON.parse(chunks.join("") || String(data.output_text ?? "")); } catch { return invalid; }
-  const validated = validateAttendanceOutput(output, context);
-  if (validated && context.purpose === "account_niche") {
-    validated.reply = validated.reply
+  if (context.purpose === "account_niche" && output && typeof output === "object" && !Array.isArray(output)) {
+    const candidate = output as Record<string, unknown>;
+    if (typeof candidate.reply === "string") candidate.reply = candidate.reply
       .replace(/(?:^|\n)\s*(?:Fontes?(?: externas)?|Referências|Bibliografia)\s*[:—][\s\S]*$/giu, "")
       .replace(/\s*\(?\[[^\]\r\n]+\]\(https?:\/\/[^\s]*?\)\)?|\s*https?:\/\/[^\s]+/giu, "").trim();
-  } else if (validated && web.calls > 0) {
+  }
+  const validated = validateAttendanceOutput(output, context);
+  if (validated && web.calls > 0 && context.purpose !== "account_niche") {
     validated.reply = validated.reply.replace(/\[([^\]\r\n]+)\]\(https?:\/\/[^\s]*?\)/giu, "$1");
     const footer = "\n\nFontes externas — consulta em " + new Date().toISOString().slice(0,10) + " (UTC):\n" + web.sources.map(source => source.url).join("\n");
     if (validated.reply.length + footer.length > 4000) return invalid;
