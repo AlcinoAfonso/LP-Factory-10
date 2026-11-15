@@ -64,7 +64,7 @@ export function parseAttendanceResponse(payload: unknown, context: AttendanceCon
   const validated = validateAttendanceOutput(output, context);
   if (validated && context.purpose === "account_niche") {
     validated.reply = validated.reply
-      .replace(/(?:^|\n)\s*(?:Fontes?(?: externas)?|Referências|Bibliografia)\s*[:—][^\n]*/giu, "")
+      .replace(/(?:^|\n)\s*(?:Fontes?(?: externas)?|Referências|Bibliografia)\s*[:—][\s\S]*$/giu, "")
       .replace(/\s*\(?\[[^\]\r\n]+\]\(https?:\/\/[^\s]*?\)\)?|\s*https?:\/\/[^\s]+/giu, "").trim();
   } else if (validated && web.calls > 0) {
     validated.reply = validated.reply.replace(/\[([^\]\r\n]+)\]\(https?:\/\/[^\s]*?\)/giu, "$1");

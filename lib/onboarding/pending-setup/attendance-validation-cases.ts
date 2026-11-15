@@ -81,7 +81,7 @@ async function main() {
   if(searched.ok) { assert.match(searched.value.output.reply,/Fontes externas/);assert.match(searched.value.output.reply,/https:\/\/example.org\/nichos/);assert.equal(searched.telemetry.webSearchCallCount,1); }
   for (const withWeb of [true, false]) {
     const nicheSearched=parseAttendanceResponse(response({...semanticOutput,preferredName:null,suggestions:[],
-      reply: semanticOutput.reply + " ([Referência](https://example.org/nichos?utm_source=openai)) https://example.org/nichos\nFontes externas: referência online"},
+      reply: semanticOutput.reply + " ([Referência](https://example.org/nichos?utm_source=openai)) https://example.org/nichos\nFontes:\n- IBGE — CNAE 8130-3/00 (2025)\n- Sebrae, 2025"},
       withWeb ? [webCall] : []),restrictedSemantic);
     assert.equal(nicheSearched.ok,true);
     if(nicheSearched.ok) {
