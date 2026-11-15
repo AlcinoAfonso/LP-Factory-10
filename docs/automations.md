@@ -1,6 +1,6 @@
 0.1 Cabeçalho
-- Data: 17/10/2026
-- Versão: v1.38
+- Data: 15/11/2026
+- Versão: v1.39
 - Status: catálogo operacional vigente.
 
 0.2 Função do documento
@@ -62,9 +62,9 @@
 - Referências: `docs/base-tecnica.md` — 3.14.5; `docs/platform-config.md` — 3.5; action `app/a/[account]/pending-setup-actions.ts`; adapters `lib/onboarding/niche-resolution/adapters/openAiResolver.ts` e `lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter.ts`; confiança em `lib/onboarding/niche-resolution/deterministicConfidence.ts`.
 
 3.6 Apply versionado de migrations no Supabase
-- Objetivo/status: apply versionado implementado; automático integral suspenso, duas migrations E10.10 excluídas. Applies seletivos concluídos e escopos disponíveis em `docs/platform-config.md` — 2.3.
-- Uso: criar migration em supabase/migrations/<timestamp>_<nome>.sql e validar no PR. Apply exige merge autorizado e decisão operacional própria; executar pipeline-supabase-apply-migrations somente pelo fluxo aprovado.
-- Controles: push na main não autoriza apply integral; retomada exige resolução separada ou revisão explícita do filtro canônico. Não usar SQL Editor no fluxo normal; migration aplicada é imutável, com correção/reversão por nova migration incremental.
+- Objetivo/status: apply versionado automático após merge autorizado, limitado às migrations pendentes da entrega; sem manutenção de escopos por funcionalidade.
+- Uso: criar migration em supabase/migrations/<timestamp>_<nome>.sql, validar integralmente e obter Code Review independente do HEAD antes do merge. A autorização humana do merge abrange seu apply; QA aplicável após a aplicação preservado.
+- Resultado/controles: ausência de pendências conclui sem aplicação; divergência bloqueia e registra a etapa. Repetir o run original permite retomar somente pendências da mesma entrega. Não usar SQL Editor no fluxo normal; migration aplicada é imutável, com correção/reversão por nova migration incremental.
 - Referências: `docs/base-tecnica.md` — 3.4.4; gates, ambientes, filtros e secrets em `docs/platform-config.md` — 2.2–2.3.
 
 3.8 Geração administrativa de draft comercial por taxon

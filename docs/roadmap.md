@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-- Data: 18/10/2026
-- Versão: v1.5.259
+- Data: 15/11/2026
+- Versão: v1.5.260
 
 0.2 Contrato do documento (consulta)
 - Estado vigente dos casos; sem narrativa operacional.
@@ -820,7 +820,7 @@
     - `public.account_profiles`
     - `public.taxon_factual_fields`
 - Repositório:
-  - Criados:
+  - Excluídos:
     - `supabase/migrations/20260926145500_e10_10_account_factual_profile.sql`
     - `supabase/migrations/20260926171100_e10_10_factual_catalog_cutover.sql`
   - Ajustados:
@@ -839,7 +839,7 @@
 
 10.10.3 Recorte factual e cutover
 - Status: retirado.
-- Conteúdo: exclusão do apply/dados preservados em E22.7.5, sem cutover pendente.
+- Conteúdo: duas candidatas nunca aplicadas removidas do diretório ativo por D3F — Rodada 3; proveniência preservada no Git. Dados e migrations aplicadas preservados em E22.7.5, sem cutover pendente.
 
 10.10.4 UX factual e prontidão para a Base
 - Status: retirado.
@@ -872,7 +872,7 @@
 
 10.11.5 Continuidade e regressão
 - Status: vigente.
-- Conteúdo: nicho/Checkout/membership/entitlement preservados; apply integral suspenso, E10.10 excluído (Platform Config 2.3).
+- Conteúdo: nicho/Checkout/membership/entitlement preservados; candidatas E10.10 fora do diretório ativo. Apply pós-merge conforme Platform Config 2.3.
 
 10.12 Atendimento inicial por IA e agente vendedor
 
@@ -2346,7 +2346,7 @@
 
 22.7.5 Retirada material residual de banco e configuração
 - Status: aplicado e validado.
-- Conteúdo: histórico preservado; FK/acessos/unidades mutáveis factuais e UPDATE da seleção retirados (Schema 1.11/1.35). Gates E20 ausentes Preview/Production; duas migrations E10.10 excluídas do apply (Platform Config 2.3/3.5). Migrations imutáveis/resíduos compartilhados preservados; exclusão destrutiva exige decisão própria.
+- Conteúdo: histórico preservado; FK/acessos/unidades mutáveis factuais e UPDATE da seleção retirados (Schema 1.11/1.35). Gates E20 ausentes Preview/Production; duas candidatas E10.10 nunca aplicadas removidas do diretório ativo, com proveniência no Git (10.10.3; Platform Config 2.3/3.5). Migrations imutáveis/resíduos compartilhados preservados; exclusão destrutiva exige decisão própria.
 
 23. E23 — Segurança e governança transversal da plataforma
 - Objetivo: segurança/governança.
@@ -2701,7 +2701,7 @@
 25.3.3 Dados do negócio e Inteligência e copy
 - Status: operacional Preview/Production.
 - Conteúdo: Dados opcionais, nome público no cabeçalho e campos iniciais de identificação sobre os registros existentes; informações próprias preservadas. Atuação mostra nicho para consulta e exige confirmação ao iniciar a Base; ausência de nicho permite confirmar entendimento disponível. Inteligência preserva sete seções/formatos/parágrafos/quebras/delimitadores/FAQ; novas manuais.
-- R3: 17 textos discretos e 17 ajudas literais por identidade de seção, com teclado/clique/toque/hover; sem edição administrativa ou persistência nova. Títulos iniciais Identificação do negócio e Referências institucionais por migration; preservar rótulos personalizados, ordem e conteúdo. Apply depende de autorização para escopo seletivo no workflow vigente.
+- R3: 17 textos discretos e 17 ajudas literais por identidade de seção, com teclado/clique/toque/hover; sem edição administrativa ou persistência nova. Títulos iniciais Identificação do negócio e Referências institucionais por migration; preservar rótulos personalizados, ordem e conteúdo. Apply segue o workflow pós-merge autorizado (Platform Config 2.3).
 - Assistências 25.1.5, permissões 25.1.3, descarte/retomada/conflito/foco 25.2 em Bases antigas/novas, com isolamento; FAQ 44 px.
 
 25.3.4 Materiais de comunicação
