@@ -6,33 +6,10 @@ on:
       - main
     paths:
       - "supabase/migrations/**"
-  workflow_dispatch:
-    inputs:
-      migration_scope:
-        description: "Escopo manual autorizado"
-        required: true
-        type: choice
-        options:
-          - e25_1_only
-          - e10_11_only
-          - e22_7_only
-          - e23_5_only
-          - e10_12_only
-          - e25_3_only
-          - e21_2_service_tier_only
-          - e21_2_terra_fast_only
-          - d14d_titles_only
-          - d14d_business_free_text_only
-          - d14d_niche_only
-          - d15e_niche_only
-          - d15e_memory_only
-      expected_main_sha:
-        description: "SHA exato da main apos merge autorizado"
-        required: true
-        type: string
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: pipeline-supabase-apply-migrations-${{ github.ref }}
@@ -44,7 +21,6 @@ jobs:
     env:
       SUPABASE_PROJECT_REF: dpikmjgiteuafsbaubue
       SUPABASE_MIGRATIONS_DIR: supabase/migrations
-      SUPABASE_APPLY_MIGRATIONS_ENABLED: ${{ vars.SUPABASE_APPLY_MIGRATIONS_ENABLED }}
       EVENT_BEFORE_SHA: ${{ github.event.before }}
 
     steps:
@@ -53,346 +29,128 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Report disabled migration gate
-        if: ${{ vars.SUPABASE_APPLY_MIGRATIONS_ENABLED != 'true' }}
-        shell: bash
-        run: |
-          {
-            echo "## Pipeline Supabase — Apply Migrations"
-            echo ""
-            echo "- branch: \`${GITHUB_REF_NAME}\`"
-            echo "- commit: \`${GITHUB_SHA}\`"
-            echo "- evento: \`${GITHUB_EVENT_NAME}\`"
-            echo "- apply habilitado: \`false\`"
-            echo "- status final: \`skipped\`"
-            echo ""
-            echo "### Gate de migrations"
-            echo ""
-            echo "- Apply nao executado porque \`SUPABASE_APPLY_MIGRATIONS_ENABLED\` nao esta definido como \`true\`."
-            echo "- Supabase CLI, \`supabase link\` e \`supabase db push\` nao foram executados."
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Block unscoped migration apply
-        if: ${{ vars.SUPABASE_APPLY_MIGRATIONS_ENABLED == 'true' && github.event_name != 'workflow_dispatch' }}
-        shell: bash
-        run: |
-          echo "Apply automatico suspenso: E10.10 permanece fora do escopo E25.1. Revisar o workflow antes de retomar o fluxo integral." >> "$GITHUB_STEP_SUMMARY"
-          exit 1
-
       - name: Setup Supabase CLI
-        if: ${{ vars.SUPABASE_APPLY_MIGRATIONS_ENABLED == 'true' }}
         uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # v2.1.1
         with:
           version: 2.106.0
 
       - name: Apply migrations
-        if: ${{ vars.SUPABASE_APPLY_MIGRATIONS_ENABLED == 'true' && github.event_name == 'workflow_dispatch' }}
         shell: bash
         env:
+          GH_TOKEN: ${{ github.token }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-          APPLY_SCOPE: ${{ inputs.migration_scope }}
-          EXPECTED_MAIN_SHA: ${{ inputs.expected_main_sha }}
         run: |
-          set -uo pipefail
+          set -euo pipefail
 
-          status="success"
-          failure_step=""
-          changed_migrations=""
+          status="failure"
+          failure_step="post-merge identity"
+          authorized_pr=""
+          expected_migrations=""
           dry_run_migrations=""
-          staged_migrations=""
-          apply_enabled="${SUPABASE_APPLY_MIGRATIONS_ENABLED:-false}"
-
-          if [ "$GITHUB_EVENT_NAME" != "workflow_dispatch" ] || [ "$GITHUB_REF_NAME" != "main" ] || { [ "$APPLY_SCOPE" != "e25_1_only" ] && [ "$APPLY_SCOPE" != "e10_11_only" ] && [ "$APPLY_SCOPE" != "e22_7_only" ] && [ "$APPLY_SCOPE" != "e23_5_only" ] && [ "$APPLY_SCOPE" != "e10_12_only" ] && [ "$APPLY_SCOPE" != "e25_3_only" ] && [ "$APPLY_SCOPE" != "e21_2_service_tier_only" ] && [ "$APPLY_SCOPE" != "e21_2_terra_fast_only" ] && [ "$APPLY_SCOPE" != "d14d_titles_only" ] && [ "$APPLY_SCOPE" != "d14d_business_free_text_only" ] && [ "$APPLY_SCOPE" != "d14d_niche_only" ] && [ "$APPLY_SCOPE" != "d15e_niche_only" ] && [ "$APPLY_SCOPE" != "d15e_memory_only" ]; } || [[ ! "$EXPECTED_MAIN_SHA" =~ ^[0-9a-f]{40}$ ]] || [ "$EXPECTED_MAIN_SHA" != "$GITHUB_SHA" ]; then
-            status="failure"
-            failure_step="manual scope, main ref, or exact post-merge SHA"
-          fi
-
-          if [ "$apply_enabled" != "true" ]; then
-            status="failure"
-            failure_step="baseline gate disabled"
-          fi
-
-          if [ "$status" = "success" ] && [ -z "${SUPABASE_ACCESS_TOKEN:-}" ]; then
-            status="failure"
-            failure_step="missing SUPABASE_ACCESS_TOKEN"
-          fi
-
-          if [ "$status" = "success" ] && [ -z "${SUPABASE_DB_PASSWORD:-}" ]; then
-            status="failure"
-            failure_step="missing SUPABASE_DB_PASSWORD"
-          fi
-
-          if [ "$status" = "success" ] && [ ! -d "$SUPABASE_MIGRATIONS_DIR" ]; then
-            status="failure"
-            failure_step="missing migrations directory"
-          fi
-
-          if [ "${GITHUB_EVENT_NAME}" = "push" ] && [ -n "${EVENT_BEFORE_SHA:-}" ] && [ "${EVENT_BEFORE_SHA}" != "0000000000000000000000000000000000000000" ]; then
-            changed_migrations="$(git diff --name-only "${EVENT_BEFORE_SHA}" "${GITHUB_SHA}" -- supabase/migrations || true)"
-          else
-            changed_migrations="(manual run or initial push; diff not computed)"
-          fi
-
-          if [ -z "${changed_migrations}" ]; then
-            changed_migrations="(no changed migration file detected by diff)"
-          fi
-
-          if [ "$status" = "success" ]; then
-            stage_root="$(mktemp -d "$RUNNER_TEMP/scoped-migrations.XXXXXX")" || {
-              status="failure"
-              failure_step="temporary project creation"
-            }
-          fi
-
-          if [ "$status" = "success" ]; then
-            stage_project="$stage_root/project"
-            mkdir -p "$stage_project/supabase/migrations"
-            cp supabase/config.toml "$stage_project/supabase/config.toml"
-            mapfile -t all_migrations < <(find "$SUPABASE_MIGRATIONS_DIR" -maxdepth 1 -type f -name '*.sql' -printf '%f\n' | LC_ALL=C sort)
-            historical_count=0
-            e10_count=0
-            e25_count=0
-            e1011_count=0
-            e227_count=0
-            e235_count=0
-            e1012_count=0
-            e253_count=0
-            e21tier_count=0
-            e21terra_count=0
-            d14d_count=0
-            d14d_text_count=0
-            d14d_niche_count=0
-            d15e_count=0
-            d15e_memory_count=0
-            for name in "${all_migrations[@]}"; do
-              case "$name" in
-                20260926145500_e10_10_account_factual_profile.sql|20260926171100_e10_10_factual_catalog_cutover.sql)
-                  e10_count=$((e10_count + 1))
-                  ;;
-                20260927145500_e25_1_account_communication_bases.sql|20260927163500_e21_2_communication_base_workloads.sql)
-                  cp "$SUPABASE_MIGRATIONS_DIR/$name" "$stage_project/supabase/migrations/$name"
-                  e25_count=$((e25_count + 1))
-                  ;;
-                20260928161504_e10_11_pending_setup_business_name.sql)
-                  if [ "$APPLY_SCOPE" = "e10_11_only" ] || [ "$APPLY_SCOPE" = "e22_7_only" ] || [ "$APPLY_SCOPE" = "e23_5_only" ] || [ "$APPLY_SCOPE" = "e10_12_only" ] || [ "$APPLY_SCOPE" = "e25_3_only" ] || [ "$APPLY_SCOPE" = "e21_2_service_tier_only" ] || [ "$APPLY_SCOPE" = "d14d_titles_only" ] || [ "$APPLY_SCOPE" = "d14d_business_free_text_only" ] || [ "$APPLY_SCOPE" = "d14d_niche_only" ] || [ "$APPLY_SCOPE" = "d15e_niche_only" ] || [ "$APPLY_SCOPE" = "d15e_memory_only" ] || [ "$APPLY_SCOPE" = "e21_2_terra_fast_only" ]; then
-                    cp "$SUPABASE_MIGRATIONS_DIR/$name" "$stage_project/supabase/migrations/$name"
-                  fi
-                  e1011_count=$((e1011_count + 1))
-                  ;;
-                20261001030000_e22_7_retire_factual_authority.sql)
-                  if [ "$APPLY_SCOPE" = "e22_7_only" ] || [ "$APPLY_SCOPE" = "e23_5_only" ] || [ "$APPLY_SCOPE" = "e10_12_only" ] || [ "$APPLY_SCOPE" = "e25_3_only" ] || [ "$APPLY_SCOPE" = "e21_2_service_tier_only" ] || [ "$APPLY_SCOPE" = "d14d_titles_only" ] || [ "$APPLY_SCOPE" = "d14d_business_free_text_only" ] || [ "$APPLY_SCOPE" = "d14d_niche_only" ] || [ "$APPLY_SCOPE" = "d15e_niche_only" ] || [ "$APPLY_SCOPE" = "d15e_memory_only" ] || [ "$APPLY_SCOPE" = "e21_2_terra_fast_only" ]; then
-                    cp "$SUPABASE_MIGRATIONS_DIR/$name" "$stage_project/supabase/migrations/$name"
-                  fi
-                  e227_count=$((e227_count + 1))
-                  ;;
-                20261005170954_e23_5_retire_unused_graphql.sql)
-                  if [ "$APPLY_SCOPE" = "e23_5_only" ] || [ "$APPLY_SCOPE" = "e10_12_only" ] || [ "$APPLY_SCOPE" = "e25_3_only" ] || [ "$APPLY_SCOPE" = "e21_2_service_tier_only" ] || [ "$APPLY_SCOPE" = "d14d_titles_only" ] || [ "$APPLY_SCOPE" = "d14d_business_free_text_only" ] || [ "$APPLY_SCOPE" = "d14d_niche_only" ] || [ "$APPLY_SCOPE" = "d15e_niche_only" ] || [ "$APPLY_SCOPE" = "d15e_memory_only" ] || [ "$APPLY_SCOPE" = "e21_2_terra_fast_only" ]; then
-                    cp "$SUPABASE_MIGRATIONS_DIR/$name" "$stage_project/supabase/migrations/$name"
-                  fi
-                  e235_count=$((e235_count + 1))
-                  ;;
-                20261007153217_e10_12_account_context_attendance.sql|20261009171607_e10_12_sales_attendance.sql|20261009204000_e10_12_restrict_attendance_commit_acl.sql)
-                  if [ "$APPLY_SCOPE" = "e10_12_only" ] || [ "$APPLY_SCOPE" = "e25_3_only" ] || [ "$APPLY_SCOPE" = "e21_2_service_tier_only" ] || [ "$APPLY_SCOPE" = "d14d_titles_only" ] || [ "$APPLY_SCOPE" = "d14d_business_free_text_only" ] || [ "$APPLY_SCOPE" = "d14d_niche_only" ] || [ "$APPLY_SCOPE" = "d15e_niche_only" ] || [ "$APPLY_SCOPE" = "d15e_memory_only" ] || [ "$APPLY_SCOPE" = "e21_2_terra_fast_only" ]; then
-                    cp "$SUPABASE_MIGRATIONS_DIR/$name" "$stage_project/supabase/migrations/$name"
-                  fi
-                  e1012_count=$((e1012_count + 1))
-                  ;;
-                20261011121811_e10_12_summary_capacity.sql)
-                  if [ "$APPLY_SCOPE" = "e10_12_only" ] || [ "$APPLY_SCOPE" = "e21_2_service_tier_only" ] || [ "$APPLY_SCOPE" = "d14d_titles_only" ] || [ "$APPLY_SCOPE" = "d14d_business_free_text_only" ] || [ "$APPLY_SCOPE" = "d14d_niche_only" ] || [ "$APPLY_SCOPE" = "d15e_niche_only" ] || [ "$APPLY_SCOPE" = "d15e_memory_only" ] || [ "$APPLY_SCOPE" = "e21_2_terra_fast_only" ]; then
-                    cp "$SUPABASE_MIGRATIONS_DIR/$name" "$stage_project/supabase/migrations/$name"
-                  fi
-                  e1012_count=$((e1012_count + 1))
-                  ;;
-                20261010202505_e25_3_communication_resources.sql)
-                  if [ "$APPLY_SCOPE" = "e25_3_only" ] || [ "$APPLY_SCOPE" = "e10_12_only" ] || [ "$APPLY_SCOPE" = "e21_2_service_tier_only" ] || [ "$APPLY_SCOPE" = "d14d_titles_only" ] || [ "$APPLY_SCOPE" = "d14d_business_free_text_only" ] || [ "$APPLY_SCOPE" = "d14d_niche_only" ] || [ "$APPLY_SCOPE" = "d15e_niche_only" ] || [ "$APPLY_SCOPE" = "d15e_memory_only" ] || [ "$APPLY_SCOPE" = "e21_2_terra_fast_only" ]; then
-                    cp "$SUPABASE_MIGRATIONS_DIR/$name" "$stage_project/supabase/migrations/$name"
-                  fi
-                  e253_count=$((e253_count + 1))
-                  ;;
-                20261023124919_e21_2_service_tier.sql)
-                  if [ "$APPLY_SCOPE" = "e21_2_service_tier_only" ] || [ "$APPLY_SCOPE" = "d14d_titles_only" ] || [ "$APPLY_SCOPE" = "d14d_business_free_text_only" ] || [ "$APPLY_SCOPE" = "d14d_niche_only" ] || [ "$APPLY_SCOPE" = "d15e_niche_only" ] || [ "$APPLY_SCOPE" = "d15e_memory_only" ] || [ "$APPLY_SCOPE" = "e21_2_terra_fast_only" ]; then
-                    cp "$SUPABASE_MIGRATIONS_DIR/$name" "$stage_project/supabase/migrations/$name"
-                  fi
-                  e21tier_count=$((e21tier_count + 1))
-                  ;;
-                20261101141410_d14d_section_titles.sql)
-                  if [ "$APPLY_SCOPE" = "d14d_titles_only" ] || [ "$APPLY_SCOPE" = "d14d_business_free_text_only" ] || [ "$APPLY_SCOPE" = "d14d_niche_only" ] || [ "$APPLY_SCOPE" = "d15e_niche_only" ] || [ "$APPLY_SCOPE" = "d15e_memory_only" ] || [ "$APPLY_SCOPE" = "e21_2_terra_fast_only" ]; then
-                    cp "$SUPABASE_MIGRATIONS_DIR/$name" "$stage_project/supabase/migrations/$name"
-                  fi
-                  d14d_count=$((d14d_count + 1))
-                  ;;
-                20261104120538_d14d_business_free_text.sql)
-                  if [ "$APPLY_SCOPE" = "d14d_business_free_text_only" ] || [ "$APPLY_SCOPE" = "d14d_niche_only" ] || [ "$APPLY_SCOPE" = "d15e_niche_only" ] || [ "$APPLY_SCOPE" = "d15e_memory_only" ] || [ "$APPLY_SCOPE" = "e21_2_terra_fast_only" ]; then
-                    cp "$SUPABASE_MIGRATIONS_DIR/$name" "$stage_project/supabase/migrations/$name"
-                  fi
-                  d14d_text_count=$((d14d_text_count + 1))
-                  ;;
-                20261106145723_d14d_account_niche_confirmation.sql)
-                  if [ "$APPLY_SCOPE" = "d14d_niche_only" ] || [ "$APPLY_SCOPE" = "d15e_niche_only" ] || [ "$APPLY_SCOPE" = "d15e_memory_only" ] || [ "$APPLY_SCOPE" = "e21_2_terra_fast_only" ]; then
-                    cp "$SUPABASE_MIGRATIONS_DIR/$name" "$stage_project/supabase/migrations/$name"
-                  fi
-                  d14d_niche_count=$((d14d_niche_count + 1))
-                  ;;
-                20261112162500_d15e_official_text_niche.sql)
-                  if [ "$APPLY_SCOPE" = "d15e_niche_only" ] || [ "$APPLY_SCOPE" = "d15e_memory_only" ] || [ "$APPLY_SCOPE" = "e21_2_terra_fast_only" ]; then
-                    cp "$SUPABASE_MIGRATIONS_DIR/$name" "$stage_project/supabase/migrations/$name"
-                  fi
-                  d15e_count=$((d15e_count + 1))
-                  ;;
-                20261113111515_d15e_transversal_memory.sql)
-                  if [ "$APPLY_SCOPE" = "d15e_memory_only" ] || [ "$APPLY_SCOPE" = "e21_2_terra_fast_only" ]; then
-                    cp "$SUPABASE_MIGRATIONS_DIR/$name" "$stage_project/supabase/migrations/$name"
-                  fi
-                  d15e_memory_count=$((d15e_memory_count + 1))
-                  ;;
-                20261114180100_e21_2_terra_fast_service_tier.sql)
-                  if [ "$APPLY_SCOPE" = "e21_2_terra_fast_only" ]; then
-                    cp "$SUPABASE_MIGRATIONS_DIR/$name" "$stage_project/supabase/migrations/$name"
-                  fi
-                  e21terra_count=$((e21terra_count + 1))
-                  ;;
-                *)
-                  version="${name%%_*}"
-                  if [[ ! "$version" =~ ^[0-9]{14}$ ]] || [[ "$version" > "20260926111926" ]]; then
-                    status="failure"
-                    failure_step="unexpected migration in selective inventory"
-                    break
-                  fi
-                  cp "$SUPABASE_MIGRATIONS_DIR/$name" "$stage_project/supabase/migrations/$name"
-                  historical_count=$((historical_count + 1))
-                  ;;
-              esac
-            done
-            if [ "${#all_migrations[@]}" -ne 75 ] || [ "$historical_count" -ne 56 ] || [ "$e10_count" -ne 2 ] || [ "$e25_count" -ne 2 ] || [ "$e1011_count" -ne 1 ] || [ "$e227_count" -ne 1 ] || [ "$e235_count" -ne 1 ] || [ "$e1012_count" -ne 4 ] || [ "$e253_count" -ne 1 ] || [ "$e21tier_count" -ne 1 ] || [ "$e21terra_count" -ne 1 ] || [ "$d14d_count" -ne 1 ] || [ "$d14d_text_count" -ne 1 ] || [ "$d14d_niche_count" -ne 1 ] || [ "$d15e_count" -ne 1 ] || [ "$d15e_memory_count" -ne 1 ]; then
-              status="failure"
-              failure_step="selective migration inventory differs from 56 historical + 2 E10.10 + 2 E25 + 1 E10.11 + 1 E22.7 + 1 E23.5 + 4 E10.12 + 1 E25.3 + 1 E21.2 service_tier + 1 E21.2 Terra/Fast + 1 D14D titles + 1 D14D business free text + 1 D14D niche + 1 D15E textual niche + 1 D15E transversal memory"
-            fi
-            if [ "$status" = "success" ]; then
-              for name in "${all_migrations[@]}"; do
-                if [ -f "$stage_project/supabase/migrations/$name" ] && ! cmp -s "$SUPABASE_MIGRATIONS_DIR/$name" "$stage_project/supabase/migrations/$name"; then
-                  status="failure"
-                  failure_step="staged migration differs from source"
-                  break
-                fi
-              done
-              staged_migrations="$(find "$stage_project/supabase/migrations" -maxdepth 1 -type f -name '*.sql' -printf '%f\n' | LC_ALL=C sort)"
-              expected_staged_count=58
-              if [ "$APPLY_SCOPE" = "e10_11_only" ]; then expected_staged_count=59; fi
-              if [ "$APPLY_SCOPE" = "e22_7_only" ]; then expected_staged_count=60; fi
-              if [ "$APPLY_SCOPE" = "e23_5_only" ]; then expected_staged_count=61; fi
-              if [ "$APPLY_SCOPE" = "e10_12_only" ]; then expected_staged_count=66; fi
-              if [ "$APPLY_SCOPE" = "e25_3_only" ]; then expected_staged_count=65; fi
-              if [ "$APPLY_SCOPE" = "e21_2_service_tier_only" ]; then expected_staged_count=67; fi
-              if [ "$APPLY_SCOPE" = "d14d_titles_only" ]; then expected_staged_count=68; fi
-              if [ "$APPLY_SCOPE" = "d14d_business_free_text_only" ]; then expected_staged_count=69; fi
-              if [ "$APPLY_SCOPE" = "d14d_niche_only" ]; then expected_staged_count=70; fi
-              if [ "$APPLY_SCOPE" = "d15e_niche_only" ]; then expected_staged_count=71; fi
-              if [ "$APPLY_SCOPE" = "d15e_memory_only" ]; then expected_staged_count=72; fi
-              if [ "$APPLY_SCOPE" = "e21_2_terra_fast_only" ]; then expected_staged_count=73; fi
-              if [ "$(printf '%s\n' "$staged_migrations" | wc -l)" -ne "$expected_staged_count" ]; then
-                status="failure"
-                failure_step="staged migration count"
-              fi
-            fi
-          fi
-
-          if [ "$status" = "success" ]; then
-            supabase --workdir "$stage_project" link --project-ref "$SUPABASE_PROJECT_REF" || {
-              status="failure"
-              failure_step="supabase link in staged project"
-            }
-          fi
-
-          if [ "$status" = "success" ]; then
-            if dry_run_output="$(supabase --workdir "$stage_project" db push --linked --dry-run 2>&1)"; then
-              dry_run_migrations="$(printf '%s\n' "$dry_run_output" | sed -n -E 's/^[[:space:]]*•[[:space:]]*([0-9]{14}_[[:alnum:]_]+\.sql)$/\1/p')"
-              if [ "$APPLY_SCOPE" = "e10_11_only" ]; then
-                expected_migrations='20260928161504_e10_11_pending_setup_business_name.sql'
-              elif [ "$APPLY_SCOPE" = "e22_7_only" ]; then
-                expected_migrations='20261001030000_e22_7_retire_factual_authority.sql'
-              elif [ "$APPLY_SCOPE" = "e23_5_only" ]; then
-                expected_migrations='20261005170954_e23_5_retire_unused_graphql.sql'
-              elif [ "$APPLY_SCOPE" = "e10_12_only" ]; then
-                expected_migrations='20261011121811_e10_12_summary_capacity.sql'
-              elif [ "$APPLY_SCOPE" = "e25_3_only" ]; then
-                expected_migrations='20261010202505_e25_3_communication_resources.sql'
-              elif [ "$APPLY_SCOPE" = "e21_2_service_tier_only" ]; then
-                expected_migrations='20261023124919_e21_2_service_tier.sql'
-              elif [ "$APPLY_SCOPE" = "e21_2_terra_fast_only" ]; then
-                expected_migrations='20261114180100_e21_2_terra_fast_service_tier.sql'
-              elif [ "$APPLY_SCOPE" = "d14d_business_free_text_only" ]; then
-                expected_migrations='20261104120538_d14d_business_free_text.sql'
-              elif [ "$APPLY_SCOPE" = "d15e_memory_only" ]; then
-                expected_migrations='20261113111515_d15e_transversal_memory.sql'
-              elif [ "$APPLY_SCOPE" = "d15e_niche_only" ]; then
-                expected_migrations='20261112162500_d15e_official_text_niche.sql'
-              elif [ "$APPLY_SCOPE" = "d14d_niche_only" ]; then
-                expected_migrations='20261106145723_d14d_account_niche_confirmation.sql'
-              elif [ "$APPLY_SCOPE" = "d14d_titles_only" ]; then
-                expected_migrations='20261101141410_d14d_section_titles.sql'
-              else
-                expected_migrations="$(printf '%s\n%s' '20260927145500_e25_1_account_communication_bases.sql' '20260927163500_e21_2_communication_base_workloads.sql')"
-              fi
-              if [ "$dry_run_migrations" != "$expected_migrations" ]; then
-                status="failure"
-                failure_step="dry-run pending migrations differ from selected scope"
-              fi
-            else
-              status="failure"
-              failure_step="supabase db push dry-run"
-            fi
-          fi
-
-          if [ "$status" = "success" ]; then
-            supabase --workdir "$stage_project" db push --linked --yes || {
-              status="failure"
-              failure_step="supabase db push in staged project"
-            }
-          fi
-
-          {
-            echo "## Pipeline Supabase — Apply Migrations"
-            echo ""
-            echo "- branch: \`${GITHUB_REF_NAME}\`"
-            echo "- commit: \`${GITHUB_SHA}\`"
-            echo "- projeto alvo: \`${SUPABASE_PROJECT_REF}\`"
-            echo "- diretório de migrations: \`${SUPABASE_MIGRATIONS_DIR}\`"
-            echo "- escopo: \`${APPLY_SCOPE}\`"
-            echo "- SHA autorizado: \`${EXPECTED_MAIN_SHA}\`"
-            echo "- evento: \`${GITHUB_EVENT_NAME}\`"
-            echo "- apply habilitado: \`${apply_enabled}\`"
-            echo "- status final: \`${status}\`"
-            echo ""
-            echo "### Migrations alteradas"
-            echo ""
-            echo '```text'
-            printf '%s\n' "$changed_migrations"
-            echo '```'
-            echo ""
-            echo "### Pendencias confirmadas no dry-run antes do apply"
-            echo ""
-            echo '```text'
-            printf '%s\n' "$dry_run_migrations"
-            echo '```'
-            echo ""
-            echo "- staging: historico e predecessores do escopo selecionado; e25_3_only inclui 65 migrations e exige somente E25.3 pendente; as 2 E10.10 foram excluidas."
-            echo "- e21_2_service_tier_only: 67 migrations em staging; somente E21.2 service_tier pendente; E10.10 excluida."
-            echo "- d14d_titles_only: 68 migrations em staging; somente D14D titles pendente; E10.10 excluida."
-            echo "- d14d_business_free_text_only: 69 migrations em staging; somente D14D business free text pendente; E10.10 excluida."
-            echo "- d14d_niche_only: 70 migrations em staging; somente confirmacao de nicho pendente; E10.10 excluida."
-            echo "- d15e_niche_only: 71 migrations em staging; somente nicho textual D15E pendente; E10.10 excluida."
-            echo "- d15e_memory_only: 72 migrations em staging; somente memoria transversal D15E pendente; E10.10 excluida."
-            echo "- e21_2_terra_fast_only: 73 migrations em staging; somente E21.2 Terra/Fast pendente; E10.10 excluida."
-            echo "- apply posterior integral permanece suspenso ate resolucao separada de E10.10."
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          if [ "$status" != "success" ]; then
+          applied="false"
+          report() {
             {
+              echo "## Pipeline Supabase — Apply Migrations"
+              echo "- branch: $GITHUB_REF_NAME"
+              echo "- commit: $GITHUB_SHA"
+              echo "- projeto alvo: $SUPABASE_PROJECT_REF"
+              echo "- evento: $GITHUB_EVENT_NAME"
+              echo "- PR mergeado: $authorized_pr"
+              echo "- status final: $status"
+              echo "- apply executado: $applied"
+              echo "- etapa: $failure_step"
               echo ""
-              echo "### Etapa que falhou"
+              echo "### Migrations acrescentadas na entrega"
+              printf '%s\n' "$expected_migrations"
               echo ""
-              echo "- \`${failure_step}\`"
+              echo "### Pendencias confirmadas antes do apply"
+              printf '%s\n' "$dry_run_migrations"
             } >> "$GITHUB_STEP_SUMMARY"
-            exit 1
+          }
+          trap report EXIT
+
+          test "$GITHUB_EVENT_NAME" = "push"
+          test "$GITHUB_REF_NAME" = "main"
+          [[ "$GITHUB_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$EVENT_BEFORE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$EVENT_BEFORE_SHA" != "0000000000000000000000000000000000000000"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git merge-base --is-ancestor "$EVENT_BEFORE_SHA" "$GITHUB_SHA"
+          authorized_pr="$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" \
+            --jq ".[] | select(.merged_at != null and .base.ref == \"main\" and .merge_commit_sha == \"$GITHUB_SHA\") | .number")"
+          [[ "$authorized_pr" =~ ^[0-9]+$ ]]
+
+          failure_step="delivery diff and immutable history"
+          changes="$(git diff --no-renames --name-status "$EVENT_BEFORE_SHA" "$GITHUB_SHA" -- "$SUPABASE_MIGRATIONS_DIR")"
+          previous_migrations="$(git ls-tree -r --name-only "$EVENT_BEFORE_SHA" -- "$SUPABASE_MIGRATIONS_DIR")"
+          while IFS=$'\t' read -r change file; do
+            [ -n "$change" ] || continue
+            [[ "$file" =~ ^supabase/migrations/[0-9]{14}_[[:alnum:]_]+\.sql$ ]]
+            case "$change" in
+              A)
+                name="${file##*/}"
+                [[ ! "$previous_migrations" =~ /${name%%_*}_ ]]
+                expected_migrations+="$name"$'\n'
+                ;;
+              D) ;; # The CLI must confirm deleted candidates are absent from remote history.
+              *) echo "Existing migration changed: $file" >&2; exit 1 ;;
+            esac
+          done <<< "$changes"
+          expected_migrations="$(printf '%s' "$expected_migrations" | LC_ALL=C sort)"
+
+          failure_step="active migration filenames and versions"
+          declare -A versions=()
+          for file in "$SUPABASE_MIGRATIONS_DIR"/*; do
+            name="${file##*/}"
+            test -f "$file"
+            test ! -L "$file"
+            [[ "$name" =~ ^([0-9]{14})_[[:alnum:]_]+\.sql$ ]]
+            version="${BASH_REMATCH[1]}"
+            test -z "${versions[$version]:-}"
+            versions[$version]=1
+          done
+
+          failure_step="credentials"
+          test -n "${SUPABASE_ACCESS_TOKEN:-}"
+          test -n "${SUPABASE_DB_PASSWORD:-}"
+
+          failure_step="supabase link"
+          supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+          # Parse the pinned CLI output; an unknown/partial format is never a no-op.
+          pending_migrations() {
+            local output names line
+            output="$(supabase db push --linked --dry-run 2>&1)" || return 1
+            ! grep -q "Skipping migration" <<< "$output" || return 1
+            if grep -Fxq "Remote database is up to date." <<< "$output"; then
+              ! grep -Eq '•|Would push these migrations:' <<< "$output"
+              return
+            fi
+            grep -Fxq "Would push these migrations:" <<< "$output" || return 1
+            names="$(sed -n '/^[[:space:]]*•/p' <<< "$output")"
+            test -n "$names" || return 1
+            while IFS= read -r line; do
+              [[ "$line" =~ ^[[:space:]]*•[[:space:]]*([0-9]{14}_[[:alnum:]_]+\.sql)$ ]] || return 1
+              printf '%s\n' "${BASH_REMATCH[1]}"
+            done <<< "$names"
+          }
+
+          failure_step="dry-run and remote history compatibility"
+          dry_run_migrations="$(pending_migrations)"
+          failure_step="unexpected pending migration"
+          while IFS= read -r name; do
+            [ -n "$name" ] || continue
+            grep -Fxq -- "$name" <<< "$expected_migrations"
+          done <<< "$dry_run_migrations"
+
+          if [ -n "$dry_run_migrations" ]; then
+            failure_step="supabase db push"
+            applied="true"
+            supabase db push --linked --yes
+            failure_step="post-apply pending verification"
+            remaining="$(pending_migrations)"
+            test -z "$remaining"
           fi
+          status="success"
+          failure_step="complete"

@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 - Documento: LP Factory 10 — Platform Config
-- Versão: v0.1.62
-- Data: 17/10/2026
+- Versão: v0.1.63
+- Data: 15/11/2026
 
 0.2 Contrato do documento
 - Fonte única das configurações externas confirmadas: plataformas, projetos, ambientes, variáveis/secrets por nome, endpoints, URLs, redirects, SMTP, DNS e redeploy.
@@ -41,7 +41,7 @@
 - `MAILBOX_PASSWORD`: senha/app password da mailbox preservada para o futuro Operador Institucional Autônomo de QA da E17.9.3; sem consumidor operacional vigente após a E22.6.
 - `SUPABASE_ACCESS_TOKEN`: token usado pelo workflow de apply de migrations Supabase.
 - `SUPABASE_DB_PASSWORD`: senha do banco usada pelo workflow de apply de migrations Supabase.
-- `SUPABASE_APPLY_MIGRATIONS_ENABLED`: variável de repositório usada como gate operacional; valor reconfirmado no GitHub em 11/10/2026 após o apply seletivo E10.12: `false`.
+- `SUPABASE_APPLY_MIGRATIONS_ENABLED`: variável legada, sem consumidor no workflow de migrations; não exige alteração de valor por entrega.
 - Regra: valores reais de secrets não devem ser versionados.
 - Regra: secrets de mailbox devem existir apenas nos escopos necessários dos workflows que os consomem.
 - Regra: `SUPABASE_DB_URL_READONLY` deve autenticar com role/usuário read-only e usar preferencialmente session pooler.
@@ -52,16 +52,14 @@
 
 2.3 Workflows conhecidos
 - Workflows: `.github/workflows/security.yml` (segurança), `.github/workflows/pipeline-supabase-inspect.yml` (inspeção read-only), `.github/workflows/pipeline-docs-apply-report.yml` (reports/PR), `.github/workflows/pipeline-supabase-apply-migrations.yml` (apply) e `.github/workflows/upgrade-next-16-1-1.yml` (Next/lockfile).
-- Apply: push na main com supabase/migrations/** ou workflow_dispatch. Automático integral suspenso mesmo com gate aberto; duas migrations E10.10 excluídas. Novas execuções exigem PR/merge autorizados e decisão operacional própria; retomada integral exige resolução separada ou revisão explícita do filtro.
-- Gate SUPABASE_APPLY_MIGRATIONS_ENABLED: false, restaurado e reconfirmado após apply seletivo D15E em 13/11/2026. Fechado registra skipped em passo sem secrets e impede CLI, link e push. Setup e apply têm condição explícita de gate aberto.
+- Apply: push na main com supabase/migrations/** após merge humano autorizado. O workflow confirma PR mergeado e SHA exato, identifica os arquivos acrescentados na entrega e confronta as pendências com o dry-run da CLI; pendência fora da entrega ou divergência de histórico bloqueia antes do apply. Sem novas pendências, termina sem aplicação.
+- A autorização do merge abrange as migrations da entrega, previamente validadas integralmente e revisadas no HEAD conforme AGENTS.md; não há escopos seletivos nem segunda aprovação rotineira. O QA aplicável após o apply permanece obrigatório.
+- SUPABASE_APPLY_MIGRATIONS_ENABLED deixou de ser consumida pelo workflow; seu valor armazenado não precisa ser alternado e não controla a aplicação. Esta mudança não altera nem remove a variável no GitHub.
 - Setup controlado: supabase/setup-cli v2.1.1 no SHA 3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf; CLI 2.106.0. Detalhes executáveis no workflow.
-- Apply manual seletivo exige main, expected_main_sha exato, inventário validado, staging sem E10.10 e dry-run exclusivo das migrations autorizadas. Escopos disponíveis no workflow: e25_1_only, e10_11_only, e22_7_only, e23_5_only, e10_12_only, e25_3_only, e21_2_service_tier_only, e21_2_terra_fast_only, d14d_titles_only, d14d_business_free_text_only, d14d_niche_only, d15e_niche_only e d15e_memory_only. E21.2 exige exclusivamente 20261023124919_e21_2_service_tier.sql pendente; merge técnico → apply seletivo → prova real autorizados em 23/10/2026, sem ativação. Gate aberto somente para essa execução e fechado ao terminar.
-- Escopo `e21_2_terra_fast_only` preparado: inventário de 75 migrations, 73 em staging, duas E10.10 excluídas e dry-run exclusivo de `20261114180100_e21_2_terra_fast_service_tier.sql`. Terra/Fast fica fora do staging dos escopos anteriores. Apply exige merge autorizado e decisão humana operacional própria; nenhuma ativação de workload está autorizada por este escopo.
-- Escopo `d15e_niche_only`: exige main e SHA pós-merge exato; inventário vigente de 74 migrations, 71 em staging, duas E10.10 excluídas e dry-run exclusivo de `20261112162500_d15e_official_text_niche.sql`. Aplicada em 12/11/2026 pelo [run 43341337866](https://github.com/AlcinoAfonso/LP-Factory-10/actions/runs/43341337866), SHA `06de2a6d57cc393edbe4c325f23843b712e93b67`; gate restaurado a false. Indisponibilidade breve entre deploy e apply aceita, sem flag de classificação ou alteração adicional de Pipeline/infraestrutura. Escopos anteriores preservados; apply integral não liberado.
-- Escopo `d15e_memory_only`: aplicado em 13/11/2026 pelo [run 43429444373](https://github.com/AlcinoAfonso/LP-Factory-10/actions/runs/43429444373), main no SHA `29b4916daa3774aa74116c82e62e0486ffb6133c`; inventário de 74 migrations, 72 em staging, duas E10.10 excluídas e dry-run exclusivo de `20261113111515_d15e_transversal_memory.sql`. Ledger e ACLs conferidos; gate restaurado a false. Preserva o workflow, secrets e escopos anteriores, sem liberar apply integral.
-- Estado aplicado: E25.1, E10.11, E22.7, E23.5, E10.12 e E25.3 concluídos sob autorizações próprias. Última conferência de ledger em 11/10/2026: 68 migrations versionadas, 66 aplicadas/staged e duas E10.10 excluídas; gate restaurado a false. Recibos nos PRs; contratos físicos em `docs/schema.md`.
+- Recuperação: usar Re-run all jobs no run original, preservando SHA e intervalo da entrega; a nova tentativa aceita somente suas pendências residuais, inclusive após falha parcial. Não há workflow_dispatch por nome/escopo. Divergência exige diagnóstico read-only antes de repetir; sem repair ou correção do ledger pelo workflow.
+- Conferência read-only em 15/11/2026: 73 arquivos ativos correspondem às 73 migrations aplicadas; as duas candidatas E10.10 nunca aplicadas foram removidas do diretório ativo, com proveniência no Git. Nenhuma migration aplicada foi alterada.
 - E10.12 aplicadas: 20261007153217_e10_12_account_context_attendance.sql, 20261009171607_e10_12_sales_attendance.sql, 20261009204000_e10_12_restrict_attendance_commit_acl.sql e 20261011121811_e10_12_summary_capacity.sql; E25.3: 20261010202505_e25_3_communication_resources.sql. Sem backfill histórico. Ativação por ambiente em 3.5.
-- Secrets SUPABASE_ACCESS_TOKEN e SUPABASE_DB_PASSWORD disponíveis somente no passo Apply migrations autorizado; projeto alvo por SUPABASE_PROJECT_REF no workflow, restrito ao projeto aprovado.
+- Secrets SUPABASE_ACCESS_TOKEN e SUPABASE_DB_PASSWORD disponíveis somente no passo Apply migrations; projeto alvo por SUPABASE_PROJECT_REF, restrito ao projeto aprovado. O token efêmero do GitHub consulta somente a associação do commit a PR mergeado, com contents/pull-requests read; concorrência e registro do resultado preservados.
 - Schema muda por migration versionada, sem SQL Editor no fluxo normal. Migration aplicada não pode ser editada, apagada, renomeada ou substituída; correção/reversão exige nova migration.
 - Reversão da capacidade do Resumo exige E10_12_ATTENDANCE_ENABLED suspenso, runtime compatível e nova migration baseada em `supabase/rollbacks/20261011121811_e10_12_summary_capacity.rollback.sql`. Bloqueada enquanto houver Resumo acima de 4.000 caracteres; sem truncar/excluir para forçar reversão.
 
