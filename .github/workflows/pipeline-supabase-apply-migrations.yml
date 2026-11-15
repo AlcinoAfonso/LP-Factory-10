@@ -83,11 +83,16 @@ jobs:
 
           failure_step="delivery diff and immutable history"
           changes="$(git diff --no-renames --name-status "$EVENT_BEFORE_SHA" "$GITHUB_SHA" -- "$SUPABASE_MIGRATIONS_DIR")"
+          previous_migrations="$(git ls-tree -r --name-only "$EVENT_BEFORE_SHA" -- "$SUPABASE_MIGRATIONS_DIR")"
           while IFS=$'\t' read -r change file; do
             [ -n "$change" ] || continue
             [[ "$file" =~ ^supabase/migrations/[0-9]{14}_[[:alnum:]_]+\.sql$ ]]
             case "$change" in
-              A) expected_migrations+="${file##*/}"$'\n' ;;
+              A)
+                name="${file##*/}"
+                [[ ! "$previous_migrations" =~ /${name%%_*}_ ]]
+                expected_migrations+="$name"$'\n'
+                ;;
               D) ;; # The CLI must confirm deleted candidates are absent from remote history.
               *) echo "Existing migration changed: $file" >&2; exit 1 ;;
             esac
@@ -117,6 +122,7 @@ jobs:
           pending_migrations() {
             local output names line
             output="$(supabase db push --linked --dry-run 2>&1)" || return 1
+            ! grep -q "Skipping migration" <<< "$output" || return 1
             if grep -Fxq "Remote database is up to date." <<< "$output"; then
               ! grep -Eq '•|Would push these migrations:' <<< "$output"
               return

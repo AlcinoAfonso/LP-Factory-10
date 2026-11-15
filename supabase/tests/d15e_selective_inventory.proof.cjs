@@ -32,6 +32,7 @@ try {
     '  "db push --linked --dry-run")',
     '    if [ "${MOCK_DRY_FAIL:-0}" = 1 ]; then exit 1; fi',
     '    if [ -f "$MOCK_PENDING.post-fail" ]; then exit 1; fi',
+    '    if [ "${MOCK_FORMAT:-normal}" = disabled ]; then echo "Skipping migrations because it is disabled in config.toml for project: fixture"; echo "Remote database is up to date."; exit 0; fi',
     '    if [ "${MOCK_FORMAT:-normal}" = unknown ]; then echo "unrecognized output"; exit 0; fi',
     '    if [ "${MOCK_FORMAT:-normal}" = malformed ]; then echo "Would push these migrations:"; echo " • bad.sql"; exit 0; fi',
     '    if [ ! -s "$MOCK_PENDING" ]; then echo "Remote database is up to date."; exit 0; fi',
@@ -46,7 +47,7 @@ try {
   ].join("\n"));
 
   let cases = 0;
-  function fixture({ count = 1, modify = false, remove = false, duplicate = false } = {}) {
+  function fixture({ count = 1, modify = false, remove = false, duplicate = false, replace = false } = {}) {
     const root = path.join(dir, String(cases++));
     fs.mkdirSync(path.join(root, "supabase", "migrations"), { recursive: true });
     const git = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
@@ -62,6 +63,10 @@ try {
     for (const name of added) write(path.join(root, "supabase/migrations", name), "-- validated delivery fixture\n");
     if (modify) write(historical, "-- changed applied migration\n");
     if (remove) fs.unlinkSync(historical);
+    if (replace) {
+      fs.unlinkSync(historical);
+      write(path.join(root, "supabase/migrations/20260101000000_replacement.sql"), "-- substituted applied migration\n");
+    }
     if (duplicate) write(path.join(root, "supabase/migrations/20261115000000_duplicate.sql"), "-- duplicate version\n");
     git("add", "-A");
     commit();
@@ -106,6 +111,8 @@ try {
   write(mixed.pending, mixed.added[0] + "\n20260101000000_history.sql\n");
   assert.ok(!hasApply(run(mixed, {}, false)));
   assert.ok(!hasApply(run(fixture(), { MOCK_DRY_FAIL: "1" }, false)));
+  assert.ok(!hasApply(run(fixture(), { MOCK_FORMAT: "disabled" }, false)));
+  assert.ok(!hasApply(run(fixture({ count: 0, replace: true }), {}, false)));
   assert.ok(!hasApply(run(fixture(), { MOCK_FORMAT: "unknown" }, false)));
   assert.ok(!hasApply(run(fixture(), { MOCK_FORMAT: "malformed" }, false)));
   assert.ok(!hasApply(run(fixture({ modify: true }), {}, false)));
