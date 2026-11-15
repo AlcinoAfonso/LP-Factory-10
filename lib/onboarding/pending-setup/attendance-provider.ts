@@ -63,7 +63,6 @@ export function parseAttendanceResponse(payload: unknown, context: AttendanceCon
   try { output = JSON.parse(chunks.join("") || String(data.output_text ?? "")); } catch { return invalid; }
   const validated = validateAttendanceOutput(output, context);
   if (validated && web.calls > 0) {
-    // Keep model citations as plain text; the footer is exclusive to Pending Setup.
     validated.reply = validated.reply.replace(/\[([^\]\r\n]+)\]\(https?:\/\/[^\s]*?\)/giu, "$1");
     if (context.purpose !== "account_niche") {
       const footer = "\n\nFontes externas — consulta em " + new Date().toISOString().slice(0,10) + " (UTC):\n" + web.sources.map(source => source.url).join("\n");
