@@ -17,10 +17,11 @@ export type SectionDetailControls = Readonly<{
 }>;
 type DetailRenderer = (definition: CommunicationSectionDefinition, controls: SectionDetailControls) => ReactNode;
 
-export function CommunicationSectionCollection({ definitions, base, suggestedKeys = [], renderDetail, showGuidance = false }: Readonly<{
+export function CommunicationSectionCollection({ definitions, base, suggestedKeys = [], pilotKeys = [], renderDetail, showGuidance = false }: Readonly<{
   definitions: readonly CommunicationSectionDefinition[];
   base: CommunicationBase;
   suggestedKeys?: readonly string[];
+  pilotKeys?: readonly string[];
   showGuidance?: boolean;
   renderDetail: DetailRenderer;
 }>) {
@@ -32,12 +33,12 @@ export function CommunicationSectionCollection({ definitions, base, suggestedKey
     </tr></thead>
     <tbody className="divide-y divide-border">{definitions.map((definition) => <SectionRow key={definition.key}
       definition={definition} hasContent={hasSectionContent(base.sections[definition.key]?.value) || Boolean(base.sections[definition.key]?.facts?.length)}
-      hasSuggestion={suggestedKeys.includes(definition.key)} renderDetail={renderDetail} showGuidance={showGuidance} />)}</tbody>
+      hasSuggestion={suggestedKeys.includes(definition.key)} hasPilot={pilotKeys.includes(definition.key)} renderDetail={renderDetail} showGuidance={showGuidance} />)}</tbody>
   </table>;
 }
 
-function SectionRow({ definition, hasContent, hasSuggestion, renderDetail, showGuidance }: Readonly<{
-  definition: CommunicationSectionDefinition; hasContent: boolean; hasSuggestion: boolean; renderDetail: DetailRenderer; showGuidance: boolean;
+function SectionRow({ definition, hasContent, hasSuggestion, hasPilot, renderDetail, showGuidance }: Readonly<{
+  definition: CommunicationSectionDefinition; hasContent: boolean; hasSuggestion: boolean; hasPilot: boolean; renderDetail: DetailRenderer; showGuidance: boolean;
 }>) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -102,7 +103,7 @@ function SectionRow({ definition, hasContent, hasSuggestion, renderDetail, showG
           window.history.pushState({ ...window.history.state }, "", window.location.href); historyEntryRef.current = true;
           dialogRef.current?.showModal(); dialogRef.current?.querySelector<HTMLElement>("button[data-section-close],input:not([type=hidden]),textarea")?.focus({ preventScroll: true });
         }}><span className="break-words font-medium text-brand-700 hover:underline dark:text-primary">{definition.label}</span>
-        <span className="text-xs leading-5 text-muted-foreground sm:hidden">{hasSuggestion ? "Sugestão disponível" : hasContent ? "Com conteúdo" : "Ainda não preenchida"}</span>
+        <span className="text-xs leading-5 text-muted-foreground sm:hidden">{hasSuggestion ? "Sugestão disponível" : hasContent ? "Com conteúdo" : "Ainda não preenchida"}{hasPilot ? <span className="block text-xs text-muted-foreground">Resultado do piloto disponível</span> : null}</span>
       </button>
       <dialog ref={dialogRef} aria-labelledby={titleId}
         className="m-auto h-[min(42rem,calc(100dvh-1rem))] max-h-[calc(100dvh-1rem)] w-[calc(100dvw-1rem)] max-w-3xl overflow-hidden rounded-xl border border-border bg-background p-0 text-left text-foreground shadow-xl backdrop:bg-black/40 open:flex open:flex-col"
@@ -150,7 +151,7 @@ function SectionRow({ definition, hasContent, hasSuggestion, renderDetail, showG
         </div>
       </dialog>
     </th>
-    <td className="hidden py-1 text-xs leading-5 text-muted-foreground sm:table-cell">{hasSuggestion ? "Sugestão disponível" : hasContent ? "Com conteúdo" : "Ainda não preenchida"}</td>
+    <td className="hidden py-1 text-xs leading-5 text-muted-foreground sm:table-cell">{hasSuggestion ? "Sugestão disponível" : hasContent ? "Com conteúdo" : "Ainda não preenchida"}{hasPilot ? <span className="block text-xs text-muted-foreground">Resultado do piloto disponível</span> : null}</td>
   </tr>;
 }
 

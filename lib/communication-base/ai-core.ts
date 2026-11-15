@@ -50,7 +50,7 @@ function targetKeys(target: StageTwoTarget): readonly CommunicationSectionKey[] 
   return [target.key];
 }
 
-function stageTwoSchema(keys: readonly CommunicationSectionKey[]) {
+export function stageTwoSchema(keys: readonly CommunicationSectionKey[]) {
   return {
     type: "object",
     additionalProperties: false,
@@ -132,7 +132,7 @@ export type StageTwoDraft = Readonly<{
   researched: boolean;
 }>;
 
-const CREDENTIAL_PATTERN = /(?:\b(?:SUPABASE_DB_URL_READONLY|[A-Z][A-Z0-9_]*_(?:SECRET(?:_KEY)?|PASSWORD|TOKEN|API_KEY|ADMIN_KEY|SERVICE_ROLE_KEY)|password|senha|api[_ -]?key|secret)\b\s*[:=]\s*\S{8,}|sk-(?:proj-)?[A-Za-z0-9_-]{16,}|sb_secret_[A-Za-z0-9_-]{12,}|Bearer\s+[A-Za-z0-9._~+/=-]{16,})/i;
+export const CREDENTIAL_PATTERN = /(?:\b(?:SUPABASE_DB_URL_READONLY|[A-Z][A-Z0-9_]*_(?:SECRET(?:_KEY)?|PASSWORD|TOKEN|API_KEY|ADMIN_KEY|SERVICE_ROLE_KEY)|password|senha|api[_ -]?key|secret)\b\s*[:=]\s*\S{8,}|sk-(?:proj-)?[A-Za-z0-9_-]{16,}|sb_secret_[A-Za-z0-9_-]{12,}|Bearer\s+[A-Za-z0-9._~+/=-]{16,})/i;
 
 
 export type OfficialNicheContext = Readonly<{ taxonId: string | null; name: string; confirmed: boolean; revision: string }>;

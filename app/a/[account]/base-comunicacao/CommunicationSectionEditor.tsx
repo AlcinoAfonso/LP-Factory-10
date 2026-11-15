@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { FormField, FormFieldLabel, FormFieldHint, FormFieldError } from "@/components/ui/form-field";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
+import { LoadingState } from "@/components/ui/loading-state";
+import type { AgentBasePilotSection } from "../../../../lib/communication-base/agent-base/pilot";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CommunicationSectionCollection, type SectionDetailControls } from "./_components/CommunicationSectionCollection";
 import { getSectionGuidance } from "../../../../lib/communication-base/section-guidance";
@@ -28,6 +30,7 @@ import {
   saveCommunicationSectionAction,
   startCommunicationBaseAction,
   generateCommunicationIntelligenceAction,
+  runAgentBasePilotAction,
   type CommunicationActionState,
 } from "./actions";
 
@@ -334,15 +337,26 @@ export function CommunicationStageOne({ account, base, canEdit, structured = fal
       current={base.sections[definition.key as CommunicationSectionKey]} canEdit={canEdit} structured={structured} nicheLabel={nicheLabel} />} />;
 }
 
-export function CommunicationStageTwo({ account, base, canEdit, canGenerate = false, nicheControl, structured = false, definitions = communicationSections }: Readonly<{
+export function CommunicationStageTwo({ account, base, canEdit, canGenerate = false, nicheControl, structured = false, definitions = communicationSections, pilotEnabled = false }: Readonly<{
   account: string;
   base: CommunicationBase;
   canEdit: boolean;
   canGenerate?: boolean;
   nicheControl?: ReactNode;
+  pilotEnabled?: boolean;
   structured?: boolean;
   definitions?: readonly CommunicationSectionDefinition[];
 }>) {
+  const [pilotPending, startPilotTransition] = useTransition();
+  const [pilot, setPilot] = useState<Readonly<{ version: number; sections: readonly AgentBasePilotSection[] }> | null>(null);
+  const [pilotMessage, setPilotMessage] = useState("");
+  const [pilotError, setPilotError] = useState(false);
+  useEffect(() => {
+    if (pilot && pilot.version !== base.version) {
+      setPilot(null); setPilotError(false);
+      setPilotMessage("A Base mudou. Os resultados do piloto foram descartados. Execute novamente com o contexto atual.");
+    }
+  }, [base.version, pilot]);
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState("");
   const [messageIsError, setMessageIsError] = useState(false);
@@ -367,6 +381,7 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
   };
   useLayoutEffect(() => { currentVersionRef.current = base.version; }, [base.version]);
   const stageTwo = definitions.filter((section) => section.stage === 2);
+  const pilotSections = pilot?.version === base.version ? pilot.sections : [];
   return (
     <section aria-label="Inteligência de comunicação" className="space-y-2">
       <div className="space-y-2">
@@ -428,15 +443,52 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
             className="mt-0.5 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-2 py-1 text-xs font-medium leading-4 text-foreground disabled:cursor-wait disabled:opacity-60 sm:ml-3 sm:mt-0">
             {pending ? "Preparando sugestões..." : hasStageTwoContent(base) ? "Atualizar inteligência com IA" : "Gerar inteligência com IA"}
           </button>
-          {generationInFlight && !pending ? <p role="status" className="mt-2 text-xs text-muted-foreground">
+          {generationInFlight && !pending && !pilotPending ? <p role="status" className="mt-2 text-xs text-muted-foreground">
             Aguarde a revisão em andamento antes de gerar sugestões para toda a Etapa 2.
           </p> : null}
           {message ? <p role={messageIsError ? "alert" : "status"} className="mt-2 text-sm">{message}</p> : null}
           <Sources sources={sources} />
         </div> : null}
       </div>
+      {pilotEnabled && canEdit && canGenerate ? <div className="space-y-2 rounded-lg border border-border bg-background px-3 py-2" aria-busy={pilotPending}>
+        <p className="text-sm font-medium">Agente Base — piloto</p>
+        <p className="text-xs leading-5 text-muted-foreground">Executa as três primeiras seções. Os resultados são temporários e não serão salvos na Base.</p>
+        <Button type="button" variant="secondary" className="min-h-11" disabled={generationInFlight || saveInFlightCount > 0 || pilotPending}
+          onClick={() => {
+            if (!canStartGeneralGeneration(pendingSavesRef.current) || !tryStartStageTwoGeneration()) return;
+            const requestedVersion = base.version;
+            const requestSaveRevision = saveRevisionRef.current;
+            startPilotTransition(async () => {
+              setPilotMessage(""); setPilotError(false);
+              try {
+                const result = await runAgentBasePilotAction({ account, version: requestedVersion });
+                if (!canInstallGeneralSuggestion(requestedVersion, currentVersionRef.current, requestSaveRevision, saveRevisionRef.current)) {
+                  setPilot(null); setPilotError(true); setPilotMessage("A Base mudou durante o piloto. Os resultados foram descartados. Atualize a página."); return;
+                }
+                if (result.ok) {
+                  setPilot({ version: requestedVersion, sections: result.sections });
+                  setPilotMessage(["Resultados disponíveis nas três seções para avaliação. Nada foi salvo.", result.notice].filter(Boolean).join(" "));
+                } else {
+                  if (result.invalidated) setPilot(null);
+                  setPilotError(true); setPilotMessage(result.message);
+                }
+              } catch {
+                setPilotError(true); setPilotMessage("Não foi possível concluir o piloto. Seus conteúdos salvos continuam disponíveis.");
+              } finally { finishStageTwoGeneration(); }
+            });
+          }}>Executar piloto do Agente Base</Button>
+        {pilotPending ? <LoadingState label="O Agente Base está preparando as três seções..." /> : null}
+        {pilotMessage ? <FeedbackMessage tone={pilotError ? "error" : pilot ? "success" : "warning"}>{pilotMessage}</FeedbackMessage> : null}
+      </div> : null}
       <CommunicationSectionCollection definitions={stageTwo} base={base} showGuidance={structured} suggestedKeys={Object.keys(suggestions)}
-        renderDetail={(section, controls) => <CommunicationSectionEditor {...controls}
+        pilotKeys={pilotSections.map(section => section.key)}
+        renderDetail={(section, controls) => <>
+          {pilotSections.filter(result => result.key === section.key).map(result => <section key={result.key} aria-label="Resultado do piloto" className="mb-4 space-y-2 border-b border-border pb-3">
+            <h3 className="text-sm font-medium">Resultado do piloto</h3>
+            {structured ? <StructuredSectionContent value={result.value} /> : <p className="whitespace-pre-wrap break-words text-sm">{formatEditorValue(result.value, section.format)}</p>}
+            <Sources sources={result.sources} />
+          </section>)}
+          <CommunicationSectionEditor {...controls}
           account={account} version={base.version} definition={section} current={base.sections[section.key as CommunicationSectionKey]}
           canEdit={canEdit} canGenerate={canGenerate} structured={structured} suggestedSuggestion={suggestions[section.key]} generalRevision={generalRevision}
           stageTwoGenerationInFlight={generationInFlight}
@@ -450,7 +502,7 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
           onStageTwoSaveFinished={() => {
             pendingSavesRef.current = Math.max(0, pendingSavesRef.current - 1);
             setSaveInFlightCount(pendingSavesRef.current);
-          }} />} />
+          }} /></>} />
     </section>
   );
 }

@@ -112,7 +112,7 @@ export default async function CommunicationBasePage({ params }: PageProps) {
               base={base} canEdit={access.value.canEdit} structured={structured} nicheLabel={nicheLabel} definitions={definitions.ok ? definitions.value : []} />}
               stageTwo={<CommunicationStageTwo key={`${stageTwoInputStateKey(base)}:${taxonomy.ok ? taxonomy.niche?.taxonId ?? "" : "error"}:${taxonomy.ok ? taxonomy.niche?.revision ?? "" : ""}`} account={access.value.accountSubdomain}
                 base={base} canEdit={access.value.canEdit} canGenerate={canGenerate} nicheControl={nicheEditor ? <AccountNicheEditor account={access.value.accountSubdomain} state={nicheEditor} hasIntelligence={hasStageTwoContent(base)} /> : undefined}
-                structured={structured} definitions={definitions.ok ? definitions.value : []} />}
+                structured={structured} definitions={definitions.ok ? definitions.value : []} pilotEnabled={process.env.VERCEL_ENV === "preview" && structured} />}
               materials={structured ? <CommunicationMaterials account={access.value.accountSubdomain} base={base} canEdit={access.value.canEdit} definitions={definitions.ok ? definitions.value : []} /> : undefined} />
           </div>
         )}

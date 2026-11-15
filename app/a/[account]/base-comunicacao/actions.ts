@@ -1,6 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { generateAgentBasePilotSection } from "../../../../lib/communication-base/adapters/agentBasePilotAdapter";
+import { agentBasePilotOrder, agentBasePilotCatalogState, selectAgentBasePilotInput,
+  type AgentBasePilotKey, type AgentBasePilotSection } from "../../../../lib/communication-base/agent-base/pilot";
 
 import { requireCommunicationBaseAccess } from "../../../../lib/communication-base/access";
 import { generateCommunicationIntelligence } from "../../../../lib/communication-base/adapters/communicationAiAdapter";
@@ -177,4 +180,53 @@ function errorMessage(error: string): string {
   }
   if (error === "invalid") return "Revise o conteúdo e tente novamente.";
   return UNAVAILABLE;
+}
+
+export type AgentBasePilotActionResult =
+  | Readonly<{ ok: true; sections: readonly AgentBasePilotSection[]; notice: string }>
+  | Readonly<{ ok: false; message: string; invalidated?: boolean }>;
+
+export async function runAgentBasePilotAction(input: Readonly<{ account: string; version: number }>): Promise<AgentBasePilotActionResult> {
+  const fail = (message: string, invalidated = false) => ({ ok: false as const, message, invalidated });
+  if (process.env.VERCEL_ENV !== "preview" || !isCommunicationResourcesEnabled()) return fail("O piloto está disponível somente no Preview.");
+  if (!input || typeof input.account !== "string" || !Number.isSafeInteger(input.version) || input.version <= 0) return fail("Solicitação inválida. Atualize a página.");
+  const access = await requireCommunicationBaseAccess(input.account, true);
+  if (!access.ok) return fail("O piloto não está disponível para este acesso.");
+  const definitions = await readCommunicationDefinitions();
+  const order = definitions.ok ? agentBasePilotOrder(definitions.value) : null;
+  if (!definitions.ok || !order) return fail("Não foi possível conferir as seções do piloto. A edição manual continua disponível.");
+  const [base, taxonomy] = await Promise.all([
+    readCommunicationBase(access.value.accountId, definitions.value),
+    readOfficialNicheContext({ accountId: access.value.accountId }),
+  ]);
+  if (!base.ok || !base.value || base.value.version !== input.version) return fail("A Base mudou. Atualize a página antes de executar o piloto.", true);
+  if (!taxonomy.ok || !taxonomy.niche?.confirmed) return fail("Defina e confirme um nicho oficial antes de executar o piloto.", true);
+  const selected = selectAgentBasePilotInput(base.value, definitions.value);
+  if (!selected || !Object.keys(selected.confirmed).length) return fail([selected?.notice, "Não há dados confirmados compatíveis para o piloto."].filter(Boolean).join(" "));
+  const catalogState = agentBasePilotCatalogState(definitions.value);
+  const sections: AgentBasePilotSection[] = [];
+  // Reserva tempo para leituras/revalidação dentro dos 300 s documentados da plataforma.
+  const deadline = Date.now() + 270_000;
+  for (const definition of order) {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) return fail("O piloto excedeu o tempo disponível. Nenhum conteúdo foi salvo.");
+    const result = await generateAgentBasePilotSection({
+      base: base.value, niche: taxonomy.niche, definitions: definitions.value,
+      key: definition.key as AgentBasePilotKey, previous: sections, timeoutMs: Math.min(120_000, remaining),
+    });
+    if (!result.ok) return fail("Não foi possível concluir o piloto em " + definition.label + ". Seus conteúdos salvos continuam disponíveis.");
+    const [latestAccess, latestBase, latestNiche, latestDefinitions] = await Promise.all([
+      requireCommunicationBaseAccess(input.account, true), readCommunicationBase(access.value.accountId, definitions.value),
+      readOfficialNicheContext({ accountId: access.value.accountId }), readCommunicationDefinitions(),
+    ]);
+    if (!latestAccess.ok || latestAccess.value.accountId !== access.value.accountId || !latestBase.ok || !latestBase.value ||
+        !isCurrentGenerationVersion(input.version, latestBase.value.version) || !latestNiche.ok ||
+        !isCurrentGenerationNiche(taxonomy.niche, latestNiche.niche) || !latestDefinitions.ok ||
+        agentBasePilotCatalogState(latestDefinitions.value) !== catalogState) {
+      return fail("A Base, o nicho ou o acesso às seções mudou durante o piloto. Os resultados foram descartados. Atualize a página.", true);
+    }
+    sections.push(result.value);
+  }
+  if (!sections.some(section => section.researched)) return fail("O piloto não registrou pesquisa Web nesta sequência. Nenhum conteúdo foi salvo.");
+  return { ok: true, sections, notice: selected.notice };
 }
