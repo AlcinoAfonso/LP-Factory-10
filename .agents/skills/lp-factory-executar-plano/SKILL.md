@@ -100,7 +100,7 @@ Com impacto no banco:
 - inspecione estado por recurso read-only autorizado e confronte com `docs/schema.md`; inspeção não autoriza escrita, migration, secret ou operação administrativa;
 - crie mudança de schema somente por `supabase/migrations/<timestamp>_<nome>.sql`; antes de merge execute migration integral em PostgreSQL compatível com o alvo (transação efêmera com rollback ou ambiente isolado autorizado) e SQL positivo/negativo para sintaxe e comportamento; dry-run/estática não substituem PostgreSQL quando ele determina resultado; não persista efeito no projeto remoto alvo;
 - antes do merge, operações remotas permitidas, quando autorizadas: inspeção read-only, `supabase migration list --linked`, `supabase db push --linked --dry-run`; proíbem-se `apply_migration`, SQL mutável, `migration repair`, `supabase db push --linked` sem `--dry-run` e quaisquer mutações de schema/histórico fora do fluxo;
-- migration aplicada é imutável; corrija/reverta por nova migration incremental. Apply só após merge na `main`, via workflow seletivo autorizado;
+- migration aplicada é imutável; corrija por nova migration. Após merge autorizado, workflow aplica só pendências previstas; divergência bloqueia, sem escopo seletivo ou segunda aprovação;
 - se o plano exigir aplicação remota pré-merge ou ela tiver ocorrido fora do fluxo, pare somente o ponto em fail-closed, registre operação/estado e use autoridade competente; não infira rollback, repair ou mutação corretiva.
 
 Pendência externa: mantenha flag aplicável desligada; siga no independente, pare se inseguro e não libere merge sem prova obrigatória. Flag nova só por risco concreto: pré-comercial admite breve indisponibilidade autorizada; comercial protege continuidade.
