@@ -46,6 +46,9 @@ assert.equal(Object.hasOwn(excluded.confirmed, "offers"), false);
 assert.match(excluded.notice, /Ofertas/);
 assert.equal(selectAgentBasePilotInput({ ...base, sections: { business_name: { format: "text", value: "password=example-secret-value", origin: "user_confirmed" } } }, definitions), null);
 
+assert.equal(selectAgentBasePilotInput({ ...base, sections: { business_name: { format: "text", value: "Nome confirmado", origin: "user_confirmed", facts: [{ label: "senha", value: "secret-test-value" }] } } }, definitions), null, "separate fact labels and values must be checked before JSON serialization");
+assert.equal(selectAgentBasePilotInput({ ...base, sections: { [customKey]: { format: "text", value: "secret-test-value", origin: "user_confirmed" } } }, customDefinitions.map(section => section.key === customKey ? { ...section, label: "Senha" } : section)), null, "custom section labels cannot separate credentials from their values");
+
 const previous: Parameters<typeof buildAgentBasePilotPrompt>[0]["previous"][number][] = [];
 for (const [key, specialized, value] of [
   ["about", AGENT_BASE_ABOUT_PROMPT, "Texto técnico"],

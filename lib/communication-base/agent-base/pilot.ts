@@ -43,6 +43,9 @@ export function selectAgentBasePilotInput(base: CommunicationBase, definitions: 
     const facts = parseCommunicationFacts(stored.facts ?? []);
     if (value === null || facts === null) return null;
     if (typeof value === "string" && value.length > COMMUNICATION_ASSISTANCE_TEXT_MAX) { excluded.push(definition.label); continue; }
+    const factualText = [definition.label + ": " + (typeof value === "string" ? value : JSON.stringify(value)),
+      ...facts.map(fact => fact.label + ": " + fact.value)].join("\n");
+    if (CREDENTIAL_PATTERN.test(factualText)) return null;
     if ((typeof value === "string" ? value.trim() : value.length) || facts.length) {
       confirmed[definition.key] = { label: definition.label, value, facts, origin: stored.origin };
     }
