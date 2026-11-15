@@ -81,7 +81,7 @@ export async function runAgentBaseQaAction(
       // Preserva também fatos estruturados como dados, sem interpretar sua origem como instrução.
       confirmedBusinessData[key] = typeof entry === "string" ? entry : JSON.stringify(entry);
     }
-    if (confirmedBusinessData.business_name !== QA_PUBLIC_NAME) {
+    if (base.sections.business_name?.value !== QA_PUBLIC_NAME) {
       return fail("O nome público confirmado não corresponde à conta QA.");
     }
     const nicheRead = await readOfficialNicheContext({ accountId: QA_ACCOUNT_ID });
@@ -175,11 +175,11 @@ export async function runAgentBaseQaAction(
 
     const common = {
       status: "success" as const,
-      message: mode === "sections"
+      message: [mode === "sections"
         ? "Seções 3.2 e 3.3 produzidas para revisão humana. Nada foi gravado na Base."
         : mode === "insights_b"
           ? "Modelo B: seção 3.3 organizada em quatro listas para revisão humana. Nada foi gravado na Base."
-          : "Pesquisa real concluída com fontes verificáveis. Nada foi gravado na Base.",
+          : "Pesquisa real concluída com fontes verificáveis. Nada foi gravado na Base.", selection.notice].filter(Boolean).join(" "),
       sources: result.value.sources,
       model: result.model,
       effort: result.reasoningEffort,

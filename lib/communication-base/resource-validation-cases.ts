@@ -185,7 +185,7 @@ for (const key of ["business_context", "offers", "service", "proof", "materials"
   assert.equal(parseSectionValue(definition, content + "x"), null);
   assert.equal(parseSectionValue(definition, []), null, "no implicit legacy conversion");
 }
-for (const definition of [communicationSections[0], extra, ...communicationSections.filter(section => section.stage === 2 && section.format === "text")]) {
+for (const definition of [communicationSections[0], extra]) {
   assert.equal(parseSectionValue(definition, "x".repeat(4001)), null, "other text limits stay unchanged");
 }
 for (const key of ["offers", "proof", "materials"]) {
