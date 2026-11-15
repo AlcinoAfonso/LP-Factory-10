@@ -65,9 +65,11 @@ export function parseAttendanceResponse(payload: unknown, context: AttendanceCon
   if (validated && web.calls > 0) {
     // The plain-text UI links verified sources in the footer, not model Markdown.
     validated.reply = validated.reply.replace(/\[([^\]\r\n]+)\]\(https?:\/\/[^\s]*?\)/giu, "$1");
-    const footer = "\n\nFontes externas — consulta em " + new Date().toISOString().slice(0,10) + " (UTC):\n" + web.sources.map(source => source.url).join("\n");
-    if (validated.reply.length + footer.length > 4000) return invalid;
-    validated.reply += footer;
+    if (context.purpose !== "account_niche") {
+      const footer = "\n\nFontes externas — consulta em " + new Date().toISOString().slice(0,10) + " (UTC):\n" + web.sources.map(source => source.url).join("\n");
+      if (validated.reply.length + footer.length > 4000) return invalid;
+      validated.reply += footer;
+    }
   }
   if (!validated) {
     const parsed = parseAttendanceOutput(output, context);

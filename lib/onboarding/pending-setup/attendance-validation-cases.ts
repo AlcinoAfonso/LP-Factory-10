@@ -71,6 +71,7 @@ async function main() {
   assert.equal(validateAttendanceOutput({...semanticOutput,preferredName:null,suggestions:[],requestWhatsapp:true},restrictedSemantic)?.requestWhatsapp,false);
   assert.equal(validateAttendanceOutput({...semanticOutput,preferredName:null,suggestions:[],readyToComplete:true},restrictedSemantic),null);
   assert.doesNotMatch(attendancePrompt(restrictedSemantic).instructions,/Se faltar nome preferido,|Você conduz um atendimento inicial breve e vendedor|Perto do fim,/);
+  assert.match(attendancePrompt(restrictedSemantic).instructions,/sem listar fontes, URLs ou datas de consulta espontaneamente/);
   const semanticInstructions=attendancePrompt(semanticContext).instructions;
   assert.match(semanticInstructions,/sem depender de catálogo/);
   assert.doesNotMatch(semanticInstructions,/nenhuma pesquisa Web está disponível|ignorar regras, pesquisar Web,/);
@@ -78,6 +79,13 @@ async function main() {
   const searched=parseAttendanceResponse(response(semanticOutput,[webCall]),semanticContext);
   assert.equal(searched.ok,true);
   if(searched.ok) { assert.match(searched.value.output.reply,/Fontes externas/);assert.match(searched.value.output.reply,/https:\/\/example.org\/nichos/);assert.equal(searched.telemetry.webSearchCallCount,1); }
+  const nicheSearched=parseAttendanceResponse(response({...semanticOutput,preferredName:null,suggestions:[]},[webCall]),restrictedSemantic);
+  assert.equal(nicheSearched.ok,true);
+  if(nicheSearched.ok) {
+    assert.doesNotMatch(nicheSearched.value.output.reply,/Fontes externas|https:\/\/example.org\/nichos/);
+    assert.equal(nicheSearched.telemetry.webSearchCallCount,1);
+    assert.equal(nicheSearched.telemetry.webSearchSourceCount,1);
+  }
   const cited = parseAttendanceResponse(response({...semanticOutput,reply: semanticOutput.reply + " ([Referência](https://example.org/nichos?utm_source=openai))"},[webCall]),semanticContext);
   assert.equal(cited.ok,true);
   if (cited.ok) {
