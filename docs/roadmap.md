@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 - Data: 15/11/2026
-- Versão: v1.5.260
+- Versão: v1.5.261
 
 0.2 Contrato do documento (consulta)
 - Estado vigente dos casos; sem narrativa operacional.
@@ -1440,7 +1440,7 @@
 - Conteúdo: E5/E10.5.6/contas/evidências preservados.
 
 17.1.6 Pipelines operacionais
-- Inspect/Docs Apply em Automations 3.1/3.2; Inspect SQL read-only com ingresso financeiro opcional E21 via HMAC. Apply integral suspenso; exceções/gates/decisão por apply em Platform Config 2.3.
+- Inspect/Docs Apply em Automations 3.1/3.2; Inspect SQL read-only com ingresso financeiro opcional E21 via HMAC. Apply pós-merge autorizado conforme Platform Config 2.3.
 - Migrations incrementais imutáveis, sem SQL Editor no fluxo normal (Base Técnica 3.4.4).
 
 17.1.7 Limites
@@ -2458,7 +2458,7 @@
     - `supa#39`
 - Referências:
   - Estado do banco: `docs/schema.md` — seção 6.2.
-  - Apply seletivo e plataforma: `docs/platform-config.md` — seções 2.3 e 4.1; `docs/automations.md` — seção 3.6.
+  - Apply e plataforma: `docs/platform-config.md` — seções 2.3 e 4.1; `docs/automations.md` — seção 3.6.
   - Update retirado do catálogo ativo: `docs/supa-up.md` — `supa#39`.
 
 23.5.3 Retirar e validar a capacidade GraphQL não utilizada
@@ -2695,7 +2695,7 @@
     - `app/a/[account]/page.tsx`
     - `lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter.ts`
 - Referências:
-  - Exceção de sequência, apply seletivo e ativação por ambiente: `docs/platform-config.md` — seções 2.3 e 3.5.
+  - Exceção de sequência, apply e ativação por ambiente: `docs/platform-config.md` — seções 2.3 e 3.5.
   - Catálogo, segurança, RPC e Storage aplicados: `docs/schema.md` — seção 1.39.
 
 25.3.3 Dados do negócio e Inteligência e copy
@@ -2712,7 +2712,7 @@
 25.3.5 Gestão administrativa de seções
 - Status: operacional Preview/Production.
 - Conteúdo: Admin central adiciona/renomeia/reordena nas três categorias; sem autoridade, recusa. Identidade/categoria/formato/salvos preservados; novas vazias/opcionais em Bases antigas/futuras, sem retroescrita/exclusão.
-- Inclusão global: prova isolada/rollback/projeção antiga/vazia aceita, sem inclusão autenticada persistente; SQL não substitui Auth/Storage/UI. Gate desligado mantém runtime anterior; progressão autorizada, apply integral continua suspenso.
+- Inclusão global: prova isolada/rollback/projeção antiga/vazia aceita, sem inclusão autenticada persistente; SQL não substitui Auth/Storage/UI. Gate desligado mantém runtime anterior; progressão autorizada.
 
 25.3.6 Nicho e continuidade da Base
 - Status: experiência de nicho operacional; extensão de memória em implementação por 10.12.7, com aplicação remota e validação hospedada pendentes.
