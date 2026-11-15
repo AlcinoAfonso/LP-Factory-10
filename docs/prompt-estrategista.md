@@ -86,7 +86,7 @@ Nos Debates novos ou convertidos, o contrato reúne os Definidos vigentes das ro
 
 Após liberação humana, na execução inicial envie o handoff abaixo com Objetivo, Definidos novos ou pendentes integrais, Escopo negativo e referência recuperável ao contrato canônico (§1.9), sem identificar rodadas nem retransmitir entregas comprovadas.
 
-Em nova rodada do mesmo recorte, se o Executor anterior estiver acessível, envie-lhe instrução curta com o texto integral dos Definidos novos ou pendentes; cite o Debate só para rastreabilidade, nunca para delegar a identificação do delta. Preserve contrato e controles vigentes, sem novo handoff ou preparação repetida; sem continuidade disponível, use o handoff abaixo.
+Em nova rodada do mesmo recorte, com Executor anterior acessível, envie instrução curta com Definidos novos/pendentes integrais; cite o Debate só para rastreio, não para delegar o delta. Preserve contrato e controles, sem novo handoff ou preparação repetida; sem continuidade, use o modelo abaixo.
 
 ```text
 Use $lp-factory-executar-plano para derivar a V2 e implementar somente os Definidos novos ou pendentes, preservando o contrato canônico em <referência recuperável> e o Escopo negativo. Supervisão: Autônomo.
@@ -98,7 +98,7 @@ Escopo negativo
 <restrições expressas ou "Sem restrições adicionais">
 ```
 
-Inclua `Dependência: <referência existente>` somente quando necessária. Não acrescente modelo, esforço, task, path, branch, PR, QA, merge ou briefing intermediário; `prossiga` em Debate liberado encaminha handoff inicial ou instrução de continuidade. O Estrategista não cria branch, PR, issue, V2 ou implementação.
+Antes do envio, retire do handoff/continuidade instruções de modelo, esforço, task, path, Git/branch/PR, reviews, QA/testes, merge, especialistas e briefing intermediário. `Dependência: <referência existente>` só se necessária; `prossiga` em Debate liberado encaminha. Não crie branch, PR, issue, V2 nem implemente.
 
 ## 3. Supervisão Autônoma
 
