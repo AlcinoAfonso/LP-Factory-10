@@ -240,6 +240,19 @@ async function main() {
     signature: createHmac("sha256", secret).update(`${timestamp}.${wrongModelBody}`).digest("hex"),
   }), { ok: false, code: "operation_context_invalid" });
 
+  const financialPayload = {
+    operationId: "10000000-0000-4000-8000-000000000004", result: "success", failureCategory: null,
+    providerResponseId: "resp_1", providerRequestId: "req_1", httpStatus: 200, usage: null,
+    requestedServiceTier: null, appliedServiceTier: "priority", appliedModel: "gpt-4.1-mini",
+    modality: "responses_text", cacheWriteTokens30m: null, cacheWriteTokens12h: null,
+    finishedAt: "2026-09-11T12:00:00.000Z",
+  };
+  for (const [patch, expected] of [[{}, true], [{ appliedServiceTier: "PRIVATE_PAYLOAD" }, false],
+    [{ requestedServiceTier: "default" }, false], [{ cacheWriteTokens12h: -1 }, false], [{ secret: "no" }, false]] as const) {
+    const body = JSON.stringify({ version: OPENAI_COST_INGESTION_PROTOCOL_VERSION, action: "finishOperation", payload: { ...financialPayload, ...patch } });
+    assert.equal(validate({ body, signature: createHmac("sha256", secret).update(`${timestamp}.${body}`).digest("hex") }).ok, expected);
+  }
+
   const sources = [
     "lib/openai-responses/openAiResponsesAdapter.ts",
     "lib/conversion-content/adapters/commercialActivationOpenAiAdapter.ts",

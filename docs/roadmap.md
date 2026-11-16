@@ -2027,6 +2027,7 @@
     - `lib/openai-costs/adapters/activeCostTrackingAdapter.ts`
     - `lib/openai-costs/adapters/activeCostTrackingAdapterCore.ts`
     - `lib/openai-costs/active-cost-validation-cases.ts`
+    - `lib/openai-costs/pricing-validation-cases.ts`
     - `lib/openai-costs/active-validation-cases.ts`
     - `app/api/internal/openai-costs/route.ts`
     - `automations/supabase-inspect/costRecorder.mjs`
@@ -2067,6 +2068,7 @@
 21.5.4 Cálculo e reconciliação de custos
 - Status: vigente.
 - Conteúdo: cálculo/paginação em Base Técnica 3.16. Global = oficial − ativo calculável − histórico, sem clamp; filtro só ativo, indisponível ≠ zero.
+- Correção focal D10 §3.11 (16/11/2026): em implementação; tarifas oficiais versionadas por data/modelo/modalidade/contexto/serviço aplicado, evidência de cache/retenção e Web Search, sem reprecificação ou backfill. Cobertura financeira informativa antes da ativação E21.2, sem novo bloqueio ou mudança em Production nesta rodada. PBs 1 a 4 preservados.
 
 21.5.5 Visão administrativa de custos
 - Status: operacional.

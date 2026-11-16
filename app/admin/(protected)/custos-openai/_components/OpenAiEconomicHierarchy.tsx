@@ -203,11 +203,17 @@ function OperationDetails({ operation }: Readonly<{ operation: OpenAiActiveCostO
       <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
         <Detail label="Modelo" value={operation.model} code />
         <Detail label="Effort" value={operation.reasoningEffort} code />
+        <Detail label="Modelo aplicado" value={operation.appliedModel ?? "Não registrado"} code />
+        <Detail label="Serviço solicitado" value={serviceTierLabel(operation.requestedServiceTier)} />
+        <Detail label="Serviço aplicado" value={serviceTierLabel(operation.appliedServiceTier)} />
+        <Detail label="Modalidade / contexto" value={`${operation.modality === "responses_text" ? "Responses textual" : "Não registrada"} · ${operation.contextBand === "long" ? "Longo (>272 mil)" : operation.contextBand === "short" ? "Curto (até 272 mil)" : "Não registrado"}`} />
         <Detail label="Retry" value={operation.retryOfOperationId ? `Sim · ${operation.retryOfOperationId}` : "Não"} code={Boolean(operation.retryOfOperationId)} />
         <Detail label="Resultado" value={operation.result ? resultLabel(operation.result) : "Pendente"} />
         <Detail label="Input tokens" value={numberOrUnavailable(operation.inputTokens)} />
         <Detail label="Cached input" value={numberOrUnavailable(operation.cachedInputTokens)} />
         <Detail label="Cache write" value={numberOrUnavailable(operation.cacheWriteTokens)} />
+        <Detail label="Gravação em cache · 30 min" value={numberOrUnavailable(operation.cacheWriteTokens30m ?? null)} />
+        <Detail label="Gravação em cache · 12 h" value={numberOrUnavailable(operation.cacheWriteTokens12h ?? null)} />
         <Detail label="Output tokens" value={numberOrUnavailable(operation.outputTokens)} />
         <Detail label="Reasoning tokens" value={numberOrUnavailable(operation.reasoningTokens)} />
         <Detail label="Total tokens" value={numberOrUnavailable(operation.totalTokens)} />
@@ -296,6 +302,11 @@ function universeLabel(universe: OpenAiActiveCostExecution["universe"]) {
 
 function numberOrUnavailable(value: number | null) {
   return value === null ? "Indisponível" : new Intl.NumberFormat("pt-BR").format(value);
+}
+
+function serviceTierLabel(value: string | null | undefined) {
+  return value === "default" ? "Standard" : value === "fast" ? "Fast" : value === "priority" ? "Fast (priority)" :
+    value === "ultrafast" ? "Ultrafast" : value ?? "Não registrado";
 }
 
 function formatTimestamp(value: string) {

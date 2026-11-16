@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { OpenAiCostExecutionDetails } from "./_components/OpenAiEconomicHierarchy";
 
 import { refreshOpenAiCostsActionCore } from "./action-core";
 import {
@@ -218,6 +221,13 @@ const activeModel = {
       webSearchPricePerCallUsd: null,
       pricingVersion: "2026-09-11-standard-v1",
       pricingEffectiveAt: "2026-09-11T00:00:00.000Z",
+      requestedServiceTier: "fast",
+      appliedServiceTier: "default",
+      appliedModel: "gpt-6.1-terra",
+      modality: "responses_text",
+      contextBand: "short",
+      cacheWriteTokens30m: 0,
+      cacheWriteTokens12h: 0,
       costStatus: "calculated" as const,
       costUnavailableReason: null,
       costUsd: "0.05",
@@ -263,6 +273,9 @@ assert.ok(composition);
 assert.equal(composition.globalReconciliationUsd, "0.7");
 assert.equal(composition.filteredActive?.totalCalculatedUsd, "0.05");
 assert.equal(composition.filteredActive?.unavailableOperationCount, 1);
+const executionMarkup = renderToStaticMarkup(<OpenAiCostExecutionDetails execution={activeModel.executions[0]} />);
+for (const text of ["Serviço solicitado", "Fast", "Serviço aplicado", "Standard", "gpt-6.1-terra", "Subtotal calculável",
+  "Custo indisponível", "pricing_not_found", "Gravação em cache · 12 h", "Ambiente"]) assert.ok(executionMarkup.includes(text), text);
 
 const lpFactoryBrowserForm = new FormData();
 lpFactoryBrowserForm.set("periodMode", "custom");

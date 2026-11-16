@@ -16,6 +16,8 @@ import {
 import {
   newOpenAiCostId,
   openAiCostRecorder,
+  openAiCostResponseEvidence,
+  openAiCostWebSearchCallCount,
   isOpenAiActiveCostTrackingEnabled,
   type OpenAiCostEconomicContext,
   type OpenAiCostExecutionOrigin,
@@ -163,6 +165,7 @@ export async function requestOpenAiResponses<T>(
       startedAt: financialStartedAt,
     });
   }
+  let financialResponse: unknown = null;
   const finishFinancial = async (input: Readonly<{
     result: "success" | "failure";
     failureCategory?: OpenAiWorkloadFailureCategory | null;
@@ -178,6 +181,8 @@ export async function requestOpenAiResponses<T>(
     const finishedAt = nowIso();
     await recorder.finishOperation({
       operationId,
+      ...openAiCostResponseEvidence(financialResponse),
+      requestedServiceTier: normalizeOpenAiAppliedServiceTier(eventContext.requestedServiceTier),
       result: input.result,
       failureCategory: input.failureCategory,
       httpStatus: input.httpStatus,
@@ -186,7 +191,7 @@ export async function requestOpenAiResponses<T>(
       providerErrorCode: input.providerErrorCode,
       providerErrorType: input.providerErrorType,
       usage: normalizeOpenAiResponseUsage(input.usage),
-      webSearchCallCount: input.webSearchCallCount,
+      webSearchCallCount: openAiCostWebSearchCallCount(financialResponse, webSearchRequested),
       webSearchRequested,
       finishedAt,
     });
@@ -244,6 +249,7 @@ export async function requestOpenAiResponses<T>(
     let payload: unknown;
     try {
       payload = await response.json();
+      financialResponse = payload;
     } catch {
       emitEvent(createOpenAiWorkloadFailureEvent({
         ...eventContext,
