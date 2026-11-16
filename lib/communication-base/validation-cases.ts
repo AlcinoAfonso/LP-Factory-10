@@ -587,13 +587,13 @@ async function runProviderFailureAccountingCase() {
       accountId: "00000000-0000-4000-8000-000000000001" },
     executionOrigin: "administrative_proof" as const,
   };
-  const usage = { input_tokens: 1000, output_tokens: 500, total_tokens: 1500 };
+  const usage = { input_tokens: 1000, input_tokens_details: { cached_tokens: 0, cache_write_tokens: 0 }, output_tokens: 500, total_tokens: 1500 };
   const withSearch = await requestOpenAiResponses(input, {
     costRecorder: recorder,
     emitEvent: (event) => { eventEnvironments.push(event.environment); },
     nowIso: () => "2026-09-27T23:00:00.000Z",
     fetchImpl: async () => new Response(JSON.stringify({
-      id: "resp_failed_after_search", usage,
+      id: "resp_failed_after_search", model: resolved.value.model, service_tier: "default", usage,
       output_text: JSON.stringify({ sections: { audience: { value: "Rascunho", basis: "confirmed_business_fact" } } }),
       output: [{ type: "web_search_call", status: "completed", action: {
         type: "search", sources: [{ title: "Fonte", url: "https://example.org/mercado" }],
@@ -608,6 +608,7 @@ async function runProviderFailureAccountingCase() {
   assert.equal(terminals[0]?.webSearchCallCount, 1, "a failed response must retain the observed Web Search call");
   assert.equal(terminals[0]?.webSearchRequested, true);
   assert.deepEqual(calculateOpenAiOperationCost({
+    ...terminals[0],
     model: resolved.value.model, startedAt: "2026-09-27T23:00:00.000Z",
     usage: terminals[0]?.usage, webSearchCallCount: terminals[0]?.webSearchCallCount,
     webSearchRequested: terminals[0]?.webSearchRequested,
@@ -618,12 +619,13 @@ async function runProviderFailureAccountingCase() {
     costRecorder: recorder,
     emitEvent: () => {},
     nowIso: () => "2026-09-27T23:00:00.000Z",
-    fetchImpl: async () => new Response(JSON.stringify({ id: "resp_failed_without_output", usage, output_text: "{}" }),
+    fetchImpl: async () => new Response(JSON.stringify({ id: "resp_failed_without_output", model: resolved.value.model, service_tier: "default", usage, output_text: "{}" }),
       { status: 200, headers: { "Content-Type": "application/json" } }),
   });
   assert.equal(withoutObservableOutput.ok, false);
   assert.equal(terminals[1]?.webSearchCallCount, null);
   assert.equal(calculateOpenAiOperationCost({
+    ...terminals[1],
     model: resolved.value.model, startedAt: "2026-09-27T23:00:00.000Z",
     usage: terminals[1]?.usage, webSearchCallCount: terminals[1]?.webSearchCallCount,
     webSearchRequested: terminals[1]?.webSearchRequested,

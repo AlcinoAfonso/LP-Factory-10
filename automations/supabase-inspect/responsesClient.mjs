@@ -36,6 +36,8 @@ export async function callResponsesApi({ apiKey, model, tools, input, costRecord
     responseId: payload?.id,
     providerRequestId: response.headers.get("x-request-id"),
     usage: payload?.usage,
+    appliedServiceTier: payload?.service_tier,
+    appliedModel: payload?.model,
   });
   if (failed) throw new Error("OpenAI response terminated without a complete result.");
   return payload;

@@ -5,7 +5,7 @@ import type {
   OpenAiCostOperationTerminal,
 } from "../active-contracts";
 import type { OpenAiCostFinancialTerminal } from "../pricing";
-import { unavailableOpenAiOperationCost } from "../pricing";
+import { calculateOpenAiOperationCost, unavailableOpenAiOperationCost } from "../pricing";
 
 export class OpenAiCostTrackingPersistenceError extends Error {
   constructor(readonly kind: "conflict" | "unavailable") {
@@ -106,6 +106,38 @@ export function operationFinishRpc(
     p_cost_unavailable_reason: financial.costUnavailableReason,
     p_cost_usd: financial.costUsd,
     p_finished_at: input.finishedAt,
+  };
+}
+
+export function operationFinancialTerminal(
+  row: Record<string, unknown>, input: OpenAiCostOperationTerminal,
+): OpenAiCostFinancialTerminal {
+  if (row.finished_at == null) {
+    return calculateOpenAiOperationCost({ ...input,
+      model: typeof row.model === "string" ? row.model : "",
+      startedAt: typeof row.started_at === "string" ? row.started_at : "",
+    });
+  }
+  // Replay must use the closed snapshot, even after a tariff update.
+  const snapshot = row.pricing_snapshot as Record<string, unknown> | null;
+  if (snapshot && Object.hasOwn(snapshot, "appliedServiceTier")) {
+    for (const key of ["requestedServiceTier", "appliedServiceTier", "appliedModel", "modality",
+      "cacheWriteTokens30m", "cacheWriteTokens12h"] as const) {
+      if ((snapshot[key] ?? null) !== (input[key] ?? null)) throw new OpenAiCostTrackingPersistenceError("conflict");
+    }
+  }
+  if (row.cost_status !== "calculated" && row.cost_status !== "unavailable") {
+    throw new OpenAiCostTrackingPersistenceError("unavailable");
+  }
+  return {
+    costStatus: row.cost_status,
+    costUnavailableReason: typeof row.cost_unavailable_reason === "string" ? row.cost_unavailable_reason : null,
+    costUsd: typeof row.cost_usd === "string" ? row.cost_usd : null,
+    pricingVersion: typeof row.pricing_version === "string" ? row.pricing_version : null,
+    pricingEffectiveAt: typeof row.pricing_effective_at === "string" ? row.pricing_effective_at : null,
+    pricingSnapshot: snapshot,
+    webSearchToolVersion: typeof row.web_search_tool_version === "string" ? row.web_search_tool_version : null,
+    webSearchPricePerCallUsd: typeof row.web_search_price_per_call_usd === "string" ? row.web_search_price_per_call_usd : null,
   };
 }
 

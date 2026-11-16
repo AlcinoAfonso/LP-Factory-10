@@ -2027,6 +2027,7 @@
     - `lib/openai-costs/adapters/activeCostTrackingAdapter.ts`
     - `lib/openai-costs/adapters/activeCostTrackingAdapterCore.ts`
     - `lib/openai-costs/active-cost-validation-cases.ts`
+    - `lib/openai-costs/pricing-validation-cases.ts`
     - `lib/openai-costs/active-validation-cases.ts`
     - `app/api/internal/openai-costs/route.ts`
     - `automations/supabase-inspect/costRecorder.mjs`

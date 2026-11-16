@@ -427,6 +427,7 @@ function parseOperation(row: Record<string, unknown>, sequence: number): OpenAiA
   const tokens = ["input_tokens", "cached_input_tokens", "cache_write_tokens", "output_tokens", "reasoning_tokens", "total_tokens"]
     .map((key) => nullableNonNegativeInteger(row[key]));
   const searchCount = nullableNonNegativeInteger(row.web_search_call_count);
+  const snapshot = record(row.pricing_snapshot);
   if (!operationId || retry === undefined || !model || !effort || !source || !revision || !startedAt ||
       finishedAt === undefined || result === undefined || failure === undefined || !costStatus ||
       cost === undefined || unavailableReason === undefined || pricingVersion === undefined ||
@@ -448,8 +449,19 @@ function parseOperation(row: Record<string, unknown>, sequence: number): OpenAiA
     webSearchToolVersion,
     webSearchPricePerCallUsd: searchPrice ?? null,
     pricingVersion: pricingVersion ?? null, pricingEffectiveAt: pricingEffectiveAt ?? null,
+    requestedServiceTier: financialTier(snapshot?.requestedServiceTier),
+    appliedServiceTier: financialTier(snapshot?.appliedServiceTier),
+    appliedModel: technicalText(snapshot?.appliedModel),
+    modality: snapshot?.modality === "responses_text" ? "responses_text" : null,
+    contextBand: snapshot?.contextBand === "long" || snapshot?.contextBand === "short" ? snapshot.contextBand : null,
+    cacheWriteTokens30m: nonNegativeInteger(snapshot?.cacheWriteTokens30m),
+    cacheWriteTokens12h: nonNegativeInteger(snapshot?.cacheWriteTokens12h),
     costStatus, costUnavailableReason: unavailableReason ?? null, costUsd: cost ?? null,
   });
+}
+
+function financialTier(value: unknown) {
+  return typeof value === "string" && ["default", "fast", "priority", "ultrafast", "auto", "flex", "scale"].includes(value) ? value : null;
 }
 
 function parseCoverage(value: unknown): readonly OpenAiActiveCostCoverage[] | null {

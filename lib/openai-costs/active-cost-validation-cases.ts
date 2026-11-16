@@ -8,9 +8,16 @@ import {
 import { buildOpenAiCostsFinancialComposition } from "./dashboard";
 import { buildOpenAiEconomicHierarchy } from "./economic-hierarchy";
 import {
-  calculateOpenAiOperationCost,
-  OPENAI_COST_PRICING_CATALOG,
+  calculateOpenAiOperationCost as calculateCost,
+  OPENAI_COST_PRICING_CATALOGS,
 } from "./pricing";
+import { validatePricingCorrection } from "./pricing-validation-cases";
+
+// Historical fixtures describe a proven Standard response and 30-minute writes.
+function calculateOpenAiOperationCost(input: Parameters<typeof calculateCost>[0], catalog?: Parameters<typeof calculateCost>[1]) {
+  return calculateCost({ ...input, appliedModel: input.model, appliedServiceTier: "default", modality: "responses_text",
+    cacheWriteTokens30m: input.usage?.cacheWriteTokens ?? 0, cacheWriteTokens12h: 0 }, catalog);
+}
 
 const period = {
   startTime: Date.parse("2026-09-11T00:00:00.000Z") / 1_000,
@@ -18,6 +25,7 @@ const period = {
 };
 
 async function main() {
+  await validatePricingCorrection();
   const oneSearch = calculateOpenAiOperationCost({
     model: "gpt-5.6-luna",
     startedAt: "2026-09-11T12:00:00.000Z",
@@ -92,14 +100,15 @@ async function main() {
     model: "gpt-5.6-luna", startedAt: afterPricingCut,
     usage: usage({ inputTokens: 10, outputTokens: 5, totalTokens: 15 }),
     webSearchCallCount: 1,
-  }, Object.freeze({ ...OPENAI_COST_PRICING_CATALOG, webSearch: null }));
+  }, Object.freeze({ ...OPENAI_COST_PRICING_CATALOGS[1], webSearch: null }));
   assert.deepEqual(searchWithoutPrice, {
     costStatus: "unavailable",
     costUnavailableReason: "web_search_pricing_missing",
     costUsd: null,
     pricingVersion: null,
     pricingEffectiveAt: null,
-    pricingSnapshot: null,
+    pricingSnapshot: { appliedModel: "gpt-5.6-luna", appliedServiceTier: "default", requestedServiceTier: null,
+      modality: "responses_text", cacheWriteTokens30m: 0, cacheWriteTokens12h: 0 },
     webSearchToolVersion: null,
     webSearchPricePerCallUsd: null,
   });
@@ -114,7 +123,7 @@ async function main() {
     assert.equal(result.costStatus, "unavailable");
     assert.equal(result.costUnavailableReason, reason);
     assert.equal(result.costUsd, null);
-    assert.equal(result.pricingSnapshot, null);
+    assert.equal(result.pricingSnapshot?.appliedServiceTier, "default");
   }
 
   const rows = [
@@ -123,6 +132,9 @@ async function main() {
       web_search_call_count: 1,
       web_search_tool_version: "web-search-2026-09-11-v1",
       web_search_price_per_call_usd: "0.01",
+      pricing_snapshot: { model: "gpt-5.6-luna", appliedModel: "gpt-6.1-terra", requestedServiceTier: "fast",
+        appliedServiceTier: "default", modality: "responses_text", contextBand: "long",
+        cacheWriteTokens30m: 3000, cacheWriteTokens12h: 4000, private_payload: "DO_NOT_EXPOSE" },
     }),
     activeRow({
       operation_sequence: 2,
@@ -188,6 +200,11 @@ async function main() {
   assert.equal(translated.value.unavailableOperationCount, 1);
   assert.equal(translated.value.unassignedExecutionCount, 1);
   assert.equal(translated.value.executions[0]?.operations[0]?.webSearchPricePerCallUsd, "0.01");
+  assert.equal(translated.value.executions[0]?.operations[0]?.requestedServiceTier, "fast");
+  assert.equal(translated.value.executions[0]?.operations[0]?.appliedServiceTier, "default");
+  assert.equal(translated.value.executions[0]?.operations[0]?.cacheWriteTokens12h, 4000);
+  assert.ok(!JSON.stringify(translated.value).includes("DO_NOT_EXPOSE"));
+  assert.equal(translated.value.executions[0]?.operations[1]?.appliedServiceTier, null, "old absent evidence stays absent");
   assert.equal(translated.value.executions[0]?.operations[1]?.retryOfOperationId, "40000000-0000-4000-8000-000000000001");
 
   const factualHistory = translateOpenAiActiveCostRows({
@@ -423,8 +440,8 @@ async function main() {
 function usage(overrides: Record<string, number | null>) {
   return {
     inputTokens: null,
-    cachedInputTokens: null,
-    cacheWriteTokens: null,
+    cachedInputTokens: 0,
+    cacheWriteTokens: 0,
     outputTokens: null,
     reasoningTokens: null,
     totalTokens: null,

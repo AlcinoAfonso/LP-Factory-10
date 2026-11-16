@@ -7,6 +7,46 @@ import {
   type OpenAiCostTrackingAdapter,
 } from "./active-contracts";
 import { isOpenAiActiveCostTrackingEnabled } from "./active-gate";
+import { normalizeOpenAiAppliedServiceTier, normalizeOpenAiResponseUsage } from "../openai-workloads";
+
+// Financial allowlist only: never forward a provider payload into the ledger.
+export function openAiCostResponseEvidence(payload: unknown) {
+  const row = record(payload);
+  const details = record(record(row?.usage)?.input_tokens_details);
+  const writes = record(details?.cache_write_tokens_details);
+  return {
+    appliedModel: typeof row?.model === "string" && /^[a-zA-Z0-9._-]{1,128}$/.test(row.model) ? row.model : null,
+    appliedServiceTier: normalizeOpenAiAppliedServiceTier(row?.service_tier),
+    modality: "responses_text",
+    usage: normalizeOpenAiResponseUsage(row?.usage),
+    cacheWriteTokens30m: metric(writes?.ttl_30m_tokens),
+    cacheWriteTokens12h: metric(writes?.ttl_12h_tokens),
+  } as const;
+}
+
+export function openAiCostWebSearchCallCount(payload: unknown, requested: boolean): number | null {
+  const row = record(payload);
+  const searchUsage = record(record(row?.tool_usage)?.web_search);
+  if (searchUsage && Object.hasOwn(searchUsage, "num_requests")) return metric(searchUsage.num_requests);
+  if (!Array.isArray(row?.output)) return requested ? null : 0;
+  let count = 0;
+  for (const item of row.output) {
+    const call = record(item);
+    if (call?.type !== "web_search_call") continue;
+    const action = record(call.action)?.type;
+    if (action === "search") count += 1;
+    else if (action !== "open_page" && action !== "find_in_page") return null;
+  }
+  return count;
+}
+
+function record(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
+}
+
+function metric(value: unknown): number | null {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : null;
+}
 
 type RecorderPhase = keyof OpenAiCostTrackingAdapter;
 type RecorderDependencies = Readonly<{
