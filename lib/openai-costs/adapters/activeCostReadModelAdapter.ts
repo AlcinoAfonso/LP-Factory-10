@@ -3,7 +3,7 @@ import "server-only";
 import { createServiceClient } from "../../supabase/service";
 import type { OpenAiActiveCostReadResult } from "../active-contracts";
 import type { OpenAiCostsPeriod } from "../contracts";
-import { readOpenAiActiveCostPages } from "./activeCostReadModelAdapterCore";
+import { OPENAI_ACTIVE_COST_COVERAGE_MAX_ROWS, readOpenAiActiveCostPages } from "./activeCostReadModelAdapterCore";
 import { isExpectedMissingRpcError } from "./activeCostTrackingAdapterCore";
 
 export async function readOpenAiActiveCosts(
@@ -53,7 +53,7 @@ export async function readOpenAiActiveCosts(
         .select("environment,workload,activated_at,contract_version")
         .order("environment", { ascending: true })
         .order("workload", { ascending: true })
-        .limit(16),
+        .limit(OPENAI_ACTIVE_COST_COVERAGE_MAX_ROWS + 1),
     });
   } catch {
     return {

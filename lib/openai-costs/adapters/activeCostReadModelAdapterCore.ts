@@ -37,6 +37,7 @@ const openAiWorkloadIds = [
 ] as const;
 const openAiConfigurationSources = ["repo_catalog", "supabase_operational"] as const;
 
+export const OPENAI_ACTIVE_COST_COVERAGE_MAX_ROWS = openAiWorkloadIds.length * 3;
 export const OPENAI_ACTIVE_COST_PAGE_SIZE = 500;
 const MAX_PAGES = 10_000;
 
@@ -465,7 +466,7 @@ function financialTier(value: unknown) {
 }
 
 function parseCoverage(value: unknown): readonly OpenAiActiveCostCoverage[] | null {
-  if (!Array.isArray(value) || value.length > 15) return null;
+  if (!Array.isArray(value) || value.length > OPENAI_ACTIVE_COST_COVERAGE_MAX_ROWS) return null;
   const seen = new Set<string>();
   const output: OpenAiActiveCostCoverage[] = [];
   for (const raw of value) {

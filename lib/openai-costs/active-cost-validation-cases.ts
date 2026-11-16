@@ -190,6 +190,21 @@ async function main() {
     activated_at: "2026-09-11T00:00:00.000Z",
     contract_version: "e21.5.3-v1",
   }];
+  // The hosted ledger has 16 coverage rows; the former fixed cap of 15 hid every active cost.
+  const coverageMatrix = ["production", "preview", "development"].flatMap((environment) => [
+    "niche_resolution", "pending_setup_conversation", "commercial_activation_draft_generation",
+    "communication_base_stage1_assistance", "communication_base_stage2_intelligence", "supabase_inspect",
+    "landing_page_dynamic_market_research", "taxon_input_catalog_sufficiency_evaluation",
+  ].map((workload) => ({ ...coverageRows[0], environment, workload })));
+  for (const count of [16, 24]) {
+    const fullCoverage = translateOpenAiActiveCostRows({ period, rows, coverageRows: coverageMatrix.slice(0, count) });
+    assert.ok(fullCoverage.ok, `all ${count} valid coverage rows must remain readable`);
+    assert.equal(fullCoverage.value.coverage.length, count);
+  }
+  assert.equal(translateOpenAiActiveCostRows({ period, rows,
+    coverageRows: [...coverageMatrix, coverageMatrix[0]] }).ok, false, "overflow/duplicate coverage must fail closed");
+  assert.equal(translateOpenAiActiveCostRows({ period, rows,
+    coverageRows: [{ ...coverageRows[0], workload: "unregistered_workload" }] }).ok, false);
   const translated = translateOpenAiActiveCostRows({ period, rows, coverageRows });
   assert.equal(translated.ok, true);
   if (!translated.ok) throw new Error("active read model must be valid");
