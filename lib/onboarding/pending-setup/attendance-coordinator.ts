@@ -1,4 +1,7 @@
 import "server-only";
+import { clientOpenAiCostContext } from "../../openai-costs/active-contracts";
+import { officialNichePromptContext } from "../niche-resolution/official-niche-policy";
+import { readAccountOfficialNiche } from "../niche-resolution/adapters/accountOfficialNicheAdapter";
 import { attendanceContactProjection, attendanceProjection, attendanceProposal, attendanceSummary, readAttendanceBusinessNameCandidate, type AttendanceOutput } from "./attendance-core";
 import { ATTENDANCE_GREETING } from "./contracts";
 import { requestAttendance } from "./attendance-provider";
@@ -16,7 +19,7 @@ const attendanceDependencies = {
   primary: readAttendancePrimary, discard: discardAttendanceProposal,
   market: readAttendanceMarketContext, operational: getConfirmedOperationalNicheResolutionLabel,
 };
-export type AttendanceDependencies = typeof attendanceDependencies;
+export type AttendanceDependencies = typeof attendanceDependencies & { official?: typeof readAccountOfficialNiche };
 
 export async function conductAttendanceTurn(input: Readonly<{
   accountId: string; userId: string; conversationId: string; expectedVersion: number;
@@ -39,25 +42,32 @@ export async function conductAttendanceTurn(input: Readonly<{
     if (!reserved || reserved.version !== claimed.version) throw new Error("reserved_turn_read_failed");
     if (!reserved.accountContext) throw new Error("account_context_read_failed");
     if (intent === "initialize") {
-      const primary = await dependencies.primary(input.accountId);
-      if (primary === undefined) throw new Error("primary_read_failed");
+      if (reserved.messages.length) throw new Error("greeting_already_initialized");
+      const [primary, official] = await Promise.all([
+        dependencies.primary(input.accountId), (dependencies.official ?? readAccountOfficialNiche)(input.accountId),
+      ]);
+      if (primary === undefined || !official.ok) throw new Error("initial_authorities_unavailable");
       const output: AttendanceOutput = { reply: ATTENDANCE_GREETING, preferredName: reserved.preferredName,
         preferredNameDeclined: reserved.preferredNameDeclined ?? false,
         businessNameCandidate: readAttendanceBusinessNameCandidate(reserved.accountContext.summary),
         requestWhatsapp: false, whatsappReference: null, whatsappDeclined: false, businessUnderstanding: "",
         confirmedUnderstanding: null, suggestions: [], sufficientUnderstanding: false, readyToComplete: false,
-        closureReason: null, action: "ask", existingTaxonId: null };
+        closureReason: null, action: "ask", existingTaxonId: null, nicheDescription: null };
       const written = await dependencies.commit({ ...fence, output, proposal: null, confirm: false,
-        observedPrimaryTaxonId: primary, summary: reserved.accountContext.summary ?? attendanceSummary(output, null, null) });
+        observedPrimaryTaxonId: primary, observedNicheRevision: official.niche?.textRevision ?? 0,
+        summary: reserved.accountContext.summary ?? attendanceSummary(output, official.niche?.confirmed ? official.niche.name : null, null) });
       if (!written.ok) await dependencies.release(fence);
       return written;
     }
     // Independent SELECTs; the reserved conversation and commit fence remain ordered.
-    const [catalog, currentPrimaryTaxonId, operational] = await Promise.all([
+    const official = await (dependencies.official ?? readAccountOfficialNiche)(input.accountId);
+    if (!official.ok) throw new Error("official_niche_read_failed");
+    const [catalogRead, currentPrimaryTaxonId, operational] = await Promise.all([
       dependencies.catalog(),
       dependencies.primary(input.accountId),
       dependencies.operational({ accountId: input.accountId, throwOnReadError: true }),
     ]);
+    const catalog = catalogRead ?? (reserved.attendanceProposal?.kind !== "existing" ? [] : null);
     if (!catalog) throw new Error("catalog_unavailable");
     if (currentPrimaryTaxonId === undefined) throw new Error("primary_read_failed");
     const confirmation = intent === "confirm";
@@ -65,13 +75,13 @@ export async function conductAttendanceTurn(input: Readonly<{
     const marketQuery = [latestAnswer, reserved.businessContextText].filter(Boolean).join("\n");
     const marketContext = await dependencies.market(marketQuery, catalog,
       currentPrimaryTaxonId ?? reserved.attendanceProposal?.taxonId ?? null);
-    if (marketContext === null) throw new Error("market_context_read_failed");
-    const context = { ...attendanceProjection(reserved, catalog), marketContext,
-      clarificationRequested: intent === "clarify" && Boolean(conversation.attendanceProposal),
+    const context = { ...attendanceProjection(reserved, catalog), marketContext: marketContext ?? [], officialNiche: officialNichePromptContext(official.niche),
+      clarificationRequested: intent === "clarify" && Boolean(reserved.attendanceProposal),
       confirmedOperationalUnderstanding: Boolean(operational),
       confirmedProposal: confirmation ? reserved.attendanceProposal ?? null : null, currentPrimaryTaxonId };
     if (confirmation && (!context.confirmedProposal || !reserved.businessContextText?.trim())) throw new Error("confirmation_proposal_missing");
-    const answer = await dependencies.request({ accountId: input.accountId, context });
+    const answer = await dependencies.request({ accountId: input.accountId, context,
+      financialContext: clientOpenAiCostContext(input.accountId, { kind: "niche_resolution", eventId: reserved.id }) });
     if (!answer.ok || (confirmation && answer.output.action !== "confirm")) throw new Error("provider_unavailable");
     const output = confirmation || answer.output.businessUnderstanding === context.displayedUnderstanding
       ? { ...answer.output, businessUnderstanding: reserved.businessContextText! }
@@ -83,8 +93,9 @@ export async function conductAttendanceTurn(input: Readonly<{
     if (!reply) throw new Error("empty_attendance_reply");
     const written = await dependencies.commit({
       ...fence, output: { ...output, reply }, confirm: confirmation, observedPrimaryTaxonId: currentPrimaryTaxonId,
-      proposal: confirmation ? null : attendanceProposal(output, catalog),
-      summary: attendanceSummary(output, catalog.find(taxon => taxon.id === currentPrimaryTaxonId)?.name ?? null,
+      observedNicheRevision: official.niche?.textRevision ?? 0,
+      proposal: confirmation ? null : attendanceProposal(output, catalog, official.niche?.textRevision ?? 0),
+      summary: attendanceSummary(output, official.niche?.confirmed ? official.niche.name : null,
         context.confirmedProposal, reserved.accountContext.summary, attendanceContactProjection(reserved.messages).contacts),
     });
     if (!written.ok) {

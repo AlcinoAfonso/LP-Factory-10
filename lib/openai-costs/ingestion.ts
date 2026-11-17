@@ -77,7 +77,14 @@ function validateEnvelope(value: unknown, expectedEnvironment: string, inventory
     }
   }
   if (action === "finishOperation") {
-    if (!exactKeys(payload, ["operationId", "result", "failureCategory", "providerResponseId", "providerRequestId", "httpStatus", "usage", "finishedAt"]) ||
+    const financialKeys = ["requestedServiceTier", "appliedServiceTier", "appliedModel", "modality", "cacheWriteTokens30m", "cacheWriteTokens12h"];
+    const legacyKeys = ["operationId", "result", "failureCategory", "providerResponseId", "providerRequestId", "httpStatus", "usage", "finishedAt"];
+    const financial = financialKeys.some((key) => Object.hasOwn(payload, key));
+    if (!exactKeys(payload, financial ? [...legacyKeys, ...financialKeys] : legacyKeys) ||
+        (financial && (payload.requestedServiceTier !== null || payload.modality !== "responses_text" ||
+          !nullableIdentifier(payload.appliedModel) ||
+          !(payload.appliedServiceTier === null || ["default", "fast", "priority", "ultrafast", "auto", "flex", "scale"].includes(String(payload.appliedServiceTier))) ||
+          ![payload.cacheWriteTokens30m, payload.cacheWriteTokens12h].every((value) => value === null || (Number.isSafeInteger(value) && Number(value) >= 0)))) ||
         !terminal(payload) || !iso(payload.finishedAt) || !usage(payload.usage) ||
         !nullableIdentifier(payload.providerResponseId) || !nullableIdentifier(payload.providerRequestId) ||
         !(payload.httpStatus === null || (Number.isInteger(payload.httpStatus) && Number(payload.httpStatus) >= 100 && Number(payload.httpStatus) <= 599))) {

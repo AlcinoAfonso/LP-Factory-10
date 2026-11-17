@@ -1,0 +1,386 @@
+{
+  "version": "fb4c98304076c1450809d604063b24724256eca7",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "preference": [
+    {
+      "case": "initial auto-open",
+      "visible": true
+    },
+    {
+      "case": "Entendi closes without opt-out",
+      "visible": false
+    },
+    {
+      "case": "reload after Entendi reopens",
+      "visible": true
+    },
+    {
+      "case": "checked suppresses on reload",
+      "visible": false
+    },
+    {
+      "case": "manual reopening preserves checked preference",
+      "checked": true
+    },
+    {
+      "case": "Escape closes without persisting opt-out",
+      "visible": false
+    },
+    {
+      "case": "uncheck and navigate away/back reopens",
+      "visible": true
+    }
+  ],
+  "mobileGuidance": {
+    "book": [
+      44,
+      44,
+      28
+    ],
+    "bookColor": "rgb(23, 99, 214)",
+    "dialog": [
+      374.3999938964844,
+      672
+    ],
+    "fieldTop": 443.6000061035156,
+    "headerBottom": 167.60000610351562,
+    "helpBeforeField": true,
+    "helpColor": "rgb(117, 117, 117)",
+    "helpFont": "14px",
+    "helpTop": 179.60000610351562,
+    "overflowX": false,
+    "placeholderColor": "rgb(117, 117, 117)",
+    "placeholderFont": "14px"
+  },
+  "toggleCollapsed": "false",
+  "escapePreserves": {
+    "helpExpanded": "false",
+    "value": "Rascunho temporário de QA; não salvar."
+  },
+  "finalIntroOpens": true,
+  "helpIcon": {
+    "background": "rgb(234, 243, 255)",
+    "color": "rgb(23, 99, 214)",
+    "height": 44,
+    "padding": "0px",
+    "svgHeight": 24,
+    "svgWidth": 24,
+    "width": 44
+  },
+  "finalEscapeClosesHelp": "false",
+  "materials": {
+    "bookWidth": 28,
+    "guidanceTop": 239.6000061035156,
+    "headerBottom": 147.60000228881836,
+    "height": 672,
+    "overflowX": false,
+    "width": 374.3999938964844
+  },
+  "intelligence": {
+    "bookWidth": 28,
+    "firstFieldTop": 397.6000061035156,
+    "guidanceTop": 215.6000061035156,
+    "headerBottom": 147.60000228881836,
+    "height": 672,
+    "overflowX": false,
+    "width": 374.3999938964844
+  },
+  "scrolledBefore": {
+    "scrollTop": 192.8000030517578,
+    "viewport": [
+      320,
+      568
+    ]
+  },
+  "scrolledAfter": {
+    "dialogWidth": 304,
+    "headerBottom": 89.60000324249268,
+    "helpTop": 157.60000610351562,
+    "helpVisible": true,
+    "overflowX": false,
+    "scrollTop": 0
+  },
+  "longTitle320": {
+    "closeLeft": 214.3125,
+    "height": 552,
+    "iconLeft": 162.3125,
+    "iconRight": 206.3125,
+    "overflowX": false,
+    "svgWidth": 28,
+    "titleRight": 158.31250286102295,
+    "width": 304
+  },
+  "desktop": {
+    "fieldTop": 331.6000061035156,
+    "height": 672,
+    "helpFont": "14px",
+    "helpTop": 187.6000061035156,
+    "overflowX": false,
+    "viewport": [
+      1440,
+      900
+    ],
+    "width": 768
+  },
+  "sections": [
+    {
+      "aiReview": false,
+      "book": 28,
+      "expanded": "true",
+      "height": 672,
+      "helpBeforeEditor": true,
+      "helpHidden": false,
+      "oldAssist": false,
+      "section": "Identificação do negócio",
+      "target": [
+        44,
+        44
+      ],
+      "width": 768
+    },
+    {
+      "aiReview": false,
+      "book": 28,
+      "expanded": "true",
+      "height": 672,
+      "helpBeforeEditor": true,
+      "helpHidden": false,
+      "oldAssist": false,
+      "section": "Atuação",
+      "target": [
+        44,
+        44
+      ],
+      "width": 768
+    },
+    {
+      "aiReview": false,
+      "book": 28,
+      "expanded": "true",
+      "height": 672,
+      "helpBeforeEditor": true,
+      "helpHidden": false,
+      "oldAssist": false,
+      "section": "Ofertas",
+      "target": [
+        44,
+        44
+      ],
+      "width": 768
+    },
+    {
+      "aiReview": false,
+      "book": 28,
+      "expanded": "true",
+      "height": 672,
+      "helpBeforeEditor": true,
+      "helpHidden": false,
+      "oldAssist": false,
+      "section": "Atendimento, horários, contatos e agendamento",
+      "target": [
+        44,
+        44
+      ],
+      "width": 768
+    },
+    {
+      "aiReview": false,
+      "book": 28,
+      "expanded": "true",
+      "height": 672,
+      "helpBeforeEditor": true,
+      "helpHidden": false,
+      "oldAssist": false,
+      "section": "Provas, credenciais e resultados",
+      "target": [
+        44,
+        44
+      ],
+      "width": 768
+    },
+    {
+      "aiReview": false,
+      "book": 28,
+      "expanded": "true",
+      "height": 672,
+      "helpBeforeEditor": true,
+      "helpHidden": false,
+      "oldAssist": false,
+      "section": "Referências institucionais",
+      "target": [
+        44,
+        44
+      ],
+      "width": 768
+    },
+    {
+      "aiReview": false,
+      "book": 28,
+      "expanded": "true",
+      "height": 672,
+      "helpBeforeEditor": true,
+      "helpHidden": false,
+      "oldAssist": false,
+      "section": "Preferências e limites",
+      "target": [
+        44,
+        44
+      ],
+      "width": 768
+    },
+    {
+      "aiReview": false,
+      "book": 28,
+      "expanded": "true",
+      "height": 672,
+      "helpBeforeEditor": null,
+      "helpHidden": false,
+      "oldAssist": false,
+      "section": "Identidade visual",
+      "target": [
+        44,
+        44
+      ],
+      "width": 768
+    },
+    {
+      "aiReview": false,
+      "book": 28,
+      "expanded": "true",
+      "height": 672,
+      "helpBeforeEditor": null,
+      "helpHidden": false,
+      "oldAssist": false,
+      "section": "Fotos, vídeos e áudios",
+      "target": [
+        44,
+        44
+      ],
+      "width": 768
+    },
+    {
+      "aiReview": false,
+      "book": 28,
+      "expanded": "true",
+      "height": 672,
+      "helpBeforeEditor": null,
+      "helpHidden": false,
+      "oldAssist": false,
+      "section": "Depoimentos e provas sociais",
+      "target": [
+        44,
+        44
+      ],
+      "width": 768
+    },
+    {
+      "aiReview": true,
+      "book": 28,
+      "expanded": "true",
+      "height": 672,
+      "helpBeforeEditor": true,
+      "helpHidden": false,
+      "oldAssist": false,
+      "section": "Quem somos",
+      "target": [
+        44,
+        44
+      ],
+      "width": 768
+    },
+    {
+      "aiReview": true,
+      "book": 28,
+      "expanded": "true",
+      "height": 672,
+      "helpBeforeEditor": true,
+      "helpHidden": false,
+      "oldAssist": false,
+      "section": "Público e contexto",
+      "target": [
+        44,
+        44
+      ],
+      "width": 768
+    },
+    {
+      "aiReview": true,
+      "book": 28,
+      "expanded": "true",
+      "height": 672,
+      "helpBeforeEditor": true,
+      "helpHidden": false,
+      "oldAssist": false,
+      "section": "Dores, desejos, crenças e objeções",
+      "target": [
+        44,
+        44
+      ],
+      "width": 768
+    },
+    {
+      "aiReview": true,
+      "book": 28,
+      "expanded": "true",
+      "height": 672,
+      "helpBeforeEditor": true,
+      "helpHidden": false,
+      "oldAssist": false,
+      "section": "Proposta de valor",
+      "target": [
+        44,
+        44
+      ],
+      "width": 768
+    },
+    {
+      "aiReview": true,
+      "book": 28,
+      "expanded": "true",
+      "height": 672,
+      "helpBeforeEditor": true,
+      "helpHidden": false,
+      "oldAssist": false,
+      "section": "Benefícios",
+      "target": [
+        44,
+        44
+      ],
+      "width": 768
+    },
+    {
+      "aiReview": true,
+      "book": 28,
+      "expanded": "true",
+      "height": 672,
+      "helpBeforeEditor": true,
+      "helpHidden": false,
+      "oldAssist": false,
+      "section": "Diferenciais",
+      "target": [
+        44,
+        44
+      ],
+      "width": 768
+    },
+    {
+      "aiReview": true,
+      "book": 28,
+      "expanded": "true",
+      "height": 672,
+      "helpBeforeEditor": true,
+      "helpHidden": false,
+      "oldAssist": false,
+      "section": "Perguntas frequentes",
+      "target": [
+        44,
+        44
+      ],
+      "width": 768
+    }
+  ],
+  "console": []
+}

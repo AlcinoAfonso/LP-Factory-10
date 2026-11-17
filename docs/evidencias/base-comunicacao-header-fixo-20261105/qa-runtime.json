@@ -1,0 +1,159 @@
+{
+  "source": "835746b3eb408c5be5ccdc7dae844f02ac7ad2b8",
+  "cases": [
+    {
+      "headerBottom": 56.79999923706055,
+      "headerTop": 0,
+      "label": "390x640-start",
+      "mainTitleTop": 120.8000030517578,
+      "overflowX": false,
+      "position": "sticky",
+      "scrollHeight": 722,
+      "scrollTop": 0,
+      "viewport": [
+        390,
+        640
+      ],
+      "zIndex": "40"
+    },
+    {
+      "headerBottom": 56.79999923706055,
+      "headerTop": 0,
+      "label": "390x640-scrolled",
+      "mainTitleTop": 38.400001525878906,
+      "overflowX": false,
+      "position": "sticky",
+      "scrollHeight": 722,
+      "scrollTop": 82.4000015258789,
+      "viewport": [
+        390,
+        640
+      ],
+      "zIndex": "40"
+    },
+    {
+      "headerBottom": 56.79999923706055,
+      "headerTop": 0,
+      "label": "320x480-scrolled",
+      "mainTitleTop": -185.6000061035156,
+      "overflowX": false,
+      "position": "sticky",
+      "scrollHeight": 786,
+      "scrollTop": 306.3999938964844,
+      "viewport": [
+        320,
+        480
+      ],
+      "zIndex": "40"
+    },
+    {
+      "headerBottom": 56.79999923706055,
+      "headerTop": 0,
+      "label": "1440x400-scrolled",
+      "mainTitleTop": -186.40000915527344,
+      "overflowX": false,
+      "position": "sticky",
+      "scrollHeight": 715,
+      "scrollTop": 315.20001220703125,
+      "viewport": [
+        1440,
+        400
+      ],
+      "zIndex": "40"
+    }
+  ],
+  "userMenu": {
+    "bottom": 258.1999969482422,
+    "left": 75.20000457763672,
+    "right": 363.2000045776367,
+    "top": 58,
+    "viewport": [
+      390,
+      640
+    ],
+    "visible": true
+  },
+  "members": {
+    "headerBottom": 56.79999923706055,
+    "headerTop": 0,
+    "label": "members-route",
+    "overflowX": false,
+    "position": "static",
+    "scrollHeight": 480,
+    "scrollTop": 0,
+    "viewport": [
+      320,
+      480
+    ],
+    "zIndex": "auto"
+  },
+  "returnFromMembers": {
+    "headerBottom": 56.79999923706055,
+    "headerTop": 0,
+    "label": "base-after-members",
+    "overflowX": false,
+    "position": "sticky",
+    "scrollHeight": 480,
+    "scrollTop": 0,
+    "viewport": [
+      320,
+      480
+    ],
+    "zIndex": "40"
+  },
+  "accountEntry": "Account entry redirects to Base by existing app/a/[account]/page.tsx; not recorded as a static-header test.",
+  "dialogLayer": {
+    "bottom": 390.8000059127808,
+    "open": true,
+    "top": 9.199999809265137,
+    "viewport": [
+      1440,
+      400
+    ]
+  },
+  "console": [],
+  "keyboard": [
+    {
+      "bottom": 319.20001220703125,
+      "focused": "Referências institucionaisCom conteúdo",
+      "headerBottom": 56.79999923706055,
+      "top": 275.20001220703125
+    },
+    {
+      "bottom": 266.40000915527344,
+      "focused": "Provas, credenciais e resultadosCom conteúdo",
+      "headerBottom": 56.79999923706055,
+      "top": 222.40000915527344
+    },
+    {
+      "bottom": 213.6000061035156,
+      "focused": "Atendimento, horários, contatos e agendamentoAinda não preenchida",
+      "headerBottom": 56.79999923706055,
+      "top": 169.60000610351562
+    },
+    {
+      "bottom": 168.8000030517578,
+      "focused": "OfertasCom conteúdo",
+      "headerBottom": 56.79999923706055,
+      "top": 124.8000030517578
+    },
+    {
+      "bottom": 168.8000030517578,
+      "focused": "AtuaçãoCom conteúdo",
+      "headerBottom": 56.79999923706055,
+      "top": 124.8000030517578
+    },
+    {
+      "bottom": 168.8000030517578,
+      "focused": "Identificação do negócioCom conteúdo",
+      "headerBottom": 56.79999923706055,
+      "top": 124.8000030517578
+    }
+  ],
+  "sectionDialog": {
+    "bottom": 392,
+    "open": true,
+    "top": 8
+  },
+  "sectionFocusReturned": true
+}

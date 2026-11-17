@@ -1,13 +1,17 @@
 import assert from "node:assert/strict";
 import type { CommunicationBase } from "./contracts";
-import { confirmedStageOneData, hasConfirmedStageOneInput, stageTwoPrompt } from "./ai-core";
-import { stageOneStateKey } from "./ui-state-keys";
+import { confirmedStageOneData, hasConfirmedStageOneInput, selectStageTwoInput, stageTwoPrompt as buildStageTwoPrompt } from "./ai-core";
+import { stageOneStateKey, stageTwoInputStateKey } from "./ui-state-keys";
 import { communicationSections, type CommunicationSectionDefinition } from "./registry";
 import { parseCommunicationFacts, parseSectionValue, parseStoredSections, projectCommunicationBase, withSection } from "./policy";
 import { formatManualEditorValue, parseManualEditorValue } from "./manual-editor-value";
 import { COMMUNICATION_MATERIAL_BUCKET, imageExtension, ownsMaterialPath, parseCommunicationMaterials, safeMaterialLink } from "./materials";
+import { isCurrentGenerationNiche } from "./generation-guard";
+import { hasHumanNicheConfirmation } from "../onboarding/niche-resolution/contracts";
 import { parseCommunicationCatalog } from "./catalog";
 import { sectionEditState } from "../../app/a/[account]/base-comunicacao/_components/section-edit-state";
+const officialNiche = { taxonId: "10000000-0000-4000-8000-000000000002", name: "Jardinagem", confirmed: true, revision: "1" };
+const stageTwoPrompt = (...args: Parameters<typeof buildStageTwoPrompt>) => buildStageTwoPrompt(args[0], args[1], args[2], args[3] ?? officialNiche);
 const faq=communicationSections.find(s=>s.key==="faq")!;
 const items=communicationSections.find(s=>s.key==="market_insights")!;
 for(const [definition,value] of [[faq,[{question:"Qual | opção?\nCom detalhes",answer:"Primeiro parágrafo.\n\nSegundo | parágrafo."}]],[items,["Dores\n\nUm parágrafo.","Desejos\nOutro texto."]]] as const) {
@@ -92,7 +96,7 @@ assert.deepEqual(confirmedStageOneData(aiBase,general),{business_name:{value:"No
 const aiChanged: CommunicationBase={...aiBase,sections:{business_name:{...aiBase.sections.business_name!,facts:[{label:"Razão social",value:"Outra empresa"}]}}};
 assert.notEqual(stageOneStateKey(aiBase),stageOneStateKey(aiChanged));
 assert.deepEqual(confirmedStageOneData(aiBase,{kind:"section",key:"audience"}),{});
-assert.equal(stageOneStateKey({...aiLegacy,sections:{...aiLegacy.sections,materials:{format:"items",value:[],origin:"user_confirmed",facts:raw.business_name.facts}}}),stageOneStateKey(aiLegacy));
+assert.equal(stageOneStateKey({...aiLegacy,sections:{...aiLegacy.sections,materials:{format:"text",value:"",origin:"user_confirmed",facts:raw.business_name.facts}}}),stageOneStateKey(aiLegacy));
 assert.equal(stageOneStateKey({...aiLegacy,sections:{...aiLegacy.sections,custom_fixed:{format:"text",value:"Manual",origin:"user_confirmed",facts:raw.business_name.facts}}}),stageOneStateKey(aiLegacy));
 const unconfirmed: CommunicationBase={...onlyFacts,sections:{business_name:{...onlyFacts.sections.business_name!,origin:"user_reviewed"}}};
 assert.equal(hasConfirmedStageOneInput(unconfirmed,general),false);
@@ -127,3 +131,140 @@ assert.equal(hasConfirmedStageOneInput(onlyFactsOff,general),false);
 assert.equal(stageTwoPrompt(onlyFactsOff,general,false),null);
 assert.equal(hasConfirmedStageOneInput(onlyFactsOn,general),true);
 console.log("PB1: gate off/on DTO, legacy AI fingerprint, stored factual preservation and reactivation passed.");
+
+
+// D14D: predefined identification is only a view over the existing optional facts.
+import * as identification from "./business-identification";
+const legacyFacts = [{ label: "Razão social", value: "Empresa antiga" }, { label: "CEP", value: "01000-000" }, { label: "CEP", value: "Outro endereço" }];
+const legacySnapshot = JSON.stringify(legacyFacts);
+const initialName = identification.updateIdentificationFact(legacyFacts, "Nome completo ou razão social", "Nome completo");
+assert.deepEqual(initialName.slice(0, 3), legacyFacts);
+assert.equal(JSON.stringify(legacyFacts), legacySnapshot);
+const changedCep = identification.updateIdentificationFact(legacyFacts, "CEP", "02000-000");
+assert.deepEqual(changedCep[0], legacyFacts[0]);
+assert.deepEqual(changedCep[2], legacyFacts[2], "duplicate legacy facts remain editable as extra rows");
+assert.equal(changedCep[1].value, "02000-000");
+assert.deepEqual(identification.updateIdentificationFact(legacyFacts, "CEP", ""), [legacyFacts[0], legacyFacts[2]]);
+assert.deepEqual(identification.updateIdentificationFact([], "UF", ""), []);
+assert.deepEqual(parseCommunicationFacts(identification.updateIdentificationFact([], "UF", "SP")), [{label:"UF",value:"SP"}]);
+const fullFacts = Array.from({length:30}, (_,i) => ({label:"Extra "+i,value:"valor"}));
+assert.deepEqual(identification.updateIdentificationFact(fullFacts, "Cidade", "Nova"), fullFacts);
+assert.equal(sectionEditState(communicationSections[0], undefined, "", true, "[]").dirty, false);
+assert.equal(sectionEditState(communicationSections[0], undefined, "", true, "[]").valid, true);
+console.log("D14D: optional predefined fields, legacy duplicates, clearing and shared limits passed.");
+const customNumber = [{ label: "Número", value: "Registro próprio" }];
+assert.equal(identification.identificationFactIndex(customNumber, "Número", [0]), -1);
+assert.deepEqual(identification.updateIdentificationFact(customNumber, "Número", "42", [0]),
+  [...customNumber, { label: "Número", value: "42" }]);
+assert.deepEqual(identification.updateIdentificationFact(customNumber, "Número", "", [0]), customNumber);
+const fixedAndCustom = [{ label: "Número", value: "42" }, ...customNumber];
+assert.deepEqual(identification.updateIdentificationFact(fixedAndCustom, "Número", "43", [1]),
+  [{ label: "Número", value: "43" }, ...customNumber]);
+console.log("D14D: custom labels do not become predefined targets during editing.");
+
+// Free-text storage and AI input capacity are independent boundaries.
+for (const key of ["business_context", "offers", "service", "proof", "materials", "preferences"]) {
+  const definition = communicationSections.find(section => section.key === key)!;
+  assert.equal(definition.format, "text");
+  const pasted = "Texto colado.\n\n- Lista manual\n- Segunda linha\n\n";
+  const content = pasted + "x".repeat(30_000 - pasted.length);
+  assert.equal(parseSectionValue(definition, content.replace(/\n/g, "\r\n")),content,
+    "native form CRLF transport must preserve the textarea's 30,000-character limit");
+  assert.equal(parseSectionValue(definition, (content + "x").replace(/\n/g, "\r\n")),null);
+  const draft = formatManualEditorValue(content, definition.format);
+  const parsed = parseSectionValue(definition, parseManualEditorValue(definition.format, draft));
+  assert.notEqual(parsed, null);
+  const saved = withSection(raw, key, parsed!, "user_confirmed");
+  assert.ok(saved);
+  const reopened = projectCommunicationBase({account_id:account,version:2,sections_json:saved,created_at:"t",updated_at:"t"});
+  assert.ok(reopened);
+  assert.equal(reopened.sections[key]?.value, content, key + " preserves paragraphs and manual lists at 30,000");
+  assert.deepEqual(reopened.sections.business_name, raw.business_name);
+  assert.equal(sectionEditState(definition,reopened.sections[key],draft,true).dirty,false);
+  assert.equal(sectionEditState(definition,reopened.sections[key],draft,true).valid,true);
+  assert.equal(parseSectionValue(definition, content + "x"), null);
+  assert.equal(parseSectionValue(definition, []), null, "no implicit legacy conversion");
+}
+for (const definition of [communicationSections[0], extra]) {
+  assert.equal(parseSectionValue(definition, "x".repeat(4001)), null, "other text limits stay unchanged");
+}
+for (const key of ["offers", "proof", "materials"]) {
+  assert.equal(parseCommunicationCatalog(catalogRows.map(row => row.section_key === key ? {...row,format:"items"} : row)),null);
+}
+const oversizedBase: CommunicationBase = {...aiBase,sections:{...aiBase.sections,business_context:{format:"text",value:"x".repeat(30_000),origin:"user_confirmed"}}};
+const inputSnapshot = JSON.stringify(oversizedBase);
+for (const target of [general, {kind:"section",key:"about"} as const]) {
+  const prompt = stageTwoPrompt(oversizedBase,target,false);
+  assert.ok(prompt,"compatible confirmed facts must still permit generation");
+  assert.deepEqual(JSON.parse(prompt.input).confirmed_business_data,confirmedStageOneData(aiBase,target));
+  assert.match(selectStageTwoInput(oversizedBase,target)!.notice,/Atuação/);
+  assert.equal(prompt.input.includes("x".repeat(100)),false,"excluded content must not be truncated into the payload");
+}
+assert.equal(JSON.stringify(oversizedBase),inputSnapshot,"selection must not rewrite storage");
+const onlyLong: CommunicationBase = {...oversizedBase,sections:{business_context:oversizedBase.sections.business_context}};
+assert.equal(stageTwoPrompt(onlyLong,general,false),null,"generation still needs at least one compatible fact");
+assert.deepEqual(selectStageTwoInput(onlyLong,general)?.confirmed,{});
+assert.match(selectStageTwoInput(onlyLong,general)!.notice,/Atuação/);
+const offersLong: CommunicationBase = {...aiBase,sections:{...aiBase.sections,business_context:{format:"text",value:"Consultoria",origin:"user_confirmed"},offers:{format:"text",value:"o".repeat(15_000),origin:"user_confirmed"}}};
+assert.equal(JSON.parse(stageTwoPrompt(offersLong,general,false)!.input).confirmed_business_data.business_context,"Consultoria");
+assert.equal("offers" in JSON.parse(stageTwoPrompt(offersLong,general,false)!.input).confirmed_business_data,false);
+assert.match(selectStageTwoInput(offersLong,general)!.notice,/Ofertas/);
+const atCapacity: CommunicationBase = {...aiBase,sections:{...aiBase.sections,offers:{format:"text",value:"o".repeat(10_000),origin:"user_confirmed"}}};
+assert.equal(JSON.parse(stageTwoPrompt(atCapacity,general,false)!.input).confirmed_business_data.offers.length,10_000);
+assert.equal(selectStageTwoInput(atCapacity,general)!.notice,"");
+assert.equal(selectStageTwoInput({...offersLong,sections:{...offersLong.sections,offers:{...offersLong.sections.offers!,origin:"user_reviewed"}}},general)!.notice,"");
+assert.equal(selectStageTwoInput({...aiBase,sections:{service:{format:"text",value:"s".repeat(15_000),origin:"user_confirmed"},business_context:{format:"text",value:"Consultoria",origin:"user_confirmed"}}},{kind:"section",key:"about"})!.notice,"","irrelevant sections are neither sent nor reported as exclusions");
+assert.ok(stageTwoPrompt({...aiBase,sections:{...aiBase.sections,materials:{format:"text",value:"x".repeat(30_000),origin:"user_confirmed"}}},general,false),"unrelated references must stay out of the AI payload");
+console.log("D14D: six 30,000-character save/reopen round trips, scoped limits, catalog and AI capacity passed.");
+
+assert.equal(buildStageTwoPrompt(aiBase, general, false), null, "missing official niche must fail before egress");
+for (const sourceType of ["manual", "user_confirmed_ai"]) assert.equal(hasHumanNicheConfirmation({ taxonId: id, sourceType }), true);
+assert.equal(hasHumanNicheConfirmation({ taxonId: id, sourceType: "taxonomy_match" }), false);
+assert.equal(hasHumanNicheConfirmation({ taxonId: id, sourceType: "taxonomy_match", confirmedAt: "2026-11-06T00:00:00Z" }), true);
+const resolution = { status: "confirmed", taxonId: id, confirmedAt: "2026-11-06T00:00:00Z" };
+assert.equal(hasHumanNicheConfirmation({ taxonId: id, sourceType: "taxonomy_match", resolution }), true, "reuse existing E10.5 human confirmation of this exact taxon");
+assert.equal(hasHumanNicheConfirmation({ taxonId: account, sourceType: "taxonomy_match", resolution }), false);
+assert.equal(hasHumanNicheConfirmation({ taxonId: id, sourceType: "taxonomy_match", resolution: { ...resolution, status: "dismissed" } }), false);
+assert.equal(buildStageTwoPrompt(aiBase, general, false, { ...officialNiche, confirmed: false }), null);
+assert.equal(isCurrentGenerationNiche(officialNiche, officialNiche), true);
+assert.equal(isCurrentGenerationNiche(officialNiche, null), false);
+assert.equal(isCurrentGenerationNiche(officialNiche, { ...officialNiche, confirmed: false }), false);
+assert.equal(isCurrentGenerationNiche(officialNiche, { ...officialNiche, taxonId: account }), false);
+assert.equal(isCurrentGenerationNiche(officialNiche, { ...officialNiche, revision: "2" }), false, "changing away and back must invalidate an in-flight suggestion");
+const privatePath = account + "/" + id + "/" + asset + ".png";
+const materialBase: CommunicationBase = { ...aiBase, sections: { ...aiBase.sections,
+  visual_identity: { format: "material_items", origin: "user_reviewed", value: [{ ...row, kind: "image", source: { type: "private", bucket: COMMUNICATION_MATERIAL_BUCKET, path: privatePath, mime: "image/png" } }] },
+  testimonials: { format: "material_items", origin: "user_reviewed", value: [{ ...row, kind: "testimonial", source: { type: "text", text: "Atendimento excelente.\n\nRecomendo." } }] },
+} };
+const materialSnapshot = JSON.stringify(materialBase);
+const nichePrompt = buildStageTwoPrompt(materialBase, general, true, officialNiche)!;
+const nichePayload = JSON.parse(nichePrompt.input);
+assert.deepEqual(nichePayload.official_niche, { taxon_id: officialNiche.taxonId, name: officialNiche.name });
+assert.equal(nichePayload.communication_materials.length, 2);
+assert.equal(nichePayload.communication_materials[1].text, "Atendimento excelente.\n\nRecomendo.");
+assert.equal(nichePrompt.input.includes(privatePath), false, "never send private paths or bytes to the text provider");
+assert.equal(nichePrompt.input.includes(COMMUNICATION_MATERIAL_BUCKET), false);
+assert.match(nichePrompt.instructions, /não presuma ter analisado arquivos/);
+assert.match(nichePrompt.instructions, /pesquisa web efetivamente executada/);
+assert.equal(JSON.stringify(materialBase), materialSnapshot, "constructing context must not change any category");
+assert.equal(buildStageTwoPrompt(materialBase, general, false, { ...officialNiche, name: "OPENAI_API_KEY=placeholder-credential" }), null);
+console.log("D14D niche: confirmed official context, changed niche rejection, material text, private asset protection and preservation passed.");
+
+const materialInputKey = stageTwoInputStateKey(materialBase);
+const changedMaterial = (patch: Record<string, unknown>): CommunicationBase => ({ ...materialBase, sections: { ...materialBase.sections,
+  testimonials: { ...materialBase.sections.testimonials!, value: [{ ...row, kind: "testimonial", source: { type: "text", text: "Atendimento excelente.\n\nRecomendo." }, ...patch }] },
+} });
+for (const patch of [{ name: "Outro nome" }, { context: "Outro contexto" }, { author: "Outra pessoa" },
+  { authorization: "Outra autorização" }, { source: { type: "text", text: "Depoimento corrigido." } },
+  { kind: "image", source: { type: "link", url: "https://example.com/referencia" } }]) {
+  assert.equal(parseCommunicationMaterials(changedMaterial(patch).sections.testimonials!.value)?.length, 1);
+  assert.notEqual(stageTwoInputStateKey(changedMaterial(patch)), materialInputKey, "every material input used by the prompt invalidates suggestions");
+}
+assert.notEqual(stageTwoInputStateKey({ ...materialBase, sections: { ...materialBase.sections,
+  testimonials: { ...materialBase.sections.testimonials!, value: [] },
+} }), materialInputKey, "removing a testimonial invalidates suggestions");
+assert.equal(stageTwoInputStateKey({ ...materialBase, version: materialBase.version + 1,
+  sections: { ...materialBase.sections, audience: { format: "text", origin: "user_reviewed", value: "Copy revisada" } },
+}), materialInputKey, "saving category 3 must preserve unapplied suggestions");
+assert.equal(JSON.stringify(materialBase), materialSnapshot, "fingerprinting inputs must not mutate persisted materials");
+console.log("D14D review: material edits/removal invalidate suggestions while category 3 saves preserve them.");

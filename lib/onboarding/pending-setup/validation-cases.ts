@@ -199,7 +199,7 @@ assert.match(pendingSetupActions, /resolution\.reason === "ai_resolution_write_f
 assert.match(pendingSetupActions, /appendPendingSetupTurn\([\s\S]*assistantContent,/);
 assert.match(pendingSetupActions, /intent === "clarify" && !isTerminalFallback/);
 assert.match(pendingSetupActions, /shouldUseTerminalFallbackAfterRejection\) \{[\s\S]*PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE/);
-assert.match(pendingSetupActions, /eventId: crypto\.randomUUID\(\)/);
+assert.match(pendingSetupActions, /kind: "niche_resolution",\s+eventId: conversationId/);
 assert.doesNotMatch(pendingSetupActions, /countPendingSetupOpenAiExecutions/);
 assert.match(pendingSetupActions, /Tente confirmar novamente\./);
 assert.doesNotMatch(pendingSetupActions, /Não consegui registrar essa escolha agora\. Tente novamente ou explique de outra forma\./);

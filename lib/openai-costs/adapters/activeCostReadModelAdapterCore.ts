@@ -37,6 +37,7 @@ const openAiWorkloadIds = [
 ] as const;
 const openAiConfigurationSources = ["repo_catalog", "supabase_operational"] as const;
 
+export const OPENAI_ACTIVE_COST_COVERAGE_MAX_ROWS = openAiWorkloadIds.length * 3;
 export const OPENAI_ACTIVE_COST_PAGE_SIZE = 500;
 const MAX_PAGES = 10_000;
 
@@ -427,6 +428,7 @@ function parseOperation(row: Record<string, unknown>, sequence: number): OpenAiA
   const tokens = ["input_tokens", "cached_input_tokens", "cache_write_tokens", "output_tokens", "reasoning_tokens", "total_tokens"]
     .map((key) => nullableNonNegativeInteger(row[key]));
   const searchCount = nullableNonNegativeInteger(row.web_search_call_count);
+  const snapshot = record(row.pricing_snapshot);
   if (!operationId || retry === undefined || !model || !effort || !source || !revision || !startedAt ||
       finishedAt === undefined || result === undefined || failure === undefined || !costStatus ||
       cost === undefined || unavailableReason === undefined || pricingVersion === undefined ||
@@ -448,12 +450,23 @@ function parseOperation(row: Record<string, unknown>, sequence: number): OpenAiA
     webSearchToolVersion,
     webSearchPricePerCallUsd: searchPrice ?? null,
     pricingVersion: pricingVersion ?? null, pricingEffectiveAt: pricingEffectiveAt ?? null,
+    requestedServiceTier: financialTier(snapshot?.requestedServiceTier),
+    appliedServiceTier: financialTier(snapshot?.appliedServiceTier),
+    appliedModel: technicalText(snapshot?.appliedModel),
+    modality: snapshot?.modality === "responses_text" ? "responses_text" : null,
+    contextBand: snapshot?.contextBand === "long" || snapshot?.contextBand === "short" ? snapshot.contextBand : null,
+    cacheWriteTokens30m: nonNegativeInteger(snapshot?.cacheWriteTokens30m),
+    cacheWriteTokens12h: nonNegativeInteger(snapshot?.cacheWriteTokens12h),
     costStatus, costUnavailableReason: unavailableReason ?? null, costUsd: cost ?? null,
   });
 }
 
+function financialTier(value: unknown) {
+  return typeof value === "string" && ["default", "fast", "priority", "ultrafast", "auto", "flex", "scale"].includes(value) ? value : null;
+}
+
 function parseCoverage(value: unknown): readonly OpenAiActiveCostCoverage[] | null {
-  if (!Array.isArray(value) || value.length > 15) return null;
+  if (!Array.isArray(value) || value.length > OPENAI_ACTIVE_COST_COVERAGE_MAX_ROWS) return null;
   const seen = new Set<string>();
   const output: OpenAiActiveCostCoverage[] = [];
   for (const raw of value) {

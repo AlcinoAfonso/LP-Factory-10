@@ -1,18 +1,129 @@
 "use client";
-import { useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { Button } from "@/components/ui/button";
+import { useAccessContext } from "@/providers/AccessProvider";
+import Image from "next/image";
+import styles from "./CommunicationBase.module.css";
 export function CommunicationBaseTabs({stageOne,stageTwo,materials}:Readonly<{stageOne:ReactNode;stageTwo:ReactNode;materials?:ReactNode}>) {
   const [selected,setSelected]=useState(0);
   const tabs=useRef<(HTMLButtonElement|null)[]>([]);
   const labels=materials?["Dados do negócio","Materiais de comunicação","Inteligência e copy"]:["Verdade da empresa","Inteligência de comunicação"];
+  const shortLabels=materials?["Negócio","Materiais","Inteligência e copy"]:labels;
   const panels=materials?[stageOne,materials,stageTwo]:[stageOne,stageTwo];
-  return <div><div role="tablist" aria-label="Categorias da Base de Comunicação" className={materials?"grid grid-cols-3 border-b border-border":"grid grid-cols-2 border-b border-border"}>
+  return <div><div role="tablist" aria-label="Categorias da Base de Comunicação" className="flex flex-wrap border-b border-border">
     {labels.map((label,i)=><button key={label} ref={el=>{tabs.current[i]=el;}} type="button" role="tab" id={"communication-tab-"+i}
-      aria-controls={"communication-panel-"+i} aria-selected={selected===i} tabIndex={selected===i?0:-1}
+      aria-controls={"communication-panel-"+i} aria-label={label} aria-selected={selected===i} tabIndex={selected===i?0:-1}
       onClick={()=>setSelected(i)} onKeyDown={event=>{
         const next=event.key==="Home"?0:event.key==="End"?labels.length-1:event.key==="ArrowRight"?(i+1)%labels.length:event.key==="ArrowLeft"?(i+labels.length-1)%labels.length:null;
         if(next!==null){event.preventDefault();setSelected(next);tabs.current[next]?.focus();}
       }}
-      className={"min-h-11 min-w-0 border-b-2 px-2 py-2 text-center text-sm font-semibold leading-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-inset "+(selected===i?"border-brand-700 text-brand-700":"border-transparent text-muted-foreground hover:text-foreground")}>{label}</button>)}
+      className={"min-h-11 min-w-0 border-b-2 px-2 py-2 text-center text-sm font-medium leading-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset sm:px-4 "+(selected===i?"border-brand-700 text-brand-700 dark:border-primary dark:text-primary":"border-transparent text-muted-foreground hover:text-foreground")}><span className="sm:hidden">{shortLabels[i]}</span><span className="hidden sm:inline">{label}</span></button>)}
   </div>{panels.map((panel,i)=><div key={i} id={"communication-panel-"+i} role="tabpanel" aria-labelledby={"communication-tab-"+i}
-    tabIndex={0} hidden={selected!==i} className="pt-3">{panel}</div>)}</div>;
+    tabIndex={0} hidden={selected!==i} className="pt-3">{materials ? <p className="mb-2 text-sm font-medium sm:hidden">{labels[i]}</p> : null}{panel}</div>)}</div>;
+}
+
+export function CommunicationBaseIntroduction() {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const introductionTitle = useRef<HTMLHeadingElement>(null);
+  const introductionBody = useRef<HTMLDivElement>(null);
+  const introductionHeader = useRef<HTMLElement>(null);
+  const introductionFooter = useRef<HTMLElement>(null);
+  const [needsOuterScroll, setNeedsOuterScroll] = useState(false);
+  useEffect(() => {
+    const element = dialog.current;
+    const header = introductionHeader.current;
+    const footer = introductionFooter.current;
+    const body = introductionBody.current;
+    if (!element || !header || !footer || !body) return;
+    if (typeof ResizeObserver === "undefined") { setNeedsOuterScroll(true); return; }
+    const observer = new ResizeObserver(() => {
+      if (!element.open) return;
+      const minimumBodyHeight = Number.parseFloat(window.getComputedStyle(body).fontSize) * 4;
+      const fixedHeight = header.getBoundingClientRect().height + footer.getBoundingClientRect().height;
+      setNeedsOuterScroll(fixedHeight + minimumBodyHeight > element.clientHeight);
+    });
+    observer.observe(element); observer.observe(header); observer.observe(footer);
+    return () => observer.disconnect();
+  }, []);
+  const openIntroduction = useCallback(() => {
+    if (!dialog.current?.open) dialog.current?.showModal();
+    dialog.current?.scrollTo({ top: 0 });
+    introductionTitle.current?.focus({ preventScroll: true });
+    introductionBody.current?.scrollTo({ top: 0 });
+  }, []);
+  const { member } = useAccessContext();
+  const userId = member && "userId" in member && typeof member.userId === "string" ? member.userId : null;
+  const storageKey = userId ? `communication-base:introduction-optout:v1:${userId}` : null;
+  const [dontShowAgain, setDontShowAgain] = useState(false);
+  useEffect(() => {
+    let suppressed = false;
+    try { suppressed = storageKey !== null && window.localStorage.getItem(storageKey) === "true"; } catch { /* Keep guidance usable when browser storage is unavailable. */ }
+    setDontShowAgain(suppressed);
+    if (suppressed) dialog.current?.close();
+    else openIntroduction();
+  }, [storageKey, openIntroduction]);
+  function dismiss() {
+    dialog.current?.close();
+    trigger.current?.focus({ preventScroll: true });
+  }
+  function updatePreference(checked: boolean) {
+    setDontShowAgain(checked);
+    if (!storageKey) return;
+    try {
+      if (checked) window.localStorage.setItem(storageKey, "true");
+      else window.localStorage.removeItem(storageKey);
+    } catch { /* The presentation remains usable without browser storage. */ }
+  }
+  return <>
+    <Button ref={trigger} type="button" variant="secondary" aria-label="Como funciona" title="Como funciona" className="group h-11 w-11 shrink-0 !bg-transparent !p-0 !text-brand-700 dark:!text-primary" onClick={openIntroduction}>
+      <span aria-hidden="true" className="flex h-[1.875rem] w-[1.875rem] items-center justify-center rounded-lg border border-brand-700/20 bg-brand-50 group-hover:bg-brand-100 dark:border-primary/30 dark:bg-primary/10">
+      <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M9.4 9a2.7 2.7 0 0 1 5.2 1c0 1.8-2.6 2-2.6 3.5M12 17h.01" />
+      </svg>
+      </span>
+    </Button>
+    <dialog ref={dialog} data-scroll-mode={needsOuterScroll ? "outer" : "body"} aria-labelledby="communication-introduction-title" onCancel={(event) => { event.preventDefault(); dismiss(); }}
+      className={`${styles.introDialog} m-auto max-h-[calc(100dvh-1rem)] w-[calc(100%-2rem)] max-w-3xl [overflow-wrap:anywhere] rounded-xl border border-border bg-background p-0 text-foreground shadow-xl backdrop:bg-black/40 ${needsOuterScroll ? "overflow-y-auto" : "overflow-hidden open:flex open:flex-col"}`}>
+      <header ref={introductionHeader} className={`${styles.introHeader} shrink-0 px-4 pb-2 pt-3 sm:px-8 sm:pt-6`}>
+        <p className={`${styles.introBrand} mb-1 text-base font-bold text-brand-700 dark:text-primary`}>LP Factory</p>
+        <h2 ref={introductionTitle} tabIndex={-1} id="communication-introduction-title" className={`${styles.introTitle} text-xl font-semibold leading-tight focus:outline-none sm:text-2xl`}>Sua comunicação começa aqui</h2>
+      </header>
+      <div ref={introductionBody} role="region" aria-label="Sobre a Base de Comunicação" tabIndex={0} className={`${styles.introBody} px-4 pb-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-8 ${needsOuterScroll ? "" : "min-h-0 overflow-y-auto overscroll-contain"}`}>
+      <div className={`${styles.introCopyLayout} grid gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-x-6 sm:gap-y-4`}>
+        <p className={`${styles.introCopy} !text-[0.9375rem] leading-6 text-muted-foreground sm:col-start-2 sm:row-start-1`}>A Base de Comunicação reúne as informações, os materiais e os diferenciais do seu negócio para orientar uma comunicação mais clara e consistente.</p>
+        <div className="flex items-center justify-center sm:col-start-1 sm:row-start-1 sm:row-span-2 sm:border-r sm:border-border sm:pr-6 lg:hidden">
+          <svg viewBox="0 0 240 160" aria-hidden="true" className="h-20 w-36 max-w-full text-primary sm:h-36 sm:w-60" fill="none">
+            <circle cx="114" cy="83" r="64" fill="currentColor" opacity=".07" />
+            <g stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
+              <rect x="20" y="65" width="45" height="65" rx="4" transform="rotate(-14 20 65)" className="fill-background" />
+              <path d="m32 81 22-5m-19 16 22-5m-19 16 15-4" opacity=".35" />
+              <rect x="46" y="37" width="46" height="65" rx="4" transform="rotate(-8 46 37)" className="fill-background" />
+              <path d="m58 53 22-3m-20 14 22-3m-21 14 17-2m-16 13 22-3" opacity=".35" />
+              <rect x="142" y="55" width="80" height="75" rx="6" className="fill-background" />
+              <path d="M148 55h68a6 6 0 0 1 6 6v8h-80v-8a6 6 0 0 1 6-6Z" fill="currentColor" />
+              <path d="M154 107h54m-54 10h34m-2-37h23m-23 10h18" opacity=".3" strokeWidth="3" strokeLinecap="round" />
+              <path d="M152 79h26v20h-26Z" fill="currentColor" opacity=".1" stroke="none" />
+              <path d="m152 99 9-12 6 7 5-5 6 10" fill="currentColor" opacity=".35" stroke="none" />
+              <path d="M95 108c12-18 22-18 39-18m-9-8 9 8-9 8m69-56-1-11m12 14 5-10m4 17 8-7" strokeWidth="3" strokeLinecap="round" />
+            </g>
+            <g className="fill-background"><circle cx="149" cy="62" r="1.5" /><circle cx="155" cy="62" r="1.5" /><circle cx="161" cy="62" r="1.5" /></g>
+          </svg>
+        </div>
+        <p className={`${styles.introCopy} !text-[0.9375rem] leading-6 text-muted-foreground sm:col-start-2 sm:row-start-2`}><strong className="font-normal lg:font-semibold">Comece com o que já tem.</strong> Você pode preencher aos poucos, revisar e complementar quando quiser. Cada seção é salva por você.</p>
+      </div>
+      </div>
+      <div className={`${styles.introArtwork} hidden lg:flex`} aria-hidden="true">
+        <Image src="/images/communication-base/intro-editorial.png" width={1422} height={1106} sizes="360px" alt="" className="h-auto w-full object-contain dark:invert dark:hue-rotate-180 dark:mix-blend-screen" />
+      </div>
+      <footer ref={introductionFooter} className={`${styles.introFooter} shrink-0 px-4 pb-3 pt-1 sm:px-8 sm:pb-6`}>
+      {storageKey ? <label className=" flex min-h-11 cursor-pointer items-center justify-center gap-2 text-xs font-normal text-muted-foreground">
+        <input type="checkbox" checked={dontShowAgain} onChange={(event) => updatePreference(event.target.checked)} className="h-4 w-4 shrink-0 accent-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
+        Não mostrar novamente
+      </label> : null}
+      <Button type="button" className="mt-1 min-h-11 w-full !bg-brand-700 !text-surface-base hover:!bg-brand-700/95 sm:mx-auto sm:flex sm:w-56" onClick={dismiss}>Entendi</Button>
+      </footer>
+    </dialog>
+  </>;
 }

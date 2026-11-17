@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState, type ReactNode } from "react";
 
+import { OpenAiDialogueCosts } from "./OpenAiDialogueCosts";
 import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 import type { OpenAiActiveCostReadModel, OpenAiCostReadWorkloadId } from "@/openai-costs/active-contracts";
 import type { OpenAiCostsFinancialComposition } from "@/openai-costs/dashboard";
@@ -130,6 +131,7 @@ function DashboardResult({ dashboard }: Readonly<{ dashboard: OpenAiCostsFinanci
       </section>
 
       <CoverageSection dashboard={dashboard} />
+      <OpenAiDialogueCosts result={dashboard.dialogues} active={dashboard.active} filters={dashboard.activeFilters} />
       {dashboard.legacy && dashboard.legacy.providerCreditFailureCount > 0 ? (
         <StatusPanel tone="danger" title="Crédito ou limite OpenAI requer atenção" role="alert">
           O período contém {dashboard.legacy.providerCreditFailureCount} ocorrência de provider associada a crédito ou limite insuficiente. Consulte a administração da OpenAI; nenhum detalhe financeiro interno é exibido ao cliente.
@@ -184,6 +186,7 @@ function ActiveCostSection({ active, filters }: Readonly<{ active: OpenAiActiveC
       <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <CountCard label="Execuções" value={active.executionCount} /><CountCard label="Operações" value={active.operationCount} /><CountCard label="Retries" value={countRetries(active)} /><CountCard label="Custos indisponíveis" value={active.unavailableOperationCount} warning /><CountCard label="Não atribuídas" value={active.unassignedExecutionCount} warning />
       </dl>
+      {active.unavailableOperationCount > 0 ? <StatusPanel tone="warning" title="Subtotal calculável incompleto">Há {active.unavailableOperationCount} operação(ões) com custo indisponível. Os subtotais incluem somente componentes calculáveis; a diferença permanece na reconciliação oficial.</StatusPanel> : null}
       {active.pendingOperationCount > 0 ? <StatusPanel tone="warning" title="Operações pendentes">Há {active.pendingOperationCount} operação(ões) sem término; elas não entram no subtotal calculável.</StatusPanel> : null}
       {active.groups.length > 0 ? (
         <div className="overflow-x-auto rounded-lg border border-border bg-card shadow-card"><table className="w-full min-w-[52rem] text-left text-sm"><caption className="sr-only">Subtotal ativo por universo, conta e workload</caption><thead className="bg-muted text-foreground"><tr><TableHeader>Universo</TableHeader><TableHeader>Conta</TableHeader><TableHeader>Workload</TableHeader><TableHeader>Execuções</TableHeader><TableHeader>Operações</TableHeader><TableHeader>Indisponíveis</TableHeader><TableHeader>Subtotal</TableHeader></tr></thead><tbody className="divide-y divide-border">

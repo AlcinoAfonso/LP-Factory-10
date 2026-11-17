@@ -1,6 +1,7 @@
 import { parseCommunicationMaterials } from "./materials";
 import {
   communicationSections,
+  isBusinessLongTextSection,
   type CommunicationSectionDefinition,
 } from "./registry";
 import type {
@@ -12,9 +13,17 @@ import type {
 } from "./contracts";
 
 export const COMMUNICATION_TEXT_MAX = 4000;
+export const COMMUNICATION_BUSINESS_TEXT_MAX = 30_000;
+// Teto por seção da Categoria 3 (texto integral, soma dos itens ou perguntas + respostas).
+export const COMMUNICATION_INTELLIGENCE_SECTION_MAX = 30_000;
 export const COMMUNICATION_ITEMS_MAX = 20;
 export const COMMUNICATION_ITEM_MAX = 400;
 export const COMMUNICATION_FAQ_MAX = 15;
+
+export function communicationTextLimit(section: CommunicationSectionDefinition): number {
+  return section.stage === 2 ? COMMUNICATION_INTELLIGENCE_SECTION_MAX
+    : isBusinessLongTextSection(section) ? COMMUNICATION_BUSINESS_TEXT_MAX : COMMUNICATION_TEXT_MAX;
+}
 
 export function parseSectionValue(
   section: CommunicationSectionDefinition,
@@ -23,31 +32,38 @@ export function parseSectionValue(
   if (section.format === "material_items") return parseCommunicationMaterials(raw);
   if (section.format === "text") {
     if (typeof raw !== "string") return null;
-    const value = raw.trim();
-    return value.length <= COMMUNICATION_TEXT_MAX ? value : null;
+    const value = (isBusinessLongTextSection(section) ? raw.replace(/\r\n?/g, "\n") : raw).trim();
+    return value.length <= communicationTextLimit(section) ? value : null;
   }
   if (section.format === "items") {
     if (!Array.isArray(raw) || raw.length > COMMUNICATION_ITEMS_MAX) return null;
     const items: string[] = [];
+    let totalCharacters = 0;
     for (const item of raw) {
       if (typeof item !== "string") return null;
       const text = item.trim();
-      if (text.length > COMMUNICATION_ITEM_MAX) return null;
+      if (section.stage !== 2 && text.length > COMMUNICATION_ITEM_MAX) return null;
+      totalCharacters += text.length;
+      if (section.stage === 2 && totalCharacters > COMMUNICATION_INTELLIGENCE_SECTION_MAX) return null;
       if (text) items.push(text);
     }
     return items;
   }
   if (!Array.isArray(raw) || raw.length > COMMUNICATION_FAQ_MAX) return null;
   const entries: CommunicationFaq[] = [];
+  let totalCharacters = 0;
   for (const item of raw) {
     if (!isRecord(item) || typeof item.question !== "string" || typeof item.answer !== "string") {
       return null;
     }
     const question = item.question.trim();
     const answer = item.answer.trim();
-    if (question.length > COMMUNICATION_ITEM_MAX || answer.length > COMMUNICATION_TEXT_MAX) {
+    if (section.stage !== 2 &&
+        (question.length > COMMUNICATION_ITEM_MAX || answer.length > COMMUNICATION_TEXT_MAX)) {
       return null;
     }
+    totalCharacters += question.length + answer.length;
+    if (section.stage === 2 && totalCharacters > COMMUNICATION_INTELLIGENCE_SECTION_MAX) return null;
     if (question && answer) entries.push({ question, answer });
     else if (question || answer) return null;
   }

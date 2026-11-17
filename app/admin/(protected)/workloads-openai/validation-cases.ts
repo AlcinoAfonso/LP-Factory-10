@@ -1,3 +1,5 @@
+import { applyOpenAiConfigurationCore } from "./applyCore";
+import { runOpenAiTechnicalConfigurationProof } from "./serviceTierProof";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
@@ -7,6 +9,7 @@ import {
 } from "@/openai-workloads";
 import {
   runOpenAiCandidateProofCore,
+  proofResolver,
   isResearchedCommunicationStageTwoProof,
   type OpenAiCandidateProofDependencies,
 } from "./proofCore";
@@ -16,6 +19,95 @@ import { confirmOpenAiModelIdentity } from "./openAiModelIdentity";
 type Case = Readonly<{ name: string; run: () => void | Promise<void> }>;
 
 const cases: readonly Case[] = [
+  {
+    name: "apply validates before writing, stops on every failure and confirms activation before success",
+    run: async () => {
+      for (const failure of [null, "proof", "save", "promote", "activate"] as const) {
+        const calls: string[] = [];
+        let active = "previous";
+        const error = { code: "40001", message: "stale_version" };
+        const result = await applyOpenAiConfigurationCore({
+          expectedVersion: 4,
+          prove: async () => { calls.push("proof"); return failure === "proof" ? { ok: false, code: "contract" } :
+            { ok: true, metadata: { schema_version: 1, proof_kind: "operational", proof_result: "approved",
+              request_id: "proof-1", provider_request_id: "req-1", latency_ms: 1, contract_version: 1, source: "openai_api" } }; },
+          save: async version => { calls.push("save"); assert.equal(version, 4); return { data: 5, error: failure === "save" ? error : null }; },
+          promote: async version => { calls.push("promote"); assert.equal(version, 5); return {
+            data: [{ candidate_revision_id: "revision-3", candidate_revision_number: 3, configuration_version: 6 }], error: failure === "promote" ? error : null }; },
+          activate: async (version, revision) => { calls.push("activate"); assert.equal(version, 6); assert.equal(revision, "revision-3");
+            if (failure !== "activate") active = revision;
+            return { data: 7, error: failure === "activate" ? error : null }; },
+        });
+        assert.equal(result.ok, failure === null);
+        const steps = ["proof", "save", "promote", "activate"];
+        assert.deepEqual(calls, failure === null ? steps : steps.slice(0, steps.indexOf(failure) + 1));
+        assert.equal(active, failure === null ? "revision-3" : "previous");
+      }
+    },
+  },
+  {
+    name: "niche functional proof resolves the exact candidate tier as well as model and effort",
+    run: async () => {
+      const base = await resolveOpenAiProductWorkload("niche_resolution", "development");
+      assert.equal(base.ok, true);
+      if (!base.ok) return;
+      for (const tier of [null, "default", "fast"] as const) {
+        const candidate: ResolvedOpenAiProductWorkload = { ...base.value, model: "gpt-6-luna", reasoningEffort: "medium", serviceTier: tier };
+        const resolved = await resolveOpenAiProductWorkload("niche_resolution", "preview", proofResolver(candidate, "preview"));
+        assert.equal(resolved.ok, true);
+        if (!resolved.ok) continue;
+        assert.equal(resolved.value.model, candidate.model);
+        assert.equal(resolved.value.reasoningEffort, candidate.reasoningEffort);
+        assert.equal(resolved.value.serviceTier, tier);
+      }
+    },
+  },
+  {
+    name: "technical proof validates model/effort and requested tier without product scenarios",
+    run: async () => {
+      const resolved = await resolveOpenAiProductWorkload("commercial_activation_draft_generation", "development");
+      assert.equal(resolved.ok, true);
+      if (!resolved.ok) return;
+      for (const [model, requested, applied, status, expected] of [
+        ["gpt-6.1-sol", null, "default", "completed", true],
+        ["gpt-6-luna", "default", "default", "completed", true],
+        ["gpt-6-luna", "fast", "fast", "completed", true],
+        ["gpt-6-luna", "fast", "priority", "completed", true],
+        ["gpt-6.1-sol", "ultrafast", "ultrafast", "completed", true],
+        ["gpt-6-luna", "fast", "default", "completed", false],
+        ["gpt-6-luna", "fast", null, "completed", false],
+        ["gpt-6-luna", "default", "default", "incomplete", false],
+      ] as const) {
+        const proof = await runOpenAiTechnicalConfigurationProof(
+          { ...resolved.value, model, reasoningEffort: "medium", serviceTier: requested }, "preview", "fixture-key", "tier-request-1",
+          { emitEvent: () => undefined, fetchImpl: async (_url, init) => {
+            const body = JSON.parse(String(init?.body));
+            assert.equal(body.model, model);
+            assert.equal(body.reasoning?.effort, "medium");
+            if (requested == null) assert.equal("service_tier" in body, false);
+            else assert.equal(body.service_tier, requested);
+            assert.deepEqual(body.tools, []);
+            assert.equal(body.store, false);
+            return new Response(JSON.stringify({ id: "resp_tier", status, service_tier: applied,
+              output: [{ type: "message", content: [{ type: "output_text", text: '{"proof":"approved"}' }] }] }),
+              { headers: { "x-request-id": "provider-tier-1" } });
+          } },
+        );
+        assert.equal(proof.ok, expected);
+        if (proof.ok) {
+          if (requested == null) {
+            assert.equal("requested_service_tier" in proof.metadata, false);
+            assert.equal("applied_service_tier" in proof.metadata, false);
+          } else {
+            assert.equal(proof.metadata.requested_service_tier, requested);
+            assert.equal(proof.metadata.applied_service_tier, applied);
+          }
+          assert.equal(proof.metadata.provider_request_id, "provider-tier-1");
+        }
+      }
+    },
+  },
+
   {
     name: "model identity requires exact live OpenAI model id before persistence",
     run: async () => {
@@ -233,23 +325,26 @@ const cases: readonly Case[] = [
       const adapter = readFileSync(new URL("../../../../lib/openai-workloads/adapters/operationalConfigurationAdapter.ts", import.meta.url), "utf8");
       assert.equal(adapter.includes("p_actor_user_id: input.actorUserId"), true);
       assert.equal(actions.includes("process.env.OPENAI_API_KEY"), true);
+      assert.equal(actions.includes("runOpenAiTechnicalConfigurationProof"), true);
+      assert.equal(actions.includes("runOpenAiCandidateProof"), false);
       assert.equal(/formData\.get\(["']actor/i.test(actions), false);
       assert.equal(/OPENAI_API_KEY/.test(proof), false);
       for (const transport of [
         "resolveNicheWithOpenAi",
         "requestCommercialActivationOpenAi",
-        "assistCommunicationSection",
         "generateCommunicationIntelligence",
       ]) {
         assert.equal(proof.includes(transport), true);
       }
       const communicationAdapter = readFileSync(new URL("../../../../lib/communication-base/adapters/communicationAiAdapter.ts", import.meta.url), "utf8");
-      for (const name of ["proveCommunicationStageOne", "proveCommunicationStageTwo"]) {
+      assert.equal(proof.includes("assistCommunicationSection"), false, "retired assistance must have no administrative provider path");
+      assert.equal(proof.includes("proveCommunicationStageOne"), false);
+      for (const name of ["proveCommunicationStageTwo"]) {
         const call = proof.split(`async function ${name}(`)[1]?.split("\nasync function ")[0];
         assert.ok(call && /\benvironment,\s*apiKey,/.test(call), `${name} must pass the selected environment`);
       }
-      assert.equal((communicationAdapter.match(/environment: input\.environment/g) ?? []).length, 2,
-        "both communication transports must forward the selected environment to Responses");
+      assert.equal((communicationAdapter.match(/environment: input\.environment/g) ?? []).length, 1,
+        "the remaining communication transport must forward the selected environment to Responses");
       assert.doesNotMatch(
         proof,
         /generateLandingPageDraftCandidate|generateLandingPageDraftImage|LandingPageGenerationContextPackage/,

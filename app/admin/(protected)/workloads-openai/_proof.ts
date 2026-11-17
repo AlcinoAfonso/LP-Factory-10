@@ -3,13 +3,13 @@ import "server-only";
 import { requestCommercialActivationOpenAi } from "@/conversion-content/adapters/commercialActivationOpenAiAdapter";
 import { resolveNicheWithOpenAi } from "@/onboarding/niche-resolution/adapters/openAiResolver";
 import type {
-  OpenAiOperationalConfigurationReader,
   OpenAiManagedWorkloadEnvironment,
   OpenAiWorkloadEvent,
   ResolvedOpenAiProductWorkload,
 } from "@/openai-workloads";
 import {
   runOpenAiCandidateProofCore,
+  proofResolver,
   isResearchedCommunicationStageTwoProof,
   type OpenAiCandidateProofAttempt as ProofAttempt,
   type OpenAiCandidateProofDependencies,
@@ -17,7 +17,7 @@ import {
 } from "./proofCore";
 import { parseCommercialProof } from "./commercialProof";
 import { lpFactoryOpenAiCostContext } from "@/openai-costs";
-import { assistCommunicationSection, generateCommunicationIntelligence } from "@/communication-base/adapters/communicationAiAdapter";
+import { generateCommunicationIntelligence } from "@/communication-base/adapters/communicationAiAdapter";
 import type { CommunicationBase } from "@/communication-base/contracts";
 
 import { requestAttendance } from "@/onboarding/pending-setup/attendance-provider";
@@ -45,33 +45,13 @@ export async function runOpenAiCandidateProof(
       attendance: dependencies.attendance ?? proveAttendance,
       commercial: dependencies.commercial ?? proveCommercialActivation,
       communicationStageOne:
-        dependencies.communicationStageOne ?? proveCommunicationStageOne,
+        async () => ({ ok: false, code: "configuration" }),
       communicationStageTwo:
         dependencies.communicationStageTwo ?? proveCommunicationStageTwo,
     },
   );
 }
 
-async function proveCommunicationStageOne(
-  workload: ResolvedOpenAiProductWorkload,
-  environment: OpenAiManagedWorkloadEnvironment,
-  apiKey: string,
-  _requestId: string,
-): Promise<ProofAttempt> {
-  const result = await assistCommunicationSection({
-    accountId: "10000000-0000-4000-8000-000000000001",
-    key: "business_context",
-    userText: "Ofereço manutenção de jardins para condomínios.",
-    environment,
-    apiKey,
-    configurationOverride: workload,
-    financialContext: lpFactoryOpenAiCostContext,
-    executionOrigin: "administrative_proof",
-  });
-  return result.ok && (result.value.suggestion || result.value.missingQuestion)
-    ? { ok: true, providerRequestId: result.responseId, latencyMs: result.latencyMs }
-    : { ok: false, code: result.ok ? "contract" : "provider" };
-}
 
 async function proveCommunicationStageTwo(
   workload: ResolvedOpenAiProductWorkload,
@@ -96,6 +76,7 @@ async function proveCommunicationStageTwo(
     base,
     target: { kind: "section", key: "market_insights" },
     requiresCurrentResearch: true,
+    niche: { taxonId: "10000000-0000-4000-8000-000000000002", name: "Jardinagem", confirmed: true, revision: "proof" },
     environment,
     apiKey,
     configurationOverride: workload,
@@ -210,27 +191,6 @@ async function proveCommercialActivation(
     : { ok: false, code: result.ok ? "contract" : "provider" };
 }
 
-function proofResolver(
-  workload: ResolvedOpenAiProductWorkload,
-  environment: OpenAiManagedWorkloadEnvironment,
-) {
-  const readOperationalConfiguration: OpenAiOperationalConfigurationReader =
-    async () => ({
-      ok: true,
-      value: {
-        environment,
-        workload: workload.id,
-        apiKind: workload.apiKind,
-        model: workload.model,
-        reasoningEffort: workload.reasoningEffort,
-        revision: "1",
-      },
-    });
-  return {
-    operationalConfigurationEnabled: "true",
-    readOperationalConfiguration,
-  } as const;
-}
 
 async function proveAttendance(
   workload: ResolvedOpenAiProductWorkload,
@@ -265,8 +225,8 @@ async function proveAttendance(
       latencyMs += result.latencyMs ?? 0;
       providerRequestId = result.responseId;
       if (turn === 0) {
-        if (output.action !== (identified ? "existing" : "pending") ||
-          (identified && output.existingTaxonId !== nicheId) || !output.businessUnderstanding || output.readyToComplete) return { ok: false, code: "contract" };
+        if (!["existing","pending"].includes(output.action) ||
+          (identified && (output.action !== "existing" || !output.nicheDescription)) || !output.businessUnderstanding || output.readyToComplete) return { ok: false, code: "contract" };
         const proposedSummary = JSON.parse(attendanceSummary(output, null, null));
         if (proposedSummary.confirmedUnderstanding !== null || !proposedSummary.contextualUnderstanding ||
           (identified && /flamenguista/i.test(proposedSummary.contextualUnderstanding))) return { ok: false, code: "contract" };
@@ -281,8 +241,9 @@ async function proveAttendance(
           context.confirmedProposal, context.summary));
         if (acceptedSummary.confirmedUnderstanding !== context.displayedUnderstanding) return { ok: false, code: "contract" };
         context = { ...context, confirmedProposal: null,
+          officialNiche: context.confirmedProposal?.kind === "semantic" ? {name:context.confirmedProposal.nicheDescription,revision:"text:1",confirmed:true}:null,
           currentPrimaryTaxonId: identified ? nicheId : null,
-          confirmedOperationalUnderstanding: !identified,
+          confirmedOperationalUnderstanding: context.confirmedProposal?.kind === "operational_fallback",
           summary: attendanceSummary(output, identified ? "Manutenção de jardins" : null, context.confirmedProposal ?? null, context.summary),
           recent: [...context.recent, { role: "assistant", content: output.reply },
             { role: "user", content: "Minha necessidade é apresentar claramente meu serviço ao público informado. A orientação de organizar o conhecimento e apoiar a comunicação já me ajudou. Entendi que serviços, preços e prazos específicos precisam de confirmação. Prefiro não informar WhatsApp. Não tenho mais dúvidas; quero seguir à etapa comercial." }] };
@@ -295,6 +256,7 @@ async function proveAttendance(
   const runSemanticClosure = async (): Promise<ProofAttempt> => {
     const understanding = "Manutenção de jardins para condomínios; quer comunicar o diferencial do serviço.";
     let context: AttendanceContext = { preferredName: "Ana", catalog, currentPrimaryTaxonId: nicheId,
+      officialNiche:{name:"Manutenção de jardins",revision:"legacy:"+nicheId+":1",confirmed:true},
       displayedUnderstanding: understanding,
       summary: JSON.stringify({ contextualUnderstanding: understanding, confirmedUnderstanding: understanding,
         classification: "Manutenção de jardins", suggestions: [] }),
@@ -337,7 +299,7 @@ async function proveAttendance(
       id: dentistryId, name: "Odontologia", level: "niche", parentId: segmentId, active: true, aliases: [],
     }];
     let context: AttendanceContext = { preferredName: null, summary: null, catalog: dentalCatalog,
-      recent: [{ role: "assistant", content: "Olá! Que prazer ter você aqui! Como posso te chamar?" },
+      recent: [{ role: "assistant", content: "Olá! Como prefere ser chamado?" },
         { role: "user", content: "João. Tenho a Clínica Sorriso e fazemos clareamento, tratamento de canal e implantes. Sou flamenguista, mas futebol não tem relação com o negócio." }] };
     let latencyMs = 0;
     let providerRequestId: string | null = null;
@@ -345,6 +307,15 @@ async function proveAttendance(
       console.warn("pending_setup_attendance_proof_failed", { scenario: 3, check, code: "contract" });
       return { ok: false, code: "contract" };
     };
+    const greeting = await requestAttendance({ accountId, context: { ...context,
+      recent: [{ role: "user", content: "Olá, quero conhecer a LP Factory." }] },
+      configurationOverride: workload, environment, apiKey,
+      financialContext: lpFactoryOpenAiCostContext, executionOrigin: "administrative_proof" });
+    if (!greeting.ok) return { ok: false, code: "provider" };
+    if (greeting.output.reply !== "Olá! Como prefere ser chamado?" || greeting.output.preferredName !== null
+      || greeting.output.action !== "ask" || greeting.output.closureReason) return contractFailure("personal_question");
+    latencyMs += greeting.latencyMs ?? 0;
+    context = { ...context, recent: [{ role: "assistant", content: greeting.output.reply }, context.recent[1]] };
     for (let turn = 0; turn < 4; turn++) {
       const result = await requestAttendance({ accountId, context, configurationOverride: workload, environment, apiKey,
         financialContext: lpFactoryOpenAiCostContext, executionOrigin: "administrative_proof" });
@@ -355,7 +326,7 @@ async function proveAttendance(
       const memory = JSON.parse(summary);
       if (/flamenguista|flamengo|futebol/i.test(JSON.stringify(memory))) return contractFailure("social");
       if (turn === 0) {
-        if (output.preferredName !== "João" || output.businessNameCandidate !== "Clínica Sorriso" || output.action !== "existing" || output.existingTaxonId !== dentistryId
+        if (output.preferredName !== "João" || output.action !== "existing" || !output.nicheDescription
           || !/clínica sorriso/i.test(output.businessUnderstanding) || !/clareamento/i.test(output.businessUnderstanding)
           || !/canal/i.test(output.businessUnderstanding) || !/implant/i.test(output.businessUnderstanding)
           || memory.confirmedUnderstanding !== null) return contractFailure("initial");
@@ -365,7 +336,7 @@ async function proveAttendance(
             { role: "user", content: "Sim, confirmo esse entendimento e essa categoria. Ainda preciso de orientação comercial." }] };
       } else if (turn === 1) {
         if (output.action !== "confirm" || memory.confirmedUnderstanding !== context.displayedUnderstanding) return contractFailure("confirmation");
-        context = { ...context, summary, confirmedProposal: null, currentPrimaryTaxonId: dentistryId,
+        context = { ...context, summary, officialNiche: context.confirmedProposal?.kind === "semantic" ? {name:context.confirmedProposal.nicheDescription,revision:"text:1",confirmed:true}:null, confirmedProposal: null, currentPrimaryTaxonId: dentistryId,
           recent: [...context.recent, { role: "assistant", content: output.reply },
             { role: "user", content: "Correção: não fazemos mais canal. Continuamos com clareamento e implantes, atendemos adultos e queremos comunicar essas ofertas. Ainda tenho dúvidas sobre como apresentá-las." }] };
       } else if (turn === 2) {
@@ -429,7 +400,7 @@ async function proveAttendance(
         id: test.id, name: test.name, level: "niche", parentId: segmentId, active: true, aliases: [],
       }];
       let context: AttendanceContext = { preferredName: "Ana", catalog: commercialCatalog,
-        currentPrimaryTaxonId: test.id, displayedUnderstanding: test.understanding,
+        currentPrimaryTaxonId: test.id, officialNiche:{name:test.name,revision:"legacy:"+test.id+":1",confirmed:true}, displayedUnderstanding: test.understanding,
         summary: JSON.stringify({ contextualUnderstanding: test.understanding, confirmedUnderstanding: test.understanding,
           classification: test.name, suggestions: [], pendingReason: null }),
         marketContext: [{ taxonId: test.id, researchId: segmentId, version: 1, updatedAt: "2026-10-01",

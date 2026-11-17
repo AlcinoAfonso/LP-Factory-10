@@ -1,3 +1,5 @@
+import type { DialogueCostResult, DialogueListResult } from "@/openai-costs/dialogue-costs";
+import { dialogueIdentitySchema } from "@/openai-costs/dialogue-costs";
 import type { OpenAiActiveCostReadResult } from "@/openai-costs/active-contracts";
 import type {
   OpenAiCostsPeriod,
@@ -23,6 +25,7 @@ export type OpenAiCostsActionDependencies = Readonly<{
   readOfficial: (period: OpenAiCostsPeriod) => Promise<OpenAiOfficialCostsReadResult>;
   readActive: (period: OpenAiCostsPeriod) => Promise<OpenAiActiveCostReadResult>;
   readLegacy: (period: OpenAiCostsPeriod) => Promise<OpenAiLpCostReadResult>;
+  readDialogues?: (period: OpenAiCostsPeriod, active: OpenAiActiveCostReadResult) => Promise<DialogueListResult>;
 }>;
 
 export async function refreshOpenAiCostsActionCore(
@@ -71,6 +74,7 @@ export async function refreshOpenAiCostsActionCore(
     active,
     legacy,
     activeFilters,
+    dialogues: dependencies.readDialogues ? await dependencies.readDialogues(selection.period, active) : null,
   });
   if (!dashboard) return failure("INVALID_RESPONSE", "A resposta de custos não pôde ser validada.");
   return {
@@ -85,4 +89,14 @@ export async function refreshOpenAiCostsActionCore(
 
 function failure(code: string, message: string): OpenAiCostsActionState {
   return { status: "error", code, message, dashboard: null };
+}
+
+export async function readDialogueCostActionCore(raw: unknown, dependencies: Readonly<{
+  authorize: () => Promise<Readonly<{ allowed: boolean }>>;
+  read: (identity: { dialogueId: string; accountId: string }) => Promise<DialogueCostResult>;
+}>): Promise<DialogueCostResult> {
+  if (!(await dependencies.authorize()).allowed) return { ok: false, code: "UNAUTHORIZED" };
+  const parsed = dialogueIdentitySchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, code: "INVALID_DIALOGUE" };
+  return await dependencies.read(parsed.data);
 }

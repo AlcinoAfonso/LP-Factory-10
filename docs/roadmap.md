@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-- Data: 18/10/2026
-- Versão: v1.5.259
+- Data: 17/11/2026
+- Versão: v1.5.262
 
 0.2 Contrato do documento (consulta)
 - Estado vigente dos casos; sem narrativa operacional.
@@ -820,7 +820,7 @@
     - `public.account_profiles`
     - `public.taxon_factual_fields`
 - Repositório:
-  - Criados:
+  - Excluídos:
     - `supabase/migrations/20260926145500_e10_10_account_factual_profile.sql`
     - `supabase/migrations/20260926171100_e10_10_factual_catalog_cutover.sql`
   - Ajustados:
@@ -839,7 +839,7 @@
 
 10.10.3 Recorte factual e cutover
 - Status: retirado.
-- Conteúdo: exclusão do apply/dados preservados em E22.7.5, sem cutover pendente.
+- Conteúdo: duas candidatas nunca aplicadas removidas do diretório ativo por D3F — Rodada 3; proveniência preservada no Git. Dados e migrations aplicadas preservados em E22.7.5, sem cutover pendente.
 
 10.10.4 UX factual e prontidão para a Base
 - Status: retirado.
@@ -872,63 +872,111 @@
 
 10.11.5 Continuidade e regressão
 - Status: vigente.
-- Conteúdo: nicho/Checkout/membership/entitlement preservados; apply integral suspenso, E10.10 excluído (Platform Config 2.3).
+- Conteúdo: nicho/Checkout/membership/entitlement preservados; candidatas E10.10 fora do diretório ativo. Apply pós-merge conforme Platform Config 2.3.
 
 10.12 Atendimento inicial por IA e agente vendedor
 
 10.12.1 Objetivo e status
 - Objetivo: entender negócio/necessidade, orientar e definir próximo passo.
-- Status: base operacional em Preview/Production; refinamentos do Pending Setup básico publicados em Production pelo PR #1079. Correção conversacional integrada #1086 candidata em Preview, com QA parcial e validação humana completa pendente. Legadas E10.9 preservadas. Depende de E10.13, não de PB-B.
+- Status: base operacional em Preview/Production; refinamentos do Pending Setup básico publicados em Production pelo PR #1079. Legadas E10.9 preservadas. Depende de E10.13, não de PB-B.
 
 10.12.2 Registros do recorte
 - Banco:
+  - Criados:
+    - `public.account_official_niches`
+    - `public.confirm_account_official_niche_v1`
+    - `public.commit_account_pending_setup_turn_v4`
+    - `public.complete_account_pending_setup_attendance_v2`
+    - `public.assert_account_niche_actor_v1`
+    - `public.account_niche_snapshot_v1`
+    - `public.claim_account_niche_turn_v1`
+    - `public.commit_account_niche_turn_v1`
+    - `public.release_account_niche_turn_v1`
+    - `public.confirm_account_niche_dialogue_v1`
   - Ajustados:
     - `public.account_context_summaries`
+    - `public.account_dialogues`
+    - `public.account_pending_setup_messages`
     - `public.commit_account_pending_setup_turn_v3`
 - Repositório:
   - Criados:
     - `supabase/migrations/20261011121811_e10_12_summary_capacity.sql`
     - `supabase/rollbacks/20261011121811_e10_12_summary_capacity.rollback.sql`
     - `supabase/tests/e10_12_summary_capacity.test.sql`
+    - `supabase/migrations/20261112162500_d15e_official_text_niche.sql`
+    - `supabase/tests/d15e_official_niche.proof.mjs`
+    - `supabase/migrations/20261113111515_d15e_transversal_memory.sql`
+    - `supabase/tests/d15e_transversal_memory.proof.mjs`
+    - `lib/onboarding/niche-resolution/adapters/accountNicheDialogueAdapter.ts`
+    - `supabase/tests/d15e_selective_inventory.proof.cjs`
+    - `lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter.ts`
+    - `lib/onboarding/niche-resolution/official-niche-policy.ts`
+    - `lib/onboarding/niche-resolution/official-niche-validation-cases.ts`
+    - `lib/onboarding/pending-setup/semantic-niche-instructions.ts`
+    - `lib/openai-responses/web-search-metadata.ts`
+    - `app/a/[account]/_components/AssistantMessageText.tsx`
   - Ajustados:
     - `.github/workflows/e10-11-sql-proof.yml`
     - `.github/workflows/pipeline-supabase-apply-migrations.yml`
     - `app/admin/(protected)/workloads-openai/_proof.ts`
     - `lib/onboarding/pending-setup/attendance-core.ts`
+    - `lib/onboarding/niche-resolution/niche-conversation-validation-cases.ts`
     - `lib/onboarding/pending-setup/attendance-coordinator.ts`
     - `lib/onboarding/pending-setup/attendance-provider.ts`
     - `lib/onboarding/pending-setup/attendance-validation-cases.ts`
     - `app/a/[account]/_components/PendingSetupConversation.tsx`
+    - `app/a/[account]/_components/NicheResolutionCard.tsx`
+    - `app/a/[account]/base-comunicacao/CommunicationSectionEditor.tsx`
+    - `app/a/[account]/base-comunicacao/actions.ts`
+    - `app/a/[account]/base-comunicacao/page.tsx`
+    - `app/a/[account]/layout.tsx`
+    - `app/a/[account]/niche-resolution-actions.ts`
     - `app/a/[account]/pending-setup-actions.ts`
-    - `lib/onboarding/pending-setup/contracts.ts`
+    - `lib/communication-base/adapters/communicationAiAdapter.ts`
+    - `lib/communication-base/ai-core.ts`
+    - `lib/communication-base/generation-guard.ts`
+    - `lib/communication-base/validation-cases.ts`
+    - `lib/onboarding/pending-setup/adapters/pendingSetupAttendanceAdapter.ts`
     - `lib/onboarding/pending-setup/adapters/pendingSetupConversationAdapter.ts`
+    - `lib/onboarding/pending-setup/contracts.ts`
+    - `lib/openai-workloads/registry.ts`
 - Referências:
   - Memória contextual e autoridades: `docs/base-tecnica.md` — seção 3.14.6.
   - Contrato de banco aplicado: `docs/schema.md` — seções 1.19D e 3.1.3.
+  - Nicho textual aplicado: `docs/schema.md` — seção 1.13.6.
+  - Extensão de memória da conta ativa: `docs/schema.md` — seções 1.13.7 e 1.19B–1.19D.
   - Apply, reversão e configuração operacional: `docs/platform-config.md` — seções 2.3 e 3.5.
 
 10.12.3 Atendimento, Diálogo da conta e Resumo da conta
 - Status: operacional; refinamentos do Pending Setup básico validados em Preview.
-- Conteúdo: mensagem/nomes/Diálogo/Resumo, distinções de aceite/proposta, compactação/confirmação e falhas em docs/base-tecnica.md — 3.14.6; sem autoridade/versionamento funcional próprios. Resumo 6.000 caracteres sem meta, entendimento 4.000; demais limites mantidos. Sem teto de três chamadas/tabela/estado/memória/parser por frase/formulário/infraestrutura novos.
-- Definido: abrir diretamente com “Olá! Que prazer ter você aqui! Como posso te chamar?”, acolher pelo nome, aproveitar nome/atividade do negócio já informados e colher só informações essenciais, sem insistência. A saudação inicial usa o commit existente sem chamada à IA. Solicitar WhatsApp opcional perto do fim, se ainda não informado; preservar exatamente o número informado no Diálogo e no Resumo existentes, mesmo incompleto ou incorreto; correção posterior substitui o contato. O agente pode alertar brevemente e oferecer correção, sem insistência, formato obrigatório ou bloqueio de avanço. Recusa não bloqueia avanço; fornecimento não autoriza contato posterior.
+- Conteúdo: mensagem/nomes/Diálogo/Resumo, distinções de aceite/proposta, compactação/confirmação e falhas em docs/base-tecnica.md — 3.14.6; sem autoridade/versionamento funcional próprios. Resumo 6.000 caracteres sem meta, entendimento 4.000; demais limites mantidos. Sem teto de três chamadas, nova memória, parser por frase, formulário ou infraestrutura antecipada.
+- Definido: acolher, pedir nome e nome do negócio, colher só informações essenciais e apresentar brevemente o valor real da LP Factory, sem insistência. Solicitar WhatsApp opcional perto do fim, se ainda não informado; preservar exatamente o número informado no Diálogo e no Resumo existentes, mesmo incompleto ou incorreto; correção posterior substitui o contato. O agente pode alertar brevemente e oferecer correção, sem insistência, formato obrigatório ou bloqueio de avanço. Recusa não bloqueia avanço; fornecimento não autoriza contato posterior.
 
-10.12.4 Identificação pelo catálogo
-- Status: operacional; refinamentos do Pending Setup básico validados em Preview.
-- Conteúdo: classificação/ausência e vínculo em Base Técnica 3.14.6; catálogo/repertório D21, comparação semântica/pergunta focal. Sem Web classificatória/manutenção de taxons/aliases.
-- Definido: comparar atividade, ofertas e público com catálogo/aliases usando conhecimento paramétrico; explicar equivalências e confirmar só classificação segura, sem impor categoria incorreta. Sem correspondência, esclarecer oferta/público; persistindo a ausência, informá-la e preservar no Resumo apenas dados comerciais relevantes e pendência, além do Diálogo integral, para uso futuro autorizado pelo D17.
+10.12.4 Identificação de nicho
+- Status: identificação semântica como fluxo único, migration aplicada e QA hospedado de conversa/confirmação/Web Search registrado por 10.12.7.
+- Conteúdo: propor descrição fiel pelas informações do negócio e conhecimento paramétrico, sem catálogo obrigatório; esclarecer ambiguidade material sem impor enquadramento aproximado. Web Search pontual e confirmação seguem Base Técnica 3.14.6. Catálogo/repertório D21 permanecem disponíveis, sem manutenção pelo atendimento.
+- Sem compreensão segura, preservar entendimento operacional, dados comerciais relevantes e pendência no Resumo, além do Diálogo integral, para uso futuro autorizado pelo D17. Persistência taxonômica e consumidores legados permanecem compatíveis, sem alternância para classificação por catálogo.
 
 10.12.5 Repertório do nicho e apoio à venda
 - Status: operacional.
-- Conteúdo: Acolher e entender → Persuadir → Solicitar WhatsApp → Encaminhar à página comercial, sem roteiro/turnos fixos; benefício contextual antes do contato opcional. Após atividade/oferta/necessidade mínimas, insight ligado à proposta real antes de nova pergunta comercial. Informação acessória só se material; identidade/confirmações mantidas.
+- Conteúdo: Entender → Impressionar → Conectar → Avançar sem roteiro/turnos fixos. Após atividade/oferta/necessidade mínimas, insight ligado à proposta real antes de nova pergunta comercial. Informação acessória só se material; identidade/confirmações mantidas.
 - D21 contextualiza, não impõe fala ou promessa; serviço/condição/prazo/disponibilidade efetivos exigem fonte comercial vigente. Avançar por 10.12.6, sem esgotar venda/diagnóstico ou interromper avanço útil. D21 governa catálogo/pesquisa/aliases; aprofundamento D17.
 - Só leituras independentes paralelas; efeitos/provider/commit ordenados, sem duração ou ganho causal comprovados.
 
 10.12.6 Conclusão e experiência
 - Status: operacional; refinamentos do Pending Setup básico validados em Preview.
 - Conteúdo: negócio/necessidades compreendidos, orientação/próximo passo claros, categoria confirmada ou ausência explícita; categoria sozinha não conclui. Identidade/E10.11 obrigatórios; WhatsApp opcional conforme 10.12.3. Sem taxon não bloqueia comercial/Base com entendimento suficiente, nem concede entitlement/trial/contratação.
-- Definido: confirmação única pela interface; candidato contextual de nome no Resumo preenche o campo editável, sem nome oficial antes do submit E10.11. Conduzir à página comercial mesmo sem nicho identificado, preservando entendimento operacional confirmado e pendência de classificação no Resumo; encerrar sem prolongar a conversa. D15B preservado; sem consulta à Base de Comunicação, pesquisa ou contato posterior com leads, nem promessa de pesquisa/retorno sem capacidade e autorização do D17.
+- Definido: conduzir à página comercial mesmo sem nicho identificado, preservando entendimento operacional confirmado e pendência de classificação no Resumo; encerrar sem prolongar a conversa. D15B preservado; sem consulta à Base de Comunicação, pesquisa de leads ou contato posterior, nem promessa de pesquisa/retorno sem capacidade e autorização do D17. Pesquisa pontual restrita à identificação de nicho segue 10.12.4.
 - Redirecionar desvio ocasional; persistência/repetição/circularidade/sem avanço → encerramento cordial com contexto/pendência no Resumo e retomada possível. Sem promessa de análise/prazo/retorno/contato, contador/tempo fixo/failsafe econômico.
 - Conflitos/atomicidade/pós-conclusão/Base em Base Técnica 3.14.6; sem continuidade assíncrona. Objeções/comparação/recomendação/contratação aprofundadas no D17 até absorção aprovada.
+
+10.12.7 Evolução transversal do agente — D15E
+- Status: Recortes 1 e 2 operacionais; Recorte 3 publicado pelo PR #1135 e migration aplicada pelo run 43429444373. Correções das falhas do QA hospedado seguem no PR #1137; conclusão funcional condicionada à validação e publicação desse delta. Recorte 4 futuro, sem execução autorizada.
+- Sequência aprovada: 1. Inteligência comercial e naturalidade; 2. Identificação e confirmação de nichos AI-first; 3. Memória transversal — Diálogo e Summary; 4. Integração, compatibilidade e validação das jornadas afetadas.
+- Recorte 1: diálogo breve e específico ao negócio, apresentação institucional fundamentada no README e orientação ao próximo passo, sem inventar ofertas ou condições; identidade, confirmação, persistência, finalidade D14D e autoridade D17 preservadas.
+- Recorte 2: nicho oficial textual exibido e confirmado, único por conta com autoria/data/revisão; proposta paramétrica independente de taxon/alias e Web Search nativo pontual, sem pesquisa rotineira ou oficialização por inferência. Preserva fallback operacional, Pending Setup, finalidade restrita do D14D e autoridade da Base; memória autorizada no Recorte 3.
+- Recorte 3: Diálogo atribuível ao participante, data e jornada, preservando mensagens submetidas mesmo sem confirmação; rascunho não enviado não é mensagem. Summary empresarial compartilhado recebe novidade material, preserva conhecimento válido e distingue declarações, fatos aceitos, hipóteses e fontes externas. Na conta ativa, confirmação explícita da proposta persistida grava nicho oficial e a mesma classificação no Summary atomicamente, sem edição textual direta ou alteração da Base; permissões, revisão e guarda de produto preservadas.
+- Base e Header consomem a descrição confirmada com controle de revisão. E10.7 e vínculos legados permanecem sem sincronização; eventual divergência da copy taxonômica depende de D21/E10.7. Sem retirada física de taxons/aliases/pesquisas, backfill obrigatório de QA, contratação, trial, contato posterior ou nova infraestrutura.
 
 10.13 Cadastro inicial de taxonomia e inteligência de mercado
 
@@ -1392,7 +1440,7 @@
 - Conteúdo: E5/E10.5.6/contas/evidências preservados.
 
 17.1.6 Pipelines operacionais
-- Inspect/Docs Apply em Automations 3.1/3.2; Inspect SQL read-only com ingresso financeiro opcional E21 via HMAC. Apply integral suspenso; exceções/gates/decisão por apply em Platform Config 2.3.
+- Inspect/Docs Apply em Automations 3.1/3.2; Inspect SQL read-only com ingresso financeiro opcional E21 via HMAC. Apply pós-merge autorizado conforme Platform Config 2.3.
 - Migrations incrementais imutáveis, sem SQL Editor no fluxo normal (Base Técnica 3.4.4).
 
 17.1.7 Limites
@@ -1739,7 +1787,7 @@
 
 21.2.1 Objetivo e status
 - Objetivo: administrar configuração por ambiente/workload sem deploy ordinário.
-- Status: ativo Preview/Production via Supabase; Development via registry.
+- Status: ativo Preview/Production via Supabase; Development via registry. Extensão service_tier candidata, sem apply ou ativação.
 
 21.2.2 Registros do recorte
 - Banco:
@@ -1793,9 +1841,17 @@
     - `supabase/tests/e21_2_5_openai_model_catalog.test.sql`
     - `supabase/tests/e21_2_6_openai_model_catalog_identity.test.sql`
     - `supabase/tests/postgrest_safe_application_conflicts.test.sql`
+    - `lib/openai-workloads/service-tier.ts`
+    - `lib/openai-workloads/service-tier-validation-cases.ts`
+    - `app/admin/(protected)/workloads-openai/serviceTierProof.ts`
+    - `supabase/migrations/20261023124919_e21_2_service_tier.sql`
+    - `supabase/tests/e21_2_service_tier.proof.mjs`
+    - `supabase/tests/e21_2_service_tier.test.sql`
   - Ajustados:
     - `lib/openai-workloads/contracts.ts`
     - `lib/openai-workloads/index.ts`
+    - `lib/openai-workloads/observability.ts`
+    - `lib/openai-responses/openAiResponsesAdapter.ts`
     - `lib/openai-workloads/registry.ts`
     - `lib/openai-workloads/resolve.ts`
     - `lib/openai-workloads/validation-cases.ts`
@@ -1813,8 +1869,10 @@
 - Conteúdo: unidades/fontes/gates em Base Técnica 3.16 e contracts.ts (21.1.2).
 
 21.2.4 Lifecycle administrativo e estado operacional
-- Status: implementado.
-- Conteúdo: lifecycle/autorização em Base Técnica 3.16; conflito sem retry autônomo, retirado sem nova operação.
+- Status: lifecycle e service_tier implementados; Rodadas 1 e 2 concluídas.
+- Conteúdo: lifecycle/autorização em Base Técnica 3.16; conflito sem retry autônomo, retirado sem nova operação. Terceira dimensão por ambiente/workload: Standard/Fast para gpt-6-luna e gpt-6.1-terra; Standard/Fast/Ultrafast para gpt-6.1-sol, subordinados ao catálogo vigente e à prova real.
+- Rodada 1: apply seletivo E21.2 concluído em 23/10/2026; prova real Standard Luna/max aprovada no #1091, sem ativação pelo Executor. Rodada 2: Salvar e aplicar sob confirmação única, revisão ativa por execução e incompatibilidade explícita; próxima execução comprovada em Production: revisão 4, Luna/max/Fast solicitado e aplicado, sem redeploy (#1095). gpt-6.1-sol e low/medium/high cadastrados e disponibilizados pelo titular; banco e Admin reconfirmados em 23/10/2026, sem divergência visual após recarga. Disponibilidade no catálogo não substitui prova operacional. Legado e revisões pendentes preservados.
+- Limites: sem alteração de modelo/effort, D18A, D10/E21.5, D10B ou PRs #1086/#1090; sem testes/prompts do Pending Setup, branches/previews de teste, comparações de qualidade/latência/custo, retomada da E21.3 ou nova infraestrutura/agentes/automações.
 
 21.2.5 Catálogo administrável e UX
 - Status: implementado.
@@ -1969,6 +2027,7 @@
     - `lib/openai-costs/adapters/activeCostTrackingAdapter.ts`
     - `lib/openai-costs/adapters/activeCostTrackingAdapterCore.ts`
     - `lib/openai-costs/active-cost-validation-cases.ts`
+    - `lib/openai-costs/pricing-validation-cases.ts`
     - `lib/openai-costs/active-validation-cases.ts`
     - `app/api/internal/openai-costs/route.ts`
     - `automations/supabase-inspect/costRecorder.mjs`
@@ -1980,6 +2039,10 @@
     - `supabase/tests/e21_5_4_openai_cost_calculation_read_model.test.sql`
     - `supabase/snippets/e21_5_4_openai_cost_calculation_read_model_verify.sql`
     - `lib/openai-costs/economic-hierarchy.ts`
+    - `lib/openai-costs/dialogue-costs.ts`
+    - `lib/openai-costs/adapters/dialogueCostReadAdapter.ts`
+    - `lib/openai-costs/dialogue-cost-validation-cases.ts`
+    - `app/admin/(protected)/custos-openai/_components/OpenAiDialogueCosts.tsx`
     - `app/admin/(protected)/custos-openai/_components/OpenAiEconomicHierarchy.tsx`
     - `supabase/migrations/20260912215000_e21_5_6_openai_cost_event_correlation.sql`
     - `supabase/tests/e21_5_6_openai_cost_event_hierarchy.test.sql`
@@ -2009,10 +2072,12 @@
 21.5.4 Cálculo e reconciliação de custos
 - Status: vigente.
 - Conteúdo: cálculo/paginação em Base Técnica 3.16. Global = oficial − ativo calculável − histórico, sem clamp; filtro só ativo, indisponível ≠ zero.
+- Correção focal D10 §3.11 (16/11/2026): em implementação; tarifas oficiais versionadas por data/modelo/modalidade/contexto/serviço aplicado, evidência de cache/retenção e Web Search, sem reprecificação ou backfill. Cobertura financeira informativa antes da ativação E21.2, sem novo bloqueio ou mudança em Production nesta rodada. PBs 1 a 4 preservados.
 
 21.5.5 Visão administrativa de custos
-- Status: operacional.
+- Status: operacional; delta D10 §3.12 implementado em branch, com QA visual no navegador integrado e publicação pendentes.
 - Conteúdo: financeiro único sob demanda/platform_admin, fontes/DTO em Base Técnica 3.16; teclado/foco/nomes/estados/responsividade, sem WCAG integral comprovada.
+- Diálogos do Agente Nicho: Pending Setup e Redefinir nicho usam identidade canônica e conta no evento financeiro existente. Consulta completa por diálogo, independente do período da reconciliação; custo acumulado/final ou parcial explícito, operações e retries sem dupla contagem. Sem associação retroativa, reprecificação ou alteração conversacional/operacional.
 
 21.5.6 Visão econômica hierárquica de custos por evento
 - Status: aplicada em Production.
@@ -2288,11 +2353,11 @@
 
 22.7.5 Retirada material residual de banco e configuração
 - Status: aplicado e validado.
-- Conteúdo: histórico preservado; FK/acessos/unidades mutáveis factuais e UPDATE da seleção retirados (Schema 1.11/1.35). Gates E20 ausentes Preview/Production; duas migrations E10.10 excluídas do apply (Platform Config 2.3/3.5). Migrations imutáveis/resíduos compartilhados preservados; exclusão destrutiva exige decisão própria.
+- Conteúdo: histórico preservado; FK/acessos/unidades mutáveis factuais e UPDATE da seleção retirados (Schema 1.11/1.35). Gates E20 ausentes Preview/Production; duas candidatas E10.10 nunca aplicadas removidas do diretório ativo, com proveniência no Git (10.10.3; Platform Config 2.3/3.5). Migrations imutáveis/resíduos compartilhados preservados; exclusão destrutiva exige decisão própria.
 
 23. E23 — Segurança e governança transversal da plataforma
 - Objetivo: segurança/governança.
-- Status: E23.1–23.5 concluídas; E23.6 encerrada com incertezas, sem remediação presumida.
+- Status: E23.1–23.5 concluídas; E23.6 encerrada com incertezas; correção Next.js implementada na E23.7, com recibo operacional próprio.
 
 23.1 Atualização de segurança do Next.js
 
@@ -2400,7 +2465,7 @@
     - `supa#39`
 - Referências:
   - Estado do banco: `docs/schema.md` — seção 6.2.
-  - Apply seletivo e plataforma: `docs/platform-config.md` — seções 2.3 e 4.1; `docs/automations.md` — seção 3.6.
+  - Apply e plataforma: `docs/platform-config.md` — seções 2.3 e 4.1; `docs/automations.md` — seção 3.6.
   - Update retirado do catálogo ativo: `docs/supa-up.md` — `supa#39`.
 
 23.5.3 Retirar e validar a capacidade GraphQL não utilizada
@@ -2425,8 +2490,29 @@
 - Conteúdo: baseline/fontes/limites/gatilhos em docs/vercel-up.md — vercel#34 e provas 23.6.2; ausência de advisory acessível não prova inexistência, uso não prova exploração. Sem versão corretiva/upgrade autorizado.
 
 23.6.4 Diagnóstico delimitado da mudança TLS Supabase
-- Status: levantamento concluído; compatibilidade só no Node local inspecionado, sem conclusão global.
-- Conteúdo: cobertura/gatilhos em docs/supa-up.md — supa#73 e provas 23.6.2; Vercel/browser/SO/integrações externas não demonstrados. Quatro cifras CBC nas APIs HTTP, não Postgres/pooler/Management API. Nenhuma incompatibilidade/correção comprovada, sem novas provas exigidas nesta rodada.
+- Status: conferência 18F concluída; compatibilidade global inconclusiva; nenhuma incompatibilidade/correção comprovada.
+- Conteúdo: 18D.1 — levantamento e provas de base ([PR #1067 — resultado final](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6173085395); [provas TLS](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6170466774)). 18F — conferência curta dos ambientes atuais, reutilizando essas provas, com resultado inconclusivo ([PR #1128 — recibo final](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1128#issuecomment-6724249956)). Limites e gatilho: docs/supa-up.md — supa#73. O aviso abrange as APIs HTTP, não Postgres/pooler/Management API.
+
+23.7 Atualização corretiva do Next.js — Debate 18E
+
+23.7.1 Objetivo e status
+- Objetivo: corrigir vulnerabilidades aplicáveis sem mudança funcional ou custo incremental de plataforma.
+- Status: concluído.
+
+23.7.2 Registros do recorte
+- Repositório:
+  - Ajustados:
+    - `package.json`
+    - `package-lock.json`
+- Updates:
+  - Aplicados:
+    - `vercel#34`
+- Referências:
+  - Baseline e limites: `docs/vercel-up.md` — `vercel#34`.
+  - Contrato integral, V2 e recibo operacional: [PR #1126](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1126).
+
+23.7.3 Correção e preservação funcional
+- Conteúdo: Next.js/lint 16.4.5 e transitivas corretivas; Auth/sessões, SSR, Server Actions e imagens preservados. Sem recursos opcionais, refatoração, banco, TLS/18F ou mudança de IA.
 
 24. E24 — Governança e compatibilidade transversal de updates
 - Objetivo: governar updates sem custo incremental.
@@ -2521,11 +2607,11 @@
 25.1.4 Etapa 1 e aproveitamento inicial
 - Status: implementado.
 - Conteúdo: nome público/atuação, Negócio, Ofertas, Atendimento, Provas/credenciais/resultados, Materiais/identidade, Preferências/limites; incompletude sem bloqueio global. Cópia inicial E10.11.
-- Orientação previsível determinística; IA só explícita/com ganho real para explicar/exemplificar/organizar/resumir/reformular fornecido, sem Web, invenção de fatos ou confirmação em nome do cliente. Ausência vira pergunta localizada/pendência; falha IA mantém edição manual. Sugestões/edição seguem 25.1.5.
+- Edição manual progressiva preservada. Assistência da categoria 1 descontinuada pelo D14E §5; action, transporte, prompt e prova exclusivos retirados. Identificadores, configurações e custos históricos preservados; helpers compartilhados continuam atendendo a inteligência.
 
 25.1.5 Etapa 2 e inteligência de comunicação
 - Status: implementado; gpt-6-luna/max (configuração E21), comparação isolada gpt-6-sol/medium.
-- Conteúdo: IA central interpreta mercado/gera comunicação com Etapa 1 confirmada pertinente; Web Search se atualidade/localidade material, sem fallback paramétrico silencioso após falha. Fato particular distinto de hipótese; revisão humana sem aprovação por chamada/vínculo persistente de pesquisa.
+- Conteúdo: IA exige nicho oficial confirmado e usa dados confirmados pertinentes da categoria 1 e textos/metadados de materiais da categoria 2; sem leitura automática de arquivos privados. Web Search se atualidade/localidade material, sem fallback paramétrico silencioso após falha. Fato particular distinto de hipótese; revisão humana sem salvamento automático. Nova metodologia D14F fora do recorte.
 - Quem somos, Público/contexto, Dores/desejos/crenças/objeções, Proposta de valor, Benefícios, Diferenciais, FAQ. Geral gera sete vazias/atualiza conjunto pertinente; revisão por seção. Salvo Etapa 2 só contextualiza alvo, sem autoridade factual; sugestão exige instalação explícita, não salva automaticamente; edição manual não dispara IA.
 - Sem LP/produto/canal, mudança de Pending Setup/comercial/trial ou Agents SDK/multiagente/job/fila/infraestrutura novos. Carteira/saldo/franquia/bloqueio comercial IA fora; créditos no D10B.
 
@@ -2555,7 +2641,8 @@
 
 25.3.1 Objetivo e status
 - Objetivo: recursos manuais nas três categorias, legado/acesso/concorrência/assistências preservados.
-- Status: PB1/D14D operacional Preview/Production; PB2/PB3 em definição.
+- Status: PB1/D14D e Rodada 3 operacionais em Preview/Production. D14E descontinuado; metodologia D14F em definição.
+- Rodada 4: definição/redefinição de nicho preparada em branch isolada; migration, ativação e QA autenticado da gravação pendentes.
 - Limites: sem novos agentes/IA/pesquisa, processamento/transcrição, publicação automática/canais; sem reabrir E25.1/PB-A/E25.2.
 
 25.3.2 Registros do recorte
@@ -2584,6 +2671,13 @@
     - `lib/communication-base/resource-validation-cases.ts`
     - `supabase/migrations/20261010202505_e25_3_communication_resources.sql`
     - `supabase/tests/e25_3_communication_resources.test.sql`
+    - `app/a/[account]/base-comunicacao/_components/SectionGuidance.tsx`
+    - `lib/communication-base/section-guidance.ts`
+    - `lib/communication-base/business-identification.ts`
+    - `supabase/migrations/20261101141410_d14d_section_titles.sql`
+    - `supabase/tests/d14d_section_titles.proof.mjs`
+    - `supabase/migrations/20261106145723_d14d_account_niche_confirmation.sql`
+    - `supabase/tests/d14d_account_niche.proof.mjs`
   - Ajustados:
     - `.github/workflows/e10-11-sql-proof.yml`
     - `.github/workflows/pipeline-supabase-apply-migrations.yml`
@@ -2603,13 +2697,18 @@
     - `lib/communication-base/ui-state-keys.ts`
     - `lib/communication-base/validation-cases.ts`
     - `next.config.js`
+    - `app/a/[account]/niche-resolution-actions.ts`
+    - `app/a/[account]/_components/NicheResolutionCard.tsx`
+    - `app/a/[account]/page.tsx`
+    - `lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter.ts`
 - Referências:
-  - Exceção de sequência, apply seletivo e ativação por ambiente: `docs/platform-config.md` — seções 2.3 e 3.5.
+  - Exceção de sequência, apply e ativação por ambiente: `docs/platform-config.md` — seções 2.3 e 3.5.
   - Catálogo, segurança, RPC e Storage aplicados: `docs/schema.md` — seção 1.39.
 
 25.3.3 Dados do negócio e Inteligência e copy
 - Status: operacional Preview/Production.
-- Conteúdo: Dados com rótulo/valor opcionais, vazios permitidos e nome público no cabeçalho; inicial Identificação e dados do negócio. Inteligência preserva sete seções/formatos/parágrafos/quebras/delimitadores/FAQ; novas manuais.
+- Conteúdo: Dados opcionais, nome público no cabeçalho e campos iniciais de identificação sobre os registros existentes; informações próprias preservadas. Atuação mostra nicho para consulta e exige confirmação ao iniciar a Base; ausência de nicho permite confirmar entendimento disponível. Inteligência preserva sete seções/formatos/parágrafos/quebras/delimitadores/FAQ; novas manuais.
+- R3: 17 textos discretos e 17 ajudas literais por identidade de seção, com teclado/clique/toque/hover; sem edição administrativa ou persistência nova. Títulos iniciais Identificação do negócio e Referências institucionais por migration; preservar rótulos personalizados, ordem e conteúdo. Apply segue o workflow pós-merge autorizado (Platform Config 2.3).
 - Assistências 25.1.5, permissões 25.1.3, descarte/retomada/conflito/foco 25.2 em Bases antigas/novas, com isolamento; FAQ 44 px.
 
 25.3.4 Materiais de comunicação
@@ -2620,4 +2719,10 @@
 25.3.5 Gestão administrativa de seções
 - Status: operacional Preview/Production.
 - Conteúdo: Admin central adiciona/renomeia/reordena nas três categorias; sem autoridade, recusa. Identidade/categoria/formato/salvos preservados; novas vazias/opcionais em Bases antigas/futuras, sem retroescrita/exclusão.
-- Inclusão global: prova isolada/rollback/projeção antiga/vazia aceita, sem inclusão autenticada persistente; SQL não substitui Auth/Storage/UI. Gate desligado mantém runtime anterior; progressão autorizada, apply integral continua suspenso.
+- Inclusão global: prova isolada/rollback/projeção antiga/vazia aceita, sem inclusão autenticada persistente; SQL não substitui Auth/Storage/UI. Gate desligado mantém runtime anterior; progressão autorizada.
+
+25.3.6 Nicho e continuidade da Base
+- Status: experiência de nicho operacional; extensão de memória em implementação por 10.12.7, com aplicação remota e validação hospedada pendentes.
+- Conteúdo: conta ativa pode definir nicho antes ou depois de iniciar a Base; redefinição exige confirmação humana e ausência de qualquer produto, inclusive rascunho. Reutiliza o agente conversacional do Pending Setup com propósito restrito e confirmação separada, sem reabrir o fluxo. Identificação semântica textual por 10.12.7; persistência taxonômica E10.5 e consumidores legados permanecem compatíveis. Antes de responder, consulta Resumo, nicho oficial e dados confirmados pertinentes da Base, sem repetir perguntas respondidas. A memória autorizada segue 10.12.7 e Base Técnica 3.14.6; mensagens enviadas e novidade empresarial permanecem mesmo sem confirmação, sem alterar automaticamente a Base. Categorias 1/2 e edição manual da categoria 3 disponíveis sem nicho.
+- Troca não altera a Base; havendo inteligência, orienta revisão antes da reutilização. Geração exige nicho oficial confirmado e descarta resposta se o vínculo mudar durante a execução; mudança nos materiais usados invalida sugestões transitórias, sem afetar conteúdos persistidos. Revisão humana permanece obrigatória.
+- Banco/ativação: `docs/schema.md` — 1.13.5–1.13.6; `docs/platform-config.md` — 3.5. Redefinição com produto e nova metodologia D14F pertencem a outra rodada.

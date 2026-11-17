@@ -1,5 +1,6 @@
 import type {
   OpenAiManagedWorkloadEnvironment,
+  OpenAiOperationalConfigurationReader,
   ResolvedOpenAiProductWorkload,
 } from "@/openai-workloads";
 import type { StageTwoDraft } from "@/communication-base/ai-core";
@@ -15,6 +16,8 @@ export type OpenAiCandidateProofMetadata = Readonly<{
   latency_ms: number | null;
   contract_version: 1;
   source: "openai_api";
+  requested_service_tier?: string;
+  applied_service_tier?: string | null;
 }>;
 
 export type OpenAiCandidateProofAttempt =
@@ -134,4 +137,27 @@ function boundedLatency(value: unknown) {
     value <= 900_000
     ? value
     : null;
+}
+
+export function proofResolver(
+  workload: ResolvedOpenAiProductWorkload,
+  environment: OpenAiManagedWorkloadEnvironment,
+) {
+  const readOperationalConfiguration: OpenAiOperationalConfigurationReader =
+    async () => ({
+      ok: true,
+      value: {
+        environment,
+        workload: workload.id,
+        apiKind: workload.apiKind,
+        model: workload.model,
+        reasoningEffort: workload.reasoningEffort,
+        serviceTier: workload.serviceTier ?? null,
+        revision: "1",
+      },
+    });
+  return {
+    operationalConfigurationEnabled: "true",
+    readOperationalConfiguration,
+  } as const;
 }

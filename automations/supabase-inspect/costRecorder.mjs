@@ -87,6 +87,13 @@ export function createCostRecorder(env = process.env, fetchImpl = fetch) {
         providerRequestId: details.providerRequestId ?? null,
         httpStatus: details.httpStatus ?? null,
         usage: normalizeUsage(details.usage),
+        requestedServiceTier: null,
+        appliedServiceTier: ["default", "fast", "priority", "ultrafast", "auto", "flex", "scale"].includes(details.appliedServiceTier)
+          ? details.appliedServiceTier : null,
+        appliedModel: typeof details.appliedModel === "string" && /^[a-zA-Z0-9._-]{1,128}$/.test(details.appliedModel) ? details.appliedModel : null,
+        modality: "responses_text",
+        cacheWriteTokens30m: token(details.usage?.input_tokens_details?.cache_write_tokens_details?.ttl_30m_tokens),
+        cacheWriteTokens12h: token(details.usage?.input_tokens_details?.cache_write_tokens_details?.ttl_12h_tokens),
         finishedAt: new Date().toISOString(),
       });
     },

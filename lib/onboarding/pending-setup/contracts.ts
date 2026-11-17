@@ -11,11 +11,11 @@ export function attendanceMessageContent(message: Pick<PendingSetupMessage, "ord
   return message.role === "assistant" ? attendancePlainText(content) : content;
 }
 export function attendanceConfirmationQuestion(proposal: AttendanceProposal): string {
-  return proposal.kind === "existing" ? "Esse entendimento e essa categoria correspondem ao seu negócio?" : "Esse entendimento descreve seu negócio?";
+  return proposal.kind === "semantic" ? "Esse entendimento e esse nicho correspondem ao seu negócio?" : proposal.kind === "existing" ? "Esse entendimento e essa categoria correspondem ao seu negócio?" : "Esse entendimento descreve seu negócio?";
 }
 export function attendanceButtonContent(proposal: AttendanceProposal, intent: "confirm" | "clarify"): string {
   return [`Pergunta exibida: ${attendanceConfirmationQuestion(proposal)}`,
-    ...(proposal.kind === "existing" ? [`Categoria proposta: ${proposal.taxonName}.`] : []),
+    ...(proposal.kind === "existing" ? [`Categoria proposta: ${proposal.taxonName}.`] : proposal.kind === "semantic" ? [`Nicho proposto: ${proposal.nicheDescription}.`] : []),
     `Escolha pelo botão: ${intent === "confirm" ? "Sim, está correto" : "Quero explicar melhor"}.`].join("\n");
 }
 export const PENDING_SETUP_STAGES = [

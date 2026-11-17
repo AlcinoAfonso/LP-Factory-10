@@ -1,6 +1,7 @@
 "use server";
 
 import "server-only";
+import { getAccountOfficialNiche } from "../../../lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter";
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
@@ -177,7 +178,6 @@ export async function continuePendingSetupConversationAction(
       : (intent === "confirm" || intent === "clarify") && conversation.attendanceProposal
         ? attendanceButtonContent(conversation.attendanceProposal, intent)
         : intent === "clarify" ? "Vamos retomar o atendimento a partir do contexto já informado." : null;
-    // Persist the static question only after interaction, before appending the first answer.
     if (intent === "message" && !conversation.messages.length) {
       const initialized = await conductAttendanceTurn({ accountId: actor.accountId, userId: actor.userId,
         conversationId, expectedVersion: conversation.version, content: null,
@@ -287,7 +287,7 @@ export async function continuePendingSetupConversationAction(
         apiKey: process.env.OPENAI_API_KEY,
         financialContext: clientOpenAiCostContext(actor.accountId, {
           kind: "niche_resolution",
-          eventId: crypto.randomUUID(),
+          eventId: conversationId,
         }),
       });
       if (resolution.ok) {
@@ -411,10 +411,10 @@ export async function completePendingSetupAction(
   }
 
   const [primaryTaxon, operationalLabel] = await Promise.all([
-    getActivePrimaryAccountTaxon({ accountId: actor.accountId }),
+    getAccountOfficialNiche({ accountId: actor.accountId }),
     getConfirmedOperationalNicheResolutionLabel({ accountId: actor.accountId }),
   ]);
-  const resolutionOutcome = primaryTaxon
+  const resolutionOutcome = primaryTaxon?.confirmed
     ? "official" as const
     : operationalLabel
       ? "operational_fallback" as const

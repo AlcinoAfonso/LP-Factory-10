@@ -1,0 +1,138 @@
+[
+  {
+    "category": "Dados do negócio",
+    "label": "Identificação do negócio",
+    "height": 44,
+    "inHeader": true,
+    "width": 44,
+    "passed": true
+  },
+  {
+    "category": "Dados do negócio",
+    "label": "Atuação",
+    "height": 44,
+    "inHeader": true,
+    "width": 44,
+    "passed": true
+  },
+  {
+    "category": "Dados do negócio",
+    "label": "Ofertas",
+    "height": 44,
+    "inHeader": true,
+    "width": 44,
+    "passed": true
+  },
+  {
+    "category": "Dados do negócio",
+    "label": "Atendimento, horários, contatos e agendamento",
+    "height": 44,
+    "inHeader": true,
+    "width": 44,
+    "passed": true
+  },
+  {
+    "category": "Dados do negócio",
+    "label": "Provas, credenciais e resultados",
+    "height": 44,
+    "inHeader": true,
+    "width": 44,
+    "passed": true
+  },
+  {
+    "category": "Dados do negócio",
+    "label": "Referências institucionais",
+    "height": 44,
+    "inHeader": true,
+    "width": 44,
+    "passed": true
+  },
+  {
+    "category": "Dados do negócio",
+    "label": "Preferências e limites",
+    "height": 44,
+    "inHeader": true,
+    "width": 44,
+    "passed": true
+  },
+  {
+    "category": "Materiais de comunicação",
+    "label": "Identidade visual",
+    "height": 44,
+    "inHeader": true,
+    "width": 44,
+    "passed": true
+  },
+  {
+    "category": "Materiais de comunicação",
+    "label": "Fotos, vídeos e áudios",
+    "height": 44,
+    "inHeader": true,
+    "width": 44,
+    "passed": true
+  },
+  {
+    "category": "Materiais de comunicação",
+    "label": "Depoimentos e provas sociais",
+    "height": 44,
+    "inHeader": true,
+    "width": 44,
+    "passed": true
+  },
+  {
+    "category": "Inteligência e copy",
+    "label": "Quem somos",
+    "height": 44,
+    "inHeader": true,
+    "width": 44,
+    "passed": true
+  },
+  {
+    "category": "Inteligência e copy",
+    "label": "Público e contexto",
+    "height": 44,
+    "inHeader": true,
+    "width": 44,
+    "passed": true
+  },
+  {
+    "category": "Inteligência e copy",
+    "label": "Dores, desejos, crenças e objeções",
+    "height": 44,
+    "inHeader": true,
+    "width": 44,
+    "passed": true
+  },
+  {
+    "category": "Inteligência e copy",
+    "label": "Proposta de valor",
+    "height": 44,
+    "inHeader": true,
+    "width": 44,
+    "passed": true
+  },
+  {
+    "category": "Inteligência e copy",
+    "label": "Benefícios",
+    "height": 44,
+    "inHeader": true,
+    "width": 44,
+    "passed": true
+  },
+  {
+    "category": "Inteligência e copy",
+    "label": "Diferenciais",
+    "height": 44,
+    "inHeader": true,
+    "width": 44,
+    "passed": true
+  },
+  {
+    "category": "Inteligência e copy",
+    "label": "Perguntas frequentes",
+    "height": 44,
+    "inHeader": true,
+    "width": 44,
+    "passed": true
+  }
+]

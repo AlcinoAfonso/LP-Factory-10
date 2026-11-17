@@ -1,4 +1,5 @@
 "use client";
+import { AssistantMessageText } from "./AssistantMessageText";
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -134,7 +135,7 @@ export function PendingSetupConversation({
                     : "max-w-[88%] rounded-2xl rounded-bl-md bg-surface-muted px-4 py-3 text-sm break-words whitespace-pre-wrap leading-6 text-ink-900 sm:max-w-[75%]"
                 }
               >
-                {conversation.attendanceEnabled ? attendanceMessageContent(message) : message.content}
+                {message.role === "assistant" ? <AssistantMessageText text={conversation.attendanceEnabled ? attendanceMessageContent(message) : message.content} /> : message.content}
               </div>
             </div>
           ))}
@@ -160,6 +161,7 @@ export function PendingSetupConversation({
               <p className="font-semibold">Entendimento proposto do negócio</p>
               <p className="mt-1 whitespace-pre-wrap break-words">{attendancePlainText(conversation.businessContextText ?? "")}</p>
             </div>
+            {conversation.attendanceProposal.kind === "semantic" ? <div className="text-sm leading-6 text-ink-900"><p className="font-semibold">Nicho proposto</p><p className="mt-1 break-words">{conversation.attendanceProposal.nicheDescription}</p></div> : null}
             {conversation.attendanceProposal.kind === "existing" ? (
               <div className="text-sm leading-6 text-ink-900">
                 <p className="font-semibold">Classificação proposta</p>

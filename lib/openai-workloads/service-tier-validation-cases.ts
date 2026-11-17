@@ -9,6 +9,8 @@ import {
 export async function validateOpenAiServiceTiers() {
   assert.deepEqual(listOpenAiServiceTiers("gpt-6-luna"), ["default", "fast"]);
   assert.deepEqual(listOpenAiServiceTiers("gpt-6.1-sol"), ["default", "fast", "ultrafast"]);
+  assert.deepEqual(listOpenAiServiceTiers("gpt-6.1-terra"), ["default", "fast"]);
+  assert.equal(isEligibleOpenAiServiceTier("gpt-6.1-terra", "ultrafast"), false);
   for (const model of ["gpt-6-sol", "GPT-6-Luna", "gpt-6-luna-unknown", "gpt-5.4-mini"]) {
     assert.deepEqual(listOpenAiServiceTiers(model), []);
     assert.equal(isEligibleOpenAiServiceTier(model, "fast"), false);
@@ -19,13 +21,14 @@ export async function validateOpenAiServiceTiers() {
   const resolved = await resolveOpenAiProductWorkload("commercial_activation_draft_generation", "development");
   assert.equal(resolved.ok, true);
   if (!resolved.ok) return;
-  for (const [tier, legacyRequest, expected] of [
-    ["fast", "default", "fast"], ["default", "auto", "default"], ["ultrafast", undefined, "ultrafast"],
-    [null, undefined, undefined], [null, "default", "default"],
+  for (const [tier, legacyRequest, expected, model] of [
+    ["fast", "default", "fast", "gpt-6-luna"], ["default", "auto", "default", "gpt-6-luna"],
+    ["ultrafast", undefined, "ultrafast", "gpt-6.1-sol"],
+    ["fast", undefined, "fast", "gpt-6.1-terra"],
+    [null, undefined, undefined, "gpt-6-luna"], [null, "default", "default", "gpt-6-luna"],
   ] as const) {
     const events: OpenAiWorkloadEvent[] = [];
     let sent: Record<string, unknown> = {};
-    const model = tier === "ultrafast" ? "gpt-6.1-sol" : "gpt-6-luna";
     const result: OpenAiResponsesResult<boolean> = await requestOpenAiResponses({
       apiKey: "fixture-key", configuration: { ...resolved.value, model, serviceTier: tier },
       environment: "development", executionOrigin: "administrative_proof",

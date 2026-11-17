@@ -1,0 +1,18 @@
+{
+  "draft30000": true,
+  "counter": true,
+  "helpEscapePreservesDraft": true,
+  "cancelContinue": true,
+  "noSaveSubmitted": true,
+  "typography": {
+    "placeholderColor": "rgb(117, 117, 117)",
+    "placeholderFont": "15.4px",
+    "textFont": "14px"
+  },
+  "savePosition": {
+    "bottom": 451.2000122070313,
+    "focused": true,
+    "top": 407.2000122070313,
+    "viewportHeight": 480
+  }
+}

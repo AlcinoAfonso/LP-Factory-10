@@ -1,3 +1,4 @@
+import { openAiResponseMatchesConfiguration } from "../../../openai-workloads/service-tier";
 import type {
   AiNicheResolutionOutput,
   AiNicheResolutionUxMode,
@@ -11,6 +12,7 @@ import {
   createOpenAiWorkloadSuccessEvent,
   emitOpenAiWorkloadEvent,
   normalizeOpenAiResponseUsage,
+  normalizeOpenAiAppliedServiceTier,
   resolveOpenAiProductWorkload,
   resolveOpenAiWorkloadEnvironment,
   type OpenAiWorkloadEnvironment,
@@ -21,6 +23,7 @@ import {
 import {
   newOpenAiCostId,
   openAiCostRecorder,
+  openAiCostResponseEvidence,
   isOpenAiActiveCostTrackingEnabled,
   type OpenAiCostEconomicContext,
   type OpenAiCostExecutionOrigin,
@@ -67,6 +70,9 @@ export type ResolveAiNicheResolutionResult =
     };
 
 type ResponsesApiResponse = {
+  model?: unknown;
+  reasoning?: unknown;
+  service_tier?: unknown;
   id?: unknown;
   usage?: unknown;
   output_text?: unknown;
@@ -208,6 +214,7 @@ export async function resolveNicheWithOpenAi(input: {
     configurationRevision: workload.revision,
     model: workload.model,
     reasoningEffort: workload.reasoningEffort,
+    requestedServiceTier: workload.serviceTier,
     environment,
   } as const;
   const emitEvent = dependencies.emitEvent ?? emitOpenAiWorkloadEvent;
@@ -265,6 +272,8 @@ export async function resolveNicheWithOpenAi(input: {
     const finishedAt = nowIso();
     await recorder.finishOperation({
       operationId,
+      ...openAiCostResponseEvidence(data),
+      requestedServiceTier: workload.serviceTier ?? null,
       result,
       failureCategory,
       httpStatus,
@@ -291,6 +300,7 @@ export async function resolveNicheWithOpenAi(input: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        ...(workload.serviceTier == null ? {} : { service_tier: workload.serviceTier }),
         model: workload.model,
         reasoning: { effort: workload.reasoningEffort },
         input: [
@@ -374,6 +384,7 @@ export async function resolveNicheWithOpenAi(input: {
     if (data.error) {
       emitEvent(createOpenAiWorkloadFailureEvent({
         ...eventContext,
+        appliedServiceTier: normalizeOpenAiAppliedServiceTier(data.service_tier),
         responseId: data.id,
         latencyMs: now() - startedAt,
         usage: data.usage,
@@ -388,10 +399,22 @@ export async function resolveNicheWithOpenAi(input: {
       };
     }
 
+    if (!openAiResponseMatchesConfiguration(workload, data)) {
+      emitEvent(createOpenAiWorkloadFailureEvent({
+        ...eventContext, appliedServiceTier: normalizeOpenAiAppliedServiceTier(data.service_tier),
+        responseId: data.id, latencyMs: now() - startedAt, usage: data.usage,
+        providerErrorCode: "active_configuration_mismatch",
+      }, "provider_error"));
+      await finishFinancial("failure", "provider_error", data);
+      return { ok: false, status: "failed", model: workload.model,
+        schemaVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION, reason: "openai_configuration_incompatible" };
+    }
+
     const outputText = extractOutputText(data);
     if (outputText.kind !== "text") {
       emitEvent(createOpenAiWorkloadFailureEvent({
         ...eventContext,
+        appliedServiceTier: normalizeOpenAiAppliedServiceTier(data.service_tier),
         responseId: data.id,
         latencyMs: now() - startedAt,
         usage: data.usage,
@@ -414,6 +437,7 @@ export async function resolveNicheWithOpenAi(input: {
     if (!parsed) {
       emitEvent(createOpenAiWorkloadFailureEvent({
         ...eventContext,
+        appliedServiceTier: normalizeOpenAiAppliedServiceTier(data.service_tier),
         responseId: data.id,
         latencyMs: now() - startedAt,
         usage: data.usage,
@@ -430,6 +454,7 @@ export async function resolveNicheWithOpenAi(input: {
 
     emitEvent(createOpenAiWorkloadSuccessEvent({
       ...eventContext,
+      appliedServiceTier: normalizeOpenAiAppliedServiceTier(data.service_tier),
       responseId: data.id,
       latencyMs: now() - startedAt,
       usage: data.usage,
