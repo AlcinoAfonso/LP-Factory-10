@@ -1,4 +1,5 @@
 import "server-only";
+import { z } from "zod";
 import { createServiceClient } from "../../supabase/service";
 import type { OpenAiActiveCostReadModel } from "../active-contracts";
 import type { OpenAiCostsPeriod } from "../contracts";
@@ -40,7 +41,43 @@ export async function listOpenAiCostDialogues(period: OpenAiCostsPeriod, active:
         add(raw);
       }
     }
-    return { ok: true, dialogues: [...dialogues.values()].sort((a,b) => b.startedAt.localeCompare(a.startedAt) || a.dialogueId.localeCompare(b.dialogueId)) };
+    const accountNames = new Map<string, string>();
+    const accountIds = [...new Set([...dialogues.values()].map(dialogue => dialogue.accountId))];
+    for (let offset = 0; offset < accountIds.length; offset += 100) {
+      const batch = accountIds.slice(offset, offset + 100);
+      const result = await client.from("accounts").select("id,name").in("id", batch).limit(batch.length + 1);
+      if (result.error || !Array.isArray(result.data) || result.data.length > batch.length) throw Error("dialogue_accounts_unavailable");
+      for (const raw of result.data) {
+        const parsed = z.object({ id: z.uuid(), name: z.string().min(1) }).safeParse(raw);
+        if (!parsed.success || !batch.includes(parsed.data.id) || accountNames.has(parsed.data.id)) throw Error("dialogue_account_invalid");
+        accountNames.set(parsed.data.id, parsed.data.name);
+      }
+    }
+    const linkedWorkloads = new Map<string, Set<"pending_setup_conversation" | "niche_resolution">>();
+    const dialogueIds = [...dialogues.keys()];
+    for (let offset = 0; offset < dialogueIds.length; offset += 100) {
+      const batch = dialogueIds.slice(offset, offset + 100);
+      const batchAccountIds = [...new Set(batch.map(dialogueId => dialogues.get(dialogueId)!.accountId))];
+      const links = await readDialoguePages(async after => {
+        let query = client.from("openai_cost_executions").select("id,account_id,economic_event_id,workload")
+          .eq("economic_event_kind", "niche_resolution").in("economic_event_id", batch).in("account_id", batchAccountIds)
+          .in("workload", ["pending_setup_conversation", "niche_resolution"]).order("id").limit(DIALOGUE_PAGE_SIZE);
+        if (after) query = query.gt("id", after);
+        return await query;
+      });
+      for (const raw of links) {
+        const link = z.object({ economic_event_id: z.uuid(), account_id: z.uuid(), workload: z.enum(["pending_setup_conversation", "niche_resolution"]) }).safeParse(raw);
+        if (!link.success || !batch.includes(link.data.economic_event_id)) throw Error("dialogue_workload_invalid");
+        const dialogue = dialogues.get(link.data.economic_event_id);
+        if (dialogue?.accountId !== link.data.account_id) continue;
+        const workloads = linkedWorkloads.get(dialogue.dialogueId) ?? new Set<"pending_setup_conversation" | "niche_resolution">();
+        workloads.add(link.data.workload);
+        linkedWorkloads.set(dialogue.dialogueId, workloads);
+      }
+    }
+    return { ok: true, dialogues: [...dialogues.values()].map(dialogue => ({ ...dialogue,
+      accountName: accountNames.get(dialogue.accountId) ?? null, workloads: [...(linkedWorkloads.get(dialogue.dialogueId) ?? [])].sort(),
+    })).sort((a,b) => b.startedAt.localeCompare(a.startedAt) || a.dialogueId.localeCompare(b.dialogueId)) };
   } catch { return { ok: false, code: "DIALOGUE_LIST_UNAVAILABLE" }; }
 }
 

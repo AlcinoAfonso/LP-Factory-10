@@ -70,8 +70,11 @@ export async function validateDialogueCosts() {
 }
 
 async function validateAdapter(execs: Record<string,unknown>[],ops: Record<string,unknown>[]) {
-  const tables: Record<string,Record<string,unknown>[]> = { account_dialogues:[metadata(),metadata(2,"account_niche")],
-    openai_cost_executions:[...execs,execution(12,2),execution(13,900),{...execution(14),account_id:otherAccount}],
+  const tables: Record<string,Record<string,unknown>[]> = {
+    accounts: [{ id: account, name: "Conta QA Principal", private_email: "PRIVATE_EMAIL" }, { id: otherAccount, name: "Conta QA Sem Operações" }],
+    account_dialogues:[metadata(),metadata(2,"account_niche"), { ...metadata(3), account_id: otherAccount, started_at: stamp }, { ...metadata(4), started_at: stamp, ended_at: null }],
+    openai_cost_executions:[...execs,execution(12,2),execution(13,900),{...execution(14),account_id:otherAccount},
+      { ...execution(15,4,"2026-11-18T00:00:00.000Z"), workload:"niche_resolution", finished_at:"2026-11-18T00:01:00.000Z" }],
     openai_cost_operations:[...ops,operation(103,12,"100"),operation(104,13,"200"),operation(105,14,"300")] };
   const selections: string[]=[]; const filters: string[]=[]; let failOperations=false;
   const client={from(table:string){
@@ -104,8 +107,20 @@ async function validateAdapter(execs: Record<string,unknown>[],ops: Record<strin
   assert.deepEqual(await adapter.readOpenAiDialogueCost({dialogueId:id(1),accountId:account}),{ok:false,code:"DIALOGUE_COST_UNAVAILABLE"});
   failOperations=false;
   const period={startTime:Date.parse("2026-11-01T00:00:00Z")/1000,endTime:Date.parse("2026-11-18T00:00:00Z")/1000};
-  const active=translateDialogueLedger(tables.openai_cost_executions,tables.openai_cost_operations);
+  const periodicExecutions=tables.openai_cost_executions.filter(e=>Date.parse(String(e.started_at))/1000<period.endTime);
+  const active=translateDialogueLedger(periodicExecutions,tables.openai_cost_operations);
   const list=await adapter.listOpenAiCostDialogues(period,active);
-  assert.ok(list.ok);if(list.ok)assert.deepEqual(list.dialogues.map(row=>row.dialogueId),[id(1),id(2)],"old unrelated economic event never creates a dialogue association");
+  assert.ok(list.ok);
+  if(list.ok) {
+    assert.deepEqual(list.dialogues.map(row=>row.dialogueId),[id(3),id(4),id(1),id(2)],"unrelated events never become dialogues");
+    assert.equal(list.dialogues.find(row=>row.dialogueId===id(3))?.accountName,"Conta QA Sem Operações");
+    assert.deepEqual(list.dialogues.find(row=>row.dialogueId===id(3))?.workloads,[],"another account's event cannot establish a workload link");
+    assert.deepEqual(list.dialogues.find(row=>row.dialogueId===id(1))?.workloads,["pending_setup_conversation"]);
+    assert.deepEqual(list.dialogues.find(row=>row.dialogueId===id(4))?.workloads,["niche_resolution"],"workload membership is exact and independent of the selected financial period");
+  }
+  const withoutPeriodicActivity=await adapter.listOpenAiCostDialogues(period,translateDialogueLedger([],[]));
+  assert.ok(withoutPeriodicActivity.ok);
+  if(withoutPeriodicActivity.ok)assert.equal(withoutPeriodicActivity.dialogues.find(row=>row.dialogueId===id(3))?.accountName,"Conta QA Sem Operações");
+  assert.ok(selections.includes("accounts:id,name"));
   assert.equal(JSON.stringify(list).includes("PRIVATE"),false);
 }

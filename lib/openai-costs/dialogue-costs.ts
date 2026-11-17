@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { OpenAiActiveCostExecution, OpenAiActiveCostReadModel } from "./active-contracts";
+import type { OpenAiActiveCostExecution, OpenAiActiveCostReadModel, OpenAiCostReadWorkloadId } from "./active-contracts";
 import { addDecimal, decimalFromNonNegativeString, decimalZero, formatDecimal } from "./decimal";
 import { translateOpenAiActiveCostRows } from "./adapters/activeCostReadModelAdapterCore";
 
@@ -7,7 +7,7 @@ export const dialogueIdentitySchema = z.object({ dialogueId: z.uuid(), accountId
 const metadataSchema = z.object({ id: z.uuid(), account_id: z.uuid(), origin: z.enum(["pending_setup", "account_niche"]),
   started_at: z.iso.datetime({ offset: true }), ended_at: z.iso.datetime({ offset: true }).nullable() });
 export type OpenAiCostDialogue = Readonly<{ dialogueId: string; accountId: string; origin: "pending_setup" | "account_niche";
-  startedAt: string; endedAt: string | null }>;
+  startedAt: string; endedAt: string | null; accountName?: string | null; workloads?: readonly OpenAiCostReadWorkloadId[] }>;
 export type DialogueListResult = Readonly<{ ok: true; dialogues: readonly OpenAiCostDialogue[] }> | Readonly<{ ok: false; code: string }>;
 export type DialogueCostDetail = Readonly<{ dialogue: OpenAiCostDialogue; executions: readonly OpenAiActiveCostExecution[];
   calculatedCostUsd: string | null; status: "accumulated" | "final" | "partial" | "unrecorded";

@@ -304,6 +304,26 @@ assert.ok(emptyDialogueMarkup.includes("Sem custo registrado"));
 assert.ok(emptyDialogueMarkup.includes("Sem valor comprovado"));
 assert.equal(emptyDialogueMarkup.includes("US$ 0,00"), false);
 
+const dialogueList = [
+  { ...dialogue, accountName: "Conta Atendimento", workloads: ["pending_setup_conversation" as const] },
+  { ...dialogue, dialogueId: "e2155000-0000-4000-8000-000000000041", accountName: "Conta Resolução", workloads: ["niche_resolution" as const] },
+  { ...dialogue, dialogueId: "e2155000-0000-4000-8000-000000000042", accountName: "Conta Sem Operações", workloads: [] },
+];
+for (const [workload, shown, hidden] of [
+  ["pending_setup_conversation", "Conta Atendimento", "Conta Resolução"],
+  ["niche_resolution", "Conta Resolução", "Conta Atendimento"],
+] as const) {
+  const filteredMarkup=renderToStaticMarkup(<OpenAiDialogueCosts result={{ok:true,dialogues:dialogueList}} active={null} filters={{workload}} />);
+  assert.ok(filteredMarkup.includes(shown));
+  assert.equal(filteredMarkup.includes(hidden),false);
+  assert.equal(filteredMarkup.includes("Conta Sem Operações"),false);
+}
+const namedWithoutActivity=renderToStaticMarkup(<OpenAiDialogueCosts result={{ok:true,dialogues:dialogueList}} active={null} filters={{}} />);
+assert.ok(namedWithoutActivity.includes("Conta Sem Operações"),"canonical account name is preserved without period operations");
+assert.equal(namedWithoutActivity.includes("Conta "+dialogue.accountId.slice(0,8)),false);
+const unrelatedWorkload=renderToStaticMarkup(<OpenAiDialogueCosts result={{ok:true,dialogues:dialogueList}} active={activeModel} filters={{workload:"supabase_inspect"}} />);
+assert.ok(unrelatedWorkload.includes("Nenhum diálogo encontrado"));
+
 const lpFactoryBrowserForm = new FormData();
 lpFactoryBrowserForm.set("periodMode", "custom");
 lpFactoryBrowserForm.set("startDate", "2026-08-01");

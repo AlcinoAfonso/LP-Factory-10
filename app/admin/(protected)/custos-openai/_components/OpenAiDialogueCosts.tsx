@@ -14,7 +14,10 @@ export function OpenAiDialogueCosts({ result, active, filters }: Readonly<{
 }>) {
   const dialogues = result?.ok ? result.dialogues.filter(dialogue =>
     filters.universe !== "lp_factory" && (!filters.accountId || dialogue.accountId === filters.accountId) &&
-    (!filters.workload || ["pending_setup_conversation", "niche_resolution"].includes(filters.workload))) : [];
+    (!filters.workload || (dialogue.workloads
+      ? dialogue.workloads.includes(filters.workload)
+      : active?.executions.some(e => e.accountId === dialogue.accountId && e.economicEvent?.kind === "niche_resolution" &&
+        e.economicEvent.eventId === dialogue.dialogueId && e.workload === filters.workload)))) : [];
   return <section className="space-y-3" aria-labelledby="niche-dialogue-costs-title">
     <h2 id="niche-dialogue-costs-title" className="text-lg font-semibold text-foreground">Diálogos do Agente Nicho</h2>
     <p className="text-sm text-muted-foreground">Diálogos iniciados ou com operações vinculadas no período. Abrir consulta o diálogo completo, inclusive operações fora do período, sem alterar a reconciliação global.</p>
@@ -32,7 +35,7 @@ function DialogueRow({ dialogue, active }: Readonly<{ dialogue: OpenAiCostDialog
   const [result, setResult] = useState<DialogueCostResult | null>(null);
   const [pending, startTransition] = useTransition();
   const linked = active?.executions.filter(e => e.accountId === dialogue.accountId && e.economicEvent?.kind === "niche_resolution" && e.economicEvent.eventId === dialogue.dialogueId) ?? [];
-  const accountName = linked[0]?.accountName ?? "Conta " + dialogue.accountId.slice(0, 8);
+  const accountName = dialogue.accountName ?? linked[0]?.accountName ?? "Conta " + dialogue.accountId.slice(0, 8);
   const environments = result?.ok ? result.value.executions.map(e => e.environment) : linked.map(e => e.environment);
   const query = () => startTransition(async () => {
     try { setResult(await readDialogueCostAction({ dialogueId: dialogue.dialogueId, accountId: dialogue.accountId })); }
