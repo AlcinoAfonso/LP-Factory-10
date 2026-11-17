@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import nodeModule from "node:module";
 import type { CommunicationBase } from "../../communication-base/contracts";
 import { communicationSections } from "../../communication-base/registry";
+import type { OpenAiCostEconomicContext } from "../../openai-costs/active-contracts";
 import type { AttendanceContext } from "../pending-setup/attendance-core";
 import type { ActivePrimaryAccountTaxon } from "./adapters/accountTaxonomyAdapter";
 
@@ -23,6 +24,7 @@ export async function validateNicheConversationActions() {
   await validateNicheProjectionAdapter(base,accountId,currentId);
   const snapshot=JSON.stringify(base), calls: AttendanceContext[]=[], commits: {summary:string|null}[]=[], saves: unknown[]=[];
   let releases=0, claims=0;
+  const financialContexts: (OpenAiCostEconomicContext | undefined)[] = [];
   const loader=nodeModule as unknown as {_load:(name:string,parent:unknown,isMain:boolean)=>unknown}; const original=loader._load;
   loader._load=function(name,parent,isMain){
     if(name==="server-only")return {};
@@ -44,7 +46,8 @@ export async function validateNicheConversationActions() {
       Object.fromEntries(["business_name","business_context","offers","preferences"].map(key=>[key,base.sections[key]!.value]))})};
     if(name.includes("communicationCatalogAdapter"))return {readCommunicationDefinitions:async()=>({ok:true,value:communicationSections})};
     if(name.includes("accountNicheResolutionUserAdapter"))return {};
-    if(name.includes("attendance-provider"))return {requestAttendance:async(input:{context:AttendanceContext})=>{
+    if(name.includes("attendance-provider"))return {requestAttendance:async(input:{context:AttendanceContext; financialContext?: OpenAiCostEconomicContext})=>{
+      financialContexts.push(input.financialContext);
       calls.push(input.context);afterProvider();return providerOk?{ok:true,output:{reply:"Proponho Jardinagem. Confirma?",action:"existing",
         nicheDescription:"Jardinagem",businessUnderstanding:"Declaração atual: jardins para condomínios.",confirmedUnderstanding:null,
         suggestions:[],whatsappDeclined:false,whatsappReference:null,closureReason:null}}:{ok:false};}};
@@ -53,6 +56,10 @@ export async function validateNicheConversationActions() {
   const actions=await import("../../../app/a/[account]/niche-resolution-actions").finally(()=>{loader._load=original;});
   const turn={account:"qa-niche",dialogueId,requestId,expectedVersion:0,expectedRevision:"legacy:"+currentId+":1",content:"Agora ofereço jardinagem."};
   assert.equal((await actions.converseAccountNicheAction(turn)).ok,true);
+  assert.deepEqual(financialContexts[0],{universe:"client",attributionStatus:"attributed",accountId,event:{kind:"niche_resolution",eventId:dialogueId}});
+  assert.equal((await actions.converseAccountNicheAction({...turn,dialogueId:requestId})).ok,true);
+  assert.deepEqual(financialContexts[1]?.event,{kind:"niche_resolution",eventId:requestId},"another dialogue in the same account has its own financial identity");
+  commits.pop(); calls.pop();
   assert.equal(calls[0].purpose,"account_niche"); assert.equal(calls[0].displayedUnderstanding,"Contexto persistido no servidor.");
   assert.equal(calls[0].businessData?.business_context.length,30000);
   assert.equal((calls[0].summary??"").includes("11999990000"),false);

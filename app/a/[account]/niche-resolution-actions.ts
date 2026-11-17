@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { clientOpenAiCostContext } from "../../../lib/openai-costs/active-contracts";
 import { readAccountOfficialNiche, confirmAccountNicheDialogue } from "../../../lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter";
 import { officialNichePromptContext, type OfficialAccountNiche } from "../../../lib/onboarding/niche-resolution/official-niche-policy";
 import { z } from "zod";
@@ -93,7 +94,8 @@ export async function converseAccountNicheAction(raw: z.input<typeof nicheTurnIn
       businessData, catalog: [], displayedUnderstanding: projectAttendanceText(reserved.state.understanding ?? ""),
       recent: reserved.recent.map(entry => ({ ...entry, content: projectAttendanceText(entry.content) })),
     };
-    const result = current.taxon && products ? { ok: true as const, output: null } : await requestAttendance({ accountId: ctx.account.id, context });
+    const result = current.taxon && products ? { ok: true as const, output: null } : await requestAttendance({ accountId: ctx.account.id, context,
+      financialContext: clientOpenAiCostContext(ctx.account.id, { kind: "niche_resolution", eventId: identity.dialogueId }) });
     if (!result.ok) throw new Error("provider_unavailable");
     const output = result.output;
     const reply = output?.reply ?? "Confirme o nicho atual: " + current.taxon!.name + ".";

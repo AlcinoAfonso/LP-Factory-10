@@ -11,6 +11,7 @@ import {
   calculateOpenAiOperationCost as calculateCost,
   OPENAI_COST_PRICING_CATALOGS,
 } from "./pricing";
+import { validateDialogueCosts } from "./dialogue-cost-validation-cases";
 import { validatePricingCorrection } from "./pricing-validation-cases";
 
 // Historical fixtures describe a proven Standard response and 30-minute writes.
@@ -26,6 +27,7 @@ const period = {
 
 async function main() {
   await validatePricingCorrection();
+  await validateDialogueCosts();
   const oneSearch = calculateOpenAiOperationCost({
     model: "gpt-5.6-luna",
     startedAt: "2026-09-11T12:00:00.000Z",

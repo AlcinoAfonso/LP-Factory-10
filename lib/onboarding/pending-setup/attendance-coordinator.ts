@@ -1,4 +1,5 @@
 import "server-only";
+import { clientOpenAiCostContext } from "../../openai-costs/active-contracts";
 import { officialNichePromptContext } from "../niche-resolution/official-niche-policy";
 import { readAccountOfficialNiche } from "../niche-resolution/adapters/accountOfficialNicheAdapter";
 import { attendanceContactProjection, attendanceProjection, attendanceProposal, attendanceSummary } from "./attendance-core";
@@ -59,7 +60,8 @@ export async function conductAttendanceTurn(input: Readonly<{
       confirmedOperationalUnderstanding: Boolean(operational),
       confirmedProposal: confirmation ? reserved.attendanceProposal ?? null : null, currentPrimaryTaxonId };
     if (confirmation && (!context.confirmedProposal || !reserved.businessContextText?.trim())) throw new Error("confirmation_proposal_missing");
-    const answer = await dependencies.request({ accountId: input.accountId, context });
+    const answer = await dependencies.request({ accountId: input.accountId, context,
+      financialContext: clientOpenAiCostContext(input.accountId, { kind: "niche_resolution", eventId: reserved.id }) });
     if (!answer.ok || (confirmation && answer.output.action !== "confirm")) throw new Error("provider_unavailable");
     const output = confirmation || answer.output.businessUnderstanding === context.displayedUnderstanding
       ? { ...answer.output, businessUnderstanding: reserved.businessContextText! }
