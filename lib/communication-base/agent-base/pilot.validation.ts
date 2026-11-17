@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { agentBasePilotOrder, agentBasePilotCatalogState, buildAgentBasePilotPrompt, parseAgentBasePilotResponse, selectAgentBasePilotInput } from "./pilot";
+import { agentBasePilotOrder, agentBasePilotCatalogState, buildAgentBasePilotPrompt, parseAgentBasePilotResponse, sanitizeAgentBasePilotFailureReason, selectAgentBasePilotInput } from "./pilot";
 import { AGENT_BASE_PROMPT } from "./base-prompt";
 import { AGENT_BASE_ABOUT_PROMPT } from "./about-prompt";
 import { AGENT_BASE_AUDIENCE_PROMPT } from "./audience-prompt";
@@ -136,4 +136,70 @@ for (const [sections, reason] of [
   [{ about: { value: "Fixture", basis: "confirmed_business_fact" } }, "invalid_stage_two_output"],
 ] as const) rejectPilot({ ...autonomousOutput(3), output_text: JSON.stringify({ sections }) }, reason);
 rejectPilot({ ...autonomousOutput(3), output_text: "invalid json" }, "invalid_stage_two_output");
+// Native Responses regression: commentary is not the structured final answer.
+const commentaryMessage = { type: "message", role: "assistant", status: "completed", phase: "commentary",
+  content: [{ type: "output_text", text: "Vou pesquisar antes de concluir." }] };
+const finalMessage = { type: "message", role: "assistant", status: "completed", phase: "final_answer",
+  content: [{ type: "output_text", text: webOutput.output_text }] };
+const phasedOutput = { output: [commentaryMessage, ...autonomousOutput(3).output, finalMessage] };
+const legacyPhased = parseStageTwoResponse(phasedOutput, { kind: "section", key: "audience" }, true, "autonomous");
+assert.equal(legacyPhased.ok, false, "old extraction reads commentary as the JSON result");
+if (!legacyPhased.ok) assert.equal(legacyPhased.reason, "invalid_stage_two_output");
+const phased = parseAgentBasePilotResponse(phasedOutput, "audience");
+assert.equal(phased.ok, true, "pilot reads final_answer after commentary and three Web calls");
+if (phased.ok) {
+  assert.equal(phased.value.value, "Resposta sintética");
+  assert.equal(phased.value.sources.length, 3);
+  assert.equal(phased.telemetry.webSearchCallCount, 3);
+}
+assert.equal(parseAgentBasePilotResponse({ ...phasedOutput,
+  output_text: commentaryMessage.content[0].text + finalMessage.content[0].text,
+}, "audience").ok, true, "native final message takes precedence over SDK aggregated output_text");
+for (const phase of [undefined, null]) {
+  assert.equal(parseAgentBasePilotResponse({ output: [commentaryMessage, ...autonomousOutput(3).output,
+    { ...finalMessage, phase },
+  ] }, "audience").ok, true, "phase is optional in the Responses contract");
+}
+const finalText = finalMessage.content[0].text;
+assert.equal(parseAgentBasePilotResponse({ output: [commentaryMessage, ...autonomousOutput(3).output,
+  { ...finalMessage, content: [
+    { type: "output_text", text: finalText.slice(0, 20) }, { type: "output_text", text: finalText.slice(20) },
+  ] },
+] }, "audience").ok, true, "all text parts of the selected final message are assembled");
+rejectPilot({ output_text: webOutput.output_text, output: [commentaryMessage, ...autonomousOutput(3).output] }, "pilot_final_output_missing");
+rejectPilot({ output: [...phasedOutput.output, finalMessage] }, "pilot_final_output_ambiguous");
+for (const status of ["incomplete", "in_progress", "failed"]) {
+  rejectPilot({ output_text: webOutput.output_text, output: [commentaryMessage, ...autonomousOutput(3).output,
+    { ...finalMessage, status },
+  ] }, "pilot_final_output_incomplete");
+}
+rejectPilot({ output: [...autonomousOutput(3).output, { ...finalMessage, content: [] }] }, "pilot_final_output_missing");
+rejectPilot({ output: [...autonomousOutput(3).output,
+  { ...finalMessage, role: "user" },
+] }, "pilot_final_output_missing");
+rejectPilot({ output: [commentaryMessage, ...autonomousOutput(3).output,
+  { ...finalMessage, content: [{ type: "output_text", text: "not JSON" }] },
+], output_text: webOutput.output_text }, "invalid_stage_two_output");
+const refused = parseAgentBasePilotResponse({ output_text: webOutput.output_text, output: [commentaryMessage,
+  ...autonomousOutput(3).output, { ...finalMessage, content: [{ type: "refusal", refusal: "Synthetic refusal" }] },
+] }, "audience");
+assert.equal(refused.ok, false, "refusal cannot be hidden by aggregate text");
+if (!refused.ok) { assert.equal(refused.kind, "refusal"); assert.equal(refused.reason, "openai_refusal"); }
+rejectPilot({ output: [...phasedOutput.output,
+  { type: "web_search_call", status: "failed", action: { type: "search" } },
+] }, "web_sources_missing");
+rejectPilot({ output: [commentaryMessage, ...autonomousOutput(51).output, finalMessage] }, "web_sources_invalid");
+rejectPilot({ output: [commentaryMessage, ...autonomousOutput(3).output,
+  { ...finalMessage, content: [{ type: "output_text", text: JSON.stringify({ sections: {
+    audience: { value: "x".repeat(30_001), basis: "strategic_hypothesis" },
+  } }) }] },
+] }, "invalid_stage_two_value");
+for (const reason of ["invalid_stage_two_output", "web_sources_invalid", "invalid_stage_two_value",
+  "pilot_final_output_missing", "pilot_final_output_incomplete", "pilot_final_output_ambiguous", "openai_refusal"]) {
+  assert.equal(sanitizeAgentBasePilotFailureReason(reason), reason, "local rejection code remains diagnosable");
+}
+for (const reason of ["", "provider error with private content", "invalid_stage_two_output\nprivate content",
+  "https://example.org/private?token=fixture", JSON.stringify(phasedOutput)]) {
+  assert.equal(sanitizeAgentBasePilotFailureReason(reason), "unclassified_failure", "arbitrary response/provider strings never reach logs");
+}
 console.log("D14F pilot: catalog identity/order, immutable prompts, provenance, progressive context and output boundaries passed (synthetic responses only).");

@@ -83,6 +83,9 @@ export function buildAgentBasePilotPrompt(input: Readonly<{
 }
 
 export function parseAgentBasePilotResponse(payload: unknown, key: AgentBasePilotKey) {
+  const selected = selectPilotFinalOutput(payload);
+  if (!selected.ok) return selected;
+  payload = selected.value;
   const output = payload && typeof payload === "object" && "output" in payload ? payload.output : null;
   const researched = Array.isArray(output) && output.some(item => item?.type === "web_search_call");
   const parsed = parseStageTwoResponse(payload, { kind: "section", key }, researched, "autonomous");
@@ -90,4 +93,47 @@ export function parseAgentBasePilotResponse(payload: unknown, key: AgentBasePilo
   return { ok: true as const, value: {
     ...parsed.value.suggestions[0], sources: parsed.value.sources, researched: parsed.value.researched,
   } satisfies AgentBasePilotSection, telemetry: parsed.telemetry };
+}
+
+// Native Responses can emit commentary before tool calls. Only the final message is structured output.
+function selectPilotFinalOutput(payload: unknown) {
+  const response = pilotRecord(payload);
+  if (!response || !Array.isArray(response.output)) return { ok: true as const, value: payload };
+  const messages = response.output.map(pilotRecord).filter((item): item is Record<string, unknown> => item?.type === "message");
+  if (!messages.length) return { ok: true as const, value: payload };
+  if (messages.some(message => Array.isArray(message.content) &&
+      message.content.some(part => pilotRecord(part)?.type === "refusal"))) {
+    return { ok: false as const, kind: "refusal" as const, reason: "openai_refusal" };
+  }
+  const candidates = messages.filter(message => (message.role === undefined || message.role === "assistant") &&
+    (message.phase === undefined || message.phase === null || message.phase === "final_answer"));
+  const explicitFinals = candidates.filter(message => message.phase === "final_answer");
+  if (explicitFinals.length > 1) return pilotOutputInvalid("pilot_final_output_ambiguous");
+  const final = (explicitFinals.length ? explicitFinals : candidates).at(-1);
+  if (!final) return pilotOutputInvalid("pilot_final_output_missing");
+  if (final.status !== undefined && final.status !== "completed") return pilotOutputInvalid("pilot_final_output_incomplete");
+  const text = Array.isArray(final.content) ? final.content.map(pilotRecord)
+    .filter(part => part?.type === "output_text" && typeof part.text === "string")
+    .map(part => part!.text as string).join("") : "";
+  if (!text.trim()) return pilotOutputInvalid("pilot_final_output_missing");
+  // Keep every web call for the existing source/content checks; never parse aggregated commentary.
+  return { ok: true as const, value: { ...response, output_text: text } };
+}
+
+function pilotRecord(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
+}
+function pilotOutputInvalid(reason: string) {
+  return { ok: false as const, kind: "invalid_response" as const, reason };
+}
+
+const pilotFailureReasons = new Set([
+  "invalid_response", "invalid_stage_two_target", "unexpected_web_search", "required_web_search_missing",
+  "web_sources_missing", "web_sources_invalid", "invalid_stage_two_output", "invalid_stage_two_basis",
+  "invalid_stage_two_value", "output_missing", "openai_refusal", "pilot_final_output_missing",
+  "pilot_final_output_incomplete", "pilot_final_output_ambiguous",
+]);
+export function sanitizeAgentBasePilotFailureReason(reason: string) {
+  // Provider errors can contain arbitrary strings. Only local, fixed diagnostic codes reach logs.
+  return pilotFailureReasons.has(reason) ? reason : "unclassified_failure";
 }

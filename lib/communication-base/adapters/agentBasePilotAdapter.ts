@@ -4,7 +4,7 @@ import { requestOpenAiResponses } from "../../openai-responses/openAiResponsesAd
 import { clientOpenAiCostContext } from "../../openai-costs";
 import { resolveOpenAiProductWorkload } from "../../openai-workloads";
 import { agentBaseQaConfiguration } from "../agent-base/research";
-import { buildAgentBasePilotPrompt, parseAgentBasePilotResponse, type AgentBasePilotSection } from "../agent-base/pilot";
+import { buildAgentBasePilotPrompt, parseAgentBasePilotResponse, sanitizeAgentBasePilotFailureReason, type AgentBasePilotSection } from "../agent-base/pilot";
 
 export async function generateAgentBasePilotSection(input: Parameters<typeof buildAgentBasePilotPrompt>[0] & Readonly<{ timeoutMs: number }>) {
   if (process.env.VERCEL_ENV !== "preview") return { ok: false as const };
@@ -32,6 +32,8 @@ export async function generateAgentBasePilotSection(input: Parameters<typeof bui
     },
     parseResponse: payload => parseAgentBasePilotResponse(payload, input.key),
   });
-  if (!result.ok) console.warn("agent_base_pilot_failure", { requestId, section: input.key, kind: result.kind });
+  if (!result.ok) console.warn("agent_base_pilot_failure", {
+    requestId, section: input.key, kind: result.kind, reason: sanitizeAgentBasePilotFailureReason(result.reason),
+  });
   return result.ok ? { ok: true as const, value: result.value } : { ok: false as const };
 }
