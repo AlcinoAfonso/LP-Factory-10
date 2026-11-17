@@ -1,0 +1,23 @@
+{
+  "head": "87f80103fabf6c11381f0d354218fa962f9dc1d5",
+  "niche": {
+    "font": "15.4px",
+    "color": "rgb(117,117,117)"
+  },
+  "placeholder": {
+    "font": "15.4px",
+    "color": "rgb(117,117,117)"
+  },
+  "captureError": "Unable to capture screenshot",
+  "capturePathsTried": [
+    "node_repl existing tab",
+    "node_repl temporary tab with same session",
+    "native cua_repl temporary tab"
+  ],
+  "sessionsStillAuthenticated": true,
+  "mutedContrastOnWhite": 4.607518093747377,
+  "counter": {
+    "color": "rgb(117, 117, 117)",
+    "font": "13.2px"
+  }
+}

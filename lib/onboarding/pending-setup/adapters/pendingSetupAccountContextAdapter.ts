@@ -29,3 +29,12 @@ export async function readPendingSetupDialogueContext(input: Readonly<{
   }
   return { context: { summary: row.summary, updatedAt: row.updated_at }, messages };
 }
+
+// Read-only context for the approved active-account niche consumer; never reopen a dialogue.
+export async function readAccountSummaryForNiche(accountId: string) {
+  const { data, error } = await createServiceClient().from("account_context_summaries")
+    .select("summary").eq("account_id", accountId).maybeSingle();
+  if (error || (data?.summary !== null && data?.summary !== undefined &&
+    (typeof data.summary !== "string" || data.summary.length > 6000))) return { ok: false as const };
+  return { ok: true as const, summary: (data?.summary ?? null) as string | null };
+}

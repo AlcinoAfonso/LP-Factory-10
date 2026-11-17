@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { requireCommunicationBaseAccess } from "../../../../lib/communication-base/access";
-import { assistCommunicationSection, generateCommunicationIntelligence } from "../../../../lib/communication-base/adapters/communicationAiAdapter";
+import { generateCommunicationIntelligence } from "../../../../lib/communication-base/adapters/communicationAiAdapter";
 import {
   createCommunicationBase,
   readCommunicationBase,
@@ -11,13 +11,13 @@ import {
   saveCommunicationSection,
 } from "../../../../lib/communication-base/adapters/communicationBaseAdapter";
 import { parseCommunicationFacts, parseSectionValue, withSection } from "../../../../lib/communication-base/policy";
-import { parseEditorValue } from "../../../../lib/communication-base/editor-value";
 import { parseEditorDraft } from "../../../../lib/communication-base/manual-editor-value";
 import { isCommunicationResourcesEnabled } from "../../../../lib/communication-base/config";
 import { readCommunicationDefinitions } from "../../../../lib/communication-base/adapters/communicationCatalogAdapter";
 import { getCommunicationSection } from "../../../../lib/communication-base/registry";
-import { hasConfirmedStageOneInput, type StageTwoDraft, type StageTwoTarget } from "../../../../lib/communication-base/ai-core";
-import { isCurrentGenerationVersion } from "../../../../lib/communication-base/generation-guard";
+import { selectStageTwoInput, type StageTwoDraft, type StageTwoTarget } from "../../../../lib/communication-base/ai-core";
+import { isCurrentGenerationNiche, isCurrentGenerationVersion } from "../../../../lib/communication-base/generation-guard";
+import { readOfficialNicheContext } from "../../../../lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter";
 import { isE1011PassageEnabled } from "../../../../lib/onboarding/pending-setup/config";
 
 export type CommunicationActionState = Readonly<{
@@ -25,12 +25,9 @@ export type CommunicationActionState = Readonly<{
   message: string;
 }>;
 
-export type CommunicationStageOneAiResult =
-  | Readonly<{ ok: true; suggestion: string; missingQuestion: string }>
-  | Readonly<{ ok: false; message: string }>;
 
 export type CommunicationStageTwoAiResult =
-  | Readonly<{ ok: true; draft: StageTwoDraft }>
+  | Readonly<{ ok: true; draft: StageTwoDraft; notice?: string }>
   | Readonly<{ ok: false; message: string }>;
 
 const UNAVAILABLE = "Não foi possível salvar agora. Atualize a página e tente novamente.";
@@ -42,6 +39,13 @@ export async function startCommunicationBaseAction(
   const account = readFormString(formData, "account");
   const access = await requireCommunicationBaseAccess(account, true);
   if (!access.ok) return failure(UNAVAILABLE);
+
+  if (isCommunicationResourcesEnabled()) {
+    if (formData.get("confirm_base_context") !== "on") return failure("Confirme o nicho ou o entendimento apresentado antes de iniciar a Base.");
+    const taxonomy = await readOfficialNicheContext({ accountId: access.value.accountId });
+    if (!taxonomy.ok) return failure("Não foi possível conferir o nicho. Atualize a página e tente novamente.");
+    if ((taxonomy.niche?.revision ?? "") !== readFormString(formData, "base_niche")) return failure("O nicho mudou. Atualize a página e confirme o contexto atual antes de iniciar a Base.");
+  }
 
   let initialSections: Record<string, unknown> = {};
   const candidate = await readPendingSetupInitialContext(access.value.accountId);
@@ -107,34 +111,6 @@ export async function saveCommunicationSectionAction(
   return { status: "saved", message: "Seção salva." };
 }
 
-export async function assistCommunicationSectionAction(input: Readonly<{
-  account: string;
-  key: string;
-  userText: string;
-  version: number;
-}>): Promise<CommunicationStageOneAiResult> {
-  const section = input && typeof input.key === "string" ? getCommunicationSection(input.key) : null;
-  if (!section || section.stage !== 1 || typeof input.account !== "string" ||
-      !Number.isSafeInteger(input.version) || input.version <= 0 ||
-      typeof input.userText !== "string" || !input.userText.trim() || input.userText.length > 10_000 ||
-      parseSectionValue(section, parseEditorValue(section.format, input.userText)) === null) {
-    return { ok: false, message: "Preencha esta seção com seus dados reais antes de pedir ajuda à IA." };
-  }
-  const access = await requireCommunicationBaseAccess(input.account, true);
-  if (!access.ok) return { ok: false, message: "A assistência não está disponível para este acesso." };
-  const base = await readCommunicationBase(access.value.accountId);
-  if (!base.ok || !base.value || base.value.version !== input.version) {
-    return { ok: false, message: "A Base mudou. Atualize a página antes de pedir ajuda à IA." };
-  }
-  const result = await assistCommunicationSection({
-    accountId: access.value.accountId,
-    key: input.key,
-    userText: input.userText,
-  });
-  return result.ok
-    ? { ok: true, suggestion: result.value.suggestion, missingQuestion: result.value.missingQuestion }
-    : { ok: false, message: result.reason === "configuration_incompatible" ? "A configuração ativa da IA é incompatível com a resposta da OpenAI. Nenhuma configuração alternativa foi usada." : "A assistência está indisponível agora. Você pode continuar a edição manual." };
-}
 
 export async function generateCommunicationIntelligenceAction(input: Readonly<{
   account: string;
@@ -152,27 +128,38 @@ export async function generateCommunicationIntelligenceAction(input: Readonly<{
   }
   const access = await requireCommunicationBaseAccess(input.account, true);
   if (!access.ok) return { ok: false, message: "A geração não está disponível para este acesso." };
+  const taxonomy = await readOfficialNicheContext({ accountId: access.value.accountId });
+  if (!taxonomy.ok) return { ok: false, message: "Não foi possível conferir o nicho. Tente novamente." };
+  if (!taxonomy.niche?.confirmed) return { ok: false, message: "Defina e confirme um nicho oficial antes de gerar sugestões com IA. A edição manual continua disponível." };
   const base = await readCommunicationBase(access.value.accountId);
   if (!base.ok || !base.value || base.value.version !== input.version) {
     return { ok: false, message: "A Base mudou. Atualize a página antes de gerar sugestões." };
   }
-  if (!hasConfirmedStageOneInput(base.value, input.target)) {
-    return { ok: false, message: "Confirme primeiro ao menos um dado da Etapa 1." };
+  const selection = selectStageTwoInput(base.value, input.target);
+  if (!selection || Object.keys(selection.confirmed).length === 0) {
+    return { ok: false, message: selection?.notice
+      ? `${selection.notice} Não há outros dados confirmados compatíveis para esta geração.`
+      : "Confirme primeiro ao menos um dado da Etapa 1." };
   }
   const result = await generateCommunicationIntelligence({
     accountId: access.value.accountId,
     base: base.value,
     target: input.target,
     requiresCurrentResearch: input.requiresCurrentResearch,
+    niche: taxonomy.niche,
   });
   if (!result.ok) {
     return { ok: false, message: result.reason === "configuration_incompatible" ? "A configuração ativa da IA é incompatível com a resposta da OpenAI. Nenhuma configuração alternativa foi usada." : "Não foi possível concluir a geração. Seus textos salvos continuam disponíveis." };
   }
   const latest = await readCommunicationBase(access.value.accountId);
+  const latestTaxonomy = await readOfficialNicheContext({ accountId: access.value.accountId });
+  if (!latestTaxonomy.ok || !isCurrentGenerationNiche(taxonomy.niche, latestTaxonomy.niche)) {
+    return { ok: false, message: "O nicho mudou durante a geração. Confira o nicho atual antes de gerar sugestões novamente." };
+  }
   if (!latest.ok || !latest.value || !isCurrentGenerationVersion(input.version, latest.value.version)) {
     return { ok: false, message: "A Base mudou. Atualize a página antes de gerar sugestões." };
   }
-  return { ok: true, draft: result.value };
+  return { ok: true, draft: result.value, notice: selection.notice };
 }
 
 function readFormString(formData: FormData, key: string): string {

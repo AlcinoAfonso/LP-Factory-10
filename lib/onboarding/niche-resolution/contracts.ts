@@ -1,5 +1,13 @@
 export type TaxonLevel = "segment" | "niche" | "ultra_niche";
 
+export function hasHumanNicheConfirmation(input: Readonly<{
+  taxonId: string; sourceType: string; confirmedAt?: string | null;
+  resolution?: Readonly<{ status: string | null; taxonId: string | null; confirmedAt: string | null }>;
+}>): boolean {
+  return input.sourceType === "manual" || input.sourceType === "user_confirmed_ai" || Boolean(input.confirmedAt) ||
+    Boolean(input.resolution?.status === "confirmed" && input.resolution.taxonId === input.taxonId && input.resolution.confirmedAt);
+}
+
 export type TaxonMatchCandidate = {
   taxonId: string;
   name: string;

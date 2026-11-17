@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Select } from "@/components/ui/select";
+import { openAiFinancialCoverage } from "@/openai-costs/pricing";
 import { FormField, FormFieldLabel, FormFieldHint } from "@/components/ui/form-field";
 import { listOpenAiServiceTiers, isEligibleOpenAiServiceTier, isValidOpenAiServiceTierSnapshot, openAiServiceTierLabel } from "@/openai-workloads/service-tier";
 
@@ -259,6 +260,7 @@ function TextFields({
     .map((option) => option.reasoningEffort))), [options, value.model]);
   const tiers = listOpenAiServiceTiers(value.model);
   const tier = value.serviceTier ?? "";
+  const financialCoverage = openAiFinancialCoverage(value.model, value.serviceTier);
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <div>
@@ -285,7 +287,7 @@ function TextFields({
         <FormFieldLabel htmlFor={idPrefix + "-tier"}>Nível de serviço</FormFieldLabel>
         <Select id={idPrefix + "-tier"} name="serviceTier" value={tier}
           disabled={disabled || !tierSupported || (tiers.length === 0 && tier === "")}
-          className="min-h-11" aria-describedby={idPrefix + "-tier-hint"}
+          className="min-h-11" aria-describedby={`${idPrefix}-tier-hint ${idPrefix}-financial-hint`}
           onChange={(event) => onChange({ ...value, serviceTier: event.target.value === "" ? null : event.target.value as OpenAiServiceTier })}>
           <option value="">Legado — sem nível explícito</option>
           {tier && !isEligibleOpenAiServiceTier(value.model, tier) ? <option value={tier} disabled>{openAiServiceTierLabel(value.serviceTier)} (incompatível)</option> : null}
@@ -296,6 +298,10 @@ function TextFields({
             tier && !isEligibleOpenAiServiceTier(value.model, tier) ? "Selecione um nível compatível." :
             tiers.length === 0 ? "Este modelo mantém o processamento atual." :
             "A escolha será validada por prova e só entrará em uso após ativação humana."}
+        </FormFieldHint>
+        <FormFieldHint id={idPrefix + "-financial-hint"}>
+          {financialCoverage.covered ? "Cobertura financeira disponível para este modelo e serviço; o custo depende da evidência de uso de cada operação." :
+            "Cobertura financeira não confirmada para este modelo e serviço. O custo poderá ficar indisponível; este aviso não altera a ativação."}
         </FormFieldHint>
       </FormField>
     </div>
@@ -426,6 +432,7 @@ function ActivationEvents({ unit }: Readonly<{ unit: OpenAiAdministrativeConfigu
 }
 
 function ConfigurationValue({ value }: Readonly<{ value: OpenAiAdministrativeConfigurationValue }>) {
+  const financialCoverage = openAiFinancialCoverage(value.model, value.serviceTier);
   return (
     <dl className="grid gap-2 sm:grid-cols-2">
       <div><dt className="text-xs font-medium uppercase opacity-70">Modelo</dt><dd className="mt-1 break-all font-mono text-xs">{value.model}</dd></div>
@@ -434,6 +441,7 @@ function ConfigurationValue({ value }: Readonly<{ value: OpenAiAdministrativeCon
         <dd className="mt-1">{effortLabels[value.reasoningEffort] ?? value.reasoningEffort}</dd>
       </div>
       <div><dt className="text-xs font-medium uppercase opacity-70">Nível de serviço</dt><dd className="mt-1">{openAiServiceTierLabel(value.serviceTier)}</dd></div>
+      <div><dt className="text-xs font-medium uppercase opacity-70">Cobertura financeira</dt><dd className="mt-1">{financialCoverage.covered ? "Tarifas disponíveis; depende da evidência de uso." : "Não confirmada; custo poderá ficar indisponível. Aviso sem bloqueio de ativação."}</dd></div>
     </dl>
   );
 }

@@ -5,7 +5,7 @@ import { isAccountMembersEnabled } from "@/lib/access/account-members/config";
 import { readCommercialEntitlementSignal } from "../../../lib/commercial-entitlements";
 import { isCommunicationBaseEnabled } from "../../../lib/communication-base/config";
 import { getClientAccountSectionContext } from "../_server/section-guard";
-import { getActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
+import { getAccountOfficialNiche } from "../../../lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter";
 import { getConfirmedOperationalNicheResolutionLabel } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
 
 type LayoutProps = {
@@ -31,7 +31,7 @@ export default async function Layout({ children, params }: LayoutProps) {
   const communicationBaseEnabled = communicationBaseEntitlement?.ok === true &&
     communicationBaseEntitlement.signal.isCommerciallyEligible;
   const primaryTaxon = accountId
-    ? await getActivePrimaryAccountTaxon({ accountId })
+    ? await getAccountOfficialNiche({ accountId })
     : null;
   const operationalNicheLabel = accountId && !primaryTaxon
     ? await getConfirmedOperationalNicheResolutionLabel({ accountId })

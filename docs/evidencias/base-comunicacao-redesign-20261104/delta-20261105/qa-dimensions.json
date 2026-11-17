@@ -1,0 +1,125 @@
+{
+  "head": "4ea98083204198c2165a26939eb76362a01d6e37",
+  "measurements": [
+    {
+      "category": "Dados do negócio",
+      "viewport": 320,
+      "bodyOverflow": false,
+      "docOverflow": false,
+      "height": 672,
+      "width": 304
+    },
+    {
+      "category": "Dados do negócio",
+      "viewport": 390,
+      "bodyOverflow": false,
+      "docOverflow": false,
+      "height": 672,
+      "width": 374.3999938964844
+    },
+    {
+      "category": "Dados do negócio",
+      "viewport": 430,
+      "bodyOverflow": false,
+      "docOverflow": false,
+      "height": 672,
+      "width": 414.3999938964844
+    },
+    {
+      "category": "Dados do negócio",
+      "viewport": 1280,
+      "bodyOverflow": false,
+      "docOverflow": false,
+      "height": 672,
+      "width": 768
+    },
+    {
+      "category": "Dados do negócio",
+      "viewport": 1440,
+      "bodyOverflow": false,
+      "docOverflow": false,
+      "height": 672,
+      "width": 768
+    },
+    {
+      "category": "Materiais de comunicação",
+      "viewport": 320,
+      "bodyOverflow": false,
+      "docOverflow": false,
+      "height": 672,
+      "width": 304
+    },
+    {
+      "category": "Materiais de comunicação",
+      "viewport": 390,
+      "bodyOverflow": false,
+      "docOverflow": false,
+      "height": 672,
+      "width": 374.3999938964844
+    },
+    {
+      "category": "Materiais de comunicação",
+      "viewport": 430,
+      "bodyOverflow": false,
+      "docOverflow": false,
+      "height": 672,
+      "width": 414.3999938964844
+    },
+    {
+      "category": "Materiais de comunicação",
+      "viewport": 1280,
+      "bodyOverflow": false,
+      "docOverflow": false,
+      "height": 672,
+      "width": 768
+    },
+    {
+      "category": "Materiais de comunicação",
+      "viewport": 1440,
+      "bodyOverflow": false,
+      "docOverflow": false,
+      "height": 672,
+      "width": 768
+    },
+    {
+      "category": "Inteligência e copy",
+      "viewport": 320,
+      "bodyOverflow": false,
+      "docOverflow": false,
+      "height": 672,
+      "width": 304
+    },
+    {
+      "category": "Inteligência e copy",
+      "viewport": 390,
+      "bodyOverflow": false,
+      "docOverflow": false,
+      "height": 672,
+      "width": 374.3999938964844
+    },
+    {
+      "category": "Inteligência e copy",
+      "viewport": 430,
+      "bodyOverflow": false,
+      "docOverflow": false,
+      "height": 672,
+      "width": 414.3999938964844
+    },
+    {
+      "category": "Inteligência e copy",
+      "viewport": 1280,
+      "bodyOverflow": false,
+      "docOverflow": false,
+      "height": 672,
+      "width": 768
+    },
+    {
+      "category": "Inteligência e copy",
+      "viewport": 1440,
+      "bodyOverflow": false,
+      "docOverflow": false,
+      "height": 672,
+      "width": 768
+    }
+  ]
+}

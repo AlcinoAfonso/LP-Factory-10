@@ -17,9 +17,9 @@ export const openAiWorkloadRegistry = deepFreeze([
     displayName: "Atendimento inicial por IA",
     classification: "product_runtime",
     configurationKind: "effective",
-    consumer: "Atendimento inicial e orientação comercial pelo catálogo curado",
+    consumer: "Atendimento inicial, orientação comercial e identificação semântica de nicho",
     fallback: "Preservar entendimento e continuar sem inventar classificação ou oferta",
-    webSearch: null,
+    webSearch: { externalWebAccess: true, searchContextSize: "low", maxToolCalls: 2, contextWindowTokenBudget: 128000 },
     configuration: {
       apiKind: "responses_text",
       model: "gpt-6-luna",

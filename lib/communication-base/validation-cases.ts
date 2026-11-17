@@ -1,4 +1,7 @@
 import "./resource-validation-cases";
+import "./agent-base/research.validation";
+import "./agent-base/sections.validation";
+import "./agent-base/insights-b.validation";
 import assert from "node:assert/strict";
 
 import { communicationSections, getCommunicationSection } from "./registry";
@@ -6,15 +9,18 @@ import { resolveCommunicationBaseAccess, type CommunicationBaseAccessDependencie
 import { accessUserIdFromAuthLookup } from "../access/auth-user-result";
 import { parseSectionValue, projectCommunicationBase, withSection } from "./policy";
 import { selectPendingSetupBusinessContext, selectPendingSetupInitialContext } from "./pending-setup-import";
-import { hasConfirmedStageOneInput, hasStageTwoContent, parseStageOneResponse, parseStageTwoResponse, stageOnePrompt, stageTwoPrompt } from "./ai-core";
+import { hasConfirmedStageOneInput, hasStageTwoContent, parseStageTwoResponse, stageTwoPrompt as buildStageTwoPrompt } from "./ai-core";
 import { selectStageTwoSectionPresentation, stageTwoBasisLabel } from "./stage-two-presentation";
 import { sectionStateKey, stageOneStateKey } from "./ui-state-keys";
 import { formatEditorValue, parseEditorValue } from "./editor-value";
 import { isCommunicationSectionSaveLocked } from "./editor-save-guard";
-import { canInstallGeneralSuggestion, canStartGeneralGeneration, createStageTwoGenerationGate, isCurrentGenerationVersion } from "./generation-guard";
+import { isCurrentGenerationNiche, canInstallGeneralSuggestion, canStartGeneralGeneration, createStageTwoGenerationGate, isCurrentGenerationVersion } from "./generation-guard";
 import { requestOpenAiResponses } from "../openai-responses/openAiResponsesAdapter";
 import { calculateOpenAiOperationCost, type OpenAiCostOperationTerminal, type OpenAiCostRecorder } from "../openai-costs";
 import { resolveOpenAiProductWorkload } from "../openai-workloads";
+
+const officialNiche = { taxonId: "10000000-0000-4000-8000-000000000002", name: "Jardinagem", confirmed: true, revision: "1" };
+const stageTwoPrompt = (...args: Parameters<typeof buildStageTwoPrompt>) => buildStageTwoPrompt(args[0], args[1], args[2], args[3] ?? officialNiche);
 
 const keys = communicationSections.map((section) => section.key);
 assert.equal(new Set(keys).size, keys.length, "section keys must be unique");
@@ -39,8 +45,46 @@ const business = getCommunicationSection("business_context");
 const audience = getCommunicationSection("audience");
 const faq = getCommunicationSection("faq");
 assert.ok(business && audience && faq);
+
+// Contrato da Categoria 3: 30.000 caracteres por seção, independente do formato.
+// Quantidades estruturais (até 20 itens / 15 pares FAQ) permanecem preservadas.
+const maximumIntelligenceLength = 30_000;
+const intelligenceSections = communicationSections.filter((section) => section.stage === 2);
+assert.equal(intelligenceSections.length, 7);
+for (const section of intelligenceSections) {
+  if (section.format === "text") {
+    const full = "a".repeat(maximumIntelligenceLength);
+    assert.equal(parseSectionValue(section, full), full, section.key + " aceita 30 mil");
+    assert.equal(parseSectionValue(section, full + "a"), null, section.key + " rejeita 30.001");
+  } else if (section.format === "items") {
+    const full = Array.from({ length: 20 }, () => "i".repeat(1500));
+    assert.deepEqual(parseSectionValue(section, full), full, section.key + " aceita 30 mil distribuídos");
+    assert.equal(parseSectionValue(section, [...full.slice(0, 19), "i".repeat(1501)]), null,
+      section.key + " rejeita 30.001 somados");
+    assert.equal(parseSectionValue(section, Array.from({ length: 21 }, () => "i")), null,
+      section.key + " preserva máximo de 20 itens");
+  } else if (section.format === "faq") {
+    const full = Array.from({ length: 15 }, () => ({ question: "Q", answer: "r".repeat(1999) }));
+    assert.deepEqual(parseSectionValue(section, full), full, "FAQ aceita 30 mil distribuídos");
+    assert.equal(parseSectionValue(section, [...full.slice(0, 14), { question: "Q", answer: "r".repeat(2000) }]), null,
+      "FAQ rejeita 30.001 somados");
+    assert.equal(parseSectionValue(section, Array.from({ length: 16 }, () => ({ question: "Q", answer: "R" }))), null,
+      "FAQ preserva máximo de 15 pares");
+    assert.equal(parseSectionValue(section, [{ question: "Q", answer: "" }]), null,
+      "FAQ preserva integridade pergunta-resposta");
+  }
+}
+assert.equal(parseSectionValue(business, "a".repeat(30_000))?.length, 30_000,
+  "Categoria 1, campos longos, permanece em 30 mil");
+const businessNameDefinition = getCommunicationSection("business_name")!;
+assert.equal(parseSectionValue(businessNameDefinition, "a".repeat(4001)), null,
+  "Categoria 1, nome público, preserva limite de 4 mil");
+const reviewedLongStageTwo = withSection({}, "audience", "a".repeat(30_000), "user_reviewed");
+assert.ok(reviewedLongStageTwo, "Conteúdo de 30 mil pode passar pela validação de gravação da Categoria 3");
+assert.equal(withSection({}, "audience", "a".repeat(30_001), "user_reviewed"), null,
+  "Gravação continua falhando além do teto");
 assert.equal(parseSectionValue(business, "  Atuo em Recife.  "), "Atuo em Recife.");
-assert.equal(parseSectionValue(business, "x".repeat(4001)), null);
+assert.equal(parseSectionValue(business, "x".repeat(30001)), null);
 assert.equal(parseSectionValue(faq, [{ question: "Quem atende?", answer: "" }]), null);
 const marketInsights = getCommunicationSection("market_insights");
 assert.ok(marketInsights);
@@ -153,7 +197,7 @@ assert.equal(canInstallGeneralSuggestion(projected.version, projected.version, 0
 assert.equal(sectionStateKey(projected.sections.audience), sectionStateKey(stageTwoFirstSave.sections.audience),
   "saving another stage 2 section must preserve this editor's unsaved draft");
 const stageOneSiblingSave = { ...projected, version: projected.version + 1, sections: { ...projected.sections,
-  offers: { format: "items" as const, value: ["Oferta confirmada"], origin: "user_confirmed" as const },
+  offers: { format: "text" as const, value: "Oferta confirmada", origin: "user_confirmed" as const },
 } };
 assert.equal(sectionStateKey(projected.sections.business_context),
   sectionStateKey(stageOneSiblingSave.sections.business_context),
@@ -171,73 +215,14 @@ const changedFacts = { ...projected, version: projected.version + 1, sections: {
 assert.notEqual(stageOneStateKey(changedFacts), stageOneKey,
   "a changed confirmed stage 1 fact must invalidate the suggestion batch");
 assert.equal(stageOneStateKey({ ...projected, sections: { ...projected.sections,
-  materials: { format: "items", value: ["Referência fora do alcance da Etapa 2"], origin: "user_confirmed" },
+  materials: { format: "text", value: "Referência fora do alcance da Etapa 2", origin: "user_confirmed" },
 } }), stageOneKey, "unrelated stage 1 material must not discard paid stage 2 suggestions");
 assert.notEqual(stageOneStateKey({ ...projected, accountId: "another-account" }), stageOneKey,
   "suggestions must not survive switching accounts");
-const stageOne = stageOnePrompt("business_context", "Consultoria para pequenas empresas em Recife.");
-assert.ok(stageOne);
-assert.match(stageOne.instructions, /Nunca crie preço/);
-assert.deepEqual(JSON.parse(stageOne.input), {
-  section: { key: "business_context", label: "Atuação" },
-  user_text: "Consultoria para pequenas empresas em Recife.",
-});
-assert.equal(stageOnePrompt("audience", "texto"), null);
-assert.equal(stageOnePrompt("business_context", "OPENAI_API_KEY=placeholder-credential"), null,
-  "credential-like text must fail before stage 1 egress");
-for (const name of ["SUPABASE_SECRET_KEY", "SUPABASE_DB_PASSWORD", "STRIPE_WEBHOOK_SECRET", "GH_TOKEN"]) {
-  assert.equal(stageOnePrompt("business_context", `${name}=placeholder-value`), null,
-    `${name} must fail before stage 1 egress`);
-}
-assert.equal(stageOnePrompt("business_context", "SUPABASE_DB_URL_READONLY=postgresql://example.invalid/db"), null,
-  "the authenticated read-only database URL must fail before stage 1 egress");
-assert.ok(stageOnePrompt("business_context", "Produzimos molho secreto artesanal e atendimento humano."),
-  "ordinary business language must remain eligible");
-assert.equal(parseStageOneResponse({ output_text: JSON.stringify({
-  suggestion: "Consultoria para pequenas empresas em Recife.", missing_question: "",
-}) }, "business_context").ok, true);
-for (const [suggestion, missingQuestion] of [["", ""], [" \n ", " \t "]]) {
-  assert.equal(parseStageOneResponse({ output_text: JSON.stringify({
-    suggestion, missing_question: missingQuestion,
-  }) }, "business_context").ok, false, "stage 1 must reject an empty suggestion and question");
-}
-for (const [suggestion, missingQuestion] of [
-  ["  Sugestão útil  ", ""], ["", "  Qual informação falta?  "],
-  ["  Sugestão útil  ", "  Qual informação falta?  "],
-]) {
-  const parsed = parseStageOneResponse({ output_text: JSON.stringify({
-    suggestion, missing_question: missingQuestion,
-  }) }, "business_context");
-  assert.equal(parsed.ok, true, "stage 1 must retain useful suggestions or localized questions");
-  if (parsed.ok) assert.deepEqual(parsed.value, {
-    suggestion: suggestion.trim(), missingQuestion: missingQuestion.trim(),
-  });
-}
-assert.equal(parseStageOneResponse({ output_text: JSON.stringify({
-  suggestion: "Sugestão", missing_question: "",
-}), output: [{ type: "web_search_call", status: "completed" }] }, "business_context").ok, false,
-"stage 1 must reject any web search call");
-for (const key of ["offers", "proof", "materials"]) {
-  const response = (suggestion: string) => parseStageOneResponse({ output_text: JSON.stringify({
-    suggestion, missing_question: "",
-  }) }, key);
-  assert.equal(response(Array.from({ length: 20 }, () => "a".repeat(400)).join("\n")).ok, true,
-    `${key} must accept the largest savable item list`);
-  assert.equal(response(Array.from({ length: 21 }, () => "item").join("\n")).ok, false,
-    `${key} must reject more than 20 item lines`);
-  assert.equal(response("a".repeat(401)).ok, false,
-    `${key} must reject an item exceeding the save limit`);
-}
-assert.equal(parseStageOneResponse({ output_text: JSON.stringify({
-  suggestion: "a".repeat(4001), missing_question: "",
-}) }, "business_context").ok, false, "text suggestions must follow the save limit");
-assert.equal(parseStageOneResponse({ output_text: JSON.stringify({
-  suggestion: "item", missing_question: "",
-}) }, "audience").ok, false, "stage 2 keys must not be accepted for stage 1");
 
 const generalTarget = { kind: "general" } as const;
 const emptySections = withSection(withSection({}, "business_name", "   ", "user_confirmed")!,
-  "offers", ["   "], "user_confirmed");
+  "offers", "   ", "user_confirmed");
 assert.ok(emptySections);
 const emptyBase = projectCommunicationBase({
   account_id: "00000000-0000-4000-8000-000000000001", version: 3, sections_json: emptySections,
@@ -386,7 +371,7 @@ assert.ok(firstGeneration);
 assert.equal("existing_stage_two_draft" in JSON.parse(firstGeneration.input), false,
   "first generation sends only confirmed stage 1 data");
 const privateInput = withSection(withSection(initial, "service", "Contato privado 11 99999-9999", "user_confirmed")!,
-  "materials", ["Referência interna"], "user_confirmed");
+  "materials", "Referência interna", "user_confirmed");
 assert.ok(privateInput);
 const privateBase = projectCommunicationBase({
   account_id: "00000000-0000-4000-8000-000000000001", version: 3, sections_json: privateInput,
@@ -446,6 +431,17 @@ assert.equal(parseStageTwoResponse({ ...stageTwoPayload, output_text: JSON.strin
 assert.equal(stageTwoPrompt(projected, { kind: "section", key: "business_context" }, false), null);
 assert.equal(parseStageTwoResponse(stageTwoPayload, { kind: "section", key: "business_context" }, false).ok, false);
 assert.equal("future_section" in projected.sections, false);
+
+{
+  const textualNiche={taxonId:null,name:"Jardinagem para condomínios",confirmed:true,revision:"text:1"};
+  const textPrompt=stageTwoPrompt(projected,generalTarget,false,textualNiche);
+  assert.ok(textPrompt);
+  assert.deepEqual(JSON.parse(textPrompt.input).official_niche,{description:textualNiche.name,revision:"text:1"});
+  assert.equal(stageTwoPrompt(projected,generalTarget,false,{...textualNiche,confirmed:false}),null);
+  assert.equal(isCurrentGenerationNiche(textualNiche,{...textualNiche,revision:"text:2"}),false);
+  assert.equal(isCurrentGenerationNiche(textualNiche,{...textualNiche}),true);
+}
+
 assert.equal(projectCommunicationBase({
   account_id: "00000000-0000-4000-8000-000000000001",
   version: 3,
@@ -456,7 +452,7 @@ assert.equal(projectCommunicationBase({
 assert.equal(projectCommunicationBase({
   account_id: "00000000-0000-4000-8000-000000000001",
   version: 3,
-  sections_json: { ...evolved, offers: { format: "items", value: ["Oferta"], origin: "pending_setup_confirmed" } },
+  sections_json: { ...evolved, offers: { format: "text", value: "Oferta", origin: "pending_setup_confirmed" } },
   created_at: "2026-09-27T00:00:00Z",
   updated_at: "2026-09-27T00:00:00Z",
 }), null, "Pending Setup provenance applies only to business context");
@@ -591,13 +587,13 @@ async function runProviderFailureAccountingCase() {
       accountId: "00000000-0000-4000-8000-000000000001" },
     executionOrigin: "administrative_proof" as const,
   };
-  const usage = { input_tokens: 1000, output_tokens: 500, total_tokens: 1500 };
+  const usage = { input_tokens: 1000, input_tokens_details: { cached_tokens: 0, cache_write_tokens: 0 }, output_tokens: 500, total_tokens: 1500 };
   const withSearch = await requestOpenAiResponses(input, {
     costRecorder: recorder,
     emitEvent: (event) => { eventEnvironments.push(event.environment); },
     nowIso: () => "2026-09-27T23:00:00.000Z",
     fetchImpl: async () => new Response(JSON.stringify({
-      id: "resp_failed_after_search", usage,
+      id: "resp_failed_after_search", model: resolved.value.model, service_tier: "default", usage,
       output_text: JSON.stringify({ sections: { audience: { value: "Rascunho", basis: "confirmed_business_fact" } } }),
       output: [{ type: "web_search_call", status: "completed", action: {
         type: "search", sources: [{ title: "Fonte", url: "https://example.org/mercado" }],
@@ -612,6 +608,7 @@ async function runProviderFailureAccountingCase() {
   assert.equal(terminals[0]?.webSearchCallCount, 1, "a failed response must retain the observed Web Search call");
   assert.equal(terminals[0]?.webSearchRequested, true);
   assert.deepEqual(calculateOpenAiOperationCost({
+    ...terminals[0],
     model: resolved.value.model, startedAt: "2026-09-27T23:00:00.000Z",
     usage: terminals[0]?.usage, webSearchCallCount: terminals[0]?.webSearchCallCount,
     webSearchRequested: terminals[0]?.webSearchRequested,
@@ -622,12 +619,13 @@ async function runProviderFailureAccountingCase() {
     costRecorder: recorder,
     emitEvent: () => {},
     nowIso: () => "2026-09-27T23:00:00.000Z",
-    fetchImpl: async () => new Response(JSON.stringify({ id: "resp_failed_without_output", usage, output_text: "{}" }),
+    fetchImpl: async () => new Response(JSON.stringify({ id: "resp_failed_without_output", model: resolved.value.model, service_tier: "default", usage, output_text: "{}" }),
       { status: 200, headers: { "Content-Type": "application/json" } }),
   });
   assert.equal(withoutObservableOutput.ok, false);
   assert.equal(terminals[1]?.webSearchCallCount, null);
   assert.equal(calculateOpenAiOperationCost({
+    ...terminals[1],
     model: resolved.value.model, startedAt: "2026-09-27T23:00:00.000Z",
     usage: terminals[1]?.usage, webSearchCallCount: terminals[1]?.webSearchCallCount,
     webSearchRequested: terminals[1]?.webSearchRequested,

@@ -1,8 +1,8 @@
 0. Introdução
 0.1. Cabeçalho
 • Documento: README — LP Factory 10 (MVP)
-• Versão: 11 — 09/10/2026
-• Data: 09/10/2026
+• Versão: 12 — 04/11/2026
+• Data: 04/11/2026
 • Escopo: visão geral do produto + documentos de referência + pendências estratégicas
 
 1. Visão geral do produto
@@ -43,6 +43,7 @@
 • Implementação que se torne desproporcional ao valor esperado pode ser interrompida, simplificada ou removida em vez de receber novas camadas para preservá-la.
 • Complexidade existente não ganha direito de permanência pelo esforço já investido; capacidades funcionais só são reduzidas ou removidas por decisão humana explícita.
 • O fluxo preferencial é: vender ou validar o serviço → executar da forma mais simples segura → automatizar o que se repetir → productizar o que demonstrar valor.
+• Enquanto não houver clientes comerciais, as contas atuais e seus dados de negócio são testes descartáveis: não exigir backfill nem compatibilidade retroativa apenas para preservá-los; quando necessário ao recorte aprovado, podem ser reiniciados ou recriados. Migrations obrigatórias, segurança e preservação funcional permanecem vigentes; reavaliar antes da primeira conta comercial.
 • Runtime não pode depender de objetos ou comportamentos de banco ainda não aplicados e validados no ambiente alvo.
 • A stack base do MVP permanece Next.js, Supabase e TypeScript.
 • Regras verificáveis, segurança, fatos, estado e contratos permanecem determinísticos quando possível; IA preserva flexibilidade controlada onde a natureza do resultado for semântica, criativa ou persuasiva.

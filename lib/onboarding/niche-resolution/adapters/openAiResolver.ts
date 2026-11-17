@@ -23,6 +23,7 @@ import {
 import {
   newOpenAiCostId,
   openAiCostRecorder,
+  openAiCostResponseEvidence,
   isOpenAiActiveCostTrackingEnabled,
   type OpenAiCostEconomicContext,
   type OpenAiCostExecutionOrigin,
@@ -271,6 +272,8 @@ export async function resolveNicheWithOpenAi(input: {
     const finishedAt = nowIso();
     await recorder.finishOperation({
       operationId,
+      ...openAiCostResponseEvidence(data),
+      requestedServiceTier: workload.serviceTier ?? null,
       result,
       failureCategory,
       httpStatus,

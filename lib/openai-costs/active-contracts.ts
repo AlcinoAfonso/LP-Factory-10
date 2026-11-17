@@ -79,6 +79,12 @@ export type OpenAiCostOperationTerminal = Readonly<{
   providerErrorCode?: string | null;
   providerErrorType?: string | null;
   usage?: OpenAiWorkloadUsage | null;
+  requestedServiceTier?: string | null;
+  appliedServiceTier?: string | null;
+  appliedModel?: string | null;
+  modality?: string | null;
+  cacheWriteTokens30m?: number | null;
+  cacheWriteTokens12h?: number | null;
   webSearchCallCount?: number | null;
   webSearchRequested?: boolean;
   finishedAt: string;
@@ -125,6 +131,13 @@ export type OpenAiActiveCostOperation = Readonly<{
   webSearchPricePerCallUsd: string | null;
   pricingVersion: string | null;
   pricingEffectiveAt: string | null;
+  requestedServiceTier?: string | null;
+  appliedServiceTier?: string | null;
+  appliedModel?: string | null;
+  modality?: string | null;
+  contextBand?: string | null;
+  cacheWriteTokens30m?: number | null;
+  cacheWriteTokens12h?: number | null;
   costStatus: "calculated" | "unavailable";
   costUnavailableReason: string | null;
   costUsd: string | null;

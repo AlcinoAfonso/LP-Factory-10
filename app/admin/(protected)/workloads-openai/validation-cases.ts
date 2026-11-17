@@ -332,18 +332,19 @@ const cases: readonly Case[] = [
       for (const transport of [
         "resolveNicheWithOpenAi",
         "requestCommercialActivationOpenAi",
-        "assistCommunicationSection",
         "generateCommunicationIntelligence",
       ]) {
         assert.equal(proof.includes(transport), true);
       }
       const communicationAdapter = readFileSync(new URL("../../../../lib/communication-base/adapters/communicationAiAdapter.ts", import.meta.url), "utf8");
-      for (const name of ["proveCommunicationStageOne", "proveCommunicationStageTwo"]) {
+      assert.equal(proof.includes("assistCommunicationSection"), false, "retired assistance must have no administrative provider path");
+      assert.equal(proof.includes("proveCommunicationStageOne"), false);
+      for (const name of ["proveCommunicationStageTwo"]) {
         const call = proof.split(`async function ${name}(`)[1]?.split("\nasync function ")[0];
         assert.ok(call && /\benvironment,\s*apiKey,/.test(call), `${name} must pass the selected environment`);
       }
-      assert.equal((communicationAdapter.match(/environment: input\.environment/g) ?? []).length, 2,
-        "both communication transports must forward the selected environment to Responses");
+      assert.equal((communicationAdapter.match(/environment: input\.environment/g) ?? []).length, 1,
+        "the remaining communication transport must forward the selected environment to Responses");
       assert.doesNotMatch(
         proof,
         /generateLandingPageDraftCandidate|generateLandingPageDraftImage|LandingPageGenerationContextPackage/,

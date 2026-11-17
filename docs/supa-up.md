@@ -684,7 +684,10 @@ Avaliar quando houver primeiros clientes ativos, incidente recorrente ou necessi
 
 ### Descrição  
 
-Guia oficial da Supabase para criar apps do ChatGPT conectados ao banco usando **mcp-use**, facilitando o deploy de **MCP Servers** em **Supabase Edge Functions**.
+O guia com **mcp-use** continua como referência. O [bloco MCP Server oficial de 22/10/2026](https://supabase.com/blog/give-your-supabase-app-its-own-mcp-server) oferece outra implementação em Edge Function, com SDK TypeScript, OAuth 2.1 e cliente Supabase por usuário sujeito a RLS. Permite expor ações de um serviço aprovado a clientes MCP sem duplicar suas regras de negócio.
+
+- Não adotado: `docs/services.md` mantém a camada sem MCP operacional. Horizonte indefinido; comparar com API/helper existente somente diante de consumidor aprovado e vantagem demonstrada, com custo incremental zero comprovado.
+- Exige configuração de OAuth, consentimento e validação de identidade; não habilitar endpoints, registro de clientes ou alterar JWT nesta catalogação.
 
 ### Valor para o Projeto  
 
@@ -1427,6 +1430,12 @@ Supabase Evals não é uma dependência do projeto nem justifica criar suíte pr
 2. Consultar fontes oficiais e validar qualquer mutação.
 3. Usar Supabase Evals apenas como referência externa até existir necessidade concreta de avaliação própria.
 
+### Evolução oficial — 07/11/2026
+
+- Autorização gerenciada pode usar Claude como emissor para organizações Supabase Team/Enterprise com SSO. Exige revisar desligamento de membros e substituição do emissor; não comprova acesso ou gratuidade local.
+- Make oferece módulos API e MCP para cenários aprovados. A inclusão do cliente MCP nos planos não prova custo zero do cenário; comparar com a automação existente antes de adotar.
+- Fontes: [autorização empresarial](https://supabase.com/blog/claude-issued-enterprise-managed-auth-for-mcp) e [integração Make](https://supabase.com/blog/automate-your-supabase-backend-with-make). Nenhuma conexão, aprovação organizacional ou integração foi realizada.
+
 ### Fontes Oficiais
 
 - [Supabase Blog — Introducing Supabase Evals](https://supabase.com/blog/introducing-supabase-evals)
@@ -2104,6 +2113,7 @@ Catalogado em 2026-10-14
 
 - Permite limitar projetos, organizações, permissões e expiração.
 - `supabase link` exige permissões próprias; `db push` autenticado pela senha do banco não é limitado pelo PAT.
+- O [guia de 26/10](https://supabase.com/blog/scope-your-personal-access-tokens) alerta que o preset Read-only também inclui leitura de secrets. Na próxima revisão autorizada, partir de No access e liberar só o necessário; usar `read_only=true` no MCP é uma restrição distinta. Não presumir segurança apenas pelo nome do preset.
 - Não criar, ler, trocar nem testar credencial nesta rodada.
 
 ### Fontes oficiais
@@ -2120,14 +2130,14 @@ Catalogado em 2026-10-14
 
 ### Status no Projeto
 
-- Estado atual: retirada anunciada a partir de 10/11/2026, no mínimo, nas APIs HTTP usadas pelo projeto; levantamento delimitado PB 18D.1 concluído, com incertezas de impacto preservadas.
-- Conclusão delimitada: capacidade compatível comprovada somente no processo local inspecionado; Vercel e browsers inconclusivos. Cobertura de integrações externas não confirmada; informação ausente não comprova ausência. Nenhuma incompatibilidade ou correção necessária comprovada.
-- Ação pendente: reavaliar e encaminhar o saldo diante do gatilho, usando a evidência disponível sem repetir buscas esgotadas; eventual correção exige recorte próprio. Sem coleta adicional ou consulta ao suporte nesta rodada.
-- Prioridade: temporal, antes de 10/11/2026.
-- Motivo da permanência: dependência das APIs HTTPS e capacidade efetiva não demonstrada para todos os consumidores conhecidos.
-- Gatilho: prazo anunciado (a partir de 10/11/2026, no mínimo), notificação específica de cliente afetado, identificação concreta de consumidor existente ou disponibilidade de nova prova efetiva de capacidade/configuração no fluxo autorizado.
-- Critério de encerramento do saldo: impacto delimitado sustentado por evidência suficiente e eventual correção aplicável validada em recorte próprio; concluir o levantamento não resolve este saldo.
-- Provas e limites: [PR #1067 — diagnóstico final e cobertura por ambiente](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6173085395).
+- Estado atual: conferência única do Debate 18F executada em 08/11/2026, antes do início mais cedo anunciado para 10/11, reutilizando as provas do PB 18D.1 e uma leitura read-only do projeto/deploys Vercel atuais.
+- Conclusão delimitada: INCONCLUSIVO para compatibilidade global. Nenhuma incompatibilidade ou correção necessária foi comprovada. Vercel confirma o projeto `lp-factory-10` configurado em Node 22.x e deployments Production/Preview READY, mas não a TLS efetiva por Function/middleware. Permanecem sem prova suficiente a capacidade/configuração TLS do fluxo Auth em navegador e a cobertura dos consumidores HTTP atuais. Capacidade local ou conexão isolada não demonstra compatibilidade global.
+- Ação pendente: nenhuma alteração de produto. O saldo permanece inconclusivo, sem repetir inventário ou buscas esgotadas. Retomar somente com nova prova efetiva de TLS dos consumidores atuais ou falha TLS concreta em consumidor existente; eventual correção exige recorte próprio.
+- Prioridade: temporal; a conferência foi concluída em 08/11/2026, antes da retirada anunciada para 10/11/2026, no mínimo.
+- Motivo da permanência: as APIs HTTPS do projeto são usadas, mas a configuração TLS efetiva dos consumidores atuais não está demonstrada em cobertura suficiente.
+- Gatilho: nova prova acessível da TLS efetiva das Functions/middleware de Preview e Production ou do fluxo Auth em navegador; ou notificação de falha TLS concreta em consumidor existente. Não reabrir por consumidor já conhecido nem ampliar para matriz de combinações.
+- Critério de encerramento do saldo: classificar afetado/corrigido somente com consumidor incompatível concreto e correção validada; classificar sem correção apenas com evidência suficiente para os consumidores atuais sob controle do projeto. Até lá, manter INCONCLUSIVO.
+- Provas e limites: [PR #1067 — diagnóstico final e cobertura por ambiente](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1067#issuecomment-6173085395); configuração atual Node 22.x, Production READY `dpl_7zGzsuGH5TZteAs4EahjPTJNEc1M` (SHA `3007a34067295ac260aae83481a08705d777ebf2`) e Preview READY `dpl_Em4oQL81N3qwwJUp5rrpFEyzF6zH` (SHA `944f94d183400baa31b3b2bf23ed09fa1b516405`) ([Production](https://vercel.com/alcino-afonsos-projects/lp-factory-10/7zGzsuGH5TZteAs4EahjPTJNEc1M), [Preview](https://vercel.com/alcino-afonsos-projects/lp-factory-10/Em4oQL81N3qwwJUp5rrpFEyzF6zH)). Esses dados identificam a configuração do projeto/deploy, não a TLS efetiva por consumidor.
 
 ### Fontes oficiais
 
@@ -2184,6 +2194,97 @@ Catalogado em 2026-10-20
 - [Supabase — middleware reutilizável (15/10/2026)](https://supabase.com/blog/supabase-middleware)
 
 ---
+
+## 76 — Supabase Compute para agentes e serviços longos *(🧪 Private alpha; dependente de recorte)*
+
+2026-10-27
+
+### Estado, valor e horizonte
+
+- Não implementado; sem `supabase/compute/` ou ativação em `supabase/config.toml`.
+- Executa agentes, APIs e tarefas longas próximos ao banco. Pode atender futuro serviço aprovado que ultrapasse limites do runtime atual; comparar com Core/Vercel e Edge Functions antes de criar infraestrutura.
+- Horizonte indefinido; acesso e custo no projeto não comprovados. A gratuidade anunciada restringe-se à avaliação alpha, não garante operação futura gratuita.
+
+### Gatilho e limites
+
+- Radar: reavaliar com consumidor, gargalo e ganho mensurável, maturidade adequada e custo incremental zero comprovado.
+- Alpha somente em `us-west-2`, sem uso em Production. Serviços podem reiniciar e recebem todos os secrets do projeto; não são sandbox para código não confiável.
+- Não aderir à waitlist, atualizar CLI, criar serviço ou autorizar implementação nesta rodada.
+
+### Fonte oficial
+
+- [Supabase Compute — 27/10/2026](https://supabase.com/blog/supabase-compute-private-alpha)
+
+---
+
+## 77 — Supabase CLI v3: destino e consentimento explícitos *(🟦 GA; compatibilidade transversal condicional)*
+
+2026-11-04  
+Conferido em 2026-11-07
+
+### Estado e aplicabilidade
+
+- Não adotado no CI: migrations fixa CLI 2.106.0; versão dos operadores não inspecionada. O config local ainda usa `[inbucket]`.
+- A v3 muda seleção de ambiente, consentimento e precedência de configuração. Isso não altera automaticamente o banco hospedado nem exige migrar o pipeline v2 saudável.
+
+### Ação, prioridade e encerramento
+
+- Prioridade condicional, antes de instalar v3 ou diante de erro real. Conferir alvo remoto, confirmação não interativa, configuração e diff engine no recorte autorizado; não atualizar nesta rodada.
+- Encerrar com compatibilidade comprovada e reconciliação ABC ou inaplicabilidade. Horizonte Starter; não autoriza mutação, instalação ou custo adicional.
+- Fontes: [aviso](https://supabase.com/changelog/supabase-cli-v3) e [migração oficial](https://supabase.com/docs/guides/local-development/cli/migrating-to-v3).
+
+---
+
+## 78 — Explorer e Notebooks para investigações reproduzíveis *(🧪 Feature preview; dependente de recorte)*
+
+2026-10-30  
+Conferido em 2026-11-07
+
+### Estado, valor e gatilho
+
+- Adoção não comprovada; busca por notebooks sem consumidor. Editor reúne consultas de banco/logs, notas e gráficos; o arquivo guarda consultas, não resultados.
+- Valor: reutilizar investigação real e comparar antes/depois de deploy. Complementa `supa#5`, `supa#40` e `supa#70`; não justifica substituir snippets ou inspeção existentes por rotina.
+- Horizonte indefinido; avaliar somente diante de investigação recorrente e vantagem comprovada, com acesso e custo incremental zero. CLI de notebooks em beta; nenhuma ativação, arquivo, query ou monitor criado.
+- Fonte: [anúncio oficial](https://supabase.com/blog/explorer-and-notebooks-investigations-your-team-can-rerun).
+
+---
+
+## 79 — Multigres: alta disponibilidade e failover *(🧪 Private alpha; transversal condicional)*
+
+2026-10-29  
+Conferido em 2026-11-07
+
+### Estado, valor e limites
+
+- Sem adoção documentada ou configuração/consumidor no repositório. Pode reduzir indisponibilidade por falha do primário em serviço com requisito real de continuidade.
+- Plano pago e convite; alpha sem SLA, imprópria para Production. Exige projeto novo; sem Realtime ou PITR e com região/tamanho limitados. Gratuidade temporária não comprova elegibilidade ou custo local.
+
+### Prioridade, gatilho e encerramento
+
+- Condicional, horizonte indefinido. Reavaliar com requisito de disponibilidade aprovado, comparando com operação atual e alternativas mais simples.
+- Adoção exige maturidade, compatibilidade e custo zero comprovados; encerrar por adoção validada/ABC ou rejeição fundamentada. Não criar cluster, réplica ou projeto nesta catalogação.
+- Fonte: [anúncio oficial](https://supabase.com/blog/multigres-private-alpha).
+
+---
+
+## 80 — OrioleDB: engine para cargas com muitas atualizações *(🧪 Public beta; transversal condicional)*
+
+2026-10-28  
+Conferido em 2026-11-07
+
+### Estado, valor e limites
+
+- Sem adoção documentada; `orioledb_version` vazio no config. Pode reduzir bloat e I/O em carga comprovadamente intensiva em UPDATE/DELETE; benchmark externo não prova ganho no projeto.
+- Selecionado ao criar projeto; beta sem SLA, ainda não indicada para Production. Há limitações de índices, extensões, comandos e recuperação; não é troca transparente do projeto atual.
+
+### Prioridade, gatilho e encerramento
+
+- Condicional, horizonte indefinido. Somente diante de gargalo real, após comparar índices/tuning existentes e medir a carga pertinente.
+- Exigir compatibilidade e custo incremental zero antes de adoção; encerrar com validação/ABC ou rejeição fundamentada. Nenhum banco, extensão ou engine alterado.
+- Fonte: [anúncio oficial](https://supabase.com/blog/orioledb-public-beta).
+
+---
+
 
 ## Registro da rodada — Supabase Update August 2026 — 10/08/2026
 
