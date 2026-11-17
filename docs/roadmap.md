@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-- Data: 15/11/2026
-- Versão: v1.5.261
+- Data: 17/11/2026
+- Versão: v1.5.262
 
 0.2 Contrato do documento (consulta)
 - Estado vigente dos casos; sem narrativa operacional.
@@ -2039,6 +2039,10 @@
     - `supabase/tests/e21_5_4_openai_cost_calculation_read_model.test.sql`
     - `supabase/snippets/e21_5_4_openai_cost_calculation_read_model_verify.sql`
     - `lib/openai-costs/economic-hierarchy.ts`
+    - `lib/openai-costs/dialogue-costs.ts`
+    - `lib/openai-costs/adapters/dialogueCostReadAdapter.ts`
+    - `lib/openai-costs/dialogue-cost-validation-cases.ts`
+    - `app/admin/(protected)/custos-openai/_components/OpenAiDialogueCosts.tsx`
     - `app/admin/(protected)/custos-openai/_components/OpenAiEconomicHierarchy.tsx`
     - `supabase/migrations/20260912215000_e21_5_6_openai_cost_event_correlation.sql`
     - `supabase/tests/e21_5_6_openai_cost_event_hierarchy.test.sql`
@@ -2071,8 +2075,9 @@
 - Correção focal D10 §3.11 (16/11/2026): em implementação; tarifas oficiais versionadas por data/modelo/modalidade/contexto/serviço aplicado, evidência de cache/retenção e Web Search, sem reprecificação ou backfill. Cobertura financeira informativa antes da ativação E21.2, sem novo bloqueio ou mudança em Production nesta rodada. PBs 1 a 4 preservados.
 
 21.5.5 Visão administrativa de custos
-- Status: operacional.
+- Status: operacional; delta D10 §3.12 implementado em branch, com QA visual no navegador integrado e publicação pendentes.
 - Conteúdo: financeiro único sob demanda/platform_admin, fontes/DTO em Base Técnica 3.16; teclado/foco/nomes/estados/responsividade, sem WCAG integral comprovada.
+- Diálogos do Agente Nicho: Pending Setup e Redefinir nicho usam identidade canônica e conta no evento financeiro existente. Consulta completa por diálogo, independente do período da reconciliação; custo acumulado/final ou parcial explícito, operações e retries sem dupla contagem. Sem associação retroativa, reprecificação ou alteração conversacional/operacional.
 
 21.5.6 Visão econômica hierárquica de custos por evento
 - Status: aplicada em Production.

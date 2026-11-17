@@ -1,3 +1,4 @@
+import type { DialogueListResult } from "./dialogue-costs";
 import { OPENAI_RETIRED_COST_WORKLOAD_IDS } from "./active-contracts";
 import type {
   OpenAiActiveCostFilters,
@@ -58,6 +59,7 @@ export type OpenAiCostsFinancialComposition = Readonly<{
   activeErrorCode: string | null;
   filteredActive: OpenAiActiveCostReadModel | null;
   activeFilters: OpenAiActiveCostFilters;
+  dialogues: DialogueListResult | null;
   legacy: OpenAiLpCostReadModel | null;
   legacyErrorCode: string | null;
   economicHierarchy: OpenAiEconomicHierarchy | null;
@@ -149,6 +151,7 @@ export function buildOpenAiCostsFinancialComposition(input: Readonly<{
   active: OpenAiActiveCostReadResult;
   legacy: OpenAiLpCostReadResult;
   activeFilters?: OpenAiActiveCostFilters;
+  dialogues?: DialogueListResult | null;
 }>): OpenAiCostsFinancialComposition | null {
   if (!input.official.ok) return null;
   const official = decimalFromNonNegativeString(input.official.value.totalUsd);
@@ -174,6 +177,7 @@ export function buildOpenAiCostsFinancialComposition(input: Readonly<{
     activeErrorCode: input.active.ok ? null : input.active.error.code,
     filteredActive: active ? filterOpenAiActiveCosts(active, activeFilters) : null,
     activeFilters,
+    dialogues: input.dialogues ?? null,
     legacy,
     legacyErrorCode: input.legacy.ok ? null : input.legacy.error.code,
     economicHierarchy: active || legacy

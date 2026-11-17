@@ -640,7 +640,10 @@ async function main() {
     primary: async () => null, official: async () => ({ok:true as const,niche:null}),
     discard: async () => { effects.push("discard"); return { ok: true, version: 3 }; },
     claim: async () => { effects.push("claim"); current = { ...current, version: 2 }; return { ok: true, version: 2 }; },
-    request: async () => ({ ok: true, output: base, responseId: "fixture", latencyMs: 1 }),
+    request: async ({ financialContext }) => {
+      assert.deepEqual(financialContext, { universe: "client", attributionStatus: "attributed", accountId, event: { kind: "niche_resolution", eventId: current.id } });
+      return { ok: true, output: base, responseId: "fixture", latencyMs: 1 };
+    },
     commit: async input => { effects.push("commit"); assert.equal(input.proposal?.kind, "semantic"); return { ok: true, version: 3 }; },
     release: async () => { effects.push("release"); return { ok: true, version: 3 }; },
   };

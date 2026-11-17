@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState, type ReactNode } from "react";
 
+import { OpenAiDialogueCosts } from "./OpenAiDialogueCosts";
 import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 import type { OpenAiActiveCostReadModel, OpenAiCostReadWorkloadId } from "@/openai-costs/active-contracts";
 import type { OpenAiCostsFinancialComposition } from "@/openai-costs/dashboard";
@@ -130,6 +131,7 @@ function DashboardResult({ dashboard }: Readonly<{ dashboard: OpenAiCostsFinanci
       </section>
 
       <CoverageSection dashboard={dashboard} />
+      <OpenAiDialogueCosts result={dashboard.dialogues} active={dashboard.active} filters={dashboard.activeFilters} />
       {dashboard.legacy && dashboard.legacy.providerCreditFailureCount > 0 ? (
         <StatusPanel tone="danger" title="Crédito ou limite OpenAI requer atenção" role="alert">
           O período contém {dashboard.legacy.providerCreditFailureCount} ocorrência de provider associada a crédito ou limite insuficiente. Consulte a administração da OpenAI; nenhum detalhe financeiro interno é exibido ao cliente.

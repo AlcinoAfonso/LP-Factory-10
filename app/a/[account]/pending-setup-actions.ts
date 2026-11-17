@@ -271,7 +271,7 @@ export async function continuePendingSetupConversationAction(
         apiKey: process.env.OPENAI_API_KEY,
         financialContext: clientOpenAiCostContext(actor.accountId, {
           kind: "niche_resolution",
-          eventId: crypto.randomUUID(),
+          eventId: conversationId,
         }),
       });
       if (resolution.ok) {

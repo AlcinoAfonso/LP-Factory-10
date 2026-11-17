@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import nodeModule from "node:module";
+import { buildDialogueCostDetail } from "../../../../lib/openai-costs/dialogue-costs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import React from "react";
@@ -276,6 +278,51 @@ assert.equal(composition.filteredActive?.unavailableOperationCount, 1);
 const executionMarkup = renderToStaticMarkup(<OpenAiCostExecutionDetails execution={activeModel.executions[0]} />);
 for (const text of ["Serviço solicitado", "Fast", "Serviço aplicado", "Standard", "gpt-6.1-terra", "Subtotal calculável",
   "Custo indisponível", "pricing_not_found", "Gravação em cache · 12 h", "Ambiente"]) assert.ok(executionMarkup.includes(text), text);
+
+// Render only sanitized financial facts; this is markup validation, not visual browser QA.
+const loader = nodeModule as unknown as { _load: (name: string, parent: unknown, isMain: boolean) => unknown };
+const originalLoader = loader._load;
+loader._load = function(name, parent, isMain) {
+  if (name === "../actions") return { readDialogueCostAction: async () => ({ ok: false, code: "NOT_CALLED_IN_RENDER" }) };
+  return originalLoader.call(this, name, parent, isMain);
+};
+const { DialogueCostDetailView, OpenAiDialogueCosts } = await import("./_components/OpenAiDialogueCosts").finally(() => { loader._load = originalLoader; });
+const dialogue = { dialogueId: "e2155000-0000-4000-8000-000000000040", accountId: activeModel.executions[0].accountId!,
+  origin: "account_niche" as const, startedAt: "2026-08-28T14:00:00.000Z", endedAt: "2026-08-28T14:30:00.000Z" };
+const dialogueExecution = { ...activeModel.executions[0], workload: "pending_setup_conversation" as const,
+  economicEvent: { kind: "niche_resolution" as const, eventId: dialogue.dialogueId } };
+const dialogueDetail = buildDialogueCostDetail(dialogue, { ...activeModel, executions: [dialogueExecution] });
+const dialogueMarkup = renderToStaticMarkup(<DialogueCostDetailView detail={dialogueDetail} />);
+for (const text of ["Subtotal calculável — parcial", "0,05", "1 custos indisponíveis", "pricing_not_found", "Redefinir nicho", "2 tentativas", "1 retries"])
+  assert.ok(dialogueMarkup.includes(text), text);
+assert.equal(dialogueMarkup.includes("Custo final"), false);
+const dialogueListMarkup = renderToStaticMarkup(<OpenAiDialogueCosts result={{ ok: true, dialogues: [dialogue] }} active={activeModel} filters={{}} />);
+for (const text of ["<table", "Diálogos do Agente Nicho", "Redefinir nicho", "Abrir", "inclusive operações fora do período"])
+  assert.ok(dialogueListMarkup.includes(text), text);
+const emptyDialogueMarkup = renderToStaticMarkup(<DialogueCostDetailView detail={buildDialogueCostDetail(dialogue, { ...activeModel, executions: [] })} />);
+assert.ok(emptyDialogueMarkup.includes("Sem custo registrado"));
+assert.ok(emptyDialogueMarkup.includes("Sem valor comprovado"));
+assert.equal(emptyDialogueMarkup.includes("US$ 0,00"), false);
+
+const dialogueList = [
+  { ...dialogue, accountName: "Conta Atendimento", workloads: ["pending_setup_conversation" as const] },
+  { ...dialogue, dialogueId: "e2155000-0000-4000-8000-000000000041", accountName: "Conta Resolução", workloads: ["niche_resolution" as const] },
+  { ...dialogue, dialogueId: "e2155000-0000-4000-8000-000000000042", accountName: "Conta Sem Operações", workloads: [] },
+];
+for (const [workload, shown, hidden] of [
+  ["pending_setup_conversation", "Conta Atendimento", "Conta Resolução"],
+  ["niche_resolution", "Conta Resolução", "Conta Atendimento"],
+] as const) {
+  const filteredMarkup=renderToStaticMarkup(<OpenAiDialogueCosts result={{ok:true,dialogues:dialogueList}} active={null} filters={{workload}} />);
+  assert.ok(filteredMarkup.includes(shown));
+  assert.equal(filteredMarkup.includes(hidden),false);
+  assert.equal(filteredMarkup.includes("Conta Sem Operações"),false);
+}
+const namedWithoutActivity=renderToStaticMarkup(<OpenAiDialogueCosts result={{ok:true,dialogues:dialogueList}} active={null} filters={{}} />);
+assert.ok(namedWithoutActivity.includes("Conta Sem Operações"),"canonical account name is preserved without period operations");
+assert.equal(namedWithoutActivity.includes("Conta "+dialogue.accountId.slice(0,8)),false);
+const unrelatedWorkload=renderToStaticMarkup(<OpenAiDialogueCosts result={{ok:true,dialogues:dialogueList}} active={activeModel} filters={{workload:"supabase_inspect"}} />);
+assert.ok(unrelatedWorkload.includes("Nenhum diálogo encontrado"));
 
 const lpFactoryBrowserForm = new FormData();
 lpFactoryBrowserForm.set("periodMode", "custom");
