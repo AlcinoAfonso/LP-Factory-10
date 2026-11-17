@@ -89,8 +89,10 @@ export async function conductAttendanceTurn(input: Readonly<{
         ? { ...answer.output, businessUnderstanding: reserved.businessContextText ?? "" } : answer.output;
     const body = output.reply.replace(/^\s*Prazer,\s*[^!\n]{1,100}!\s*/iu, "").trim();
     const greeting = output.preferredName && !context.greetedByName ? `Prazer, ${output.preferredName}!` : "";
-    const reply = [greeting, body].filter(Boolean).join(" ");
-    if (!reply) throw new Error("empty_attendance_reply");
+    // Preserve the complete response (including sources) if the optional salutation cannot fit.
+    const withGreeting = [greeting, body].filter(Boolean).join(" ");
+    const reply = withGreeting.length <= 4000 ? withGreeting : body;
+    if (!reply || reply.length > 4000) throw new Error("invalid_attendance_reply_length");
     const written = await dependencies.commit({
       ...fence, output: { ...output, reply }, confirm: confirmation, observedPrimaryTaxonId: currentPrimaryTaxonId,
       observedNicheRevision: official.niche?.textRevision ?? 0,

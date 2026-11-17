@@ -748,6 +748,17 @@ async function main() {
     });
     assert.equal(result.ok,true);assert.deepEqual(effects,["claim","commit"]);
   }
+  current = { ...conversation }; effects.length=0;
+  const overlongBody = "A".repeat(3990);
+  assert.equal((await conductAttendanceTurn(input, { ...deps,
+    request: async () => ({ ok:true, output:{ ...base, reply:overlongBody }, responseId:"long-reply", latencyMs:1 }),
+    commit: async ({ output }) => {
+      assert.equal(output.reply, overlongBody, "preserve full reply when greeting would exceed SQL length");
+      assert.ok(output.reply.length <= 4000); effects.push("commit");
+      return { ok:true, version:3 };
+    },
+  })).ok,true);
+  assert.deepEqual(effects,["claim","commit"]);
   current = { ...conversation, attendanceProposal: semantic }; effects.length = 0;
   assert.equal((await conductAttendanceTurn({ ...input, intent:"clarify",content:"Quero explicar melhor." },{...deps,
     request: async ({context:shown})=>{
