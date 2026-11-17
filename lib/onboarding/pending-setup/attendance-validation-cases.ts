@@ -54,10 +54,10 @@ async function main() {
   assert.equal(attendanceMessageContent({ ordinal: 1, role: "assistant", content: "Olá! Como prefere ser chamado?" }), ATTENDANCE_GREETING);
   assert.equal(attendanceMessageContent({ ordinal: 1, role: "user", content: "**Padarias**" }), "**Padarias**");
   assert.equal(attendanceMessageContent({ ordinal: 2, role: "assistant", content: "Nicho **Padarias**" }), "Nicho Padarias");
-  const pendingSchema = attendancePrompt(context).schema as { properties?: Record<string, unknown> };
-  const nicheSchema = attendancePrompt({ ...context, purpose: "account_niche", preferredName: null }).schema as { properties?: Record<string, unknown> };
-  assert.ok(pendingSchema.properties?.businessNameCandidate, "name candidate required only for Pending Setup");
-  assert.equal(nicheSchema.properties?.businessNameCandidate, undefined, "active niche schema unchanged");
+  const pendingBusinessNameSchema = attendancePrompt(context).schema as { properties?: Record<string, unknown> };
+  const nicheBusinessNameSchema = attendancePrompt({ ...context, purpose: "account_niche", preferredName: null }).schema as { properties?: Record<string, unknown> };
+  assert.ok(pendingBusinessNameSchema.properties?.businessNameCandidate, "name candidate required only for Pending Setup");
+  assert.equal(nicheBusinessNameSchema.properties?.businessNameCandidate, undefined, "active niche schema unchanged");
   assert.match(attendancePrompt(context).instructions,/No Pending Setup, a saudação inicial/);
   assert.doesNotMatch(attendancePrompt({ ...context, purpose:"account_niche", preferredName:null }).instructions,/No Pending Setup, a saudação inicial/);
 
