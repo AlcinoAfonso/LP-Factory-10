@@ -181,13 +181,18 @@ export function stageTwoPrompt(base: CommunicationBase, target: StageTwoTarget, 
 }
 
 
-export function parseStageTwoResponse(payload: unknown, target: StageTwoTarget, requiresCurrentResearch: boolean) {
+export function parseStageTwoResponse(
+  payload: unknown, target: StageTwoTarget, requiresCurrentResearch: boolean,
+  researchMode: "legacy" | "autonomous" = "legacy",
+) {
   const keys = targetKeys(target);
   if (!keys) return invalid("invalid_stage_two_target");
   const extracted = extractOutput(payload);
   if (!extracted.ok) return extracted;
   if (!requiresCurrentResearch && extracted.webCalls.length) return invalid("unexpected_web_search");
-  if (requiresCurrentResearch && (extracted.webCalls.length < 1 || extracted.webCalls.length > 2)) {
+  // Autonomous pilot research is bounded by the workload request, not this legacy output-item ceiling.
+  if (requiresCurrentResearch && (extracted.webCalls.length < 1 ||
+      (researchMode === "legacy" && extracted.webCalls.length > 2))) {
     return invalid("required_web_search_missing");
   }
   const sources = new Map<string, WebSource>();

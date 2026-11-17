@@ -85,7 +85,7 @@ export function buildAgentBasePilotPrompt(input: Readonly<{
 export function parseAgentBasePilotResponse(payload: unknown, key: AgentBasePilotKey) {
   const output = payload && typeof payload === "object" && "output" in payload ? payload.output : null;
   const researched = Array.isArray(output) && output.some(item => item?.type === "web_search_call");
-  const parsed = parseStageTwoResponse(payload, { kind: "section", key }, researched);
+  const parsed = parseStageTwoResponse(payload, { kind: "section", key }, researched, "autonomous");
   if (!parsed.ok) return parsed;
   return { ok: true as const, value: {
     ...parsed.value.suggestions[0], sources: parsed.value.sources, researched: parsed.value.researched,

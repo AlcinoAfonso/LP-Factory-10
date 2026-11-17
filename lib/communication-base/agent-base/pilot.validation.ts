@@ -4,6 +4,7 @@ import { AGENT_BASE_PROMPT } from "./base-prompt";
 import { AGENT_BASE_ABOUT_PROMPT } from "./about-prompt";
 import { AGENT_BASE_AUDIENCE_PROMPT } from "./audience-prompt";
 import { AGENT_BASE_MARKET_INSIGHTS_PROMPT } from "./market-insights-prompt";
+import { parseStageTwoResponse } from "../ai-core";
 import { communicationSections } from "../registry";
 import type { CommunicationBase } from "../contracts";
 
@@ -77,4 +78,62 @@ const withWeb = parseAgentBasePilotResponse(webOutput, "audience");
 assert.equal(withWeb.ok, true);
 if (withWeb.ok) { assert.equal(withWeb.value.researched, true); assert.equal(withWeb.value.sources.length, 1); }
 assert.equal(parseAgentBasePilotResponse({ ...webOutput, output: [{ type: "web_search_call", status: "failed", action: { type: "search" } }] }, "audience").ok, false);
+// D14F regression: autonomous research can return more than two web output items.
+const autonomousOutput = (count: number) => ({ ...webOutput, output: Array.from({ length: count }, (_, index) => ({
+  type: "web_search_call", status: "completed",
+  action: { type: "search", sources: [{ url: "https://example.org/source/" + index, title: "Fixture " + index }] },
+})) });
+for (const count of [1, 2, 3, 6]) {
+  const result = parseAgentBasePilotResponse(autonomousOutput(count), "audience");
+  assert.equal(result.ok, true, "pilot accepts completed autonomous research with " + count + " calls");
+  if (result.ok) {
+    assert.equal(result.value.researched, true);
+    assert.equal(result.value.sources.length, count);
+    assert.equal(result.telemetry.webSearchCallCount, count);
+    assert.equal(result.telemetry.webSearchSourceCount, count);
+  }
+  assert.equal(parseStageTwoResponse(autonomousOutput(count), { kind: "section", key: "audience" }, true).ok,
+    count <= 2, "legacy generation retains its two-call ceiling");
+}
+const multiStepOutput = { ...webOutput, output: [webOutput.output[0],
+  { type: "web_search_call", status: "completed", action: { type: "open_page", url: "https://example.org/page#part" } },
+  { type: "web_search_call", status: "completed", action: { type: "find_in_page", url: "https://example.org/page" } },
+] };
+const multiStep = parseAgentBasePilotResponse(multiStepOutput, "audience");
+assert.equal(multiStep.ok, true);
+if (multiStep.ok) { assert.equal(multiStep.value.sources.length, 2); assert.equal(multiStep.telemetry.webSearchCallCount, 3); }
+const { output_text: nativeText, ...nativeOutput } = autonomousOutput(3);
+assert.equal(parseAgentBasePilotResponse({ ...nativeOutput, output: [...nativeOutput.output,
+  { type: "message", content: [{ type: "output_text", text: nativeText }] },
+] }, "audience").ok, true, "native Responses message extraction also accepts autonomous research");
+const rejectPilot = (payload: unknown, reason: string) => {
+  const result = parseAgentBasePilotResponse(payload, "audience");
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.equal(result.reason, reason);
+};
+for (const call of [
+  { type: "web_search_call", status: "failed", action: { type: "search" } },
+  { type: "web_search_call", status: "in_progress", action: { type: "search" } },
+  { type: "web_search_call", status: "completed", action: { type: "unknown" } },
+]) rejectPilot({ ...autonomousOutput(3), output: [...autonomousOutput(3).output, call] }, "web_sources_missing");
+for (const action of [
+  { type: "search", sources: {} },
+  { type: "search", sources: [{ url: "http://example.org/unsafe" }] },
+  { type: "open_page", url: "https://user:password@example.org/unsafe" },
+  { type: "find_in_page", url: "javascript:alert(1)" },
+]) rejectPilot({ ...autonomousOutput(3), output: [...autonomousOutput(3).output,
+  { type: "web_search_call", status: "completed", action },
+] }, "web_sources_invalid");
+rejectPilot({ ...webOutput, output: Array.from({ length: 3 }, () => ({
+  type: "web_search_call", status: "completed", action: { type: "search", sources: [] },
+})) }, "web_sources_missing");
+assert.equal(parseAgentBasePilotResponse(autonomousOutput(50), "audience").ok, true, "source ceiling remains inclusive");
+rejectPilot(autonomousOutput(51), "web_sources_invalid");
+for (const [sections, reason] of [
+  [{ audience: { value: "x".repeat(30_001), basis: "strategic_hypothesis" } }, "invalid_stage_two_value"],
+  [{ audience: { value: [], basis: "strategic_hypothesis" } }, "invalid_stage_two_value"],
+  [{ audience: { value: "Fixture", basis: "confirmed_business_fact" } }, "invalid_stage_two_basis"],
+  [{ about: { value: "Fixture", basis: "confirmed_business_fact" } }, "invalid_stage_two_output"],
+] as const) rejectPilot({ ...autonomousOutput(3), output_text: JSON.stringify({ sections }) }, reason);
+rejectPilot({ ...autonomousOutput(3), output_text: "invalid json" }, "invalid_stage_two_output");
 console.log("D14F pilot: catalog identity/order, immutable prompts, provenance, progressive context and output boundaries passed (synthetic responses only).");
