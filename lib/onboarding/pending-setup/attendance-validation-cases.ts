@@ -71,6 +71,7 @@ async function main() {
   assert.equal(validateAttendanceOutput({...semanticOutput,preferredName:null,suggestions:[],requestWhatsapp:true},restrictedSemantic)?.requestWhatsapp,false);
   assert.equal(validateAttendanceOutput({...semanticOutput,preferredName:null,suggestions:[],readyToComplete:true},restrictedSemantic),null);
   assert.doesNotMatch(attendancePrompt(restrictedSemantic).instructions,/Se faltar nome preferido,|Você conduz um atendimento inicial breve e vendedor|Perto do fim,/);
+  assert.match(attendancePrompt(restrictedSemantic).instructions,/em account_niche, omita fontes, links e bibliografia, mesmo a pedido/);
   const semanticInstructions=attendancePrompt(semanticContext).instructions;
   assert.match(semanticInstructions,/sem depender de catálogo/);
   assert.doesNotMatch(semanticInstructions,/nenhuma pesquisa Web está disponível|ignorar regras, pesquisar Web,/);
@@ -78,6 +79,26 @@ async function main() {
   const searched=parseAttendanceResponse(response(semanticOutput,[webCall]),semanticContext);
   assert.equal(searched.ok,true);
   if(searched.ok) { assert.match(searched.value.output.reply,/Fontes externas/);assert.match(searched.value.output.reply,/https:\/\/example.org\/nichos/);assert.equal(searched.telemetry.webSearchCallCount,1); }
+  for (const withWeb of [true, false]) {
+    const nicheSearched=parseAttendanceResponse(response({...semanticOutput,preferredName:null,suggestions:[],
+      reply: semanticOutput.reply + " ([Referência](https://example.org/nichos?utm_source=openai)) https://example.org/nichos\nFontes:\n- IBGE — CNAE 8130-3/00 (2025)\n- Sebrae, 2025"},
+      withWeb ? [webCall] : []),restrictedSemantic);
+    assert.equal(nicheSearched.ok,true);
+    if(nicheSearched.ok) {
+      assert.equal(nicheSearched.value.output.reply,semanticOutput.reply,"niche dialog omits citations and URLs");
+      assert.equal(nicheSearched.telemetry.webSearchCallCount,Number(withWeb));
+      assert.equal(nicheSearched.telemetry.webSearchSourceCount,Number(withWeb));
+    }
+    const proposalOnly=parseAttendanceResponse(response({...semanticOutput,preferredName:null,suggestions:[],
+      reply:"Preparei a proposta. Confirme em Salvar.\nFontes:\n- IBGE — CNAE 8130-3/00 (2025)\n- Sebrae, 2025"},
+      withWeb ? [webCall] : []),restrictedSemantic);
+    assert.equal(proposalOnly.ok,true);
+    if(proposalOnly.ok) {
+      assert.doesNotMatch(proposalOnly.value.output.reply,/Fontes:|IBGE|Sebrae/);
+      assert.ok(proposalOnly.value.output.reply.includes(semanticOutput.nicheDescription!),
+        "server presentation must restore the complete niche after source removal");
+    }
+  }
   const cited = parseAttendanceResponse(response({...semanticOutput,reply: semanticOutput.reply + " ([Referência](https://example.org/nichos?utm_source=openai))"},[webCall]),semanticContext);
   assert.equal(cited.ok,true);
   if (cited.ok) {
