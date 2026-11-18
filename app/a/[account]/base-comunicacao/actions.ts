@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { createClient } from "../../../../lib/supabase/server";
 import { generateAgentBasePilotSection } from "../../../../lib/communication-base/adapters/agentBasePilotAdapter";
 import { agentBasePilotOrder, agentBasePilotCatalogState, selectAgentBasePilotInput,
   type AgentBasePilotKey, type AgentBasePilotSection } from "../../../../lib/communication-base/agent-base/pilot";
@@ -186,12 +187,29 @@ export type AgentBasePilotActionResult =
   | Readonly<{ ok: true; sections: readonly AgentBasePilotSection[]; notice: string }>
   | Readonly<{ ok: false; message: string; invalidated?: boolean }>;
 
+async function logAgentBasePilotAccessDenial(phase: "initial" | "revalidation", reason: string): Promise<void> {
+  let authState: "authenticated" | "session_missing" | "session_not_found" | "auth_error" = "auth_error";
+  try {
+    const { data, error } = await (await createClient()).auth.getUser();
+    authState = error
+      ? error.code === "session_not_found" ? "session_not_found"
+        : error.name === "AuthSessionMissingError" ? "session_missing" : "auth_error"
+      : data.user ? "authenticated" : "session_missing";
+  } catch {
+    // O diagnóstico não interfere na recusa original.
+  }
+  console.warn(JSON.stringify({ event: "agent_base_pilot_access_denied", phase, reason, authState }));
+}
+
 export async function runAgentBasePilotAction(input: Readonly<{ account: string; version: number }>): Promise<AgentBasePilotActionResult> {
   const fail = (message: string, invalidated = false) => ({ ok: false as const, message, invalidated });
   if (process.env.VERCEL_ENV !== "preview" || !isCommunicationResourcesEnabled()) return fail("O piloto está disponível somente no Preview.");
   if (!input || typeof input.account !== "string" || !Number.isSafeInteger(input.version) || input.version <= 0) return fail("Solicitação inválida. Atualize a página.");
   const access = await requireCommunicationBaseAccess(input.account, true);
-  if (!access.ok) return fail("O piloto não está disponível para este acesso.");
+  if (!access.ok) {
+    await logAgentBasePilotAccessDenial("initial", access.error);
+    return fail("O piloto não está disponível para este acesso.");
+  }
   const definitions = await readCommunicationDefinitions();
   const order = definitions.ok ? agentBasePilotOrder(definitions.value) : null;
   if (!definitions.ok || !order) return fail("Não foi possível conferir as seções do piloto. A edição manual continua disponível.");
@@ -219,6 +237,7 @@ export async function runAgentBasePilotAction(input: Readonly<{ account: string;
       requireCommunicationBaseAccess(input.account, true), readCommunicationBase(access.value.accountId, definitions.value),
       readOfficialNicheContext({ accountId: access.value.accountId }), readCommunicationDefinitions(),
     ]);
+    if (!latestAccess.ok) await logAgentBasePilotAccessDenial("revalidation", latestAccess.error);
     if (!latestAccess.ok || latestAccess.value.accountId !== access.value.accountId || !latestBase.ok || !latestBase.value ||
         !isCurrentGenerationVersion(input.version, latestBase.value.version) || !latestNiche.ok ||
         !isCurrentGenerationNiche(taxonomy.niche, latestNiche.niche) || !latestDefinitions.ok ||
