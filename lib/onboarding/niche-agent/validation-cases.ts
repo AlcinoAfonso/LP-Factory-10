@@ -62,6 +62,8 @@ test("informa de uma vez atividade, oferta e público e aceita proposta textual 
   assert.equal(request.instructions, NICHE_AGENT_INSTRUCTIONS);
   assert.equal(promptVersion, NICHE_AGENT_PROMPT_VERSION);
   assert.equal(contractVersion, 1);
+  const format = request.text as { format: { schema: { required: string[] } } };
+  assert.deepEqual(format.format.schema.required, ["reply", "proposal", "reaction", "memory"]);
   assert.equal(request.store, false);
   assert.equal(request.background, false);
   assert.equal("tools" in request, false);
@@ -80,11 +82,17 @@ test("dúvida material permite pergunta focal, sem proposta ou efeito", () => {
   assert.deepEqual(output.memory, []);
 });
 
-test("aceite inequívoco na mensagem atual recupera a proposta e a revisão observadas", () => {
-  for (const text of ["Sim, está correto!", "Pode confirmar.", `Confirmo que meu nicho é ${proposed}.`]) {
-    const input = { ...context, officialNiche, activeProposal: proposal, message: { text, replyToProposalId: proposal.id } };
+test("aceites semânticos em formulações naturais recuperam a proposta e a revisão observadas", () => {
+  const history = [{ role: "assistant" as const, text: proposalAnswer.reply }];
+  for (const text of [
+    "Era exatamente assim que eu queria descrever o que fazemos.",
+    "Fico com essa descrição para representar nosso trabalho.",
+    "Desse jeito, quem lê entende direitinho o serviço que a gente oferece. Vamos com essa.",
+  ]) {
+    const input = { ...context, history, officialNiche, activeProposal: proposal, message: { text, replyToProposalId: proposal.id } };
     const data = JSON.parse(String(prepared(input).request.input));
-    assert.deepEqual(data.activeProposal, { description: proposed, boundAcceptance: true });
+    assert.equal(data.message, text);
+    assert.deepEqual(data.activeProposal, { description: proposed, linkedToMessage: true });
     assert.deepEqual(success(input, acceptance).confirmation, {
       proposalId: proposal.id, description: proposed, expectedOfficialRevision: "text:3",
     });
@@ -93,22 +101,35 @@ test("aceite inequívoco na mensagem atual recupera a proposta e a revisão obse
   }
 });
 
-test("aceite antigo, ambíguo, desvinculado ou de revisão anterior falha mesmo se o modelo disser accept", () => {
+test("aceite antigo, sem vínculo, de outra proposta ou com revisão divergente é recusado pelo código", () => {
   const input: NicheTurnContext = { ...context, officialNiche, activeProposal: proposal,
-    history: [{ role: "user", text: "Sim, confirmo." }] };
+    history: [{ role: "user", text: "É exatamente o que fazemos." }],
+    summary: "O interlocutor aceitou uma proposta anterior." };
   const invalidTurns = [
     { ...input, message: null },
-    { ...input, message: { text: "Sim.", replyToProposalId: null } },
-    { ...input, message: { text: "Sim.", replyToProposalId: "previous-proposal" } },
-    { ...input, message: { text: "Sim.", replyToProposalId: proposal.id }, officialNiche: { ...officialNiche, revision: "text:4" } },
-    ...["Talvez.", "Sim?", "Acho que sim.", "Sim, mas agora só fazemos festas infantis.", "Sim, confirmo o número."].map(
-      text => ({ ...input, message: { text, replyToProposalId: proposal.id } }),
-    ),
+    { ...input, message: { text: "Fico com essa descrição.", replyToProposalId: null } },
+    { ...input, message: { text: "Fico com essa descrição.", replyToProposalId: "previous-proposal" } },
+    { ...input, activeProposal: { ...proposal, id: "new-proposal" }, message: {
+      text: "Fico com essa descrição.", replyToProposalId: proposal.id,
+    } },
+    { ...input, message: { text: "Fico com essa descrição.", replyToProposalId: proposal.id },
+      officialNiche: { ...officialNiche, revision: "text:4" } },
   ];
   for (const turn of invalidTurns) {
-    assert.notEqual(JSON.parse(String(prepared(turn).request.input)).activeProposal?.boundAcceptance, true);
+    assert.notEqual(JSON.parse(String(prepared(turn).request.input)).activeProposal?.linkedToMessage, true);
     assert.equal(run(turn, acceptance).ok, false);
     assert.equal(success(turn, clarification).confirmation, null);
+  }
+});
+
+test("dúvida ou relato de terceiros em mensagem vinculada permite esclarecer sem confirmar", () => {
+  for (const [text, reply] of [
+    ["Acho que sim, mas ainda estou em dúvida sobre a parte dos eventos.", "Qual parte sobre os eventos você ajustaria?"],
+    ["Minha sócia disse que a descrição está certa. Eu ainda estou avaliando.", "Tudo bem. Qual ponto você quer avaliar melhor?"],
+  ]) {
+    const input = { ...context, officialNiche, activeProposal: proposal, message: { text, replyToProposalId: proposal.id } };
+    assert.equal(JSON.parse(String(prepared(input).request.input)).activeProposal.linkedToMessage, true);
+    assert.deepEqual(success(input, { ...clarification, reply }), { ...clarification, reply, confirmation: null });
   }
 });
 

@@ -78,35 +78,6 @@ const responsesEnvelope = z.object({
   })).optional(),
 });
 
-const directAcceptances = new Set([
-  "sim", "sim, confirmo", "sim, esta correto", "sim, e isso mesmo",
-  "confirmo", "confirmo o nicho", "confirmo esse nicho", "confirmo este nicho",
-  "concordo", "eu concordo", "esta correto", "esta certo", "e isso mesmo",
-  "pode confirmar", "pode registrar", "esse e o meu nicho", "esse e meu nicho",
-]);
-
-function normalizeAcceptance(text: string): string {
-  return text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase()
-    .replace(/\s+/g, " ").trim().replace(/[.!]+$/u, "").trimEnd();
-}
-
-function boundConfirmation(
-  message: NicheTurnContext["message"],
-  proposal: NicheTurnContext["activeProposal"],
-): NicheTurn["confirmation"] {
-  if (!message || !proposal || message.replyToProposalId !== proposal.id) return null;
-  const acceptance = normalizeAcceptance(message.text);
-  const description = normalizeAcceptance(proposal.description);
-  if (!directAcceptances.has(acceptance) &&
-    acceptance !== `confirmo ${description}` &&
-    acceptance !== `confirmo que meu nicho e ${description}`) return null;
-  return {
-    proposalId: proposal.id,
-    description: proposal.description,
-    expectedOfficialRevision: proposal.expectedOfficialRevision,
-  };
-}
-
 export function prepareNicheTurn(raw: NicheTurnContext):
   | Readonly<{ ok: true; value: PreparedNicheTurn }>
   | Readonly<{ ok: false; kind: "invalid_context" }> {
@@ -116,7 +87,13 @@ export function prepareNicheTurn(raw: NicheTurnContext):
   const { message, history, summary, businessContext, officialNiche, activeProposal, externalSources = [] } = validated.data;
   const currentProposal = activeProposal?.expectedOfficialRevision === (officialNiche?.revision ?? null)
     ? activeProposal : null;
-  const confirmation = boundConfirmation(message, currentProposal);
+  const confirmationTarget = currentProposal && message?.replyToProposalId === currentProposal.id
+    ? {
+        proposalId: currentProposal.id,
+        description: currentProposal.description,
+        expectedOfficialRevision: currentProposal.expectedOfficialRevision,
+      }
+    : null;
 
   return {
     ok: true,
@@ -132,7 +109,7 @@ export function prepareNicheTurn(raw: NicheTurnContext):
           businessContext: businessContext === null ? null : redactPotentialContactDetails(businessContext),
           officialNiche: officialNiche?.description ?? null,
           activeProposal: currentProposal ? {
-            description: currentProposal.description, boundAcceptance: confirmation !== null,
+            description: currentProposal.description, linkedToMessage: confirmationTarget !== null,
           } : null,
           externalSources: externalSources.map(({ id, excerpt, checkedOn }) => ({
             id, excerpt: redactPotentialContactDetails(excerpt), checkedOn,
@@ -142,7 +119,7 @@ export function prepareNicheTurn(raw: NicheTurnContext):
         background: false,
         text: { format: textFormat },
       },
-      parseResponse: parseTurn(summary ?? "", message !== null, currentProposal?.description ?? null, confirmation, externalSources),
+      parseResponse: parseTurn(summary ?? "", message !== null, currentProposal?.description ?? null, confirmationTarget, externalSources),
     },
   };
 }
@@ -151,7 +128,7 @@ function parseTurn(
   priorSummary: string,
   hasMessage: boolean,
   currentDescription: string | null,
-  confirmation: NicheTurn["confirmation"],
+  confirmationTarget: NicheTurn["confirmation"],
   sources: readonly { id: string }[],
 ): OpenAiResponsesParser<NicheTurn> {
   const invalid = { ok: false, kind: "invalid_response", reason: "niche_turn_invalid" } as const;
@@ -176,8 +153,8 @@ function parseTurn(
     const turn = turnSchema.safeParse(raw);
     if (!turn.success) return invalid;
     const { reply, proposal, reaction, memory } = turn.data;
-    if ((reaction === "accept") !== (confirmation !== null) ||
-      (confirmation && (proposal !== null || memory.length > 0))) return invalid;
+    const confirmation = reaction === "accept" ? confirmationTarget : null;
+    if (reaction === "accept" && (!confirmation || proposal !== null || memory.length > 0)) return invalid;
     if (!hasMessage && (reaction !== "continue" || memory.length > 0)) return invalid;
     if (proposal && (!reply.includes(proposal) || (reaction === "reject" && proposal === currentDescription))) return invalid;
     if (!validMemory(memory, priorSummary, sources)) return invalid;
