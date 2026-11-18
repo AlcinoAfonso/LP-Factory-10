@@ -59,6 +59,9 @@ async function main() {
   assert.ok(pendingBusinessNameSchema.properties?.businessNameCandidate, "name candidate required only for Pending Setup");
   assert.equal(nicheBusinessNameSchema.properties?.businessNameCandidate, undefined, "active niche schema unchanged");
   assert.match(attendancePrompt(context).instructions,/No Pending Setup, a saudação inicial/);
+  assert.match(attendancePrompt(context).instructions,/Se faltar nome preferido, pergunte como chamar o lead/);
+  assert.doesNotMatch(attendancePrompt(context).instructions,/use somente "Olá! Como prefere ser chamado\?"/);
+  assert.equal((attendancePrompt(context).instructions.match(/Se faltar nome preferido,/g) ?? []).length,1);
   assert.doesNotMatch(attendancePrompt({ ...context, purpose:"account_niche", preferredName:null }).instructions,/No Pending Setup, a saudação inicial/);
 
   {
@@ -585,7 +588,7 @@ async function main() {
     assert.equal(field in nicheSchema.properties, false); assert.equal(nicheSchema.required.includes(field), false);
     assert.equal(field in pendingSchema.properties, true); assert.equal(pendingSchema.required.includes(field), true);
   }
-  assert.equal(ATTENDANCE_PROMPT_VERSION, "d15e_r3_onboarding_v2");
+  assert.equal(ATTENDANCE_PROMPT_VERSION, "d15e_r3_onboarding_v3");
   assert.equal(ATTENDANCE_CONTRACT_VERSION, 15);
   assert.equal(NICHE_ATTENDANCE_PROMPT_VERSION, "d15e_r3_account_niche_v3");
   assert.equal(wires[0].instructions, attendancePrompt(context).instructions);
@@ -688,6 +691,14 @@ async function main() {
   assert.equal(readAttendanceBusinessNameCandidate(nameMemory), "Jardins Ana");
   const unsafe = validateAttendanceOutput({ ...base, businessNameCandidate: "Nome inventado" }, { ...context, summary: nameMemory });
   assert.equal(unsafe?.businessNameCandidate, "Jardins Ana");
+  const omitted = validateAttendanceOutput({ ...base, businessNameCandidate: null },
+    { ...context, summary: nameMemory, recent: [{role:"user",content:"Gostaria de falar dos serviços."}] });
+  assert.equal(omitted?.businessNameCandidate,"Jardins Ana");
+  assert.equal(readAttendanceBusinessNameCandidate(attendanceSummary(omitted!,null,null,nameMemory)),"Jardins Ana");
+  const withdrawn = validateAttendanceOutput({ ...base, businessNameCandidate: "Jardins Ana" },
+    { ...context, summary: nameMemory, recent: [{role:"user",content:"Não use mais esse nome para o meu negócio."}] });
+  assert.equal(withdrawn?.businessNameCandidate,null);
+  assert.equal(readAttendanceBusinessNameCandidate(attendanceSummary(withdrawn!,null,null,nameMemory)),null);
   const whatsappMemory = attendanceSummary({ ...base, businessNameCandidate: null, requestWhatsapp: true,
     action:"ask",nicheDescription:null,existingTaxonId:null },null,null);
   assert.deepEqual(readAttendanceContactInput(whatsappMemory), {requested:true,value:null});
