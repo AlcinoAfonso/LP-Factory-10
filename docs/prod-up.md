@@ -690,6 +690,8 @@ Catalogado em 2026-08-04
 
 A Meta reúne capacidades para atendimento, qualificação, recomendações, agendamento, venda, handoff humano e campanhas no WhatsApp. O Meta Business Agent e sua plataforma ampliam esse caminho com IA, conexões a sistemas, controles, guardrails e mensuração. A WhatsApp Business Platform também evolui campanhas pelo Ads Manager e opções de chamada, voz e vídeo.
 
+Em 12–13/11/2026, a Meta passou a expor no teste do agente os componentes interativos gerados no WhatsApp e adicionou opções para comparar produtos e abrir o catálogo da conta. Isso permite avaliar a experiência de descoberta e a resposta do agente antes de atender clientes reais. Avaliar apenas em recorte aprovado de venda assistida, com catálogo vinculado quando exigido, elegibilidade da conta, custo incremental zero e comparação com CTA e atendimento manual. [Changelog do Meta Business Agent](https://developers.facebook.com/documentation/meta-business-agent/changelog/).
+
 ### Horizonte sugerido
 
 - Starter: CTA, preferência de canal e continuidade manual segura.
