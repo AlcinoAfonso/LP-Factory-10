@@ -158,7 +158,7 @@ Atualizado em 2026-08-03
 
 Unified Logs reúne, em uma única visão pesquisável, eventos do API Gateway, Postgres, Auth, Storage, PostgREST, Realtime e poolers. A open beta inclui filtros combináveis, busca, live tail, histograma por nível e detalhamento do percurso da requisição.
 
-Em 10/11/2026, o [Correlated Logs](https://supabase.com/changelog/correlated-logs) entrou em beta. O Studio correlaciona eventos pelos identificadores disponíveis de requisição, trace ou usuário autenticado. Priorizar leitura manual sob demanda na próxima investigação real. A disponibilidade no projeto e o custo de uso recorrente seguem pendentes. A correlação via trace do aplicativo depende de `supa#69`.
+Em 10/11/2026, o [Correlated Logs](https://supabase.com/changelog/53230-correlated-logs) entrou em beta. O Studio correlaciona eventos pelos identificadores disponíveis de requisição, trace ou usuário autenticado. Priorizar leitura manual sob demanda na próxima investigação real. A disponibilidade no projeto e o custo de uso recorrente seguem pendentes. A correlação via trace do aplicativo depende de `supa#69`.
 
 O recurso não deve ser descrito como AI Debugging e não substitui os logs estruturados do aplicativo nem Log Drains para retenção externa.
 
