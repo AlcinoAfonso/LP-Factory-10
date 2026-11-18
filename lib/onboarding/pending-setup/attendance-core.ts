@@ -4,7 +4,7 @@ import { validNicheDescription } from "../niche-resolution/official-niche-policy
 import { validateBusinessDisplayName, validatePreferredName } from "./policy";
 import type { PendingSetupConversation } from "./contracts";
 
-export const ATTENDANCE_PROMPT_VERSION = "d15e_r3_onboarding_v3";
+export const ATTENDANCE_PROMPT_VERSION = "d15e_r3_onboarding_v4";
 export const ATTENDANCE_CONTRACT_VERSION = 15;
 export const ATTENDANCE_LEASE_SECONDS = 360;
 
@@ -192,12 +192,32 @@ export function parseAttendanceOutput(raw: unknown, context: Pick<AttendanceCont
     ? { ...raw, businessNameCandidate: null } : raw;
   return pendingSetupAttendanceOutputSchema.safeParse(projected);
 }
+// A turn with no new facts must not take an already-started dialogue back to identity.
+export function attendanceNextStage(previousStage: PendingSetupConversation["stage"], output: AttendanceOutput,
+  hasProposal: boolean): PendingSetupConversation["stage"] {
+  if (hasProposal) return "niche_confirmation";
+  if (output.readyToComplete) return "ready_to_complete";
+  if (previousStage === "business_understanding" || previousStage === "niche_confirmation" ||
+    output.preferredName || output.preferredNameDeclined || output.businessUnderstanding) return "business_understanding";
+  return "identity";
+}
 export function validateAttendanceOutput(raw: unknown, context: AttendanceContext) {
   const parsed = parseAttendanceOutput(raw, context);
   if (!parsed.success) return null;
   const value: AttendanceOutput = parsed.data;
-  if (value.action === "existing" ? !validNicheDescription(value.nicheDescription) : value.nicheDescription !== null) return null;
   const nicheOnly = context.purpose === "account_niche";
+  // The model sometimes proposes "existing" without a description. Keep business facts,
+  // but never construct or confirm a niche that it did not actually provide.
+  if (!nicheOnly && !context.confirmedProposal && value.action === "existing" &&
+    value.nicheDescription === null && value.existingTaxonId === null &&
+    !value.readyToComplete && !value.requestWhatsapp) {
+    value.action = "ask";
+    value.reply = !context.preferredName && !context.preferredNameDeclined &&
+      !value.preferredName && !value.preferredNameDeclined
+      ? "Recebi as informações sobre seu negócio. Como posso te chamar?"
+      : "Entendi as informações sobre seu negócio, mas ainda não tenho uma proposta segura de nicho para confirmar. Quer acrescentar algum detalhe ou prefere que eu tente novamente com o que já contou?";
+  }
+  if (value.action === "existing" ? !validNicheDescription(value.nicheDescription) : value.nicheDescription !== null) return null;
   if (nicheOnly && value.action === "existing" && !value.reply.includes(value.nicheDescription!)) {
     // Display the server-validated proposal without relying on the model to duplicate it in prose.
     const presentation = "\n\nDescrição proposta para sua confirmação: " + value.nicheDescription;
