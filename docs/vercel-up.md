@@ -913,14 +913,10 @@ Catalogado em 2026-10-14
 ---
 
 
-## 39 — Retirada dos checks nativos de lint e typecheck *(🟨 Depreciação; compatibilidade transversal condicional)*
+## 39 — Retirada dos checks nativos de lint e typecheck *(⚪ Registro histórico — inaplicabilidade verificada)*
 
-2026-11-17
-
-- Estado: retirada anunciada para 30/11/2026. Afeta apenas Deployment Checks do provedor Vercel. O `npm run check` já inclui lint e typecheck e é usado em workflows específicos do GitHub Actions. O uso de checks nativos como gate dos deploys atuais não foi confirmado.
-- Ação pendente e prioridade: verificar em leitura a configuração de Build and Deployment antes de 30/11. A prioridade sobe se houver check nativo exigido para liberar um deploy. Mantém-se no radar pelo risco de perder um gate existente.
-- Se houver dependência, avaliar a cobertura equivalente no CI já usado, com custo incremental zero e validação do bloqueio em caso de falha. Horizonte Starter. Encerrar com ausência comprovada do gate nativo ou cobertura equivalente validada e reconciliada pelo ABC.
-- Fonte: [aviso oficial da Vercel](https://vercel.com/changelog/native-lint-and-typecheck-deployment-checks-are-being-deprecated).
+- Estado final: a retirada anunciada para 30/11/2026 alcança apenas Deployment Checks nativos. Em 18/11, a seção Deployment Checks do projeto `lp-factory-10` exibiu “No checks configured”. A revisão operacional foi encerrada sem saldo de migração. O comando `npm run check` inclui lint e typecheck e continua registrado nos workflows que o utilizam.
+- Evidências: [aviso oficial da Vercel](https://vercel.com/changelog/native-lint-and-typecheck-deployment-checks-are-being-deprecated) e [configuração do projeto](https://vercel.com/alcino-afonsos-projects/lp-factory-10/settings/build-and-deployment#deployment-checks).
 
 ---
 
