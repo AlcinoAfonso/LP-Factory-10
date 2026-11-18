@@ -184,10 +184,10 @@
 - Email OTP Expiration: 3600 segundos; sem validade local paralela no Core. Template, redirects e expiração configurados; gate E11 habilitado em Production.
 - Jornada e regras de concorrência, reenvio, senha e isolamento em `docs/roadmap.md` — 11.1.4.
 
-4.7 Acesso operacional read-only para automações
+4.7 Role read-only `ai_readonly`
 - Role operacional read-only: `ai_readonly`.
 - Secret anteriormente relacionado ao workflow: `SUPABASE_DB_URL_READONLY`.
-- Uso: inspeções e verificações read-only em automações.
+- O role foi usado pelo Supabase Inspect. O uso por outros consumidores não foi verificado.
 - Regra: não usar esse acesso para mutações.
 - Regra: revisar permissões antes de ampliar o escopo operacional.
 
