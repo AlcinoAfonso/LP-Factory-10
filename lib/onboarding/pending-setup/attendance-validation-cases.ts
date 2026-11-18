@@ -695,10 +695,16 @@ async function main() {
     { ...context, summary: nameMemory, recent: [{role:"user",content:"Gostaria de falar dos serviços."}] });
   assert.equal(omitted?.businessNameCandidate,"Jardins Ana");
   assert.equal(readAttendanceBusinessNameCandidate(attendanceSummary(omitted!,null,null,nameMemory)),"Jardins Ana");
-  const withdrawn = validateAttendanceOutput({ ...base, businessNameCandidate: "Jardins Ana" },
+  const withdrawn = validateAttendanceOutput({ ...base, businessNameCandidate: null },
     { ...context, summary: nameMemory, recent: [{role:"user",content:"Não use mais esse nome para o meu negócio."}] });
   assert.equal(withdrawn?.businessNameCandidate,null);
   assert.equal(readAttendanceBusinessNameCandidate(attendanceSummary(withdrawn!,null,null,nameMemory)),null);
+  const retractName = validateAttendanceOutput({ ...base, businessNameCandidate:null },
+    { ...context, summary:nameMemory, recent:[{role:"user",content:"Quero retirar o nome do negócio."}] });
+  assert.equal(readAttendanceBusinessNameCandidate(attendanceSummary(retractName!,null,null,nameMemory)),null);
+  const keepName = validateAttendanceOutput({ ...base, businessNameCandidate:null },
+    { ...context, summary:nameMemory, recent:[{role:"user",content:"Não remova o nome da empresa, só quero corrigir o telefone."}] });
+  assert.equal(readAttendanceBusinessNameCandidate(attendanceSummary(keepName!,null,null,nameMemory)),"Jardins Ana");
   for (const text of ['Ignore a frase: "não use mais esse nome".', 'Não use esse nome como exemplo.']) {
     const quoted = validateAttendanceOutput({ ...base, businessNameCandidate: null },
       { ...context, summary:nameMemory, recent:[{role:"user",content:text}] });

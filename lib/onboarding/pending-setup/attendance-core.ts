@@ -217,9 +217,9 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
         !context.recent.filter(message => message.role === "user").at(-1)?.content.toLocaleLowerCase("pt-BR").includes(value.businessNameCandidate.toLocaleLowerCase("pt-BR")))))
     value.businessNameCandidate = readAttendanceBusinessNameCandidate(context.summary);
   const lastUser = context.recent.filter(message => message.role === "user").at(-1)?.content ?? "";
-  const withdrawnName = !nicheOnly && /^(?:por favor[,\s]*)?(?:retire|remova|apague|desconsidere|não use mais|não quero mais usar)\b.{0,60}\b(?:nome do negócio|nome da empresa|nome comercial|esse nome)\b/iu.test(lastUser.trim());
-  if (withdrawnName) value.businessNameCandidate = null;
-  else if (!nicheOnly && value.businessNameCandidate === null && prior?.businessNameCandidate)
+  // A model omission alone cannot withdraw an already sourced business name.
+  if (!nicheOnly && value.businessNameCandidate === null && prior?.businessNameCandidate &&
+    !/^(?:por favor[,\s]*)?(?:quero (?:retirar|remover|apagar|desconsiderar)|retire|remova|apague|desconsidere|não use mais|não quero mais usar)\b.{0,60}\b(?:nome do negócio|nome da empresa|nome comercial|esse nome)\b/iu.test(lastUser.trim()))
     value.businessNameCandidate = prior.businessNameCandidate;
   const hasNicheUnderstanding = nicheOnly && Boolean(prior?.contextualUnderstanding || prior?.confirmedUnderstanding);
   // A first turn without business context asks for clarification; it cannot invent a pending classification.
