@@ -4,7 +4,7 @@ import { AGENT_BASE_PROMPT } from "./base-prompt";
 import { AGENT_BASE_ABOUT_PROMPT } from "./about-prompt";
 import { AGENT_BASE_AUDIENCE_PROMPT } from "./audience-prompt";
 import { AGENT_BASE_MARKET_INSIGHTS_PROMPT } from "./market-insights-prompt";
-import { parseStageTwoResponse } from "../ai-core";
+import { parseStageTwoResponse, stageTwoSchema } from "../ai-core";
 import { communicationSections } from "../registry";
 import type { CommunicationBase } from "../contracts";
 
