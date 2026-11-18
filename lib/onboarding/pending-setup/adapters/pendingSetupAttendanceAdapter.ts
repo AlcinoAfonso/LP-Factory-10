@@ -1,7 +1,7 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { PendingSetupConversation, PendingSetupWriteResult } from "../contracts";
-import type { AttendanceOutput, AttendanceProposal } from "../attendance-core";
+import { attendanceNextStage, type AttendanceOutput, type AttendanceProposal } from "../attendance-core";
 
 export type AttendanceTurnIdentity = Readonly<{
   conversationId: string; accountId: string; userId: string; expectedVersion: number; turnToken: string;
@@ -36,11 +36,10 @@ export async function claimAttendanceTurn(input: AttendanceTurnIdentity & Readon
 }
 export async function commitAttendanceTurn(input: AttendanceTurnIdentity & Readonly<{
   output: AttendanceOutput; proposal: AttendanceProposal | null; confirm: boolean;
+  previousStage: PendingSetupConversation["stage"];
   observedPrimaryTaxonId: string | null; observedNicheRevision?: number; summary: string;
 }>) {
-  const stage: PendingSetupConversation["stage"] = input.proposal ? "niche_confirmation"
-    : input.output.readyToComplete ? "ready_to_complete"
-    : input.output.preferredName || input.output.preferredNameDeclined || input.output.businessUnderstanding ? "business_understanding" : "identity";
+  const stage = attendanceNextStage(input.previousStage, input.output, Boolean(input.proposal));
   const { data, error } = await createServiceClient().rpc("commit_account_pending_setup_turn_v4", {
     ...identity(input), p_assistant_content: input.output.reply,
     p_summary: input.summary, p_business_understanding: input.output.businessUnderstanding,
