@@ -167,6 +167,26 @@ if (cited.ok) {
 }
 assert.equal(parseStageTwoResponse(citedOnly, { kind: "section", key: "audience" }, true, "autonomous").ok,
   false, "legacy parser remains unchanged");
+const alreadySourced = parseAgentBasePilotResponse({ output: [webOutput.output[0], citedFinal] }, "audience");
+assert.equal(alreadySourced.ok, true, "citations supplement nonempty action.sources");
+if (alreadySourced.ok) {
+  assert.equal(alreadySourced.value.sources.length, 2);
+  assert.equal(alreadySourced.telemetry.webSearchCallCount, 1);
+}
+const manyCitations = Array.from({ length: 50 }, (_, i) => ({
+  type: "url_citation", url: `https://example.org/extra/${i}`, title: "Fonte adicional",
+}));
+const citedWithCount = (count: number) => ({ output: [webOutput.output[0], {
+  ...citedFinal, content: [{ ...citedFinal.content[0], annotations: manyCitations.slice(0, count) }],
+}] });
+const capped = parseAgentBasePilotResponse(citedWithCount(49), "audience");
+assert.equal(capped.ok, true, "50 distinct sources total remain valid");
+if (capped.ok) assert.equal(capped.telemetry.webSearchSourceCount, 50);
+rejectPilot(citedWithCount(50), "web_sources_invalid");
+rejectPilot({ output: [webOutput.output[0], { ...citedFinal, content: [{
+  ...citedFinal.content[0], annotations: [{ type: "url_citation", url: "http://example.org/unsafe" }],
+}] }] }, "web_sources_invalid");
+
 for (const url of [undefined, null]) {
   const result = parseAgentBasePilotResponse({ ...webOutput, output: [webOutput.output[0],
     { type: "web_search_call", status: "completed", action: { type: "open_page", url } },
