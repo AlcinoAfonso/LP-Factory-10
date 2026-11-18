@@ -71,9 +71,9 @@ for (const [key, specialized, value] of [
 const marketSchema = buildAgentBasePilotPrompt({
   base, niche, definitions, key: "market_insights", previous: previous.slice(0, 2),
 })!.schema;
-assert.equal(marketSchema.properties.sections.properties.market_insights.properties.value.maxItems, 20,
+assert.equal(Reflect.get(marketSchema.properties.sections.properties.market_insights.properties.value, "maxItems"), 20,
   "pilot constrains the generated item count to the existing 20-item contract");
-assert.equal(stageTwoSchema(["market_insights"]).properties.sections.properties.market_insights.properties.value.maxItems,
+assert.equal(Reflect.get(stageTwoSchema(["market_insights"]).properties.sections.properties.market_insights.properties.value, "maxItems"),
   undefined, "shared schema remains unchanged");
 for (const count of [20, 21]) {
   const result = parseAgentBasePilotResponse({ output_text: JSON.stringify({
