@@ -619,6 +619,7 @@ Catalogado em 2026-10-14
 - Relação com a stack: pode identificar senhas sem formato reconhecível; não substitui `github#13`, `github#16` ou revisão independente.
 - Horizonte: indefinido; mantido no radar, sem recomendação de adoção agora.
 - Estado atual: scans de alertas já detectados por IA em GHSP/GHAS recebem o modelo novo; isso não inclui todos os alertas baseados em padrões. Desde28/10, o bloqueio contextual na push protection está em public preview, desligado por padrão; requer push protection e AI-detected secrets habilitados.
+- Desde 17/11, a [detecção sob demanda em Copilot](https://github.blog/changelog/2026-11-17-secret-scanning-on-demand-for-developers-and-agents/) está em public preview. Combina detector de padrões e modelo contextual no diff e exige opt-in. O consumo usa créditos de IA. A varredura de [logs do Actions](https://github.blog/changelog/2026-11-09-secret-scanning-detects-secrets-in-github-actions-workflow-logs/) é outra superfície, com exigência de licença enterprise, apenas para padrões de provedores e runs posteriores à ativação.
 - Ação pendente: avaliar elegibilidade, benefício adicional e cobrança somente diante de necessidade comprovada.
 - Prioridade: condicional.
 - Motivo da permanência: cobertura potencial de credenciais não estruturadas.
