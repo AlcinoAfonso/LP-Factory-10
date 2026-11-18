@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
-import { hasHumanNicheConfirmation, type DeterministicMatchDecision } from "../contracts";
+import { hasHumanNicheConfirmation } from "../contracts";
 
 const ACCOUNT_TAXONOMY_DETERMINISTIC_SOURCE_TYPE = "taxonomy_match" as const;
 const ACCOUNT_TAXONOMY_USER_CONFIRMED_AI_SOURCE_TYPE = "user_confirmed_ai" as const;
@@ -141,35 +141,6 @@ export type AccountTaxonomyLinkResult =
   | { status: "skipped_not_high_confidence"; taxonId: string | null }
   | { status: "skipped_conflicting_primary"; taxonId: string; existingPrimaryTaxonId: string }
   | { status: "failed"; taxonId: string | null };
-
-export function shouldLinkAccountTaxonomyFromDecision(
-  decision: DeterministicMatchDecision,
-): boolean {
-  return (
-    decision.confidence === "high" &&
-    decision.shouldUseDeterministicMatch === true &&
-    decision.selectedCandidate !== null &&
-    Boolean(decision.selectedCandidate.taxonId) &&
-    decision.needsAdminReview === false
-  );
-}
-
-export async function linkAccountTaxonomyFromDeterministicDecision(input: {
-  accountId: string;
-  decision: DeterministicMatchDecision;
-}): Promise<AccountTaxonomyLinkResult> {
-  const taxonId = input.decision.selectedCandidate?.taxonId ?? null;
-
-  if (!shouldLinkAccountTaxonomyFromDecision(input.decision) || !taxonId) {
-    return { status: "skipped_not_high_confidence", taxonId };
-  }
-
-  return upsertPrimaryAccountTaxonomyLink({
-    accountId: input.accountId,
-    taxonId,
-    sourceType: ACCOUNT_TAXONOMY_DETERMINISTIC_SOURCE_TYPE,
-  });
-}
 
 export async function linkPrimaryAccountTaxonomyFromUserConfirmedAi(input: {
   accountId: string;

@@ -18,10 +18,19 @@ export default async function Page({ params }: PageProps) {
   const journey = await loadAccountJourney({ accountSubdomain });
 
   if (journey.view === "pending_setup") {
+    const { conversation } = journey;
+    if (!conversation || conversation.stage !== "ready_to_complete") return null;
+
     return (
       <PendingSetupConversation
         accountSubdomain={accountSubdomain}
-        conversation={journey.conversation}
+        conversation={{
+          id: conversation.id,
+          version: conversation.version,
+          businessDisplayName: conversation.businessDisplayName,
+          businessNameCandidate: conversation.businessNameCandidate,
+          attendanceEnabled: conversation.attendanceEnabled,
+        }}
         passageEnabled={journey.passageEnabled}
       />
     );

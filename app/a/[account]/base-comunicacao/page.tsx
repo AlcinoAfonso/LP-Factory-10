@@ -8,9 +8,6 @@ import { requireCommunicationBaseAccess } from "../../../../lib/communication-ba
 import { readCommunicationBase, readPendingSetupInitialContext } from "../../../../lib/communication-base/adapters/communicationBaseAdapter";
 import { stageTwoInputStateKey } from "../../../../lib/communication-base/ui-state-keys";
 import { readOfficialNicheContext } from "../../../../lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter";
-import { loadAccountNicheEditorAction } from "../niche-resolution-actions";
-import { AccountNicheEditor } from "../_components/NicheResolutionCard";
-import { hasStageTwoContent } from "../../../../lib/communication-base/ai-core";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CommunicationBaseTabs, CommunicationBaseIntroduction } from "./CommunicationBaseTabs";
@@ -54,7 +51,6 @@ export default async function CommunicationBasePage({ params }: PageProps) {
     : null;
 
   const showIntroduction = result.ok && (Boolean(base) || (access.value.canEdit && (!structured || taxonomy.ok)));
-  const nicheEditor = await loadAccountNicheEditorAction(access.value.accountSubdomain);
   const canGenerate = Boolean(taxonomy.ok && taxonomy.niche?.confirmed);
 
   return (
@@ -77,7 +73,6 @@ export default async function CommunicationBasePage({ params }: PageProps) {
           <p className="text-sm text-muted-foreground [overflow-wrap:anywhere]">
             {taxonomy.ok && taxonomy.niche ? `Nicho: ${nicheLabel}` : nicheLabel}
           </p>
-          {nicheEditor ? <AccountNicheEditor account={access.value.accountSubdomain} state={nicheEditor} hasIntelligence={base ? hasStageTwoContent(base) : false} /> : null}
         </header>
         {!result.ok ? (
           <FeedbackMessage tone="error">
@@ -111,7 +106,7 @@ export default async function CommunicationBasePage({ params }: PageProps) {
             <CommunicationBaseTabs stageOne={<CommunicationStageOne account={access.value.accountSubdomain}
               base={base} canEdit={access.value.canEdit} structured={structured} nicheLabel={nicheLabel} definitions={definitions.ok ? definitions.value : []} />}
               stageTwo={<CommunicationStageTwo key={`${stageTwoInputStateKey(base)}:${taxonomy.ok ? taxonomy.niche?.taxonId ?? "" : "error"}:${taxonomy.ok ? taxonomy.niche?.revision ?? "" : ""}`} account={access.value.accountSubdomain}
-                base={base} canEdit={access.value.canEdit} canGenerate={canGenerate} nicheControl={nicheEditor ? <AccountNicheEditor account={access.value.accountSubdomain} state={nicheEditor} hasIntelligence={hasStageTwoContent(base)} /> : undefined}
+                base={base} canEdit={access.value.canEdit} canGenerate={canGenerate}
                 structured={structured} definitions={definitions.ok ? definitions.value : []} />}
               materials={structured ? <CommunicationMaterials account={access.value.accountSubdomain} base={base} canEdit={access.value.canEdit} definitions={definitions.ok ? definitions.value : []} /> : undefined} />
           </div>

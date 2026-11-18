@@ -5,7 +5,6 @@ export { redactPotentialContactDetails } from "../text-redaction";
 const AUTH_PREFERRED_NAME_KEYS = ["preferred_name", "full_name", "name"] as const;
 const MAX_PREFERRED_NAME_LENGTH = 80;
 const MAX_BUSINESS_DISPLAY_NAME_LENGTH = 120;
-const MAX_BUSINESS_CONTEXT_LENGTH = 4000;
 
 export type PreferredNameValidation =
   | Readonly<{ ok: true; value: string }>
@@ -55,17 +54,6 @@ export function resolvePreferredNameFromAuth(
   return null;
 }
 
-export function validateBusinessContext(input: unknown):
-  | Readonly<{ ok: true; value: string }>
-  | Readonly<{ ok: false; reason: "empty" | "too_long" }> {
-  if (typeof input !== "string") return { ok: false, reason: "empty" };
-
-  const value = normalizeSpaces(input);
-  if (!value) return { ok: false, reason: "empty" };
-  if (value.length > MAX_BUSINESS_CONTEXT_LENGTH) return { ok: false, reason: "too_long" };
-  return { ok: true, value };
-}
-
 export function validateBusinessDisplayName(input: unknown):
   | Readonly<{ ok: true; value: string }>
   | Readonly<{ ok: false; reason: "empty" | "too_long" | "invalid" }> {
@@ -81,5 +69,4 @@ export const pendingSetupPolicy = {
   authPreferredNameKeys: AUTH_PREFERRED_NAME_KEYS,
   maxPreferredNameLength: MAX_PREFERRED_NAME_LENGTH,
   maxBusinessDisplayNameLength: MAX_BUSINESS_DISPLAY_NAME_LENGTH,
-  maxBusinessContextLength: MAX_BUSINESS_CONTEXT_LENGTH,
 } as const;
