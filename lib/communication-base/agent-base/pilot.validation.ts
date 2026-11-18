@@ -68,6 +68,20 @@ for (const [key, specialized, value] of [
   assert.equal(parsed.ok, true);
   if (parsed.ok) { assert.equal(parsed.value.researched, false); previous.push(parsed.value); }
 }
+const marketSchema = buildAgentBasePilotPrompt({
+  base, niche, definitions, key: "market_insights", previous: previous.slice(0, 2),
+})!.schema;
+assert.equal(marketSchema.properties.sections.properties.market_insights.properties.value.maxItems, 20,
+  "pilot constrains the generated item count to the existing 20-item contract");
+assert.equal(stageTwoSchema(["market_insights"]).properties.sections.properties.market_insights.properties.value.maxItems,
+  undefined, "shared schema remains unchanged");
+for (const count of [20, 21]) {
+  const result = parseAgentBasePilotResponse({ output_text: JSON.stringify({
+    sections: { market_insights: { basis: "strategic_hypothesis",
+      value: Array.from({ length: count }, (_, index) => "Item " + index) } },
+  }) }, "market_insights");
+  assert.equal(result.ok, count === 20, "20 items are accepted; 21 fail without truncation");
+}
 assert.equal(buildAgentBasePilotPrompt({ base, niche, definitions, key: "audience", previous: [] }), null, "cannot skip the current catalog section");
 assert.equal(buildAgentBasePilotPrompt({ base, niche: { ...niche, confirmed: false }, definitions, key: "about", previous: [] }), null);
 assert.equal(parseAgentBasePilotResponse({ output_text: JSON.stringify({ sections: { about: { value: "x".repeat(30_001), basis: "confirmed_business_fact" } } }) }, "about").ok, false);
