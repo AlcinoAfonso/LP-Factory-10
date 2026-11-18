@@ -7,6 +7,8 @@ import { isCommunicationBaseEnabled } from "../../../lib/communication-base/conf
 import { getClientAccountSectionContext } from "../_server/section-guard";
 import { getAccountOfficialNiche } from "../../../lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter";
 import { getConfirmedOperationalNicheResolutionLabel } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
+import { readCompletedPendingSetupName } from "../../../lib/onboarding/pending-setup/adapters/pendingSetupConversationAdapter";
+import { readCommunicationBase } from "../../../lib/communication-base/adapters/communicationBaseAdapter";
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -37,6 +39,13 @@ export default async function Layout({ children, params }: LayoutProps) {
     ? await getConfirmedOperationalNicheResolutionLabel({ accountId })
     : null;
   const resolvedNicheLabel = primaryTaxon?.name ?? operationalNicheLabel;
+  const hasAccountAccess = Boolean(accountId && !ctx?.blocked && ctx?.account?.status === "active" && ctx?.member?.status === "active");
+  const [currentBase, completedSetupName] = hasAccountAccess && accountId
+    ? await Promise.all([readCommunicationBase(accountId), readCompletedPendingSetupName(accountId)])
+    : [null, null];
+  const savedPublicName = currentBase?.ok ? currentBase.value?.sections.business_name?.value : null;
+  const publicName = typeof savedPublicName === "string" && savedPublicName.trim()
+    ? savedPublicName.trim() : completedSetupName;
   const enrichedCtx = resolvedNicheLabel
     ? {
         ...ctx,
@@ -51,6 +60,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     <AccessProvider value={enrichedCtx as any}>
       <Header
         userEmail={userEmail}
+        accountIdentity={publicName ? { publicName, officialTaxonName: primaryTaxon?.name ?? null, operationalNicheLabel } : undefined}
         accountMembersEnabled={isAccountMembersEnabled()}
         communicationBaseEnabled={communicationBaseEnabled}
       />

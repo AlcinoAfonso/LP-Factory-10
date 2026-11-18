@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import nodeModule from "node:module";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { existsSync, readFileSync } from "node:fs";
 
 import { decideAccountJourney } from "./onboarding-journey-policy";
@@ -71,3 +74,30 @@ assert.equal(existsSync(legacyDetailRoute), false);
 assert.equal(existsSync(legacyPreviewRoute), false);
 
 console.log("ok - reduced Account Dashboard journey keeps commercial and waiting behavior");
+
+async function validateAccountHeader() {
+  const loader = nodeModule as unknown as { _load: (name: string, parent: unknown, isMain: boolean) => unknown };
+  const original = loader._load;
+  loader._load = function(name, parent, isMain) { return name === "server-only" ? {} : original.call(this, name, parent, isMain); };
+  const [{ Header }, { AccessProvider }] = await Promise.all([
+    import("../../../../components/layout/Header"), import("../../../../providers/AccessProvider"),
+  ]).finally(() => { loader._load = original; });
+  const context = { account: { id: "qa", name: "Nome cadastral preservado", subdomain: "qa", status: "active" as const, primaryTaxonName: "Descrição operacional anterior" },
+    member: { role: "owner" as "owner" | "viewer", status: "active" as const } };
+  const identity = { publicName: "Pão da Gema", officialTaxonName: "Padarias", operationalNicheLabel: "Referência anterior" };
+  const render = (value: typeof context | null, props: Parameters<typeof Header>[0]) =>
+    renderToStaticMarkup(createElement(AccessProvider, { value } as Parameters<typeof AccessProvider>[0], createElement(Header, props)));
+  const official = render(context, { accountIdentity: identity, accountMembersEnabled: true });
+  assert.match(official, /Pão da Gema/); assert.match(official, /Padarias/); assert.match(official, /Membros/);
+  assert.doesNotMatch(official, /Nome cadastral preservado|Referência anterior/);
+  const legacy = render(context, {});
+  assert.match(legacy, /Nome cadastral preservado/); assert.match(legacy, /Descrição operacional anterior/);
+  const operational = render(context, { accountIdentity: { ...identity, officialTaxonName: null, operationalNicheLabel: "Encontros de histórias" } });
+  assert.match(operational, /Referência operacional: /); assert.match(operational, /Encontros de histórias/); assert.doesNotMatch(operational, /Padarias/);
+  assert.doesNotMatch(render(null, { accountIdentity: identity }), /Pão da Gema|Padarias/);
+  assert.doesNotMatch(render(null, { userEmail: "qa@example.invalid", accountIdentity: identity }), /Pão da Gema|Padarias/);
+  assert.doesNotMatch(render({ ...context, member: { ...context.member, role: "viewer" as const } }, { accountIdentity: identity, accountMembersEnabled: true }), /Membros/);
+  assert.equal(context.account.name, "Nome cadastral preservado");
+  console.log("ok - shared Header preserves account identity, official/operational distinction and existing variants");
+}
+validateAccountHeader().catch(error => { console.error(error); process.exitCode = 1; });

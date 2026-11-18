@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import { officialNichePromptContext } from "../niche-resolution/official-niche-policy";
 import nodeModule from "node:module";
 import { attendanceContactProjection, attendanceProjection, attendancePrompt, attendanceProposal, attendanceSummary, validateAttendanceOutput,
-  projectAttendanceSummary, ATTENDANCE_PROMPT_VERSION, ATTENDANCE_CONTRACT_VERSION, NICHE_ATTENDANCE_PROMPT_VERSION, validateStoredAttendanceProposal, type AttendanceContext, type AttendanceOutput } from "./attendance-core";
+  projectAttendanceSummary, readAttendanceContactInput, readAttendanceBusinessNameCandidate, ATTENDANCE_PROMPT_VERSION, ATTENDANCE_CONTRACT_VERSION, NICHE_ATTENDANCE_PROMPT_VERSION, validateStoredAttendanceProposal, type AttendanceContext, type AttendanceOutput } from "./attendance-core";
 import type { AttendanceDependencies } from "./attendance-coordinator";
-import type { PendingSetupConversation } from "./contracts";
+import { ATTENDANCE_GREETING, attendanceMessageContent, attendanceConfirmationQuestion, attendanceButtonContent, type PendingSetupConversation } from "./contracts";
 const accountId = "10000000-0000-4000-8000-000000000001";
 const segmentId = "10000000-0000-4000-8000-000000000002";
 const nicheId = "10000000-0000-4000-8000-000000000003";
@@ -47,6 +47,22 @@ async function main() {
   ]).finally(() => { loader._load = original; });
   const { parseAttendanceResponse, requestAttendance } = provider;
   const { conductAttendanceTurn } = coordinator;
+  const semantic = { kind: "semantic" as const, taxonId: null, taxonName: null, nicheDescription: "Jardinagem de condomínios", expectedNicheRevision: 0 };
+  assert.match(attendanceConfirmationQuestion(semantic), /nicho/);
+  assert.match(attendanceButtonContent(semantic, "confirm"), /Nicho proposto: Jardinagem de condomínios/);
+  assert.match(attendanceButtonContent(semantic, "clarify"), /Quero explicar melhor/);
+  assert.equal(attendanceMessageContent({ ordinal: 1, role: "assistant", content: "Olá! Como prefere ser chamado?" }), ATTENDANCE_GREETING);
+  assert.equal(attendanceMessageContent({ ordinal: 1, role: "user", content: "**Padarias**" }), "**Padarias**");
+  assert.equal(attendanceMessageContent({ ordinal: 2, role: "assistant", content: "Nicho **Padarias**" }), "Nicho Padarias");
+  const pendingBusinessNameSchema = attendancePrompt(context).schema as { properties?: Record<string, unknown> };
+  const nicheBusinessNameSchema = attendancePrompt({ ...context, purpose: "account_niche", preferredName: null }).schema as { properties?: Record<string, unknown> };
+  assert.ok(pendingBusinessNameSchema.properties?.businessNameCandidate, "name candidate required only for Pending Setup");
+  assert.equal(nicheBusinessNameSchema.properties?.businessNameCandidate, undefined, "active niche schema unchanged");
+  assert.match(attendancePrompt(context).instructions,/No Pending Setup, a saudação inicial/);
+  assert.match(attendancePrompt(context).instructions,/Se faltar nome preferido, pergunte como chamar o lead/);
+  assert.doesNotMatch(attendancePrompt(context).instructions,/use somente "Olá! Como prefere ser chamado\?"/);
+  assert.equal((attendancePrompt(context).instructions.match(/Se faltar nome preferido,/g) ?? []).length,1);
+  assert.doesNotMatch(attendancePrompt({ ...context, purpose:"account_niche", preferredName:null }).instructions,/No Pending Setup, a saudação inicial/);
 
   {
   const privateNiche={name:"Jardinagem",revision:"text:1",confirmed:true,confirmedBy:"private-author-test-id",taxonId:"private-reference"};
@@ -273,7 +289,7 @@ async function main() {
     { role: "assistant", content: "  Como prefere ser chamado?  " }, nameContext.recent[1]] })?.preferredName, "João");
   const nameRequest = { ...base, preferredName: null, reply: "Olá! Como prefere ser chamado?", nicheDescription: null, action: "ask", existingTaxonId: null };
   assert.ok(validateAttendanceOutput(nameRequest, nameContext));
-  assert.equal(validateAttendanceOutput({ ...nameRequest, reply: "Como gostaria de ser chamado?" }, nameContext), null);
+  assert.ok(validateAttendanceOutput({ ...nameRequest, reply: "Como gostaria de ser chamado?" }, nameContext));
   assert.equal(validateAttendanceOutput({ ...nameRequest, action: "existing", existingTaxonId: base.existingTaxonId }, nameContext), null);
   assert.ok(validateAttendanceOutput({ ...nameRequest, reply: "Encerramos por aqui; podemos retomar o objetivo comercial quando desejar.",
     closureReason: "Desvio persistente sem avanço útil." }, nameContext));
@@ -572,8 +588,8 @@ async function main() {
     assert.equal(field in nicheSchema.properties, false); assert.equal(nicheSchema.required.includes(field), false);
     assert.equal(field in pendingSchema.properties, true); assert.equal(pendingSchema.required.includes(field), true);
   }
-  assert.equal(ATTENDANCE_PROMPT_VERSION, "d15e_r3_onboarding_v1");
-  assert.equal(ATTENDANCE_CONTRACT_VERSION, 14);
+  assert.equal(ATTENDANCE_PROMPT_VERSION, "d15e_r3_onboarding_v3");
+  assert.equal(ATTENDANCE_CONTRACT_VERSION, 15);
   assert.equal(NICHE_ATTENDANCE_PROMPT_VERSION, "d15e_r3_account_niche_v3");
   assert.equal(wires[0].instructions, attendancePrompt(context).instructions);
   assert.ok(JSON.stringify(events).includes(ATTENDANCE_PROMPT_VERSION));
@@ -652,7 +668,7 @@ async function main() {
   assert.equal(nicheWires[0].store, false); assert.equal(nicheWires[0].background, false);
   assert.ok(JSON.stringify(nicheEvents).includes(NICHE_ATTENDANCE_PROMPT_VERSION));
   assert.ok(JSON.stringify(nicheEvents).includes('"contractVersion":16'));
-  assert.ok(JSON.stringify(events).includes('"contractVersion":14'));
+  assert.ok(JSON.stringify(events).includes('"contractVersion":15'));
   await (await import("../niche-resolution/niche-conversation-validation-cases")).validateNicheConversationActions();
   const effects: string[] = [];
   let current = { ...conversation };
@@ -668,6 +684,43 @@ async function main() {
     commit: async input => { effects.push("commit"); assert.equal(input.proposal?.kind, "semantic"); return { ok: true, version: 3 }; },
     release: async () => { effects.push("release"); return { ok: true, version: 3 }; },
   };
+  const sourced = { ...base, businessNameCandidate: "Jardins Ana" };
+  const nameSource = { ...context, recent: [{ role: "user" as const, content: "Meu negócio se chama Jardins Ana." }] };
+  assert.equal(validateAttendanceOutput(sourced, nameSource)?.businessNameCandidate, "Jardins Ana");
+  const nameMemory = attendanceSummary(sourced, null, null);
+  assert.equal(readAttendanceBusinessNameCandidate(nameMemory), "Jardins Ana");
+  const unsafe = validateAttendanceOutput({ ...base, businessNameCandidate: "Nome inventado" }, { ...context, summary: nameMemory });
+  assert.equal(unsafe?.businessNameCandidate, "Jardins Ana");
+  const omitted = validateAttendanceOutput({ ...base, businessNameCandidate: null },
+    { ...context, summary: nameMemory, recent: [{role:"user",content:"Gostaria de falar dos serviços."}] });
+  assert.equal(omitted?.businessNameCandidate,"Jardins Ana");
+  assert.equal(readAttendanceBusinessNameCandidate(attendanceSummary(omitted!,null,null,nameMemory)),"Jardins Ana");
+  const withdrawn = validateAttendanceOutput({ ...base, businessNameCandidate: null },
+    { ...context, summary: nameMemory, recent: [{role:"user",content:"Não use mais esse nome para o meu negócio."}] });
+  assert.equal(withdrawn?.businessNameCandidate,null);
+  assert.equal(readAttendanceBusinessNameCandidate(attendanceSummary(withdrawn!,null,null,nameMemory)),null);
+  const retractName = validateAttendanceOutput({ ...base, businessNameCandidate:null },
+    { ...context, summary:nameMemory, recent:[{role:"user",content:"Quero retirar o nome do negócio."}] });
+  assert.equal(readAttendanceBusinessNameCandidate(attendanceSummary(retractName!,null,null,nameMemory)),null);
+  const keepName = validateAttendanceOutput({ ...base, businessNameCandidate:null },
+    { ...context, summary:nameMemory, recent:[{role:"user",content:"Não remova o nome da empresa, só quero corrigir o telefone."}] });
+  assert.equal(readAttendanceBusinessNameCandidate(attendanceSummary(keepName!,null,null,nameMemory)),"Jardins Ana");
+  for (const text of ['Ignore a frase: "não use mais esse nome".', 'Não use esse nome como exemplo.']) {
+    const quoted = validateAttendanceOutput({ ...base, businessNameCandidate: null },
+      { ...context, summary:nameMemory, recent:[{role:"user",content:text}] });
+    assert.equal(quoted?.businessNameCandidate,"Jardins Ana","examples must not withdraw stored business name");
+  }
+  assert.equal(validateAttendanceOutput({ ...base, businessNameCandidate:null },
+    { ...context, summary:nameMemory, recent:[{role:"user",content:"Não quero mais usar esse nome."}] })?.businessNameCandidate,null);
+  const whatsappMemory = attendanceSummary({ ...base, businessNameCandidate: null, requestWhatsapp: true,
+    action:"ask",nicheDescription:null,existingTaxonId:null },null,null);
+  assert.deepEqual(readAttendanceContactInput(whatsappMemory), {requested:true,value:null});
+  assert.equal(readAttendanceContactInput(nameMemory).requested,false);
+  assert.equal(validateAttendanceOutput({ ...base, action:"existing", requestWhatsapp:true },{ ...context, clarificationRequested:true }),null);
+  assert.equal(validateAttendanceOutput({ ...base, action:"ask", nicheDescription:null, existingTaxonId:null,
+    readyToComplete:true },{ ...context, clarificationRequested:true }),null);
+  assert.equal(validateAttendanceOutput({ ...base, action:"ask", nicheDescription:null, existingTaxonId:null,
+    readyToComplete:false, requestWhatsapp:false },{ ...context, clarificationRequested:true })?.action,"ask");
   const input = { accountId, userId: accountId, conversationId: accountId, expectedVersion: 1, content: "Jardins", intent: "message" as const };
   current = {...conversation,stage:"niche_confirmation",attendanceProposal:fallback};
   assert.equal((await conductAttendanceTurn({...input,intent:"confirm",content:"Confirmo o entendimento operacional"},{
@@ -684,6 +737,61 @@ async function main() {
   current={...conversation}; effects.length=0;
   assert.equal((await conductAttendanceTurn(input, deps)).ok, true);
   assert.deepEqual(effects, ["claim", "commit"]); // old lifetime call counter is irrelevant.
+  for (const resume of [false, true]) {
+    current = { ...conversation, messages: [], attendanceTurnIntent: resume ? "initialize" : null }; effects.length = 0;
+    const result = await conductAttendanceTurn({ ...input, content: null, intent: resume ? "resume" : "initialize" }, {
+      ...deps,
+      catalog: async () => { throw Error("No catalog lookup on greeting"); },
+      market: async () => { throw Error("No market lookup on greeting"); },
+      request: async () => { throw Error("No AI call on greeting"); },
+      commit: async ({ output, observedNicheRevision, proposal }) => {
+        assert.equal(output.reply, ATTENDANCE_GREETING);
+        assert.equal(output.nicheDescription, null);
+        assert.equal(observedNicheRevision, 0);
+        assert.equal(proposal, null); effects.push("commit");
+        return { ok: true, version: 3 };
+      },
+    });
+    assert.equal(result.ok,true);
+    assert.deepEqual(effects,["claim","commit"]);
+  }
+  for (const alreadyGreeted of [false,true]) {
+    current = { ...conversation, messages: alreadyGreeted ? [
+      { ...conversation.messages[0], role: "assistant", content: "Prazer, Ana! Vamos conversar." },
+      ...Array.from({length:9},(_,i)=>({ ...conversation.messages[0], id:String(i+2), ordinal:i+2,content:"Contexto adicional." }))
+    ] : conversation.messages }; effects.length=0;
+    const result=await conductAttendanceTurn(input,{...deps,
+      request: async ({context:shown})=>{
+        assert.equal(shown.greetedByName,alreadyGreeted);
+        return {ok:true,output:{...base,reply:"Prazer, Ana! Podemos conversar sobre seu negócio."},responseId:"greet",latencyMs:1};
+      },
+      commit: async ({output})=>{
+        assert.equal(output.reply,alreadyGreeted?"Podemos conversar sobre seu negócio.":"Prazer, Ana! Podemos conversar sobre seu negócio.");
+        effects.push("commit");return {ok:true,version:3};
+      },
+    });
+    assert.equal(result.ok,true);assert.deepEqual(effects,["claim","commit"]);
+  }
+  current = { ...conversation }; effects.length=0;
+  const overlongBody = "A".repeat(3990);
+  assert.equal((await conductAttendanceTurn(input, { ...deps,
+    request: async () => ({ ok:true, output:{ ...base, reply:overlongBody }, responseId:"long-reply", latencyMs:1 }),
+    commit: async ({ output }) => {
+      assert.equal(output.reply, overlongBody, "preserve full reply when greeting would exceed SQL length");
+      assert.ok(output.reply.length <= 4000); effects.push("commit");
+      return { ok:true, version:3 };
+    },
+  })).ok,true);
+  assert.deepEqual(effects,["claim","commit"]);
+  current = { ...conversation, attendanceProposal: semantic }; effects.length = 0;
+  assert.equal((await conductAttendanceTurn({ ...input, intent:"clarify",content:"Quero explicar melhor." },{...deps,
+    request: async ({context:shown})=>{
+      assert.equal(shown.clarificationRequested,true);
+      return {ok:true,output:{...base,action:"ask",nicheDescription:null,existingTaxonId:null,reply:"O que deseja corrigir?"},responseId:"clarify",latencyMs:1};
+    },commit:async ({output,proposal})=>{
+      assert.equal(output.action,"ask");assert.equal(proposal,null);effects.push("commit");return {ok:true,version:3};
+    }
+  })).ok,true);
   current = { ...conversation, accountContext: { summary: closedSummary, updatedAt: conversation.updatedAt } };
   assert.equal((await conductAttendanceTurn(input, { ...deps,
     request: async ({ context: resumed }) => {

@@ -2,7 +2,8 @@ import "server-only";
 import { clientOpenAiCostContext } from "../../openai-costs/active-contracts";
 import { officialNichePromptContext } from "../niche-resolution/official-niche-policy";
 import { readAccountOfficialNiche } from "../niche-resolution/adapters/accountOfficialNicheAdapter";
-import { attendanceContactProjection, attendanceProjection, attendanceProposal, attendanceSummary } from "./attendance-core";
+import { attendanceContactProjection, attendanceProjection, attendanceProposal, attendanceSummary, readAttendanceBusinessNameCandidate, type AttendanceOutput } from "./attendance-core";
+import { ATTENDANCE_GREETING } from "./contracts";
 import { requestAttendance } from "./attendance-provider";
 import { loadPendingSetupConversation } from "./adapters/pendingSetupConversationAdapter";
 import { claimAttendanceTurn, commitAttendanceTurn, releaseAttendanceTurn,
@@ -40,6 +41,24 @@ export async function conductAttendanceTurn(input: Readonly<{
     const reserved = await dependencies.load(input);
     if (!reserved || reserved.version !== claimed.version) throw new Error("reserved_turn_read_failed");
     if (!reserved.accountContext) throw new Error("account_context_read_failed");
+    if (intent === "initialize") {
+      if (reserved.messages.length) throw new Error("greeting_already_initialized");
+      const [primary, official] = await Promise.all([
+        dependencies.primary(input.accountId), (dependencies.official ?? readAccountOfficialNiche)(input.accountId),
+      ]);
+      if (primary === undefined || !official.ok) throw new Error("initial_authorities_unavailable");
+      const output: AttendanceOutput = { reply: ATTENDANCE_GREETING, preferredName: reserved.preferredName,
+        preferredNameDeclined: reserved.preferredNameDeclined ?? false,
+        businessNameCandidate: readAttendanceBusinessNameCandidate(reserved.accountContext.summary),
+        requestWhatsapp: false, whatsappReference: null, whatsappDeclined: false, businessUnderstanding: "",
+        confirmedUnderstanding: null, suggestions: [], sufficientUnderstanding: false, readyToComplete: false,
+        closureReason: null, action: "ask", existingTaxonId: null, nicheDescription: null };
+      const written = await dependencies.commit({ ...fence, output, proposal: null, confirm: false,
+        observedPrimaryTaxonId: primary, observedNicheRevision: official.niche?.textRevision ?? 0,
+        summary: reserved.accountContext.summary ?? attendanceSummary(output, official.niche?.confirmed ? official.niche.name : null, null) });
+      if (!written.ok) await dependencies.release(fence);
+      return written;
+    }
     // Independent SELECTs; the reserved conversation and commit fence remain ordered.
     const official = await (dependencies.official ?? readAccountOfficialNiche)(input.accountId);
     if (!official.ok) throw new Error("official_niche_read_failed");
@@ -57,6 +76,7 @@ export async function conductAttendanceTurn(input: Readonly<{
     const marketContext = await dependencies.market(marketQuery, catalog,
       currentPrimaryTaxonId ?? reserved.attendanceProposal?.taxonId ?? null);
     const context = { ...attendanceProjection(reserved, catalog), marketContext: marketContext ?? [], officialNiche: officialNichePromptContext(official.niche),
+      clarificationRequested: intent === "clarify" && Boolean(reserved.attendanceProposal),
       confirmedOperationalUnderstanding: Boolean(operational),
       confirmedProposal: confirmation ? reserved.attendanceProposal ?? null : null, currentPrimaryTaxonId };
     if (confirmation && (!context.confirmedProposal || !reserved.businessContextText?.trim())) throw new Error("confirmation_proposal_missing");
@@ -67,8 +87,14 @@ export async function conductAttendanceTurn(input: Readonly<{
       ? { ...answer.output, businessUnderstanding: reserved.businessContextText! }
       : answer.output.closureReason && !answer.output.businessUnderstanding
         ? { ...answer.output, businessUnderstanding: reserved.businessContextText ?? "" } : answer.output;
+    const body = output.reply.replace(/^\s*Prazer,\s*[^!\n]{1,100}!\s*/iu, "").trim();
+    const greeting = output.preferredName && !context.greetedByName ? `Prazer, ${output.preferredName}!` : "";
+    // Preserve the complete response (including sources) if the optional salutation cannot fit.
+    const withGreeting = [greeting, body].filter(Boolean).join(" ");
+    const reply = withGreeting.length <= 4000 ? withGreeting : body;
+    if (!reply || reply.length > 4000) throw new Error("invalid_attendance_reply_length");
     const written = await dependencies.commit({
-      ...fence, output, confirm: confirmation, observedPrimaryTaxonId: currentPrimaryTaxonId,
+      ...fence, output: { ...output, reply }, confirm: confirmation, observedPrimaryTaxonId: currentPrimaryTaxonId,
       observedNicheRevision: official.niche?.textRevision ?? 0,
       proposal: confirmation ? null : attendanceProposal(output, catalog, official.niche?.textRevision ?? 0),
       summary: attendanceSummary(output, official.niche?.confirmed ? official.niche.name : null,
