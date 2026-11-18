@@ -158,6 +158,8 @@ Atualizado em 2026-08-03
 
 Unified Logs reúne, em uma única visão pesquisável, eventos do API Gateway, Postgres, Auth, Storage, PostgREST, Realtime e poolers. A open beta inclui filtros combináveis, busca, live tail, histograma por nível e detalhamento do percurso da requisição.
 
+Em 10/11/2026, o [Correlated Logs](https://supabase.com/changelog/53230-correlated-logs) entrou em beta. O Studio correlaciona eventos pelos identificadores disponíveis de requisição, trace ou usuário autenticado. Priorizar leitura manual sob demanda na próxima investigação real. A disponibilidade no projeto e o custo de uso recorrente seguem pendentes. A correlação via trace do aplicativo depende de `supa#69`.
+
 O recurso não deve ser descrito como AI Debugging e não substitui os logs estruturados do aplicativo nem Log Drains para retenção externa.
 
 ### Valor para o Projeto
@@ -1502,7 +1504,7 @@ Melhorias no changelog da Supabase com RSS feeds, filtros por tag, feed `.md` e 
 
 ### Descrição
 
-Recurso de Auth para conectar provedores OAuth2 ou OpenID Connect próprios ao projeto Supabase, incluindo IdPs corporativos ou regionais compatíveis.
+Recurso de Auth para conectar provedores OAuth2 ou OpenID Connect próprios ao projeto Supabase, incluindo IdPs corporativos ou regionais compatíveis. Em 17/11/2026, o Dashboard passou a permitir cadastrar o emissor OIDC para validar tokens de terceiros e gerenciar emissores criados pela Management API. A capacidade é complementar ao login com provedores personalizados e segue condicionada a um caso de identidade aprovado e à confirmação do custo incremental. [Changelog oficial](https://supabase.com/changelog/custom-oidc-third-party-auth).
 
 ### Valor para o Projeto
 
