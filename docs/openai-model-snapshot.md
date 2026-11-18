@@ -2,7 +2,7 @@
 
 ## 1. Autoridade, validade e fontes
 
-- Data da fotografia técnica: 07/11/2026; baseline anterior de 14/09/2026, reorganizado em 22/09/2026.
+- Data da fotografia técnica: 18/11/2026; baseline anterior de 14/09/2026, reorganizado em 22/09/2026.
 - Objetivo: manter uma fotografia técnica itemizada e rastreável das capacidades OpenAI relevantes ao LP Factory 10.
 - Este documento não define sozinho modelo, `reasoning.effort`, tool, arquitetura ou configuração de produção e não autoriza adoção.
 - A configuração efetiva permanece em `docs/platform-config.md`; a governança das decisões por workload permanece em `docs/gestor-automations.md` e no caso competente do roadmap.
@@ -89,7 +89,12 @@
 | `OAI-M08` | `gpt-6-astra` | tarefas complexas somente mediante comparação própria | 1,05M | 128k | `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo |
 | `OAI-M09` | `gpt-6.1-sol` | trabalho profissional complexo; candidato ainda não comparado para `OAI-W07` | 1,05M | 128k | `low`, `medium`, `high`, `xhigh`, `max` | documentada; `medium` é o padrão | documentação específica do modelo e Model guidance |
 | `OAI-M10` | `gpt-6.1-terra` | escrita e raciocínio visual; candidato dependente de comparação própria | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | documentada desde 26/10/2026; `medium` padrão | documentação específica do modelo e changelog |
+| `OAI-M11` | `gpt-6.2-astra` | raciocínio e programação complexos, sujeitos a comparação por workload | 1,05M | 128k | `low`, `medium`, `high`, `xhigh`, `max` | documentada desde 17/11/2026 | [modelo](https://developers.openai.com/api/docs/models/gpt-6.2-astra) |
+| `OAI-M12` | `gpt-6.2-sol` | programação e fluxos com agentes, sujeitos a comparação por workload | 1,05M | 128k | `low`, `medium`, `high`, `xhigh`, `max` | documentada desde 17/11/2026 | [modelo](https://developers.openai.com/api/docs/models/gpt-6.2-sol) |
 
+- `OAI-M11` e `OAI-M12` aceitam até 922k tokens de entrada, texto/imagens de entrada e texto de saída. Suportam Responses e Chat Completions. Tools, incluindo function calling, Web Search e computer use, exigem Responses. A delegação multiagente está em beta. Os dois rejeitam effort `none`. [Catálogo de modelos](https://developers.openai.com/api/docs/models).
+- Na Responses API, a família GPT-6.2 posiciona `instructions` de nível superior depois de `input`. Instruções estáveis elegíveis para cache podem ficar na primeira mensagem `developer`. Edições no prefixo de conversas podem descartar itens de raciocínio, assim como certas mudanças de modelo ou identidade. Verificar esses comportamentos em comparação própria antes de migrar. [Guia oficial GPT-6.2](https://developers.openai.com/api/docs/guides/latest-model).
+- A Responses API documenta em beta janelas de conclusão em segundo plano de duas ou oito horas para GPT-6.2 Astra, GPT-6.2 Sol, GPT-6.1 Terra e GPT-6 Luna. Aplicabilidade condicional a tarefas assíncronas compatíveis. [Changelog OpenAI](https://developers.openai.com/api/docs/changelog).
 - Luna, Terra e Sol documentam Responses API, function calling, Structured Outputs e reasoning tokens.
 - Em GPT-5.6, o effort padrão documentado é `medium` quando omitido; comparações devem registrar o valor explicitamente.
 - Para `gpt-5.4-mini`, o padrão documentado é `none` quando o parâmetro é omitido.
