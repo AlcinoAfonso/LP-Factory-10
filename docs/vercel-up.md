@@ -913,6 +913,17 @@ Catalogado em 2026-10-14
 ---
 
 
+## 39 — Retirada dos checks nativos de lint e typecheck *(🟨 Depreciação; compatibilidade transversal condicional)*
+
+2026-11-17
+
+- Estado: retirada anunciada para 30/11/2026. Afeta apenas Deployment Checks do provedor Vercel. O `npm run check` já inclui lint e typecheck e é usado em workflows específicos do GitHub Actions. O uso de checks nativos como gate dos deploys atuais não foi confirmado.
+- Ação pendente e prioridade: verificar em leitura a configuração de Build and Deployment antes de 30/11. A prioridade sobe se houver check nativo exigido para liberar um deploy. Mantém-se no radar pelo risco de perder um gate existente.
+- Se houver dependência, avaliar a cobertura equivalente no CI já usado, com custo incremental zero e validação do bloqueio em caso de falha. Horizonte Starter. Encerrar com ausência comprovada do gate nativo ou cobertura equivalente validada e reconciliada pelo ABC.
+- Fonte: [aviso oficial da Vercel](https://vercel.com/changelog/native-lint-and-typecheck-deployment-checks-are-being-deprecated).
+
+---
+
 ## Registro da rodada — Vercel + Next.js Update — 10/08/2026
 
 ### Updates ajustados ou incorporados
