@@ -12,7 +12,6 @@ import type {
   OpenAiProductWorkloadId,
   OpenAiReasoningEffort,
   OpenAiServiceTier,
-  OpenAiWorkloadId,
 } from "../contracts";
 import {
   openAiImageQualities,
@@ -85,7 +84,7 @@ export const readOpenAiAdministrativeConfigurations: OpenAiAdministrativeConfigu
     }
   };
 
-type ManagedWorkload = Exclude<OpenAiWorkloadId, "supabase_inspect">;
+type ManagedWorkload = OpenAiProductWorkloadId;
 
 export type OpenAiCandidateConfigurationReadResult =
   | Readonly<{

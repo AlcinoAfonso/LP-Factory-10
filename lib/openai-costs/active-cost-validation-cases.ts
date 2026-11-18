@@ -234,6 +234,24 @@ async function main() {
   assert.equal(factualHistory.value.executionCount, translated.value.executionCount);
   assert.ok(factualHistory.value.executions.every((item) => item.workload === "taxon_input_catalog_sufficiency_evaluation"));
 
+  const inspectHistory = translateOpenAiActiveCostRows({
+    period,
+    rows: [activeRow({
+      workload: "supabase_inspect",
+      model: "gpt-4.1-mini",
+      reasoning_effort: "not_applicable",
+      configuration_source: "github_actions_default_reference",
+      configuration_revision: "v2",
+      pricing_snapshot: { model: "gpt-4.1-mini" },
+    })],
+    coverageRows: coverageRows.map((row) => ({ ...row, workload: "supabase_inspect" })),
+  });
+  assert.ok(inspectHistory.ok, "retired Inspect executions and coverage must remain readable");
+  const filteredInspect = filterOpenAiActiveCosts(inspectHistory.value, { workload: "supabase_inspect" });
+  assert.equal(filteredInspect.totalCalculatedUsd, "0.0000014");
+  assert.equal(filteredInspect.executions[0]?.operations[0]?.configurationSource, "github_actions_default_reference");
+  assert.equal(filteredInspect.coverage[0]?.workload, "supabase_inspect");
+
   const correlated = translateOpenAiActiveCostRows({
     period,
     coverageRows,

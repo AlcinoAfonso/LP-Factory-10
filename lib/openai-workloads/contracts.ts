@@ -6,8 +6,6 @@ export const openAiProductWorkloadIds = [
   "communication_base_stage2_intelligence",
 ] as const;
 
-export const openAiOperationalWorkloadIds = ["supabase_inspect"] as const;
-
 export const openAiReasoningEfforts = [
   "none",
   "low",
@@ -33,11 +31,6 @@ export const openAiWorkloadFailureCategories = [
 
 export type OpenAiProductWorkloadId =
   (typeof openAiProductWorkloadIds)[number];
-export type OpenAiOperationalWorkloadId =
-  (typeof openAiOperationalWorkloadIds)[number];
-export type OpenAiWorkloadId =
-  | OpenAiProductWorkloadId
-  | OpenAiOperationalWorkloadId;
 export type OpenAiServiceTier = "default" | "fast" | "ultrafast";
 export type OpenAiReasoningEffort = (typeof openAiReasoningEfforts)[number];
 export type OpenAiImageQuality = (typeof openAiImageQualities)[number];
@@ -70,13 +63,6 @@ export type OpenAiWebSearchPolicy = Readonly<{
   contextWindowTokenBudget: 128000;
 }>;
 
-export type OpenAiInventoryReferenceConfiguration = Readonly<{
-  model: string;
-  reasoningEffort: "not_applicable";
-  source: "github_actions_default_reference";
-  revision: string;
-}>;
-
 export type OpenAiProductWorkloadDefinition = Readonly<{
   id: OpenAiProductWorkloadId;
   displayName: string;
@@ -87,20 +73,6 @@ export type OpenAiProductWorkloadDefinition = Readonly<{
   configuration: OpenAiEffectiveConfiguration;
   webSearch?: OpenAiWebSearchPolicy | null;
 }>;
-
-export type OpenAiOperationalWorkloadDefinition = Readonly<{
-  id: OpenAiOperationalWorkloadId;
-  displayName: string;
-  classification: "operational";
-  configurationKind: "inventory_reference";
-  consumer: string;
-  fallback: string;
-  configuration: OpenAiInventoryReferenceConfiguration;
-}>;
-
-export type OpenAiWorkloadDefinition =
-  | OpenAiProductWorkloadDefinition
-  | OpenAiOperationalWorkloadDefinition;
 
 export type ResolvedOpenAiProductWorkload = Readonly<{
   id: OpenAiProductWorkloadId;
@@ -119,26 +91,11 @@ export type ResolvedOpenAiProductWorkload = Readonly<{
   webSearch?: OpenAiWebSearchPolicy | null;
 }>;
 
-export type OpenAiWorkloadInventoryItem =
-  | (Omit<ResolvedOpenAiProductWorkload, "source"> &
-      Readonly<{ source: "repo_catalog" }>)
-  | Readonly<{
-      id: OpenAiOperationalWorkloadId;
-      displayName: string;
-      classification: "operational";
-      configurationKind: "inventory_reference";
-      consumer: string;
-      fallback: string;
-      model: string;
-      reasoningEffort: "not_applicable";
-      source: "github_actions_default_reference";
-      revision: string;
-      effectiveConfigurationVerified: false;
-    }>;
+export type OpenAiWorkloadInventoryItem = Omit<ResolvedOpenAiProductWorkload, "source"> &
+  Readonly<{ source: "repo_catalog" }>;
 
 export type OpenAiWorkloadResolveErrorCode =
   | "UNKNOWN_WORKLOAD"
-  | "NOT_PRODUCT_RUNTIME_WORKLOAD"
   | "NOT_TEXT_PRODUCT_WORKLOAD"
   | "UNKNOWN_ENVIRONMENT"
   | "OPERATIONAL_CONFIGURATION_READ_FAILED"

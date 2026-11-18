@@ -24,7 +24,6 @@ import {
   type DecimalValue,
 } from "../decimal";
 import {
-  openAiOperationalWorkloadIds,
   openAiProductWorkloadIds,
   openAiReasoningEfforts,
 } from "../../openai-workloads";
@@ -32,7 +31,6 @@ import { OPENAI_RETIRED_COST_WORKLOAD_IDS } from "../active-contracts";
 
 const openAiWorkloadIds = [
   ...openAiProductWorkloadIds,
-  ...openAiOperationalWorkloadIds,
   ...OPENAI_RETIRED_COST_WORKLOAD_IDS,
 ] as const;
 const openAiConfigurationSources = ["repo_catalog", "supabase_operational"] as const;

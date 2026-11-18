@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { createHmac } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { createOpenAiCostRecorder } from "./recorder";
 import {
@@ -7,14 +6,8 @@ import {
   isExpectedMissingRpcError,
   legacyExecutionStartRpc,
   operationFinishRpc,
-  OpenAiCostTrackingPersistenceError,
-  openAiCostPersistenceFailure,
 } from "./adapters/activeCostTrackingAdapterCore";
 import type { OpenAiCostTrackingAdapter } from "./active-contracts";
-import {
-  OPENAI_COST_INGESTION_PROTOCOL_VERSION,
-  validateOpenAiCostIngestion,
-} from "./ingestion";
 import { requestCommercialActivationOpenAi } from "../conversion-content/adapters/commercialActivationOpenAiAdapter";
 import { listOpenAiWorkloadInventory } from "../openai-workloads";
 
@@ -160,14 +153,6 @@ async function main() {
   });
   assert.equal(terminal.p_cached_input_tokens, 2);
   assert.equal(terminal.p_web_search_call_count, 2);
-  assert.deepEqual(
-    openAiCostPersistenceFailure(new OpenAiCostTrackingPersistenceError("conflict")),
-    { status: 409, code: "persistence_conflict" },
-  );
-  assert.deepEqual(openAiCostPersistenceFailure(new Error("database detail")), {
-    status: 503,
-    code: "persistence_unavailable",
-  });
 
   const commercialConfiguration = listOpenAiWorkloadInventory().find(
     (item) => item.id === "commercial_activation_draft_generation",
@@ -192,79 +177,15 @@ async function main() {
   });
   assert.deepEqual(functional, { ok: true, value: "functional-result", responseId: "resp_test" });
 
-  const secret = "test-ingestion-secret";
-  const now = Date.parse("2026-09-11T12:00:00.000Z");
-  const timestamp = now.toString();
-  const inventory = {
-    id: "supabase_inspect",
-    displayName: "Supabase Inspect",
-    classification: "operational",
-    configurationKind: "inventory_reference",
-    consumer: "test",
-    fallback: "test",
-    model: "gpt-4.1-mini",
-    reasoningEffort: "not_applicable",
-    source: "github_actions_default_reference",
-    revision: "v2",
-    effectiveConfigurationVerified: false,
-  } as const;
-  const envelope = {
-    version: OPENAI_COST_INGESTION_PROTOCOL_VERSION,
-    action: "startOperation",
-    payload: {
-      operationId: "10000000-0000-4000-8000-000000000004",
-      executionId: "10000000-0000-4000-8000-000000000005",
-      sequence: 1,
-      model: inventory.model,
-      reasoningEffort: inventory.reasoningEffort,
-      configurationSource: inventory.source,
-      configurationRevision: inventory.revision,
-      startedAt: "2026-09-11T12:00:00.000Z",
-    },
-  };
-  const body = JSON.stringify(envelope);
-  const signature = createHmac("sha256", secret).update(`${timestamp}.${body}`).digest("hex");
-  const validate = (overrides: Partial<Parameters<typeof validateOpenAiCostIngestion>[0]> = {}) =>
-    validateOpenAiCostIngestion({
-      body, timestamp, signature, protocol: OPENAI_COST_INGESTION_PROTOCOL_VERSION,
-      secret, expectedEnvironment: "production", inventory, now, ...overrides,
-    });
-  assert.equal(validate().ok, true);
-  assert.deepEqual(validate({ signature: "0".repeat(64) }), { ok: false, code: "signature_invalid" });
-  assert.deepEqual(validate({ now: now - 1 }), { ok: false, code: "request_expired" });
-  assert.deepEqual(validate({ now: now + 300_001 }), { ok: false, code: "request_expired" });
-  assert.deepEqual(validate({ body: `${body} ` }), { ok: false, code: "signature_invalid" });
-  const wrongModelBody = JSON.stringify({ ...envelope, payload: { ...envelope.payload, model: "arbitrary" } });
-  assert.deepEqual(validate({
-    body: wrongModelBody,
-    signature: createHmac("sha256", secret).update(`${timestamp}.${wrongModelBody}`).digest("hex"),
-  }), { ok: false, code: "operation_context_invalid" });
-
-  const financialPayload = {
-    operationId: "10000000-0000-4000-8000-000000000004", result: "success", failureCategory: null,
-    providerResponseId: "resp_1", providerRequestId: "req_1", httpStatus: 200, usage: null,
-    requestedServiceTier: null, appliedServiceTier: "priority", appliedModel: "gpt-4.1-mini",
-    modality: "responses_text", cacheWriteTokens30m: null, cacheWriteTokens12h: null,
-    finishedAt: "2026-09-11T12:00:00.000Z",
-  };
-  for (const [patch, expected] of [[{}, true], [{ appliedServiceTier: "PRIVATE_PAYLOAD" }, false],
-    [{ requestedServiceTier: "default" }, false], [{ cacheWriteTokens12h: -1 }, false], [{ secret: "no" }, false]] as const) {
-    const body = JSON.stringify({ version: OPENAI_COST_INGESTION_PROTOCOL_VERSION, action: "finishOperation", payload: { ...financialPayload, ...patch } });
-    assert.equal(validate({ body, signature: createHmac("sha256", secret).update(`${timestamp}.${body}`).digest("hex") }).ok, expected);
-  }
-
   const sources = [
     "lib/openai-responses/openAiResponsesAdapter.ts",
     "lib/conversion-content/adapters/commercialActivationOpenAiAdapter.ts",
     "lib/onboarding/niche-resolution/adapters/openAiResolver.ts",
-    "automations/supabase-inspect/run.mjs",
-    "automations/supabase-inspect/costRecorder.mjs",
     "app/a/[account]/pending-setup-actions.ts",
   ].map((path) => readFileSync(path, "utf8")).join("\n");
   for (const workload of [
     "niche_resolution",
     "commercial_activation_draft_generation",
-    "supabase_inspect",
   ]) assert.ok(sources.includes(workload), `missing producer ${workload}`);
   assert.equal(sources.includes("landing_page_dynamic_market_research"), false, "E20.7 producer must remain removed");
   assert.equal(sources.includes("taxon_input_catalog_sufficiency_evaluation"), false, "E22.7 factual producer must remain removed");
@@ -297,13 +218,6 @@ async function main() {
     "v1 bridge row must remain uncorrelated without backfill",
   ]) assert.ok(eventSqlTest.includes(evidence), `missing SQL evidence: ${evidence}`);
 
-  const workflow = readFileSync(".github/workflows/pipeline-supabase-inspect.yml", "utf8");
-  assert.ok(workflow.includes("SUPABASE_DB_URL_READONLY"));
-  assert.equal(workflow.includes("SUPABASE_SECRET_KEY"), false);
-  assert.ok(workflow.includes("OPENAI_COST_INGESTION_HMAC_SECRET"));
-  const route = readFileSync("app/api/internal/openai-costs/route.ts", "utf8");
-  assert.ok(route.includes("activeCostTrackingAdapter[action]"));
-  assert.equal(route.includes("openAiCostRecorder[action]"), false);
   console.log("PASS E21.5.3 active cost tracking contracts");
 }
 
