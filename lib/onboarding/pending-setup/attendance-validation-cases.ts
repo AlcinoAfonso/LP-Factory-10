@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { officialNichePromptContext } from "../niche-resolution/official-niche-policy";
 import nodeModule from "node:module";
-import { attendanceContactProjection, attendanceProjection, attendancePrompt, attendanceProposal, attendanceSummary, validateAttendanceOutput,
+import { attendanceContactProjection, attendanceProjection, attendancePrompt, attendanceProposal, attendanceSummary, validateAttendanceOutput, attendanceNextStage,
   projectAttendanceSummary, readAttendanceContactInput, readAttendanceBusinessNameCandidate, ATTENDANCE_PROMPT_VERSION, ATTENDANCE_CONTRACT_VERSION, NICHE_ATTENDANCE_PROMPT_VERSION, validateStoredAttendanceProposal, type AttendanceContext, type AttendanceOutput } from "./attendance-core";
 import type { AttendanceDependencies } from "./attendance-coordinator";
 import { ATTENDANCE_GREETING, attendanceMessageContent, attendanceConfirmationQuestion, attendanceButtonContent, type PendingSetupConversation } from "./contracts";
@@ -72,7 +72,21 @@ async function main() {
   const semanticOutput: AttendanceOutput = { ...base, reply:"Proponho Jardinagem para condomínios. Confirma esse nicho?", existingTaxonId: null, nicheDescription: "Jardinagem para condomínios" };
   assert.equal(validateAttendanceOutput(semanticOutput,semanticContext)?.nicheDescription,"Jardinagem para condomínios");
   assert.equal(validateAttendanceOutput({...semanticOutput,existingTaxonId:nicheId},semanticContext),null);
-  assert.equal(validateAttendanceOutput({...semanticOutput,nicheDescription:null},semanticContext),null);
+  const missingNiche = validateAttendanceOutput({...semanticOutput,nicheDescription:null},semanticContext);
+  assert.equal(missingNiche?.action, "ask");
+  assert.equal(missingNiche?.nicheDescription, null);
+  assert.equal(missingNiche?.businessUnderstanding, semanticOutput.businessUnderstanding);
+  assert.doesNotMatch(missingNiche?.reply ?? "", /Confirma esse nicho/);
+  assert.equal(attendanceProposal(missingNiche!, []), null, "no invented or confirmed niche");
+  assert.equal(JSON.parse(attendanceSummary(missingNiche!,null,null)).classification, "Não identificada.");
+  assert.equal(validateAttendanceOutput({...semanticOutput,nicheDescription:null,readyToComplete:true},semanticContext),null);
+  const emptyTurn = { ...semanticOutput, action: "ask" as const, nicheDescription: null,
+    preferredName: null, preferredNameDeclined: false, businessUnderstanding: "" };
+  assert.equal(attendanceNextStage("identity",emptyTurn,false),"identity");
+  assert.equal(attendanceNextStage("business_understanding",emptyTurn,false),"business_understanding");
+  assert.equal(attendanceNextStage("niche_confirmation",emptyTurn,false),"business_understanding");
+  assert.equal(attendanceNextStage("business_understanding",emptyTurn,true),"niche_confirmation");
+  assert.equal(attendanceNextStage("business_understanding",{...emptyTurn,readyToComplete:true},false),"ready_to_complete");
   assert.equal(validateAttendanceOutput({...semanticOutput,reply:"Uma proposta diferente da descrição estruturada."},semanticContext),null);
   assert.equal(validateAttendanceOutput({...semanticOutput,nicheDescription:"<instrução>"},semanticContext),null);
   const semanticProposal = attendanceProposal(semanticOutput,[]);
@@ -588,7 +602,7 @@ async function main() {
     assert.equal(field in nicheSchema.properties, false); assert.equal(nicheSchema.required.includes(field), false);
     assert.equal(field in pendingSchema.properties, true); assert.equal(pendingSchema.required.includes(field), true);
   }
-  assert.equal(ATTENDANCE_PROMPT_VERSION, "d15e_r3_onboarding_v3");
+  assert.equal(ATTENDANCE_PROMPT_VERSION, "d15e_r3_onboarding_v4");
   assert.equal(ATTENDANCE_CONTRACT_VERSION, 15);
   assert.equal(NICHE_ATTENDANCE_PROMPT_VERSION, "d15e_r3_account_niche_v3");
   assert.equal(wires[0].instructions, attendancePrompt(context).instructions);
