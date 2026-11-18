@@ -72,7 +72,7 @@ export function buildAgentBasePilotPrompt(input: Readonly<{
   if (input.key === "market_insights") {
     const section = schema.properties.sections.properties.market_insights;
     schema.properties.sections.properties.market_insights = { ...section,
-      properties: { ...section.properties, value: { ...section.properties.value, maxItems: COMMUNICATION_ITEMS_MAX } },
+      properties: { ...section.properties, value: Object.assign({}, section.properties.value, { maxItems: COMMUNICATION_ITEMS_MAX }) },
     };
   }
   return {
