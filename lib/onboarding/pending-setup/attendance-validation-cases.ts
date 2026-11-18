@@ -304,7 +304,9 @@ async function main() {
   const nameRequest = { ...base, preferredName: null, reply: "Olá! Como prefere ser chamado?", nicheDescription: null, action: "ask", existingTaxonId: null };
   assert.ok(validateAttendanceOutput(nameRequest, nameContext));
   assert.ok(validateAttendanceOutput({ ...nameRequest, reply: "Como gostaria de ser chamado?" }, nameContext));
-  assert.equal(validateAttendanceOutput({ ...nameRequest, action: "existing", existingTaxonId: base.existingTaxonId }, nameContext), null);
+  const recoveredNameRequest = validateAttendanceOutput({ ...nameRequest, action: "existing", existingTaxonId: base.existingTaxonId }, nameContext);
+  assert.equal(recoveredNameRequest?.action, "ask", "incomplete niche proposal must not block identity collection");
+  assert.equal(attendanceProposal(recoveredNameRequest!, []), null);
   assert.ok(validateAttendanceOutput({ ...nameRequest, reply: "Encerramos por aqui; podemos retomar o objetivo comercial quando desejar.",
     closureReason: "Desvio persistente sem avanço útil." }, nameContext));
   const businessOnlyAnswer = { ...nameContext, recent: [nameContext.recent[0],
