@@ -5,7 +5,7 @@ import { AGENT_BASE_MARKET_INSIGHTS_PROMPT, AGENT_BASE_MARKET_INSIGHTS_PROMPT_VE
 import { CREDENTIAL_PATTERN, COMMUNICATION_ASSISTANCE_TEXT_MAX, parseStageTwoResponse, stageTwoSchema,
   type CommunicationSuggestion, type OfficialNicheContext, type WebSource } from "../ai-core";
 import type { CommunicationBase } from "../contracts";
-import { parseCommunicationFacts, parseSectionValue } from "../policy";
+import { COMMUNICATION_ITEMS_MAX, parseCommunicationFacts, parseSectionValue } from "../policy";
 import type { CommunicationSectionDefinition } from "../registry";
 
 const prompts = {
@@ -68,6 +68,13 @@ export function buildAgentBasePilotPrompt(input: Readonly<{
       input.previous.some((section, index) => section.key !== order?.[index]?.key) ||
       CREDENTIAL_PATTERN.test(JSON.stringify([input.niche, input.previous]))) return null;
   const specialized = prompts[input.key];
+  const schema = stageTwoSchema([input.key]);
+  if (input.key === "market_insights") {
+    const section = schema.properties.sections.properties.market_insights;
+    schema.properties.sections.properties.market_insights = { ...section,
+      properties: { ...section.properties, value: { ...section.properties.value, maxItems: COMMUNICATION_ITEMS_MAX } },
+    };
+  }
   return {
     instructions: AGENT_BASE_PROMPT + "\n\n" + specialized.text,
     promptVersion: AGENT_BASE_PROMPT_VERSION + ":" + specialized.version,
@@ -78,7 +85,7 @@ export function buildAgentBasePilotPrompt(input: Readonly<{
       official_niche: { taxon_id: input.niche.taxonId, name: input.niche.name },
       previous_sections: input.previous,
     }),
-    schema: stageTwoSchema([input.key]),
+    schema,
   };
 }
 
