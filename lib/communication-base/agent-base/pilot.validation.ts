@@ -155,6 +155,35 @@ if (phased.ok) {
 assert.equal(parseAgentBasePilotResponse({ ...phasedOutput,
   output_text: commentaryMessage.content[0].text + finalMessage.content[0].text,
 }, "audience").ok, true, "native final message takes precedence over SDK aggregated output_text");
+const citedFinal = { ...finalMessage, content: [{ type: "output_text", text: webOutput.output_text,
+  annotations: [{ type: "url_citation", url: "https://example.org/cited#section", title: "Fonte citada" }] }] };
+const sourceFreeCall = { type: "web_search_call", status: "completed", action: { type: "search" } };
+const citedOnly = { output: [sourceFreeCall, citedFinal] };
+const cited = parseAgentBasePilotResponse(citedOnly, "audience");
+assert.equal(cited.ok, true, "pilot accepts native final-answer citations as verifiable sources");
+if (cited.ok) {
+  assert.deepEqual(cited.value.sources, [{ url: "https://example.org/cited", title: "Fonte citada" }]);
+  assert.equal(cited.telemetry.webSearchCallCount, 1, "citations do not invent tool calls");
+}
+assert.equal(parseStageTwoResponse(citedOnly, { kind: "section", key: "audience" }, true, "autonomous").ok,
+  false, "legacy parser remains unchanged");
+for (const url of [undefined, null]) {
+  const result = parseAgentBasePilotResponse({ ...webOutput, output: [webOutput.output[0],
+    { type: "web_search_call", status: "completed", action: { type: "open_page", url } },
+  ] }, "audience");
+  assert.equal(result.ok, true, "open_page may omit its URL without inventing evidence");
+  if (result.ok) assert.equal(result.telemetry.webSearchCallCount, 2);
+}
+rejectPilot({ output: [sourceFreeCall, finalMessage] }, "web_sources_missing");
+rejectPilot({ output: [sourceFreeCall, { ...citedFinal, content: [{
+  ...citedFinal.content[0], annotations: [{ type: "url_citation", url: "http://example.org/unsafe" }],
+}] }] }, "web_sources_invalid");
+rejectPilot({ output: [{ ...sourceFreeCall, action: { type: "search", sources: [{ url: "http://example.org/unsafe" }] } },
+  citedFinal] }, "web_sources_invalid");
+rejectPilot({ ...webOutput, output: [...webOutput.output,
+  { type: "web_search_call", status: "completed", action: { type: "find_in_page", url: null } },
+] }, "web_sources_invalid");
+
 for (const phase of [undefined, null]) {
   assert.equal(parseAgentBasePilotResponse({ output: [commentaryMessage, ...autonomousOutput(3).output,
     { ...finalMessage, phase },
