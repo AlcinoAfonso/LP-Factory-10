@@ -12,9 +12,6 @@
 0.4 Estrutura canônica
 - Subprojetos isolados em `automations/<nome>/`; `.github/workflows/` somente como entrada/orquestração.
 
-0.5 Residência dos runtimes
-- `automations/supabase-inspect/` e `automations/docs-apply-report/` são as raízes vigentes. Paths antigos em `pipelines/` não são oficiais; Inspect não usa fallback `npm install --no-save`.
-
 1. Objetivo e escopo
 - Catálogo operacional conforme 0.2; demais assuntos nas fontes de 0.3.
 - Automação que materialize caso informa Aplicação funcional no roadmap; facilitador de testes informa Caso funcional validado, sem referência funcional inversa. Infraestrutura genérica sem vínculo material omite esses blocos.
@@ -26,14 +23,7 @@
 3. Catálogo de automações operacionais
 
 3.1 Supabase Inspect Actions
-- Objetivo/status: inspeção Supabase implementada via GitHub Actions; consultas SQL read-only e amostras somente em logs/Job Summary.
-- Captura financeira: quando OPENAI_COST_INGESTION_ENABLED habilita o ingresso, eventos assinados de execução/operação são gravados no ledger ativo pelo Core. Essa escrita não persiste consultas nem amostras; configuração em `docs/platform-config.md` — 2.2 e 3.5.
-- Uso: GitHub → Actions → pipeline-supabase-inspect; informar briefing_path ou inputs manuais. SQL livre e batch seguem o README local.
-- Resultado: logs e Job Summary com SQL executado, rowCount, colunas, amostra e diagnóstico; guardrails e limites em `automations/supabase-inspect/README.md`.
-- Dependências: runtime `automations/supabase-inspect/`; workflow `.github/workflows/pipeline-supabase-inspect.yml`; credenciais/configuração em `docs/platform-config.md` — 2.2.
-
-3.1.1 Supabase Inspect — presets opcionais de verificação
-- Não implementados nem autorizados; modo livre por SQL permanece disponível. Proposta futura não altera a operação atual nem substitui `docs/schema.md`.
+- Workflow manual, executor SQL read-only e ingresso financeiro dedicado retirados. A consulta de custos históricos permanece em `/admin/custos-openai`.
 
 3.2 Pipeline Docs Apply Report
 - Objetivo/status: aplicação de reports JSON em Markdown implementada, com branch, commit e PR para revisão humana.

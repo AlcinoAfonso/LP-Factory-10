@@ -1440,7 +1440,7 @@
 - Conteúdo: E5/E10.5.6/contas/evidências preservados.
 
 17.1.6 Pipelines operacionais
-- Inspect/Docs Apply em Automations 3.1/3.2; Inspect SQL read-only com ingresso financeiro opcional E21 via HMAC. Apply pós-merge autorizado conforme Platform Config 2.3.
+- Docs Apply em Automations 3.2. Apply pós-merge autorizado conforme Platform Config 2.3. Supabase Inspect retirado conforme Automations 3.1.
 - Migrations incrementais imutáveis, sem SQL Editor no fluxo normal (Base Técnica 3.4.4).
 
 17.1.7 Limites
@@ -1750,7 +1750,7 @@
 
 21.1.1 Objetivo e status
 - Objetivo: catálogo/resolução/telemetria comuns.
-- Status: implementado; cinco workloads textuais + Inspect externo, sem imagem ativa.
+- Status: implementado; cinco workloads textuais, sem imagem ativa.
 
 21.1.2 Registros do recorte
 - Repositório:
@@ -1781,7 +1781,7 @@
 
 21.1.5 Inventário administrativo
 - Status: implementado.
-- Conteúdo: Admin mostra configuração/origem/revisão, modalidade/consumidor/fallback; Inspect não verificado pelo Core. Sem consulta externa para inventário ou conteúdo protegido.
+- Conteúdo: Admin mostra configuração/origem/revisão, modalidade/consumidor/fallback. Sem consulta externa para inventário ou conteúdo protegido.
 
 21.2 Configuração operacional dinâmica dos workloads OpenAI
 
@@ -2067,7 +2067,7 @@
 
 21.5.3 Atribuição e evidência por execução
 - Status: ativa nos ambientes comprovados.
-- Conteúdo: atribuição/idempotência/fail-open em Base Técnica 3.16; ledger Schema 3.11, gates Platform Config 3.5. Cinco workloads e ingresso Inspect E17.1.6 sem credencial mutável de banco.
+- Conteúdo: atribuição/idempotência/fail-open em Base Técnica 3.16; ledger Schema 3.11, gates Platform Config 3.5. Cinco workloads de produto. Ingresso dedicado do Inspect retirado e histórico de custos consultável.
 
 21.5.4 Cálculo e reconciliação de custos
 - Status: vigente.
@@ -2196,15 +2196,15 @@
 - Referências:
   - Configuração externa final: `docs/platform-config.md` — camada de services e projeto Core.
   - Catálogo da camada: `docs/services.md` — nenhum service/MCP operacional.
-  - Automação preservada: `docs/automations.md` — Supabase Inspect Actions.
+  - A E22.3 preservou à época a automação GitHub. Retirada posterior em Automations 3.1.
 
 22.3.3 Auditoria de consumidores
 - Status: concluída.
-- Conteúdo: Core sem MCP; Inspect/credencial read-only preservados (E17.1.6), sem substituto MCP/SDK/job.
+- Conteúdo: Core sem MCP, sem substituto MCP/SDK/job.
 
 22.3.4 Retirada do MCP
 - Status: retirado.
-- Conteúdo: service/Agent Builder removidos; Inspect E21 é automação GitHub, não MCP/verificação Core.
+- Conteúdo: Service e Agent Builder removidos. Histórico do workflow GitHub em Automations 3.1.
 
 22.3.5 Retirada da infraestrutura Vercel
 - Status: concluída.

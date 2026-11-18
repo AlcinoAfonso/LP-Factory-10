@@ -1966,10 +1966,10 @@ Catalogado em 2026-09-05
 
 ### Status no Projeto
 
-- Status: não implementado; o projeto mantém inspeção SQL read-only via GitHub Actions e o Supabase Plugin preservado, mas não possui monitor agendado que use `query_logs`, `get_advisors` e `execute_sql` pelo Supabase MCP.
+- Status: não implementado; o projeto mantém o Supabase Plugin e não possui monitor agendado que use `query_logs`, `get_advisors` e `execute_sql` pelo Supabase MCP.
 - Evidência: `docs/roadmap.md` 17.1 e 22.3, `docs/automations.md` 3.1 e 3.3, `docs/platform-config.md` 4.7 e busca semântica no repositório no SHA inicial da rodada.
 - Natureza de uso: observabilidade operacional transversal.
-- Relação com a stack: complementar a `supa#5`, `supa#33`, `supa#46` e `supa#59`, mas sobreposto ao `pipeline-supabase-inspect` para verificações que a automação atual já consiga executar com menor custo e complexidade.
+- Relação com a stack: complementar a `supa#5`, `supa#33`, `supa#46` e `supa#59`, com eventual sobreposição a verificações manuais já disponíveis.
 - Horizonte: indefinido; depende de avaliação técnica ou operacional própria, não de plano comercial.
 
 ### Descrição
@@ -1990,7 +1990,7 @@ Para projetos pequenos, a orientação oficial é começar com um único monitor
 Avaliar somente quando houver:
 
 1. necessidade recorrente comprovada de detectar incidente, regressão, risco de segurança ou aproximação de limite;
-2. comparação com o `pipeline-supabase-inspect` atual, demonstrando ganho mensurável de cobertura, tempo de diagnóstico ou redução de SQL manual;
+2. comparação com as verificações manuais disponíveis, demonstrando ganho mensurável de cobertura, tempo de diagnóstico ou redução de SQL manual;
 3. acesso Supabase MCP project-scoped e read-only validado, com minimização e redação de dados sensíveis;
 4. execução inicial sob demanda e revisão humana dos primeiros resultados, limiares e falsos positivos;
 5. decisão entre um Generalist diário ou semanal e monitores especializados, preferindo um único fluxo enquanto o projeto permanecer pequeno.
@@ -2408,7 +2408,7 @@ Conferido em 2026-11-07
 ### Pontos não validados e lacunas documentais
 
 - A documentação oficial consultada não informa uma data de publicação na própria página dos monitores; a capacidade e as instruções estavam disponíveis e foram verificadas em 05/09/2026.
-- `supa#70`: não há baseline de falsos positivos, custo por execução, autorização de agendamento nem prova de superioridade sobre o `pipeline-supabase-inspect`.
+- `supa#70`: não há baseline de falsos positivos, custo por execução, autorização de agendamento nem prova de superioridade sobre as verificações manuais.
 - Permanecem as lacunas anteriores que ainda não foram encerradas nos respectivos itens, inclusive Unified Logs, `pg_graphql`, Grafana Cloud e tracing.
 
 ### Validação de IDs e rastreabilidade
@@ -2431,7 +2431,7 @@ Conferido em 2026-11-07
 ### Updates ajustados ou incorporados
 
 - `supa#71` foi adicionado para registrar os Health Check Advisors nativos, priorizando leitura manual e triagem simples antes de qualquer monitor por agente.
-- `supa#70` permanece ativo e condicionado; a nova capacidade fornece uma fonte oficial adicional, mas não demonstra necessidade de agente, agendamento ou substituição do `pipeline-supabase-inspect`.
+- `supa#70` permanece ativo e condicionado; a nova capacidade fornece uma fonte oficial adicional, mas não demonstra necessidade de agente ou agendamento.
 
 ### Updates avaliados e não adicionados nesta atualização
 

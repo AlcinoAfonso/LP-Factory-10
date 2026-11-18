@@ -30,13 +30,7 @@
 
 2.2 GitHub Actions
 - Secrets e variáveis conhecidos:
-- `OPENAI_API_KEY`: usado por automações/CI que chamam OpenAI. Consumidor atual: `pipeline-supabase-inspect`.
-- `SUPABASE_DB_URL_READONLY`: conexão read-only para inspeções/automação de banco. Consumidor atual: `pipeline-supabase-inspect`.
-- `OPENAI_COST_INGESTION_HMAC_SECRET`: secret de assinatura do ingresso financeiro do `pipeline-supabase-inspect`; configurado no GitHub Actions e no Core, sem valor versionado.
-- `OPENAI_COST_INGESTION_ENABLED`: variável não sensível que libera o envio financeiro do `pipeline-supabase-inspect`; configurada e ativa no fluxo Production validado.
-- `OPENAI_COST_INGESTION_URL`: URL HTTPS do endpoint interno do Core; configurada no GitHub Actions para o ingresso Production validado.
-- `OPENAI_COST_INGESTION_ENVIRONMENT`: ambiente explícito enviado pelo workflow, restrito a `production`, `preview` ou `development`; configurada como variável do fluxo validado.
-- `OPENAI_COST_INGESTION_PROTOCOL_VERSION`: versão do protocolo aceito pelo cliente do `supabase_inspect`; configurada como variável do fluxo validado.
+- Supabase Inspect retirado do código. Ficaram sem consumidor versionado no GitHub Actions os secrets `OPENAI_API_KEY`, `SUPABASE_DB_URL_READONLY` e `OPENAI_COST_INGESTION_HMAC_SECRET` e as variáveis `OPENAI_COST_INGESTION_ENABLED`, `OPENAI_COST_INGESTION_URL`, `OPENAI_COST_INGESTION_ENVIRONMENT` e `OPENAI_COST_INGESTION_PROTOCOL_VERSION`.
 - `MAILBOX_EMAIL`: e-mail institucional preservado para o futuro Operador Institucional Autônomo de QA da E17.9.3; sem consumidor operacional vigente após a E22.6.
 - `MAILBOX_PASSWORD`: senha/app password da mailbox preservada para o futuro Operador Institucional Autônomo de QA da E17.9.3; sem consumidor operacional vigente após a E22.6.
 - `SUPABASE_ACCESS_TOKEN`: token usado pelo workflow de apply de migrations Supabase.
@@ -44,14 +38,13 @@
 - `SUPABASE_APPLY_MIGRATIONS_ENABLED`: variável legada, sem consumidor no workflow de migrations; não exige alteração de valor por entrega.
 - Regra: valores reais de secrets não devem ser versionados.
 - Regra: secrets de mailbox devem existir apenas nos escopos necessários dos workflows que os consomem.
-- Regra: `SUPABASE_DB_URL_READONLY` deve autenticar com role/usuário read-only e usar preferencialmente session pooler.
 - Regra: workflows que acessam banco para inspeção devem ser read-only, salvo caso explicitamente aprovado.
 - Retenção observada em leitura read-only de GitHub → Settings → Actions → General em 06/09/2026: artefatos e logs são mantidos por 90 dias, que também é o limite máximo exibido para este repositório público.
 - A partir de 01/10/2026, checks, workflow runs e commit statuses passam a seguir a mesma configuração de retenção de artefatos e logs. Dados já expirados não são restaurados por aumento posterior da janela.
 - Regra de evidência: a expiração das evidências operacionais é normal; o estado final durável permanece em PR, commit, roadmap e documentos canônicos competentes, sem exportação ou armazenamento paralelo por padrão.
 
 2.3 Workflows conhecidos
-- Workflows: `.github/workflows/security.yml` (segurança), `.github/workflows/pipeline-supabase-inspect.yml` (inspeção read-only), `.github/workflows/pipeline-docs-apply-report.yml` (reports/PR), `.github/workflows/pipeline-supabase-apply-migrations.yml` (apply) e `.github/workflows/upgrade-next-16-1-1.yml` (Next/lockfile).
+- Workflows: `.github/workflows/security.yml` (segurança), `.github/workflows/pipeline-docs-apply-report.yml` (reports/PR), `.github/workflows/pipeline-supabase-apply-migrations.yml` (apply) e `.github/workflows/upgrade-next-16-1-1.yml` (Next/lockfile).
 - Apply: push na main com supabase/migrations/** após merge humano autorizado. O workflow confirma PR mergeado e SHA exato, identifica os arquivos acrescentados na entrega e confronta as pendências com o dry-run da CLI; pendência fora da entrega ou divergência de histórico bloqueia antes do apply. Sem novas pendências, termina sem aplicação.
 - A autorização do merge abrange as migrations da entrega, previamente validadas integralmente e revisadas no HEAD conforme AGENTS.md; não há escopos seletivos nem segunda aprovação rotineira. O QA aplicável após o apply permanece obrigatório.
 - SUPABASE_APPLY_MIGRATIONS_ENABLED deixou de ser consumida pelo workflow; seu valor armazenado não precisa ser alternado e não controla a aplicação. Esta mudança não altera nem remove a variável no GitHub.
@@ -85,7 +78,7 @@
 
 3.2 Projeto de serviços
 - lpf-10-services removido em 01/09/2026; sem projeto, domínio, endpoint, Root Directory ou configuração de build remanescente.
-- MCP_SUPABASE_INSPECT_URL e LPF_MCP_SECRET removidos do Core por ausência de consumidor. Não representa retirada da automação GitHub preservada.
+- MCP_SUPABASE_INSPECT_URL e LPF_MCP_SECRET removidos do Core por ausência de consumidor. Essa retirada antecedeu a remoção do workflow GitHub.
 
 3.3 Runtime e build
 - Node.js: `22.x`
@@ -119,9 +112,7 @@
 - OPENAI_ADMIN_KEY: Organization Admin Key com Read only, exclusiva do Core para Costs API em Preview/Production. Configurada e validada nos dois ambientes; separada de OPENAI_API_KEY, nunca em client, log, banco ou payload sanitizado.
 - OPENAI_LP_COST_TRACKING_ENABLED: true somente em Production; ausente em Preview/Development. Sem consumidor após retirada do write-side E21.4; valor inerte, série/corte/cobertura preservados somente leitura. Sem remoção obrigatória ou novo consumidor autorizado.
 - OPENAI_ACTIVE_COST_TRACKING_ENABLED: ledger ativo transversal; Config ativa em Preview/Production, independente por ambiente. Ausência/vazio/diferente de true desliga captura sem bloquear workload. Alteração exige redeploy e validação do ambiente.
-- OPENAI_COST_INGESTION_ENABLED: Config do ingresso financeiro assinado de supabase_inspect, escopo Preview/Production do Core alinhado ao workflow. Configurada no Core/GitHub; fluxo Production validado, inclusive rejeição de assinatura inválida/expirada.
-- OPENAI_COST_INGESTION_HMAC_SECRET: Secret exclusivo do ingresso, configurado no GitHub e Core para Production validado; valores independentes por ambiente.
-- OPENAI_COST_INGESTION_ENVIRONMENT: Config para validar ambiente declarado pelo workflow; escopo Preview/Production, configurada no GitHub/Core para Production validado. Revisão de referência code-owned E21.
+- `OPENAI_COST_INGESTION_ENABLED`, `OPENAI_COST_INGESTION_HMAC_SECRET` e `OPENAI_COST_INGESTION_ENVIRONMENT` ficaram sem consumidor no Core com a retirada do ingresso dedicado. A remoção das entradas hospedadas depende de confirmação por ambiente.
 - OPENAI_OPERATIONAL_CONFIG_ENABLED: referência legada, sem poder de selecionar baseline em Preview/Production. Cada execução lê a revisão ativa Supabase do ambiente, sem cache/fallback; trocas ordinárias no Admin não exigem código ou redeploy. Development mantém repo_catalog. Variáveis existentes não foram alteradas.
 - E25_1_COMMUNICATION_BASE_ENABLED: Config true em Preview/Production, independente por ambiente; controla rota, actions, navegação e assistência da Base. Ausente/outro valor desabilita sem consultar tabela. Apply, configuração E21 e ativação concluídos; alteração exige redeploy.
 - E25_3_COMMUNICATION_RESOURCES_ENABLED: Config true em Preview/Production do lp-factory-10, independente por ambiente, confirmada em 11/10/2026. Recursos manuais das três categorias e gestão global de seções separados de E25.1; somente true habilita. Preview reativado/validado antes de Production, ambos operacionais. Alterar exige redeploy; desligar preserva E25.1 e dados persistidos. [Recibo final](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1057#issuecomment-6112021128).
@@ -135,7 +126,6 @@
 - Workloads retirados: landing_page_dynamic_market_research e taxon_input_catalog_sufficiency_evaluation sem unidades mutáveis ou consumidores correntes. Revisões/ativações/custos e quatro unidades antigas de drafts permanecem históricos e inertes; fora da allowlist não invalidam leitura corrente.
 - maxDuration = 300 no segmento produtivo, operacionalmente validado; contrato executável no código.
 - OPENAI_NICHE_RESOLVER_MODEL, OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL e OPENAI_COMMERCIAL_ACTIVATION_MODEL: ausentes de Preview/Production, sem branch override ou consumidor ativo. Não recriar sem necessidade aprovada; modelo efetivo pela configuração E21 acima.
-- SUPABASE_DB_URL_READONLY: sem consumidor Vercel; preservado somente no GitHub para automations/supabase-inspect, sem mutações.
 
 3.6 Classificação Config e Secret no Core
 - Secret: credenciais, tokens, senhas, chaves privadas e assinatura/autenticação. Config: URLs, publishable keys, flags/gates/IDs e demais valores não sensíveis, inclusive server-side; NEXT_PUBLIC_* deve ser Config.
@@ -143,7 +133,7 @@
 - Config confirmado: ACCESS_CONTEXT_ENFORCED, ACCESS_CTX_USE_V2, NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY e OPENAI_LP_COST_TRACKING_ENABLED. E11_MEMBERS_ENABLED e OPENAI_OPERATIONAL_CONFIG_ENABLED possuem entradas gerais conformes e exceções abaixo.
 - Sobreclassificações preservadas por decisão conservadora: E11_MEMBERS_ENABLED em branch scope legado, OPENAI_OPERATIONAL_CONFIG_ENABLED em Preview e os 16 nomes STRIPE_TEST_*_PRODUCT_ID/STRIPE_TEST_*_PRICE_ID. Secrets salvos são write-only; não substituir/reinserir valores para reclassificar por rotina.
 - Branch scopes preservados: codex-app/e11-11-1-7, codex-app/e20-5-pos-merge, codex-app/e20-6-5-post-apply-corrections e codex-app/e11-2-orquestracao; entradas scoped dos gates E20 foram retiradas, sem mudar configurações independentes.
-- Ausentes do Core: E19_5_WORKSPACE_ENABLED, MCP_SUPABASE_INSPECT_URL, LPF_MCP_SECRET, SUPABASE_DB_URL_READONLY, E7_ONBOARD_SERVICE_ONLY e gates E20 de 3.5. SUPABASE_DB_URL_READONLY do GitHub permanece preservado.
+- Ausentes do Core: E19_5_WORKSPACE_ENABLED, MCP_SUPABASE_INSPECT_URL, LPF_MCP_SECRET, SUPABASE_DB_URL_READONLY, E7_ONBOARD_SERVICE_ONLY e gates E20 de 3.5.
 - Nova correção exige risco ou impacto funcional material comprovado e decisão própria. Inspeção somente de metadados, sem recuperar, copiar, substituir ou expor valores.
 
 4. Supabase
@@ -196,7 +186,7 @@
 
 4.7 Acesso operacional read-only para automações
 - Role operacional read-only: `ai_readonly`.
-- Secret relacionado: `SUPABASE_DB_URL_READONLY`.
+- Secret anteriormente relacionado ao workflow: `SUPABASE_DB_URL_READONLY`.
 - Uso: inspeções e verificações read-only em automações.
 - Regra: não usar esse acesso para mutações.
 - Regra: revisar permissões antes de ampliar o escopo operacional.
@@ -260,7 +250,7 @@
 - Registrar nova API/endpoint quando virar dependência operacional.
 
 6.4 Histórico de integração Agent Builder — Supabase Inspect
-- Integração Agent Builder Supabase Inspect retirada manualmente em 01/09/2026; sem workflow operacional ou consumidor independente. Nenhum substituto autorizado por essa retirada; automação GitHub em `docs/automations.md` — 3.1.
+- Integração Agent Builder Supabase Inspect retirada manualmente em 01/09/2026; sem workflow operacional ou consumidor independente. Nenhum substituto autorizado por essa retirada; histórico da automação GitHub em `docs/automations.md` — 3.1.
 
 7. Stripe
 

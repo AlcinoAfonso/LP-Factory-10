@@ -56,14 +56,13 @@
 | `OAI-W01` | `niche_resolution` | `gpt-5.4-mini + none` | operacional | `lib/openai-workloads/registry.ts` e `docs/platform-config.md` |
 | `OAI-W02` | `commercial_activation_draft_generation` | `gpt-5.4-mini + none` | operacional | `lib/openai-workloads/registry.ts` e `docs/platform-config.md` |
 | `OAI-W03` | `taxon_input_catalog_sufficiency_evaluation` | histórico: `gpt-5.6-terra + low` (retirado pela E22.7) | histórica | E20.8.7 (histórico), `docs/platform-config.md` e `docs/roadmap.md` 22.7.4 |
-| `OAI-W04` | `supabase_inspect` | `gpt-4.1-mini + not_applicable` | referência operacional externa; modelo com retirada anunciada | `lib/openai-workloads/registry.ts`, `docs/automations.md` e `docs/platform-config.md` |
+| `OAI-W04` | `supabase_inspect` | histórico: `gpt-4.1-mini + not_applicable` | histórica | `docs/automations.md` 3.1 e histórico de custos E21.5 |
 | `OAI-W05` | `landing_page_dynamic_market_research` | configuração encerrada pela E20.8 | histórica | commits e migrations da E20.7 |
 | `OAI-W06` | `communication_base_stage1_assistance` | `gpt-5.4-mini + none` operacional em Preview e Production sob E21/E25.1 | operacional | `lib/openai-workloads/registry.ts`, `docs/platform-config.md`, `docs/roadmap.md` 25.1.4 e `docs/schema.md` 1.28.4 |
 | `OAI-W07` | `communication_base_stage2_intelligence` | `gpt-6-luna + max`, Web Search até duas chamadas, operacional em Preview e Production após E21/E25.1 | operacional | `lib/openai-workloads/registry.ts`, `docs/platform-config.md`, `docs/roadmap.md` 25.1.5 e `docs/schema.md` 1.28.4 |
 | `OAI-W08` | `pending_setup_conversation` | `gpt-6-luna + xhigh`, sem Web Search; prompt `e10_12_sales_context_v14`, contrato 5; provas E21 aprovadas nas revisões 14 de Preview e 5 de Production, com configuração ativa por ambiente na fonte operacional | operacional | `lib/openai-workloads/registry.ts`, `docs/platform-config.md`, E10.12 e PR #1069 |
 
 - O registry usa fonte `repo_catalog` revisão `v2` no baseline local; Preview e Production usam exclusivamente `supabase_operational` com revisão decimal ativa e revisão própria por workload, conforme a governança da E21.1.
-- `supabase_inspect` é uma referência de inventário para workflow operacional separado do Core, com fonte `github_actions_default_reference`; não é baseline de workload de produto nem autorização para alterar o workflow.
 - `landing_page_dynamic_market_research` não integra o registry nem a configuração efetiva corrente; seus registros anteriores permanecem somente como histórico.
 - Variáveis legadas de modelo não são fonte runtime atual; seu estado operacional permanece exclusivamente em `docs/platform-config.md`.
 - O registry registra identidade e configuração de referência; a ativação hospedada deve ser confirmada nas fontes operacionais. `OAI-W06` e `OAI-W07` estão operacionais em Preview e Production conforme `docs/platform-config.md`, `docs/roadmap.md` 25.1.4–25.1.5 e `docs/schema.md` 1.28.4.
@@ -83,7 +82,7 @@
 | `OAI-M02` | `gpt-5.6-luna` | tarefas de alto volume que justifiquem comparação própria | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo |
 | `OAI-M03` | `gpt-5.6-terra` | equilíbrio de capacidade para casos que justifiquem comparação própria | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo |
 | `OAI-M04` | `gpt-5.6-sol` | trabalho profissional complexo que justifique comparação própria | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo |
-| `OAI-M05` | `gpt-4.1-mini` | referência externa do workflow `OAI-W04`; não é baseline de produto | 1.047.576 | 32.768 | não aplicável; modelo sem etapa de reasoning | referência operacional externa; depreciação anunciada | documentação específica do modelo e `lib/openai-workloads/registry.ts` |
+| `OAI-M05` | `gpt-4.1-mini` | referência histórica de `OAI-W04` | 1.047.576 | 32.768 | não aplicável | depreciação anunciada | documentação específica do modelo |
 | `OAI-M06` | `gpt-6-luna` | configuração operacional de `OAI-W07` e `OAI-W08` em Preview e Production | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | operacional em `OAI-W07` e `OAI-W08` | documentação específica do modelo, registry e fontes operacionais do projeto |
 | `OAI-M07` | `gpt-6-sol` | alternativa técnica avaliada focalmente para `OAI-W07` | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo e PR #978 |
 | `OAI-M08` | `gpt-6-astra` | tarefas complexas somente mediante comparação própria | 1,05M | 128k | `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo |
@@ -98,8 +97,7 @@
 - Luna, Terra e Sol documentam Responses API, function calling, Structured Outputs e reasoning tokens.
 - Em GPT-5.6, o effort padrão documentado é `medium` quando omitido; comparações devem registrar o valor explicitamente.
 - Para `gpt-5.4-mini`, o padrão documentado é `none` quando o parâmetro é omitido.
-- `gpt-4.1-mini` é um modelo não reasoning; a referência operacional externa `OAI-W04` não deve receber `reasoning.effort`.
-- `OAI-M05`/`OAI-W04`: aviso oficial de 14/10/2026 agenda retirada de `gpt-4.1-mini-2025-04-14` para 14/01/2027 e indica `gpt-6-luna` como substituto. O workflow `pipeline-supabase-inspect.yml` ainda oferece somente `gpt-4.1-mini`; planejar migração antes do prazo, validando modelo resolvido, contrato, tools, qualidade e limites no recorte próprio. A configuração hospedada não foi inspecionada; não presumir troca automática nem equivalência. Fonte: página oficial de deprecações.
+- `OAI-M05` é um modelo sem etapa de reasoning. O aviso de 14/10/2026 agenda a retirada de `gpt-4.1-mini-2025-04-14` para 14/01/2027 e indica `gpt-6-luna` como substituto. A retirada de `OAI-W04` encerra a proposta de migração do workflow. [Depreciações da OpenAI](https://developers.openai.com/api/docs/deprecations)
 - `gpt-6.1-sol` requer Responses API para tool calling; Chat Completions não oferece tools para esse modelo. Não suporta `none` nem `minimal`; preservar o effort atual e comparar somente em recorte autorizado.
 - `OAI-M10`: entrada textual/visual e saída textual; tools por Responses API, incluindo function calling, Web Search, file search, imagem, code interpreter, shell, apply patch, skills, computer use, MCP e tool search. Disponibilidade não demonstra superioridade nem substitui modelo/effort de workload existente.
 - Limites e capacidades são voláteis e devem ser reconfirmados na fonte oficial focal antes de uma decisão material.
