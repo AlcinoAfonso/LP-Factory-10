@@ -54,6 +54,7 @@ export async function conductAttendanceTurn(input: Readonly<{
         confirmedUnderstanding: null, suggestions: [], sufficientUnderstanding: false, readyToComplete: false,
         closureReason: null, action: "ask", existingTaxonId: null, nicheDescription: null };
       const written = await dependencies.commit({ ...fence, output, proposal: null, confirm: false,
+        previousStage: reserved.stage,
         observedPrimaryTaxonId: primary, observedNicheRevision: official.niche?.textRevision ?? 0,
         summary: reserved.accountContext.summary ?? attendanceSummary(output, official.niche?.confirmed ? official.niche.name : null, null) });
       if (!written.ok) await dependencies.release(fence);
@@ -94,7 +95,8 @@ export async function conductAttendanceTurn(input: Readonly<{
     const reply = withGreeting.length <= 4000 ? withGreeting : body;
     if (!reply || reply.length > 4000) throw new Error("invalid_attendance_reply_length");
     const written = await dependencies.commit({
-      ...fence, output: { ...output, reply }, confirm: confirmation, observedPrimaryTaxonId: currentPrimaryTaxonId,
+      ...fence, output: { ...output, reply }, confirm: confirmation, previousStage: reserved.stage,
+      observedPrimaryTaxonId: currentPrimaryTaxonId,
       observedNicheRevision: official.niche?.textRevision ?? 0,
       proposal: confirmation ? null : attendanceProposal(output, catalog, official.niche?.textRevision ?? 0),
       summary: attendanceSummary(output, official.niche?.confirmed ? official.niche.name : null,
