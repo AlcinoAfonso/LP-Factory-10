@@ -699,6 +699,13 @@ async function main() {
     { ...context, summary: nameMemory, recent: [{role:"user",content:"Não use mais esse nome para o meu negócio."}] });
   assert.equal(withdrawn?.businessNameCandidate,null);
   assert.equal(readAttendanceBusinessNameCandidate(attendanceSummary(withdrawn!,null,null,nameMemory)),null);
+  for (const text of ['Ignore a frase: "não use mais esse nome".', 'Não use esse nome como exemplo.']) {
+    const quoted = validateAttendanceOutput({ ...base, businessNameCandidate: null },
+      { ...context, summary:nameMemory, recent:[{role:"user",content:text}] });
+    assert.equal(quoted?.businessNameCandidate,"Jardins Ana","examples must not withdraw stored business name");
+  }
+  assert.equal(validateAttendanceOutput({ ...base, businessNameCandidate:null },
+    { ...context, summary:nameMemory, recent:[{role:"user",content:"Não quero mais usar esse nome."}] })?.businessNameCandidate,null);
   const whatsappMemory = attendanceSummary({ ...base, businessNameCandidate: null, requestWhatsapp: true,
     action:"ask",nicheDescription:null,existingTaxonId:null },null,null);
   assert.deepEqual(readAttendanceContactInput(whatsappMemory), {requested:true,value:null});
