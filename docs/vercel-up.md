@@ -913,6 +913,13 @@ Catalogado em 2026-10-14
 ---
 
 
+## 39 — Retirada dos checks nativos de lint e typecheck *(⚪ Registro histórico — inaplicabilidade verificada)*
+
+- Estado final: a retirada anunciada para 30/11/2026 alcança apenas Deployment Checks nativos. Em 18/11, a seção Deployment Checks do projeto `lp-factory-10` exibiu “No checks configured”. A revisão operacional foi encerrada sem saldo de migração. O comando `npm run check` inclui lint e typecheck e continua registrado nos workflows que o utilizam.
+- Evidências: [aviso oficial da Vercel](https://vercel.com/changelog/native-lint-and-typecheck-deployment-checks-are-being-deprecated) e [configuração do projeto](https://vercel.com/alcino-afonsos-projects/lp-factory-10/settings/build-and-deployment#deployment-checks).
+
+---
+
 ## Registro da rodada — Vercel + Next.js Update — 10/08/2026
 
 ### Updates ajustados ou incorporados
