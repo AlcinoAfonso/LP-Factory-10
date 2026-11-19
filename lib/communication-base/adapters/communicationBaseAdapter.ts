@@ -16,6 +16,7 @@ import {
   parseStoredSections,
   projectCommunicationBase,
   withSection,
+  withGeneratedIntelligence,
 } from "../policy";
 
 const COLUMNS = "account_id,sections_json,version,created_at,updated_at";
@@ -207,6 +208,35 @@ export async function saveCommunicationSection(input: Readonly<{
   } catch {
     return { ok: false, error: "write_failed" };
   }
+}
+
+// One compare-and-swap replaces every intelligence section without touching other categories.
+export async function saveGeneratedIntelligence(input: Readonly<{
+  accountId: string; expectedVersion: number; definitions: readonly CommunicationSectionDefinition[];
+  sections: readonly Readonly<{ key: string; value: CommunicationSectionValue }>[];
+}>): Promise<CommunicationBaseResult<CommunicationBase>> {
+  if (!input.accountId || !Number.isSafeInteger(input.expectedVersion) || input.expectedVersion <= 0) {
+    return { ok: false, error: "invalid" };
+  }
+  try {
+    const service = createServiceClient();
+    const { data: current, error: readError } = await service.from("account_communication_bases")
+      .select(COLUMNS).eq("account_id", input.accountId).limit(1).maybeSingle();
+    if (readError) return { ok: false, error: "read_failed" };
+    if (!current || current.version !== input.expectedVersion) return { ok: false, error: "conflict" };
+    const stored = parseStoredSections(current.sections_json, input.definitions);
+    if (!stored) return { ok: false, error: "read_failed" };
+    const next = withGeneratedIntelligence(stored, input.sections, input.definitions);
+    if (!next) return { ok: false, error: "invalid" };
+    const { data, error } = await service.from("account_communication_bases")
+      .update({ sections_json: next, version: input.expectedVersion + 1, updated_at: new Date().toISOString() })
+      .eq("account_id", input.accountId).eq("version", input.expectedVersion)
+      .maxAffected(1).select(COLUMNS).maybeSingle();
+    if (error) return { ok: false, error: "write_failed" };
+    if (!data) return { ok: false, error: "conflict" };
+    const base = projectBaseRow(data as BaseRow, input.definitions);
+    return base ? { ok: true, value: base } : { ok: false, error: "read_failed" };
+  } catch { return { ok: false, error: "write_failed" }; }
 }
 
 async function readWithService(
