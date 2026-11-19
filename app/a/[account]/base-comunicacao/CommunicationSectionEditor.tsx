@@ -351,7 +351,7 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
 }>) {
   const router = useRouter();
   const [pilotPending, startPilotTransition] = useTransition();
-  const [pilotSources, setPilotSources] = useState<readonly AgentBasePilotSection[]>([]);
+  const [pilotSources, setPilotSources] = useState<Readonly<{ version: number; catalogKey: string; sections: readonly AgentBasePilotSection[] }> | null>(null);
   const [pilotMessage, setPilotMessage] = useState("");
   const [pilotError, setPilotError] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -379,7 +379,7 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
   };
   useLayoutEffect(() => { currentVersionRef.current = base.version; currentCatalogKeyRef.current = pilotCatalogKey; }, [base.version, pilotCatalogKey]);
   const stageTwo = definitions.filter((section) => section.stage === 2);
-  const pilotSections = pilotSources;
+  const pilotSections = pilotSources?.version === base.version && pilotSources.catalogKey === pilotCatalogKey ? pilotSources.sections : [];
   return (
     <section aria-label="Inteligência de comunicação" className="space-y-2">
       <div className="space-y-2">
@@ -460,7 +460,7 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
             const requestedVersion = base.version;
             const requestSaveRevision = saveRevisionRef.current;
             startPilotTransition(async () => {
-              setPilotMessage(""); setPilotError(false); setPilotSources([]);
+              setPilotMessage(""); setPilotError(false); setPilotSources(null);
               const sections: AgentBasePilotSection[] = [];
               let catalogState = "";
               let nicheRevision = "";
@@ -486,7 +486,7 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
                   account, version: requestedVersion, sections, catalogState, nicheRevision,
                 });
                 if (!saved.ok) { setPilotError(true); setPilotMessage(saved.message); return; }
-                setPilotSources(sections);
+                setPilotSources({ version: requestedVersion + 1, catalogKey: pilotCatalogKey, sections });
                 setPilotMessage("Categoria 3 atualizada e salva. Você pode editar cada seção.");
                 router.refresh();
               } catch {
@@ -495,7 +495,7 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
             });
           }}>Gerar e salvar toda a Categoria 3</Button>
         {pilotPending ? <LoadingState label="O Agente Base está preparando a Categoria 3..." /> : null}
-        {pilotMessage ? <FeedbackMessage tone={pilotError ? "error" : pilotSources.length ? "success" : "warning"}>{pilotMessage}</FeedbackMessage> : null}
+        {pilotMessage ? <FeedbackMessage tone={pilotError ? "error" : pilotSources ? "success" : "warning"}>{pilotMessage}</FeedbackMessage> : null}
       </div> : null}
       <CommunicationSectionCollection definitions={stageTwo} base={base} showGuidance={structured} suggestedKeys={Object.keys(suggestions)}
         pilotKeys={pilotSections.map(section => section.key)}
