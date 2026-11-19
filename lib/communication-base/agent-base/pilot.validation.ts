@@ -6,6 +6,7 @@ import { AGENT_BASE_AUDIENCE_PROMPT } from "./audience-prompt";
 import { AGENT_BASE_MARKET_INSIGHTS_PROMPT } from "./market-insights-prompt";
 import { parseStageTwoResponse, stageTwoSchema } from "../ai-core";
 import { communicationSections } from "../registry";
+import { parseStoredSections, withGeneratedIntelligence } from "../policy";
 import type { CommunicationBase } from "../contracts";
 
 const base: CommunicationBase = {
@@ -21,9 +22,12 @@ const niche = { taxonId: null, name: "Nicho oficial confirmado", confirmed: true
 assert.equal(AGENT_BASE_PILOT_MODEL, "gpt-6.2-sol");
 const definitions = communicationSections;
 const order = agentBasePilotOrder(definitions);
-assert.deepEqual(order?.map(section => section.key), ["about", "audience", "market_insights"]);
-assert.deepEqual(agentBasePilotOrder([...definitions].reverse())?.map(section => section.key), ["market_insights", "audience", "about"], "catalog order determines the sequence");
-assert.equal(agentBasePilotOrder(definitions.filter(section => section.key !== "about")), null);
+const expectedKeys = definitions.filter(section => section.stage === 2).map(section => section.key);
+assert.deepEqual(order?.map(section => section.key), expectedKeys);
+assert.deepEqual(agentBasePilotOrder([...definitions].reverse())?.map(section => section.key),
+  [...expectedKeys].reverse(), "catalog order determines the sequence");
+assert.deepEqual(agentBasePilotOrder(definitions.filter(section => section.key !== "about"))?.map(section => section.key),
+  expectedKeys.filter(key => key !== "about"), "catalog determines the available sections");
 assert.equal(agentBasePilotOrder([...definitions, definitions[7]]), null);
 assert.equal(agentBasePilotOrder(definitions.map(section => section.key === "about" ? { ...section, format: "items" } : section)), null);
 const snapshot = agentBasePilotCatalogState(definitions);
@@ -266,4 +270,48 @@ for (const reason of ["", "provider error with private content", "invalid_stage_
   "https://example.org/private?token=fixture", JSON.stringify(phasedOutput)]) {
   assert.equal(sanitizeAgentBasePilotFailureReason(reason), "unclassified_failure", "arbitrary response/provider strings never reach logs");
 }
+const generated = definitions.filter(section => section.stage === 2).map(section => ({
+  key: section.key, value: section.format === "faq" ? [{ question: "Pergunta?", answer: "Resposta confirmada." }]
+    : section.format === "items" ? ["Descoberta pertinente"] : "Texto estratégico",
+}));
+const originals = { ...base.sections, custom_future: { format: "text", value: "Preservar" } };
+const replaced = withGeneratedIntelligence(originals, generated, definitions);
+assert.ok(replaced);
+assert.deepEqual(replaced.business_name, originals.business_name, "confirmed business data remains intact");
+assert.deepEqual(replaced.custom_future, originals.custom_future, "future unrelated categories remain intact");
+assert.equal((replaced.about as { origin: string }).origin, "agent_generated");
+assert.ok(parseStoredSections(replaced, definitions), "auto-generated provenance is readable");
+assert.equal(withGeneratedIntelligence(originals, generated.slice(0, -1), definitions), null,
+  "partial generation never creates a replacement");
+assert.equal(withGeneratedIntelligence(originals, [...generated].reverse(), definitions), null,
+  "out-of-order generation never creates a replacement");
+assert.equal(withGeneratedIntelligence(originals, generated.map(section => section.key === "benefits"
+  ? { key: section.key, value: Array.from({ length: 21 }, () => "Item") } : section), definitions), null,
+  "invalid section blocks the entire replacement");
+const dynamicDefinition = { key: "custom_intelligence", label: "Posicionamento adicional",
+  format: "text" as const, stage: 2 as const, group: "Inteligência" };
+const dynamicDefinitions = [...definitions, dynamicDefinition];
+assert.deepEqual(agentBasePilotOrder(dynamicDefinitions)?.map(section => section.key),
+  [...expectedKeys, dynamicDefinition.key], "a future section is generated without a fixed total");
+const completed = generated.map(section => ({
+  key: section.key, value: section.value, basis: section.key === "about"
+    ? "confirmed_business_fact" as const : "strategic_hypothesis" as const,
+  sources: [], researched: false,
+}));
+const dynamicPrompt = buildAgentBasePilotPrompt({
+  base, niche, definitions: dynamicDefinitions, key: dynamicDefinition.key, previous: completed,
+});
+assert.ok(dynamicPrompt);
+assert.match(dynamicPrompt.instructions, /Posicionamento adicional/);
+assert.ok(parseAgentBasePilotResponse({ output_text: JSON.stringify({
+  sections: { [dynamicDefinition.key]: { value: "Posicionamento claro", basis: "strategic_hypothesis" } },
+}) }, dynamicDefinition.key, dynamicDefinitions).ok, "dynamic output uses shared source and content validation");
+assert.equal(withGeneratedIntelligence(originals, [...generated, { key: dynamicDefinition.key, value: "Novo" }], dynamicDefinitions)
+  ?.custom_intelligence && (withGeneratedIntelligence(originals,
+    [...generated, { key: dynamicDefinition.key, value: "Novo" }], dynamicDefinitions)?.custom_intelligence as { origin: string }).origin,
+  "agent_generated");
+assert.equal(Reflect.get(buildAgentBasePilotPrompt({ base, niche, definitions, key: "faq",
+  previous: completed.slice(0, -1) })!.schema.properties.sections.properties.faq.properties.value, "maxItems"), 15,
+  "FAQ output observes the 15-pair existing limit");
+
 console.log("D14F pilot: catalog identity/order, immutable prompts, provenance, progressive context and output boundaries passed (synthetic responses only).");
