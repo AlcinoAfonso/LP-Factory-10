@@ -2641,7 +2641,7 @@
 
 25.3.1 Objetivo e status
 - Objetivo: recursos manuais nas três categorias, legado/acesso/concorrência/assistências preservados.
-- Status: PB1/D14D e Rodada 3 operacionais em Preview/Production. D14E descontinuado; metodologia D14F em definição.
+- Status: PB1/D14D e Rodada 3 operacionais em Preview/Production. D14E descontinuado; piloto D14F em 25.3.7, sujeito à avaliação humana.
 - Rodada 4: definição/redefinição de nicho preparada em branch isolada; migration, ativação e QA autenticado da gravação pendentes.
 - Limites: sem novos agentes/IA/pesquisa, processamento/transcrição, publicação automática/canais; sem reabrir E25.1/PB-A/E25.2.
 
@@ -2725,4 +2725,10 @@
 - Status: experiência de nicho operacional; extensão de memória em implementação por 10.12.7, com aplicação remota e validação hospedada pendentes.
 - Conteúdo: conta ativa pode definir nicho antes ou depois de iniciar a Base; redefinição exige confirmação humana e ausência de qualquer produto, inclusive rascunho. Reutiliza o agente conversacional do Pending Setup com propósito restrito e confirmação separada, sem reabrir o fluxo. Identificação semântica textual por 10.12.7; persistência taxonômica E10.5 e consumidores legados permanecem compatíveis. Antes de responder, consulta Resumo, nicho oficial e dados confirmados pertinentes da Base, sem repetir perguntas respondidas. A memória autorizada segue 10.12.7 e Base Técnica 3.14.6; mensagens enviadas e novidade empresarial permanecem mesmo sem confirmação, sem alterar automaticamente a Base. Categorias 1/2 e edição manual da categoria 3 disponíveis sem nicho.
 - Troca não altera a Base; havendo inteligência, orienta revisão antes da reutilização. Geração exige nicho oficial confirmado e descarta resposta se o vínculo mudar durante a execução; mudança nos materiais usados invalida sugestões transitórias, sem afetar conteúdos persistidos. Revisão humana permanece obrigatória.
-- Banco/ativação: `docs/schema.md` — 1.13.5–1.13.6; `docs/platform-config.md` — 3.5. Redefinição com produto e nova metodologia D14F pertencem a outra rodada.
+- Banco/ativação: `docs/schema.md` — 1.13.5–1.13.6; `docs/platform-config.md` — 3.5. Redefinição com produto pertence a outra rodada; piloto D14F em 25.3.7.
+
+25.3.7 Agente Base — piloto sequencial D14F
+- Status: piloto restrito ao Preview. Teste funcional e avaliação de qualidade a cargo do humano. Geração vigente, revisão individual e edição manual preservadas.
+- Conteúdo: a ação em Inteligência e copy gera sequencialmente todas as seções vigentes da Categoria 3, conforme o catálogo. Usa o Prompt Base, os especializados aprovados quando aplicáveis, dados confirmados da Categoria 1, nicho oficial e contexto progressivo. Reutiliza Responses API e Web Search sob E21.
+- Apresentação e salvamento: ao concluir todas as etapas, substitui e salva automaticamente toda a Categoria 3, inclusive edições anteriores. A RPC transacional revalida versão da Base, nicho e catálogo e preserva as demais categorias. Falha ou conflito impede o salvamento. Fontes ficam disponíveis por seção. Depende da migration `20261119111600` (`docs/schema.md` — 1.38.3).
+- Repositório: criados `lib/communication-base/agent-base/pilot.ts`, `lib/communication-base/agent-base/pilot.validation.ts` e `lib/communication-base/adapters/agentBasePilotAdapter.ts`; ajustados `app/a/[account]/base-comunicacao/{page.tsx,actions.ts,CommunicationSectionEditor.tsx,_components/CommunicationSectionCollection.tsx}`, `lib/communication-base/ai-core.ts` e `lib/communication-base/validation-cases.ts`.

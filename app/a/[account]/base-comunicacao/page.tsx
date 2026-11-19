@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+import { agentBasePilotCatalogState } from "../../../../lib/communication-base/agent-base/pilot";
 import { readCommunicationDefinitions } from "../../../../lib/communication-base/adapters/communicationCatalogAdapter";
 import { isCommunicationResourcesEnabled } from "../../../../lib/communication-base/config";
 import { CommunicationMaterials } from "./_components/CommunicationMaterials";
@@ -56,6 +58,7 @@ export default async function CommunicationBasePage({ params }: PageProps) {
   const showIntroduction = result.ok && (Boolean(base) || (access.value.canEdit && (!structured || taxonomy.ok)));
   const nicheEditor = await loadAccountNicheEditorAction(access.value.accountSubdomain);
   const canGenerate = Boolean(taxonomy.ok && taxonomy.niche?.confirmed);
+  const pilotCatalogKey = createHash("sha256").update(agentBasePilotCatalogState(definitions.ok ? definitions.value : [])).digest("hex");
 
   return (
     <main className={`${styles.surface} mx-auto max-w-5xl px-4 py-4 sm:px-6 sm:py-6`}>
@@ -112,7 +115,7 @@ export default async function CommunicationBasePage({ params }: PageProps) {
               base={base} canEdit={access.value.canEdit} structured={structured} nicheLabel={nicheLabel} definitions={definitions.ok ? definitions.value : []} />}
               stageTwo={<CommunicationStageTwo key={`${stageTwoInputStateKey(base)}:${taxonomy.ok ? taxonomy.niche?.taxonId ?? "" : "error"}:${taxonomy.ok ? taxonomy.niche?.revision ?? "" : ""}`} account={access.value.accountSubdomain}
                 base={base} canEdit={access.value.canEdit} canGenerate={canGenerate} nicheControl={nicheEditor ? <AccountNicheEditor account={access.value.accountSubdomain} state={nicheEditor} hasIntelligence={hasStageTwoContent(base)} /> : undefined}
-                structured={structured} definitions={definitions.ok ? definitions.value : []} />}
+                structured={structured} definitions={definitions.ok ? definitions.value : []} pilotEnabled={process.env.VERCEL_ENV === "preview" && structured} pilotCatalogKey={pilotCatalogKey} />}
               materials={structured ? <CommunicationMaterials account={access.value.accountSubdomain} base={base} canEdit={access.value.canEdit} definitions={definitions.ok ? definitions.value : []} /> : undefined} />
           </div>
         )}

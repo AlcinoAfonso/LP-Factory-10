@@ -1175,6 +1175,10 @@
 - service_role possui SELECT, INSERT e UPDATE, sem DELETE. A Server Action verifica Access Context, papel de edição e entitlement antes de escrever.
 - A escrita por versão esperada incrementa version e preserva chaves desconhecidas; divergência de versão falha sem sobrescrever a Base.
 
+1.38.3 Gravação integral do Agente Base
+- `commit_generated_communication_intelligence_v1(uuid,integer,jsonb,jsonb,jsonb)` → conjunto de linhas de `account_communication_bases`. Migration `20261119111600_d14f_agent_base_atomic_save.sql`; SECURITY INVOKER, EXECUTE apenas service_role.
+- A transação reutiliza o advisory lock do catálogo, bloqueia alterações concorrentes do nicho e da Base, valida catálogo/nicho/versão e substitui exclusivamente as chaves vigentes de intelligence. Conflito cancela a operação; demais categorias permanecem.
+
 1.39 communication_base_sections
 1.39.1 Função, colunas e constraints
 - Catálogo global de seções da Base de Comunicação, aplicado por `supabase/migrations/20261010202505_e25_3_communication_resources.sql`, sem reescrever conteúdo de account_communication_bases.

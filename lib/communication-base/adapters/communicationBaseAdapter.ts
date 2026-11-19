@@ -3,6 +3,7 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { CommunicationSectionDefinition } from "../registry";
+import type { OfficialAccountNiche } from "../../onboarding/niche-resolution/official-niche-policy";
 import { isCommunicationResourcesEnabled } from "../config";
 import type {
   CommunicationBase,
@@ -16,6 +17,7 @@ import {
   parseStoredSections,
   projectCommunicationBase,
   withSection,
+  withGeneratedIntelligence,
 } from "../policy";
 
 const COLUMNS = "account_id,sections_json,version,created_at,updated_at";
@@ -207,6 +209,41 @@ export async function saveCommunicationSection(input: Readonly<{
   } catch {
     return { ok: false, error: "write_failed" };
   }
+}
+
+// Validates the full replacement; the RPC checks Base, niche and catalog under one transaction.
+export async function saveGeneratedIntelligence(input: Readonly<{
+  accountId: string; expectedVersion: number; definitions: readonly CommunicationSectionDefinition[];
+  sections: readonly Readonly<{ key: string; value: CommunicationSectionValue }>[];
+  catalogState: string; niche: OfficialAccountNiche;
+}>): Promise<CommunicationBaseResult<CommunicationBase>> {
+  if (!input.accountId || !Number.isSafeInteger(input.expectedVersion) || input.expectedVersion <= 0) {
+    return { ok: false, error: "invalid" };
+  }
+  try {
+    const service = createServiceClient();
+    const { data: current, error: readError } = await service.from("account_communication_bases")
+      .select(COLUMNS).eq("account_id", input.accountId).limit(1).maybeSingle();
+    if (readError) return { ok: false, error: "read_failed" };
+    if (!current || current.version !== input.expectedVersion) return { ok: false, error: "conflict" };
+    const stored = parseStoredSections(current.sections_json, input.definitions);
+    if (!stored) return { ok: false, error: "read_failed" };
+    const next = withGeneratedIntelligence(stored, input.sections, input.definitions);
+    if (!next) return { ok: false, error: "invalid" };
+    const { data, error } = await service.rpc("commit_generated_communication_intelligence_v1", {
+      p_account_id: input.accountId, p_expected_version: input.expectedVersion,
+      p_expected_catalog: JSON.parse(input.catalogState),
+      p_expected_niche: {
+        name: input.niche.name, textRevision: input.niche.textRevision,
+        taxonId: input.niche.taxonId, legacyUpdatedAt: input.niche.legacyUpdatedAt,
+      },
+      p_generated_sections: Object.fromEntries(input.sections.map(section => [section.key, next[section.key]])),
+    }).single();
+    if (error) return { ok: false, error: error.code === "40001" ? "conflict" : "write_failed" };
+    if (!data) return { ok: false, error: "write_failed" };
+    const base = projectBaseRow(data as BaseRow, input.definitions);
+    return base ? { ok: true, value: base } : { ok: false, error: "read_failed" };
+  } catch { return { ok: false, error: "write_failed" }; }
 }
 
 async function readWithService(
