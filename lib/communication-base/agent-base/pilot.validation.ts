@@ -283,6 +283,12 @@ assert.equal((replaced.about as { origin: string }).origin, "agent_generated");
 assert.ok(parseStoredSections(replaced, definitions), "auto-generated provenance is readable");
 assert.equal(withGeneratedIntelligence(originals, generated.slice(0, -1), definitions), null,
   "partial generation never creates a replacement");
+for (const key of ["about", "benefits", "faq"]) {
+  const emptyValue = key === "about" ? "" : [];
+  assert.equal(withGeneratedIntelligence(originals, generated.map(section =>
+    section.key === key ? { key: section.key, value: emptyValue } : section), definitions), null,
+    "a generated empty section cannot erase saved content");
+}
 assert.equal(withGeneratedIntelligence(originals, [...generated].reverse(), definitions), null,
   "out-of-order generation never creates a replacement");
 assert.equal(withGeneratedIntelligence(originals, generated.map(section => section.key === "benefits"
