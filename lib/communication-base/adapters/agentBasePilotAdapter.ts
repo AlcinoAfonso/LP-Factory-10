@@ -30,7 +30,7 @@ export async function generateAgentBasePilotSection(input: Parameters<typeof bui
       tool_choice: "auto", max_tool_calls: web.maxToolCalls, include: ["web_search_call.action.sources"],
       text: { format: { type: "json_schema", name: "agent_base_pilot_section", strict: true, schema: prompt.schema } },
     },
-    parseResponse: payload => parseAgentBasePilotResponse(payload, input.key),
+    parseResponse: payload => parseAgentBasePilotResponse(payload, input.key, input.definitions),
   });
   if (!result.ok) console.warn("agent_base_pilot_failure", {
     requestId, section: input.key, kind: result.kind, reason: sanitizeAgentBasePilotFailureReason(result.reason),
