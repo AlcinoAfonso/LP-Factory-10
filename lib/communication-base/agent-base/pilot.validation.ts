@@ -306,10 +306,9 @@ assert.match(dynamicPrompt.instructions, /Posicionamento adicional/);
 assert.ok(parseAgentBasePilotResponse({ output_text: JSON.stringify({
   sections: { [dynamicDefinition.key]: { value: "Posicionamento claro", basis: "strategic_hypothesis" } },
 }) }, dynamicDefinition.key, dynamicDefinitions).ok, "dynamic output uses shared source and content validation");
-assert.equal(withGeneratedIntelligence(originals, [...generated, { key: dynamicDefinition.key, value: "Novo" }], dynamicDefinitions)
-  ?.custom_intelligence && (withGeneratedIntelligence(originals,
-    [...generated, { key: dynamicDefinition.key, value: "Novo" }], dynamicDefinitions)?.custom_intelligence as { origin: string }).origin,
-  "agent_generated");
+const dynamicReplacement = withGeneratedIntelligence(originals,
+  [...generated, { key: dynamicDefinition.key, value: "Novo" }], dynamicDefinitions);
+assert.equal((dynamicReplacement?.custom_intelligence as { origin: string } | undefined)?.origin, "agent_generated");
 assert.equal(Reflect.get(buildAgentBasePilotPrompt({ base, niche, definitions, key: "faq",
   previous: completed.slice(0, -1) })!.schema.properties.sections.properties.faq.properties.value, "maxItems"), 15,
   "FAQ output observes the 15-pair existing limit");
