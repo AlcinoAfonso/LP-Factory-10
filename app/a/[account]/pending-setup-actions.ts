@@ -7,7 +7,8 @@ import { revalidatePath } from "next/cache";
 import { getAccessContext } from "@/lib/access/getAccessContext";
 import { getConfirmedOperationalNicheResolutionLabel } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
 import { validateBusinessDisplayName } from "../../../lib/onboarding/pending-setup";
-import { conversationalMessage, mergeNicheMemory, nicheSummaryContext, requestNicheAgent } from "../../../lib/onboarding/niche-agent/runtime";
+import { conversationalMessage, currentSynthesis, mergeNicheMemory, nicheSummaryContext, requestNicheAgent } from "../../../lib/onboarding/niche-agent/runtime";
+import { relevantNicheHistory } from "../../../lib/onboarding/niche-agent/dialogue";
 import { readAccountOfficialNiche } from "../../../lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter";
 import { readActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import {
@@ -182,12 +183,14 @@ export async function conversePendingSetupAction(raw: unknown) {
       ? { id: dialogueId + ":proposal", description: saved.nicheDescription!, expectedOfficialRevision: officialRevision }
       : null;
     const operationalProposal = saved?.kind === "operational_fallback" ? conversation.businessContextText : null;
+    const synthesis = saved?.kind === "semantic" && !active ? null : currentSynthesis(state, conversation.messages);
     const observed = conversation.accountContext;
     const summary = nicheSummaryContext(observed.summary);
     const result = await requestNicheAgent(actor.accountId, dialogueId, {
-      message: { text: content, replyToProposalId: active?.id ?? null },
-      history: conversation.messages.filter(entry => entry.id !== requestId).slice(-8)
-        .map(entry => ({ role: entry.role, text: entry.content })),
+      message: { id: requestId, text: content, replyToProposalId: active?.id ?? null },
+      history: relevantNicheHistory(conversation.messages, requestId, content),
+      activeSynthesis: synthesis && { id: synthesis.id, text: synthesis.text, accepted: synthesis.accepted, partialReply: synthesis.partialReply },
+      nicheAccepted: state?.nicheAccepted,
       summary: summary.text,
       businessContext: (conversation.businessNameCandidate
         ? [conversation.businessContextText, "Nome anteriormente informado: " + conversation.businessNameCandidate]
@@ -202,36 +205,42 @@ export async function conversePendingSetupAction(raw: unknown) {
         preferredNameDeclined: Boolean(conversation.preferredNameDeclined),
         operationalProposal,
         operationalAccepted: Boolean(state?.operationalAccepted),
-        whatsappKnown: summary.whatsappKnown,
+        whatsappKnown: summary.whatsappKnown || Boolean(synthesis?.phone || synthesis?.declined),
       },
     });
     const outcome = result?.pendingSetup;
     if (!result || !outcome) throw new Error("provider_unavailable");
-    const acceptOperational = outcome.operational.reaction === "accept" && Boolean(operationalProposal);
-    const accept = Boolean(result.confirmation) || acceptOperational;
+    const acceptedSynthesis = !result.synthesisWrite.offer && !result.synthesisWrite.clear &&
+      Boolean(result.synthesisWrite.accept || synthesis?.accepted);
+    const keepNiche = active && !result.proposal && (result.reaction === "continue" || result.reaction === "accept");
+    const acceptOperational = acceptedSynthesis && Boolean(operationalProposal) &&
+      (outcome.operational.reaction === "accept" || Boolean(result.synthesisWrite.accept && synthesis?.text === operationalProposal));
+    const accept = Boolean(acceptedSynthesis && keepNiche && (result.confirmation || state?.nicheAccepted)) || acceptOperational;
     const next = result.proposal
       ? { kind: "semantic" as const, taxonId: null, taxonName: null, nicheDescription: result.proposal,
           expectedNicheRevision: niche?.textRevision ?? 0 }
       : outcome.operational.proposal
         ? { kind: "operational_fallback" as const, taxonId: null, taxonName: null }
-        : !accept && ((active && result.reaction === "continue") ||
+        : !accept && (keepNiche ||
             (operationalProposal && outcome.operational.reaction === "continue")) ? saved : null;
-    const understanding = outcome.operational.proposal ?? result.proposal ?? conversation.businessContextText ??
+    const understanding = outcome.operational.proposal ?? result.synthesis.proposal ?? synthesis?.text ??
+      result.proposal ?? conversation.businessContextText ??
       result.memory.find(entry => entry.kind === "declaration")?.text ?? "";
     const nameReady = !isE1011PassageEnabled() || Boolean(conversation.businessDisplayName ||
       (outcome.publicName.reaction === "accept" && state?.nameProposal) ||
       (outcome.publicName.reaction === "continue" && !outcome.publicName.proposal && state?.acceptedName));
-    const ready = !next && nameReady && Boolean(understanding) &&
+    const ready = !next && acceptedSynthesis && nameReady && Boolean(understanding) &&
       (accept || niche?.confirmed || (state?.operationalAccepted && outcome.operational.reaction === "continue"));
     const written = await commitPendingNicheTurn({ ...fence, reply: result.reply,
-      summary: mergeNicheMemory(observed.summary, result, acceptOperational ? operationalProposal ?? undefined : undefined),
+      summary: mergeNicheMemory(observed.summary, result, synthesis),
       observed, understanding, preferredName: outcome.preferredName.value,
       preferredNameDeclined: outcome.preferredName.value ? false : outcome.preferredName.declined || Boolean(conversation.preferredNameDeclined),
       stage: next ? "niche_confirmation" : ready ? "ready_to_complete" : "business_understanding",
       proposal: next, accept, observedTaxon: taxonomy.taxon?.taxonId ?? null,
       observedRevision: niche?.textRevision ?? 0, nameProposal: outcome.publicName.proposal,
       nameReaction: outcome.publicName.reaction === "continue" ? "keep" : outcome.publicName.reaction,
-      clearOperational: outcome.operational.reaction === "clear",
+      clearOperational: outcome.operational.reaction === "clear" || result.synthesisWrite.clear,
+      synthesis: result.synthesisWrite,
     });
     if (!written) throw new Error("turn_not_committed");
     return { ok: true as const };

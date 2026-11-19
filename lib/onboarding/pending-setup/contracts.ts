@@ -1,4 +1,5 @@
 import type { AttendanceProposal } from "./attendance-core";
+import type { SynthesisReference } from "../niche-agent/dialogue";
 export const PENDING_SETUP_STAGES = [
   "identity",
   "business_understanding",
@@ -45,6 +46,10 @@ export type PendingSetupConversation = Readonly<{
     nameProposal?: string | null;
     acceptedName?: string | null;
     operationalAccepted?: boolean;
+    synthesis?: SynthesisReference | null;
+    synthesisAccepted?: boolean;
+    synthesisPartialId?: string | null;
+    nicheAccepted?: boolean;
   }>;
   attendanceTurnIntent?: "initialize" | "message" | "confirm" | "clarify" | null;
   version: number;

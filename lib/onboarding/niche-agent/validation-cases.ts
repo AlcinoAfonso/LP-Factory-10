@@ -2,8 +2,9 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { prepareNicheTurn, type NicheTurn, type NicheTurnContext } from "./index";
 import { NICHE_AGENT_INSTRUCTIONS, NICHE_AGENT_PROMPT_VERSION } from "./prompt";
+import { mergeNicheMemory, publicResearchContext, relevantNicheHistory, resolveSynthesis } from "./dialogue";
 
-type ModelTurn = Omit<NicheTurn, "confirmation">;
+type ModelTurn = Omit<NicheTurn, "confirmation" | "synthesisWrite" | "synthesis" | "searchTopic">;
 const proposed = "Catering vegano para eventos corporativos";
 const proposal = { id: "proposal-42", description: proposed, expectedOfficialRevision: "text:3" };
 const officialNiche = { description: "Alimentação vegana para eventos", revision: "text:3" };
@@ -50,7 +51,9 @@ function message(content: unknown) {
 }
 
 function response(output: unknown) {
-  return message([{ type: "output_text", text: JSON.stringify(output) }]);
+  const filled = output && typeof output === "object" && !Array.isArray(output)
+    ? { synthesis: { proposal: null, reaction: "continue" }, searchTopic: null, ...output } : output;
+  return message([{ type: "output_text", text: JSON.stringify(filled) }]);
 }
 
 function run(input: NicheTurnContext, output: unknown) {
@@ -68,7 +71,7 @@ test("Pending Setup preserva contato antecipado por referência e nunca envia os
   const input = { ...context, message: { text: content, replyToProposalId: null },
     history: [{ role: "user" as const, text: "O WhatsApp antigo começa com 3344-0000." }], pendingSetup: pendingContext };
   const preparedTurn = prepared(input);
-  assert.equal(preparedTurn.contractVersion, 2);
+  assert.equal(preparedTurn.contractVersion, 3);
   assert.match(String(preparedTurn.request.input), /contato_1/);
   assert.doesNotMatch(String(preparedTurn.request.input), /99999|1111|3344|0000/);
   const output = { ...proposalAnswer, pendingSetup: {
@@ -80,7 +83,7 @@ test("Pending Setup preserva contato antecipado por referência e nunca envia os
   assert.equal(result.value.pendingSetup?.whatsapp.value, "(21) 99999-1111");
   assert.equal(run(context, output).ok, false);
   assert.equal(run(input, { ...output, pendingSetup: { ...output.pendingSetup,
-    whatsapp: { reference: "contato_2", declined: false } } }).ok, false);
+    whatsapp: { reference: "contato_3", declined: false } } }).ok, false);
 });
 
 test("Pending Setup distingue o aceite do nome e do nicho de recusas opcionais", () => {
@@ -97,6 +100,95 @@ test("Pending Setup distingue o aceite do nome e do nicho de recusas opcionais",
   assert.equal(run({ ...input, pendingSetup: { ...pendingContext, nameProposal: null } }, output).ok, false);
 });
 
+test("síntese referencia o texto exibido e o WhatsApp sem ocultar ano, quantidade ou preço", () => {
+  const id = "00000000-0000-4000-8000-000000000001";
+  const assistant = "00000000-0000-4000-8000-000000000002";
+  const text = "Em 2026 fornecemos 1200 refeições por R$ 4500. Meu WhatsApp é (21) 99999-1111.";
+  const business = "Fornece 1200 refeições por R$ 4500.";
+  const input = { ...context, message: { id, text, replyToProposalId: null }, pendingSetup: pendingContext };
+  const preparedTurn = prepared(input);
+  assert.match(String(preparedTurn.request.input), /2026.*1200.*4500.*contato_1/);
+  assert.doesNotMatch(String(preparedTurn.request.input), /99999|1111/);
+  const offer = run(input, { ...clarification, reply: "📝 " + business + " Está correto?",
+    synthesis: { proposal: business, reaction: "continue" }, pendingSetup: { ...pendingOutcome,
+      whatsapp: { reference: "contato_1", declined: false } } });
+  assert.ok(offer.ok && offer.value.synthesisWrite.offer);
+  assert.equal(offer.value.synthesisWrite.accept, null);
+  assert.match(offer.value.reply, /WhatsApp informado \(final 11\)/);
+  const snapshot = resolveSynthesis({ ...offer.value.synthesisWrite.offer, messageId: assistant }, [
+    { id, role: "user", content: text }, { id: assistant, role: "assistant", content: offer.value.reply },
+  ]);
+  assert.deepEqual(snapshot, { id: assistant, text: business, phone: "(21) 99999-1111", declined: false });
+  const accepted = { ...input, activeSynthesis: { id: assistant, text: business, accepted: false } };
+  const acceptOutput = { ...clarification, synthesis: { proposal: null, reaction: "accept" }, pendingSetup: pendingOutcome };
+  const result = run(accepted, acceptOutput);
+  assert.ok(result.ok);
+  assert.equal(result.value.synthesisWrite.accept, assistant);
+  assert.equal(run(input, acceptOutput).ok, false);
+  const prior = JSON.stringify({ confirmedUnderstanding: "Atende na zona sul.", whatsapp: "21900000000" });
+  assert.equal(mergeNicheMemory(prior, offer.value, snapshot), null);
+  assert.equal(mergeNicheMemory(prior, result.value, { ...snapshot!, id }), null);
+  const summary = JSON.parse(mergeNicheMemory(prior, result.value, snapshot)!);
+  assert.equal(summary.whatsapp, "(21) 99999-1111");
+  assert.equal(summary.confirmedUnderstanding, "Atende na zona sul.\n" + business);
+});
+
+test("usa mensagens relevantes antigas e permite pesquisa condicional nas duas jornadas", () => {
+  const messages = Array.from({ length: 70 }, (_, index) => ({
+    id: String(index), role: "user" as const, content: index === 9 ? "Nosso serviço inclui reflorestamento." : "Outra informação " + index,
+  }));
+  const history = relevantNicheHistory(messages, "69", "O reflorestamento entra na proposta?");
+  assert.ok(history.some(entry => entry.id === "9"));
+  assert.ok(history.some(entry => entry.id === "68"));
+  const topic = "Diferença entre jardinagem e paisagismo";
+  for (const pendingSetup of [undefined, pendingContext]) {
+    const input = { ...context, officialNiche, activeProposal: proposal, pendingSetup,
+      message: { text: "Há diferença entre jardinagem e paisagismo?", replyToProposalId: proposal.id } };
+    const journeyOutput = pendingSetup ? { pendingSetup: pendingOutcome } : {};
+    const response = run(input, { ...clarification, ...journeyOutput, searchTopic: topic });
+    assert.ok(response.ok && response.value.searchTopic === topic);
+    const assent = run(input, { ...acceptance, ...journeyOutput, searchTopic: topic });
+    assert.ok(assent.ok && assent.value.searchTopic === null);
+    const privateContext = { ...input, summary: "Dados privados da conta",
+      businessContext: JSON.stringify({ business_name: "Estúdio Aurora" }) };
+    assert.equal(publicResearchContext("paisagismo para Estúdio Aurora, eventos", privateContext), null);
+    assert.equal(publicResearchContext("jardinagem em rua particular", privateContext), null);
+    const search = publicResearchContext(topic, privateContext);
+    assert.ok(search);
+    assert.deepEqual(search.history, []);
+    assert.equal(search.message, null);
+    assert.equal(search.summary, null);
+    assert.equal(search.businessContext, null);
+  }
+  const research = prepareNicheTurn({ ...context, message: null, researchTopic: topic }, 1);
+  assert.ok(research.ok);
+  const evidence = response(clarification);
+  const url = "https://example.org/paisagismo";
+  const source = { type: "web_search_call", status: "completed", action: { type: "search", sources: [{ url }] } };
+  const output = { ...evidence, output: [source, { ...evidence.output[0], content: [{
+    ...((evidence.output[0].content as object[])[0]), annotations: [{ type: "url_citation", url }],
+  }] }] };
+  const result = research.value.parseResponse(output);
+  assert.ok(result.ok && result.value.reply.includes(url));
+  assert.equal(research.value.parseResponse(evidence).ok, false);
+  assert.equal(prepared(context).parseResponse(output).ok, false);
+});
+
+test("corrige só o fato reexibido na síntese aceita e preserva o restante", () => {
+  const id = "00000000-0000-4000-8000-000000000004";
+  const shown = "Atende empresas.";
+  const prior = { confirmedUnderstanding: "Atua no varejo. Entrega na região metropolitana.",
+    contextualUnderstanding: null, whatsapp: "21900000000" };
+  const input = { ...context, summary: prior.confirmedUnderstanding, activeSynthesis: { id, text: shown, accepted: false } };
+  const result = run(input, { ...clarification, synthesis: { proposal: null, reaction: "accept" },
+    memory: [{ kind: "declaration", text: shown, replaces: "Atua no varejo.", sourceId: null },
+      { kind: "declaration", text: "Atende também hotéis.", replaces: "Entrega na região metropolitana.", sourceId: null }] });
+  assert.ok(result.ok);
+  const updated = JSON.parse(mergeNicheMemory(JSON.stringify(prior), result.value, { id, text: shown, phone: null, declined: false })!);
+  assert.equal(updated.confirmedUnderstanding, "Entrega na região metropolitana.\nAtende empresas.");
+  assert.equal(updated.whatsapp, prior.whatsapp);
+});
+
 test("informa de uma vez atividade, oferta e público e aceita proposta textual sem catálogo", () => {
   const { request, promptVersion, contractVersion } = prepared(context);
   const input = JSON.parse(String(request.input));
@@ -105,9 +197,9 @@ test("informa de uma vez atividade, oferta e público e aceita proposta textual 
   assert.equal("catalog" in input, false);
   assert.equal(request.instructions, NICHE_AGENT_INSTRUCTIONS);
   assert.equal(promptVersion, NICHE_AGENT_PROMPT_VERSION);
-  assert.equal(contractVersion, 1);
+  assert.equal(contractVersion, 3);
   const format = request.text as { format: { schema: { required: string[] } } };
-  assert.deepEqual(format.format.schema.required, ["reply", "proposal", "reaction", "memory"]);
+  assert.deepEqual(format.format.schema.required, ["reply", "proposal", "reaction", "synthesis", "searchTopic", "memory"]);
   assert.equal(request.store, false);
   assert.equal(request.background, false);
   assert.equal("tools" in request, false);
@@ -156,10 +248,10 @@ test("aceite pode carregar novidade de memória sem substituir a proposta vincul
   const confirmation = {
     proposalId: proposal.id, description: proposed, expectedOfficialRevision: proposal.expectedOfficialRevision,
   };
-  assert.deepEqual(success(input, output), { ...output, confirmation });
-  assert.deepEqual(success(input, { ...output, memory: [memory[0], memory[0]] }), {
-    ...acceptance, confirmation,
-  });
+  const partial = success(input, output);
+  assert.deepEqual(partial.confirmation, confirmation);
+  assert.equal(partial.synthesisWrite.accept, null);
+  assert.deepEqual(success(input, { ...output, memory: [memory[0], memory[0]] }).memory, []);
 });
 
 test("aceite antigo, sem vínculo, de outra proposta ou com revisão divergente é recusado pelo código", () => {
@@ -190,7 +282,10 @@ test("dúvida ou relato de terceiros em mensagem vinculada permite esclarecer se
   ]) {
     const input = { ...context, officialNiche, activeProposal: proposal, message: { text, replyToProposalId: proposal.id } };
     assert.equal(JSON.parse(String(prepared(input).request.input)).activeProposal.linkedToMessage, true);
-    assert.deepEqual(success(input, { ...clarification, reply }), { ...clarification, reply, confirmation: null });
+    const outcome = success(input, { ...clarification, reply });
+    assert.equal(outcome.reply, reply);
+    assert.equal(outcome.confirmation, null);
+    assert.equal(outcome.synthesisWrite.accept, null);
   }
 });
 
@@ -216,9 +311,9 @@ test("correção registra apenas o trecho superado e preserva contexto válido",
     [change, { ...change, text: "Atende apenas empresas.", replaces: "no varejo." }],
   ];
   for (const memory of unsafeBatches) {
-    assert.deepEqual(success(input, { ...corrected, memory }), {
-      ...corrected, memory: [], confirmation: null,
-    });
+    const outcome = success(input, { ...corrected, memory });
+    assert.deepEqual(outcome.memory, []);
+    assert.equal(outcome.confirmation, null);
   }
 });
 
@@ -259,10 +354,8 @@ test("preserva a resposta ao descartar memória com fonte externa sem comprovaç
   const output = success(input, { ...clarification, memory: [change] });
   assert.deepEqual(output.memory, [change]);
   assert.equal(output.confirmation, null);
-  assert.deepEqual(success(context, { ...clarification, memory: [change] }), { ...clarification, confirmation: null });
-  assert.deepEqual(success(input, { ...clarification, memory: [{ ...change, sourceId: "inventada" }] }), {
-    ...clarification, confirmation: null,
-  });
+  assert.deepEqual(success(context, { ...clarification, memory: [change] }).memory, []);
+  assert.deepEqual(success(input, { ...clarification, memory: [{ ...change, sourceId: "inventada" }] }).memory, []);
 });
 
 test("resposta inválida, falha e recusa do provider não devolvem efeitos nem alteram contexto", () => {

@@ -1,11 +1,11 @@
 import { z } from "zod";
 import type { OpenAiResponsesInput, OpenAiResponsesParser } from "../../openai-responses/openAiResponsesAdapter";
 import { OFFICIAL_NICHE_MAX_LENGTH, validNicheDescription } from "../niche-resolution/official-niche-policy";
-import { redactPotentialContactDetails } from "../text-redaction";
 import { webSearchMetadata } from "../../openai-responses/web-search-metadata";
 import { NICHE_AGENT_INSTRUCTIONS, NICHE_AGENT_PROMPT_VERSION } from "./prompt";
+import { contactReference, projectContactText, type SynthesisWrite } from "./dialogue";
 
-const CONTRACT_VERSION = 1;
+const CONTRACT_VERSION = 3;
 const SUMMARY_LIMIT = 6000;
 const dialogueText = z.string().trim().min(1).max(4000);
 const reference = z.string().trim().min(1).max(160);
@@ -22,11 +22,16 @@ const pendingSetupContext = z.strictObject({
 });
 
 const contextSchema = z.strictObject({
-  message: z.strictObject({ text: dialogueText, replyToProposalId: reference.nullable() }).nullable(),
+  message: z.strictObject({ text: dialogueText, replyToProposalId: reference.nullable(), id: z.uuid().optional() }).nullable(),
   history: z.array(z.strictObject({
     role: z.enum(["user", "assistant"]),
     text: dialogueText,
-  })).max(8).readonly(),
+    id: z.uuid().optional(),
+  })).max(28).readonly(),
+  activeSynthesis: z.strictObject({ id: z.uuid(), text: z.string().max(1000), accepted: z.boolean(),
+    partialReply: dialogueText.nullish() }).nullish(),
+  nicheAccepted: z.boolean().optional(),
+  researchTopic: z.string().max(160).optional(),
   summary: z.string().max(SUMMARY_LIMIT).nullable(),
   businessContext: dialogueText.nullable(),
   officialNiche: z.strictObject({ description: nicheDescription, revision: reference }).nullable(),
@@ -51,6 +56,11 @@ const turnSchema = z.strictObject({
   reply: dialogueText,
   proposal: nicheDescription.nullable(),
   reaction: z.enum(["continue", "accept", "reject", "correct"]),
+  synthesis: z.strictObject({
+    proposal: z.string().trim().min(1).max(1000).nullable(),
+    reaction: z.enum(["continue", "accept", "partial", "clear"]),
+  }),
+  searchTopic: z.string().trim().min(1).max(160).nullable(),
   memory: z.array(z.strictObject({
     kind: z.enum(["declaration", "hypothesis", "external"]),
     text: z.string().trim().min(1).max(1000),
@@ -74,6 +84,7 @@ type PendingTurn = z.output<typeof pendingTurnSchema>["pendingSetup"];
 
 type ModelTurn = z.output<typeof turnSchema>;
 export type NicheTurn = Readonly<ModelTurn & {
+  synthesisWrite: SynthesisWrite;
   pendingSetup?: Omit<PendingTurn, "whatsapp"> & {
     whatsapp: { value: string | null; declined: boolean };
   };
@@ -97,18 +108,8 @@ const textFormat = {
 } as const;
 const pendingTextFormat = { ...textFormat, schema: z.toJSONSchema(pendingTurnSchema, { target: "draft-7" }) };
 
-function projectCurrentMessage(text: string, pending: boolean) {
-  const contacts = new Map<string, string>();
-  const projected = pending
-    ? text.replace(/\[contato_\d+\]/giu, "[referência informada na mensagem]")
-      .replace(/(?:\+\s*|\()?(?:\d[\s().-]*){3,}\d/gu, match => {
-        const id = `contato_${contacts.size + 1}`;
-        contacts.set(id, match.trimEnd());
-        return `[${id}] `;
-      })
-    : text;
-  return { text: redactPotentialContactDetails(projected), contacts };
-}
+type Contact = { value: string; source: z.output<typeof contactReference> | null };
+const redact = (text: string) => projectContactText(text, () => "[telefone removido]");
 
 const responsesEnvelope = z.object({
   status: z.string(),
@@ -116,7 +117,10 @@ const responsesEnvelope = z.object({
   output: z.array(z.object({
     type: z.string(),
     role: z.string().optional(),
-    content: z.array(z.object({ type: z.string(), text: z.string().optional() })).optional(),
+    content: z.array(z.object({
+      type: z.string(), text: z.string().optional(),
+      annotations: z.array(z.object({ type: z.string(), url: z.string().optional() })).optional(),
+    })).optional(),
   })).optional(),
 });
 
@@ -126,8 +130,17 @@ export function prepareNicheTurn(raw: NicheTurnContext, searchLimit = 0):
   const validated = contextSchema.safeParse(raw);
   if (!validated.success) return { ok: false, kind: "invalid_context" };
 
-  const { message, history, summary, businessContext, officialNiche, activeProposal, externalSources = [], pendingSetup } = validated.data;
-  const current = message ? projectCurrentMessage(message.text, Boolean(pendingSetup)) : null;
+  const { message, history, activeSynthesis, nicheAccepted, researchTopic, summary, businessContext, officialNiche,
+    activeProposal, externalSources = [], pendingSetup } = validated.data;
+  const contacts = new Map<string, Contact>();
+  function project(text: string, messageId?: string) {
+    return projectContactText(text, (value, index) => {
+      const id = `contato_${contacts.size + 1}`;
+      contacts.set(id, { value, source: messageId ? { messageId, index } : null });
+      return `[${id}]`;
+    }, true);
+  }
+  const current = message ? pendingSetup ? project(message.text, message.id) : redact(message.text) : null;
   const currentProposal = activeProposal?.expectedOfficialRevision === (officialNiche?.revision ?? null)
     ? activeProposal : null;
   const confirmationTarget = currentProposal && message?.replyToProposalId === currentProposal.id
@@ -142,22 +155,25 @@ export function prepareNicheTurn(raw: NicheTurnContext, searchLimit = 0):
     ok: true,
     value: {
       promptVersion: NICHE_AGENT_PROMPT_VERSION,
-      contractVersion: pendingSetup ? CONTRACT_VERSION + 1 : CONTRACT_VERSION,
+      contractVersion: CONTRACT_VERSION,
       request: {
         instructions: NICHE_AGENT_INSTRUCTIONS,
         input: JSON.stringify({
-          message: current?.text ?? null,
-          history: history.map(({ role, text }) => ({ role, text: pendingSetup
-            ? projectCurrentMessage(text, true).text.replace(/\[contato_\d+\]/gu, "[telefone removido]")
-            : redactPotentialContactDetails(text) })),
-          summary: summary === null ? null : redactPotentialContactDetails(summary),
-          businessContext: businessContext === null ? null : redactPotentialContactDetails(businessContext),
+          message: current,
+          history: history.map(({ role, text, id }) => ({ role, text: pendingSetup && role === "user"
+            ? project(text, id) : redact(text) })),
+          summary: summary === null ? null : redact(summary),
+          businessContext: businessContext === null ? null : redact(businessContext),
+          activeSynthesis: activeSynthesis ? { text: redact(activeSynthesis.text), accepted: activeSynthesis.accepted,
+            partialReply: activeSynthesis.partialReply ? redact(activeSynthesis.partialReply) : null } : null,
+          nicheAccepted: Boolean(currentProposal && nicheAccepted),
+          ...(researchTopic ? { researchTopic } : {}),
           officialNiche: officialNiche?.description ?? null,
           activeProposal: currentProposal ? {
             description: currentProposal.description, linkedToMessage: confirmationTarget !== null,
           } : null,
           externalSources: externalSources.map(({ id, excerpt, checkedOn }) => ({
-            id, excerpt: redactPotentialContactDetails(excerpt), checkedOn,
+            id, excerpt: redact(excerpt), checkedOn,
           })),
           ...(pendingSetup ? { pendingSetup } : {}),
         }),
@@ -166,7 +182,7 @@ export function prepareNicheTurn(raw: NicheTurnContext, searchLimit = 0):
         text: { format: pendingSetup ? pendingTextFormat : textFormat },
       },
       parseResponse: parseTurn(summary ?? "", message !== null, currentProposal?.description ?? null,
-        confirmationTarget, externalSources, pendingSetup, current?.contacts, searchLimit),
+        confirmationTarget, externalSources, pendingSetup, contacts, activeSynthesis, searchLimit),
     },
   };
 }
@@ -178,7 +194,8 @@ function parseTurn(
   confirmationTarget: NicheTurn["confirmation"],
   sources: readonly { id: string }[],
   pending: z.output<typeof pendingSetupContext> | undefined,
-  contacts: ReadonlyMap<string, string> = new Map(),
+  contacts: ReadonlyMap<string, Contact>,
+  activeSynthesis: NonNullable<z.output<typeof contextSchema>["activeSynthesis"]> | null | undefined,
   searchLimit = 0,
 ): OpenAiResponsesParser<NicheTurn> {
   const invalid = { ok: false, kind: "invalid_response", reason: "niche_turn_invalid" } as const;
@@ -190,7 +207,7 @@ function parseTurn(
       return { ok: false, kind: "provider_error", reason: "niche_turn_unavailable" };
     }
     const web = webSearchMetadata(payload);
-    if (!web || web.calls > searchLimit || status !== "completed" || !output ||
+    if (!web || web.calls > searchLimit || (searchLimit > 0 && web.calls === 0) || status !== "completed" || !output ||
       output.some(({ type }) => !["message", "reasoning", "web_search_call"].includes(type))) return invalid;
     const messages = output.filter(({ type }) => type === "message");
     const content = messages[0]?.content ?? [];
@@ -205,33 +222,57 @@ function parseTurn(
     const pendingResult = pending ? pendingTurnSchema.safeParse(raw) : null;
     const turn = pendingResult ?? turnSchema.safeParse(raw);
     if (!turn.success) return invalid;
-    const { reply, proposal, reaction, memory } = turn.data;
+    const { reply, proposal, reaction, memory, synthesis, searchTopic } = turn.data;
     const confirmation = reaction === "accept" ? confirmationTarget : null;
     if (reaction === "accept" && (!confirmation || proposal !== null)) return invalid;
     if (!hasMessage && (reaction !== "continue" || memory.length > 0)) return invalid;
     if (proposal && (!reply.includes(proposal) || (reaction === "reject" && proposal === currentDescription))) return invalid;
-    const safeMemory = validMemory(memory, priorSummary, sources) ? memory : [];
-    if (!pendingResult) return { ok: true, value: { reply, proposal, reaction, memory: safeMemory, confirmation } };
-    if (!pendingResult.success || !pending || !hasMessage) return invalid;
-    const result = pendingResult.data.pendingSetup;
-    const value = result.whatsapp.reference === null ? null : contacts.get(result.whatsapp.reference);
-    if (value === undefined || (value !== null && result.whatsapp.declined) ||
+    if ((["accept", "partial"].includes(synthesis.reaction) && (!hasMessage || !activeSynthesis || activeSynthesis.accepted)) ||
+      (synthesis.reaction === "accept" && synthesis.proposal) ||
+      (synthesis.proposal && (!reply.includes(synthesis.proposal) || reply.split(synthesis.proposal).length !== 2))) return invalid;
+    const result = pendingResult?.success ? pendingResult.data.pendingSetup : null;
+    const contact = result?.whatsapp.reference ? contacts.get(result.whatsapp.reference) : null;
+    if (result && (!pending || !hasMessage || contact === undefined || (contact !== null && result.whatsapp.declined) ||
       (result.preferredName.value && result.preferredName.declined) ||
       [result.publicName, result.operational].some(item => item.proposal &&
         (!reply.includes(item.proposal) || item.reaction === "accept")) ||
       (result.publicName.reaction === "accept" && !pending.nameProposal) ||
       (result.operational.reaction === "accept" && (!pending.operationalProposal || proposal || confirmation)) ||
-      (result.operational.proposal && (proposal || confirmation))) return invalid;
-    const containsContact = (text: string) => /\[contato_\d+\]|(?:\+?\d[\s().-]*){10,15}/u.test(text);
-    if ([reply, proposal ?? "", result.publicName.proposal ?? "", result.preferredName.value ?? "",
-      result.operational.proposal ?? ""].some(containsContact)) return invalid;
+      (result.operational.proposal && (proposal || confirmation)))) return invalid;
+    const containsContact = (text: string) => /\[contato_\d+\]/iu.test(text) || redact(text) !== text;
+    if ([reply, proposal ?? "", result?.publicName.proposal ?? "", result?.preferredName.value ?? "",
+      result?.operational.proposal ?? ""].some(containsContact)) return invalid;
+    const hasAcceptance = Boolean(confirmation || synthesis.reaction === "accept" ||
+      result?.publicName.reaction === "accept" || result?.operational.reaction === "accept");
+    if (web.calls > 0 && (hasAcceptance || searchTopic || proposal || synthesis.proposal)) return invalid;
+    const start = synthesis.proposal ? reply.indexOf(synthesis.proposal) : -1;
+    const contactNote = contact?.source ? " WhatsApp informado (final " + contact.value.replace(/\D/g, "").slice(-2) + ")."
+      : result?.whatsapp.declined ? " WhatsApp não informado por opção." : "";
+    const end = start + (synthesis.proposal?.length ?? 0);
+    const shown = start >= 0 ? reply.slice(0, end) + contactNote + reply.slice(end) : reply;
+    const cited = new Set(content.flatMap(item => item.annotations ?? [])
+      .filter(item => item.type === "url_citation").map(item => item.url));
+    const sourceUrls = web.sources.map(source => source.url);
+    const urls = cited.size ? sourceUrls.filter(url => cited.has(url)) : sourceUrls.slice(0, 3);
+    if (web.calls > 0 && urls.length === 0) return invalid;
     const displayedReply = web.calls > 0
-      ? reply + "\n\nFontes consultadas em " + new Date().toISOString().slice(0, 10) + ":\n" + web.sources.map(source => source.url).join("\n")
-      : reply;
+      ? shown + "\n\nFontes consultadas em " + new Date().toISOString().slice(0, 10) + ":\n" + urls.join("\n")
+      : shown;
     if (displayedReply.length > 4000) return invalid;
-    return { ok: true, value: { reply: displayedReply, proposal, reaction, confirmation,
-      memory: safeMemory.some(entry => containsContact(entry.text)) ? [] : safeMemory,
-      pendingSetup: { ...result, whatsapp: { value, declined: result.whatsapp.declined } } } };
+    const safeMemory = (validMemory(memory, priorSummary, sources) ? memory : [])
+      .filter(entry => !containsContact(entry.text));
+    return { ok: true, value: { reply: displayedReply, proposal, reaction, confirmation, synthesis,
+      searchTopic: hasAcceptance ? null : searchTopic,
+      synthesisWrite: {
+        offer: synthesis.proposal ? { start: Array.from(reply.slice(0, start)).length + 1,
+          length: Array.from(synthesis.proposal).length, contact: contact?.source ?? (result?.whatsapp.declined ? "declined" : null) } : null,
+        accept: synthesis.reaction === "accept" ? activeSynthesis?.id ?? null : null,
+        clear: synthesis.reaction === "clear",
+        partial: synthesis.reaction === "partial" && !synthesis.proposal,
+        nicheReaction: confirmation ? "accept" : reaction === "continue" ? "continue" : "clear",
+      },
+      memory: safeMemory,
+      ...(result ? { pendingSetup: { ...result, whatsapp: { value: contact?.value ?? null, declined: result.whatsapp.declined } } } : {}) } };
   };
 }
 

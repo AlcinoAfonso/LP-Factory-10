@@ -1,6 +1,7 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { readActivePrimaryAccountTaxon } from "./accountTaxonomyAdapter";
+import { allowsLegacyNicheDialogue } from "./accountNicheDialogueAdapter";
 import { validNicheDescription, type OfficialAccountNiche } from "../official-niche-policy";
 export type OfficialNicheRead = { ok: true; niche: OfficialAccountNiche | null } | { ok: false };
 export async function readAccountOfficialNiche(accountId: string): Promise<OfficialNicheRead> {
@@ -54,6 +55,9 @@ export async function getAccountOfficialNiche(input: { accountId: string }) {
 export async function confirmAccountNicheDialogue(input: Readonly<{
   accountId: string; actorUserId: string; dialogueId: string; expectedVersion: number;
 }>) {
+  if (!await allowsLegacyNicheDialogue({ ...input, userId: input.actorUserId })) {
+    return { ok: false as const, reason: "conflict" as const };
+  }
   const { data, error } = await createServiceClient().rpc("confirm_account_niche_dialogue_v1", {
     p_account_id: input.accountId, p_user_id: input.actorUserId, p_dialogue_id: input.dialogueId,
     p_expected_version: input.expectedVersion, p_confirmed: true,

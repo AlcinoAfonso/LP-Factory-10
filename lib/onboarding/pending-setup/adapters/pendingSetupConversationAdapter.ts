@@ -15,6 +15,7 @@ import { readPendingSetupDialogueContext } from "./pendingSetupAccountContextAda
 import { resolvePreferredNameFromAuth } from "../policy";
 import { isE1011PassageEnabled, isE1012AttendanceEnabled } from "../config";
 import { z } from "zod";
+import type { SynthesisWrite } from "../../niche-agent/dialogue";
 
 type ConversationRow = {
   id: string;
@@ -195,7 +196,7 @@ export async function commitPendingNicheTurn(input: PendingTurnFence & {
   understanding: string; preferredName: string | null; preferredNameDeclined: boolean;
   stage: PendingSetupStage; proposal: PendingSetupConversation["attendanceProposal"]; accept: boolean;
   observedTaxon: string | null; observedRevision: number; nameProposal: string | null;
-  nameReaction: string; clearOperational: boolean;
+  nameReaction: string; clearOperational: boolean; synthesis: SynthesisWrite;
 }) {
   const { data, error } = await createServiceClient().rpc("commit_account_pending_setup_turn_v5", {
     ...turnFence(input), p_reply: input.reply, p_summary: input.summary,
@@ -206,6 +207,7 @@ export async function commitPendingNicheTurn(input: PendingTurnFence & {
     p_observed_niche_revision: input.observedRevision, p_name_proposal: input.nameProposal,
     p_name_reaction: input.nameReaction, p_passage_enabled: isE1011PassageEnabled(),
     p_clear_operational: input.clearOperational,
+    p_synthesis: input.synthesis,
   });
   return !error && Number.isSafeInteger(Number(data)) && Number(data) > input.version;
 }

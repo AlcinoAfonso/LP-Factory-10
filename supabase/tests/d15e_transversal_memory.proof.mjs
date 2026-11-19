@@ -139,19 +139,25 @@ try{
   });
 
   const proposal = 'Jardinagem para condomínios';
+  const synthesisText = 'Atende condomínios com serviços de jardinagem.';
+  const effect = (opts={}) => ({offer:null,accept:null,clear:false,partial:false,nicheReaction:'continue',...opts});
+  const offer = (contact=null) => ({start:1,length:synthesisText.length,contact});
   const reserve = async (f, { dialogue = id(), request = id(), token = id(), version = 0, content = 'Atendemos condomínios.', client = db } = {}) => {
     const niche = await official(f.a);
     const {rows} = await client.query('select claim_account_niche_turn_v2($1,$2,$3,$4,$5,$6,$7,$8) result',
       [dialogue,f.a,f.u,version,request,token,content,niche ? 'text:' + niche.revision : null]);
     return { ...rows[0].result, d: dialogue, request, token, user: f.u, content };
   };
-  const write = async (f,c,{ next = null, accept = null, keep = false, summary = null, reply = next ? 'Proponho ' + next : 'Entendido.' } = {}) =>
-    (await db.query('select commit_account_niche_turn_v2($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) result',
-      [c.d,f.a,f.u,c.version,c.token,reply,'',next,summary,c.summary,c.summaryUpdatedAt,accept,keep])).rows[0].result;
+  const write = async (f,c,{next=null,accept=null,keep=false,summary=null,
+    synthesis=effect(accept ? {accept:c.state?.synthesis?.messageId,nicheReaction:'accept'} : {})}={}) => {
+    const reply = [synthesis.offer ? synthesisText : '',next ? 'Proponho ' + next : 'Entendido.'].filter(Boolean).join(' ');
+    return (await db.query('select commit_account_niche_turn_v2($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) result',
+      [c.d,f.a,f.u,c.version,c.token,reply,'',next,summary,c.summary,c.summaryUpdatedAt,accept,keep,synthesis])).rows[0].result;
+  };
   const messages = async (c) => (await db.query('select role,content from account_pending_setup_messages where dialogue_id=$1 order by ordinal',[c.d])).rows;
   async function propose(f) {
     const opened = await reserve(f);
-    const written = await write(f, opened, { next: proposal });
+    const written = await write(f, opened, { next: proposal, synthesis:effect({offer:offer()}) });
     return { dialogue: opened.d, version: written.version };
   }
   await test('v2 preserves the exact proposal across interruption; acceptance, reply and memory commit together',async()=>{
@@ -183,9 +189,10 @@ try{
     const c = await reserve(f,{dialogue:doubt.d,version:clarified.version,content:'Também atendemos hotéis.'});
     const next = 'Jardinagem para condomínios e hotéis';
     assert.equal(c.state.proposal,proposal);
-    const corrected = await write(f,c,{next});
+    const corrected = await write(f,c,{next,synthesis:effect({offer:offer()})});
     await assert.rejects(reserve(f,{dialogue:c.d,version:corrected.version,request:doubt.request,content:doubt.content}),/niche_request_conflict/);
     const newTurn = await reserve(f,{dialogue:c.d,version:corrected.version,content:'Tudo certo.'});
+    await assert.rejects(write(f,newTurn,{synthesis:effect({accept:c.state.synthesis.messageId})}),/niche_synthesis_required/);
     await assert.rejects(write(f,newTurn,{accept:proposal}),/niche_changed/);
     assert.equal((await official(f.a)).revision,'1');
     assert.equal(newTurn.state.proposal,next);
@@ -203,15 +210,40 @@ try{
       assert.match((await racing)?.message??'',/niche_turn_conflict/);
     } finally { await db.query('rollback'); await other.end(); }
   });
-  await test('a newer Summary discards only the stale memory delta and keeps the Base reply',async()=>{
+  await test('unconfirmed Summary writes fail; an accepted snapshot retries against newer Summary without overwriting it',async()=>{
     const f = await fixture();
-    const c = await reserve(f);
+    const offered = await propose(f);
+    const c = await reserve(f,{...offered,content:'A síntese está certa.'});
     const latest = { ...JSON.parse(c.summary), contextualUnderstanding:'Novo contexto de outro participante.' };
     await db.query('update account_context_summaries set summary=$2,updated_at=clock_timestamp() where account_id=$1',[f.a,JSON.stringify(latest)]);
-    const written = await write(f,c,{summary:JSON.stringify({...latest,contextualUnderstanding:'Impedir sobrescrita.'})});
+    await assert.rejects(write(f,c,{summary:JSON.stringify(latest)}),/niche_synthesis_required/);
+    await assert.rejects(write(f,c,{summary:JSON.stringify(latest),
+      synthesis:effect({accept:c.state.synthesis.messageId})}),/niche_summary_changed/);
+    await release(f,c);
+    const retry = await reserve(f,{...offered,request:c.request,content:c.content});
+    const written = await write(f,retry,{keep:true,summary:JSON.stringify({...JSON.parse(retry.summary),confirmedUnderstanding:synthesisText}),
+      synthesis:effect({accept:retry.state.synthesis.messageId})});
     assert.equal(written.confirmed,false);
-    assert.equal((await messages(c)).length,2);
+    assert.equal((await messages(c)).length,4);
     assert.equal(JSON.parse((await memory(f.a)).summary).contextualUnderstanding,latest.contextualUnderstanding);
+  });
+  await test('partial niche assent and abandonment leave Summary intact until the same synthesis is accepted',async()=>{
+    const f = await fixture();
+    const before = await memory(f.a);
+    const offered = await propose(f);
+    const c = await reserve(f,{...offered,content:'O nicho sim, quero rever a síntese.'});
+    const partial = await write(f,c,{keep:true,synthesis:effect({partial:true,nicheReaction:'accept'})});
+    assert.deepEqual(await memory(f.a),before);
+    assert.equal((await official(f.a)).revision,'1');
+    const resumed = await reserve(f,{dialogue:c.d,version:partial.version,content:'A síntese também está certa.'});
+    assert.equal(resumed.state.nicheAccepted,true);
+    assert.equal(resumed.state.synthesisRequired,true);
+    assert.equal(resumed.state.synthesisPartialId,c.request);
+    assert.equal(resumed.state.synthesis.messageId,c.state.synthesis.messageId);
+    const final = await write(f,resumed,{accept:proposal,summary:JSON.stringify({...JSON.parse(resumed.summary),confirmedUnderstanding:synthesisText}),
+      synthesis:effect({accept:resumed.state.synthesis.messageId})});
+    assert.equal(final.confirmed,true);
+    assert.equal(JSON.parse((await memory(f.a)).summary).confirmedUnderstanding,synthesisText);
   });
   await test('a draft product added after reservation blocks confirmation without a reply or partial memory',async()=>{
     const f = await fixture();
@@ -229,7 +261,7 @@ try{
     const f = await fixture('A');
     const opening = await reserve(f);
     const next = 'N'.repeat(120);
-    const offered = await write(f,opening,{next});
+    const offered = await write(f,opening,{next,synthesis:effect({offer:offer()})});
     const j = {classification:'A',whatsapp:''};
     j.whatsapp = '9'.repeat(5990-JSON.stringify(j).length);
     await db.query('update account_context_summaries set summary=$2 where account_id=$1',[f.a,JSON.stringify(j)]);
@@ -252,29 +284,38 @@ try{
     return {...rows[0].result,request,token,content};
   }
   async function writePending(f,c,{next=null,accept=false,stage='business_understanding',name=null,nameReaction='keep',
-    understanding='Oferecemos jardinagem.',summary=null,revision=0}={}) {
+    understanding=synthesisText,summary=null,revision=0,synthesis=effect()}={}) {
     const prior=await memory(f.a);
-    const reply = [next?.nicheDescription ?? (next ? understanding : ''), name ?? ''].filter(Boolean).join(' ') || 'Entendido.';
-    const {rows}=await db.query('select commit_account_pending_setup_turn_v5($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21) result',
+    const reply = [synthesis.offer ? synthesisText : '',next?.nicheDescription ?? (next ? understanding : ''), name ?? ''].filter(Boolean).join(' ') || 'Entendido.';
+    const {rows}=await db.query('select commit_account_pending_setup_turn_v5($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22) result',
       [f.d,f.a,f.u,c.version,c.token,reply,summary,prior.summary,prior.updated_at,understanding,null,true,stage,
-        next,accept,null,revision,name,nameReaction,true,false]);
+        next,accept,null,revision,name,nameReaction,true,false,synthesis]);
     return Number(rows[0].result);
   }
   await test('Pending Setup reserves once, decides acceptance after the turn and reuses the public name RPC',async()=>{
     const f = await pending();
-    const c = await reservePending(f);
+    const c = await reservePending(f,{content:'Oferecemos jardinagem. WhatsApp (21) 99999-1111.'});
     const next = {kind:'semantic',taxonId:null,taxonName:null,nicheDescription:proposal,expectedNicheRevision:0};
-    const offered = await writePending(f,c,{stage:'niche_confirmation',next,name:'Jardins do Vale'});
+    const contact = {messageId:c.request,index:0};
+    const offered = await writePending(f,c,{stage:'niche_confirmation',next,name:'Jardins do Vale',synthesis:effect({offer:offer(contact)})});
+    const saved = async () => (await db.query('select niche_state from account_dialogues where id=$1',[f.d])).rows[0].niche_state;
+    const snapshot = (await saved()).synthesis;
+    assert.deepEqual(snapshot.contact,contact);
     const doubt = await reservePending(f,{version:offered,content:'Ainda não. Como ficaria?'});
-    const kept = await writePending(f,doubt,{stage:'niche_confirmation',next});
+    await assert.rejects(writePending(f,doubt,{stage:'niche_confirmation',next,summary:JSON.stringify({whatsapp:'(21) 99999-1111'})}),/pending_setup_synthesis_required/);
+    const kept = await writePending(f,doubt,{stage:'niche_confirmation',next,nameReaction:'accept'});
+    assert.equal((await memory(f.a)).summary,null);
+    assert.equal((await saved()).synthesis.messageId,snapshot.messageId);
     assert.equal(await official(f.a),undefined);
     const reserved = await reservePending(f,{version:kept,content:'O nicho e o nome estão certos.'});
     await db.query('select release_account_pending_setup_turn_v2($1,$2,$3,$4,$5)',[f.d,f.a,f.u,reserved.version,reserved.token]);
     const retried = await reservePending(f,{version:kept,request:reserved.request,content:reserved.content});
-    const ready=await writePending(f,retried,{stage:'ready_to_complete',accept:true,nameReaction:'accept',
-      summary:JSON.stringify({contextualUnderstanding:'Atende condomínios.',classification:'Pendente'})});
+    const ready=await writePending(f,retried,{stage:'ready_to_complete',accept:true,
+      synthesis:effect({accept:snapshot.messageId,nicheReaction:'accept'}),
+      summary:JSON.stringify({confirmedUnderstanding:synthesisText,classification:'Pendente',whatsapp:'(21) 99999-1111'})});
     assert.equal((await official(f.a)).description,proposal);
     assert.equal(JSON.parse((await memory(f.a)).summary).classification,proposal);
+    assert.equal(JSON.parse((await memory(f.a)).summary).whatsapp,'(21) 99999-1111');
     assert.equal((await reservePending(f,{version:ready,request:reserved.request,content:reserved.content})).replay,true);
     assert.equal((await db.query('select count(*)::int n from account_pending_setup_messages where conversation_id=$1',[f.d])).rows[0].n,6);
     assert.equal((await db.query('select business_display_name from account_pending_setup_conversations where id=$1',[f.d])).rows[0].business_display_name,'Jardins do Vale');
@@ -284,9 +325,11 @@ try{
     const f = await pending();
     const c = await reservePending(f);
     const next = {kind:'operational_fallback',taxonId:null,taxonName:null};
-    const offered = await writePending(f,c,{stage:'niche_confirmation',next,name:'Jardins do Vale'});
+    const offered = await writePending(f,c,{stage:'niche_confirmation',next,name:'Jardins do Vale',synthesis:effect({offer:offer()})});
+    const {rows}=await db.query('select niche_state from account_dialogues where id=$1',[f.d]);
     const reserved = await reservePending(f,{version:offered,content:'Podemos seguir com esse nome e esse entendimento.'});
-    const ready = await writePending(f,reserved,{stage:'ready_to_complete',accept:true,nameReaction:'accept'});
+    const ready = await writePending(f,reserved,{stage:'ready_to_complete',accept:true,nameReaction:'accept',
+      synthesis:effect({accept:rows[0].niche_state.synthesis.messageId})});
     assert.equal(await official(f.a),undefined);
     assert.equal((await db.query("select complete_account_pending_setup_attendance_v2($1,$2,$3,$4,'operational_fallback',true) ok",[f.d,f.a,f.u,ready])).rows[0].ok,true);
   });

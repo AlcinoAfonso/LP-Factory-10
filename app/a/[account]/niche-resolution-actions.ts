@@ -7,9 +7,10 @@ import { officialNichePromptContext, type OfficialAccountNiche } from "../../../
 import { z } from "zod";
 import { claimAccountNicheTurn, commitAccountNicheTurn, releaseAccountNicheTurn } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheDialogueAdapter";
 import {
-  claimNicheConversation, commitNicheConversation, readNicheConversation,
+  claimNicheConversation, commitNicheConversation, readNicheConversation, readNicheDialogueMessages,
 } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheDialogueAdapter";
-import { conversationalMessage, mergeNicheMemory, nicheSummaryContext, requestNicheAgent } from "../../../lib/onboarding/niche-agent/runtime";
+import { conversationalMessage, currentSynthesis, mergeNicheMemory, nicheSummaryContext, requestNicheAgent } from "../../../lib/onboarding/niche-agent/runtime";
+import { relevantNicheHistory } from "../../../lib/onboarding/niche-agent/dialogue";
 import { attendanceSummary, projectAttendanceSummary, projectAttendanceText, type AttendanceContext } from "../../../lib/onboarding/pending-setup/attendance-core";
 import { requestAttendance } from "../../../lib/onboarding/pending-setup/attendance-provider";
 import { readBusinessContextForNiche } from "../../../lib/communication-base/adapters/communicationBaseAdapter";
@@ -83,25 +84,32 @@ export async function converseBaseNicheAction(raw: unknown) {
     if (!claim) return { ok: false as const, message: "A conversa ou o nicho mudou. Atualize a página para continuar." };
     if (claim.replay) return { ok: true as const };
     fence = { ...identity, expectedVersion: claim.version, turnToken };
-    if (!claim.summaryUpdatedAt || !claim.recent) throw new Error("context_unavailable");
+    const messages = await readNicheDialogueMessages(identity.dialogueId);
+    if (!claim.summaryUpdatedAt || !messages) throw new Error("context_unavailable");
+    const synthesis = currentSynthesis(claim.state, messages);
     const active = claim.state.proposal ? {
       id: identity.dialogueId + ":proposal", description: claim.state.proposal, expectedOfficialRevision: niche?.confirmed ? expectedRevision : null,
     } : null;
     const prior = claim.summary ?? null;
     const reply = await requestNicheAgent(identity.accountId, identity.dialogueId, {
-      message: { text: input.content, replyToProposalId: active?.id ?? null },
-      history: claim.recent.slice(0, -1).map(entry => ({ role: entry.role, text: entry.content })),
+      message: { id: input.requestId, text: input.content, replyToProposalId: active?.id ?? null },
+      history: relevantNicheHistory(messages, input.requestId, input.content),
+      activeSynthesis: synthesis && { id: synthesis.id, text: synthesis.text, accepted: synthesis.accepted, partialReply: synthesis.partialReply },
+      nicheAccepted: claim.state.nicheAccepted,
       summary: nicheSummaryContext(prior).text,
       businessContext: JSON.stringify(business.value).slice(0, 4000),
       officialNiche: niche?.confirmed ? { description: niche.name, revision: niche.revision } : null,
       activeProposal: active,
     });
     if (!reply) throw new Error("provider_unavailable");
+    const keep = Boolean(active && !reply.proposal && (reply.reaction === "continue" || reply.reaction === "accept"));
+    const acceptedProposal = keep && !reply.synthesisWrite.offer && !reply.synthesisWrite.clear &&
+      (reply.synthesisWrite.accept || synthesis?.accepted) && (reply.confirmation || claim.state.nicheAccepted)
+      ? active!.description : null;
     const written = await commitNicheConversation({ ...fence, reply: reply.reply,
-      proposal: reply.proposal, understanding: "", summary: mergeNicheMemory(prior, reply),
+      proposal: reply.proposal, understanding: "", summary: mergeNicheMemory(prior, reply, synthesis),
       observedSummary: prior, observedSummaryUpdatedAt: claim.summaryUpdatedAt,
-      acceptedProposal: reply.confirmation?.description ?? null,
-      keepProposal: Boolean(active && !reply.proposal && reply.reaction === "continue"),
+      acceptedProposal, keepProposal: keep && !acceptedProposal, synthesis: reply.synthesisWrite,
     });
     if (!written) throw new Error("turn_not_committed");
     return { ok: true as const };
