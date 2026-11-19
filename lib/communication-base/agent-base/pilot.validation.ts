@@ -1,12 +1,17 @@
 import assert from "node:assert/strict";
 import { AGENT_BASE_PILOT_MODEL, agentBasePilotOrder, agentBasePilotCatalogState, buildAgentBasePilotPrompt, parseAgentBasePilotResponse, sanitizeAgentBasePilotFailureReason, selectAgentBasePilotInput } from "./pilot";
-import { AGENT_BASE_PROMPT } from "./base-prompt";
-import { AGENT_BASE_ABOUT_PROMPT } from "./about-prompt";
-import { AGENT_BASE_AUDIENCE_PROMPT } from "./audience-prompt";
-import { AGENT_BASE_MARKET_INSIGHTS_PROMPT } from "./market-insights-prompt";
+import { AGENT_BASE_PROMPT, AGENT_BASE_PROMPT_VERSION } from "./base-prompt";
+import { AGENT_BASE_ABOUT_PROMPT, AGENT_BASE_ABOUT_SECTION_SCHEMA } from "./about-prompt";
+import { AGENT_BASE_AUDIENCE_PROMPT, AGENT_BASE_AUDIENCE_SECTION_SCHEMA } from "./audience-prompt";
+import { AGENT_BASE_MARKET_INSIGHTS_PROMPT, AGENT_BASE_MARKET_INSIGHTS_SECTION_SCHEMA } from "./market-insights-prompt";
+import { AGENT_BASE_VALUE_PROPOSITION_PROMPT, AGENT_BASE_VALUE_PROPOSITION_PROMPT_VERSION,
+  AGENT_BASE_VALUE_PROPOSITION_SECTION_SCHEMA } from "./value-proposition-prompt";
+import { AGENT_BASE_BENEFITS_PROMPT, AGENT_BASE_BENEFITS_PROMPT_VERSION, AGENT_BASE_BENEFITS_SECTION_SCHEMA } from "./benefits-prompt";
+import { AGENT_BASE_DIFFERENTIATORS_PROMPT, AGENT_BASE_DIFFERENTIATORS_PROMPT_VERSION, AGENT_BASE_DIFFERENTIATORS_SECTION_SCHEMA } from "./differentiators-prompt";
+import { AGENT_BASE_FAQ_PROMPT, AGENT_BASE_FAQ_PROMPT_VERSION, AGENT_BASE_FAQ_SECTION_SCHEMA } from "./faq-prompt";
 import { parseStageTwoResponse, stageTwoSchema } from "../ai-core";
 import { communicationSections } from "../registry";
-import { parseStoredSections, withGeneratedIntelligence } from "../policy";
+import { COMMUNICATION_ITEMS_MAX, COMMUNICATION_FAQ_MAX, parseStoredSections, withGeneratedIntelligence } from "../policy";
 import type { CommunicationBase } from "../contracts";
 
 const base: CommunicationBase = {
@@ -69,14 +74,107 @@ for (const [key, specialized, value] of [
   assert.equal(input.confirmed_business_data.business_name.origin, "user_confirmed");
   assert.deepEqual(input.confirmed_business_data.business_name.facts, base.sections.business_name?.facts);
   assert.deepEqual(prompt.schema.properties.sections.required, [key]);
+  if (key === "about") {
+    assert.deepEqual(prompt.schema.properties.sections.properties.about, AGENT_BASE_ABOUT_SECTION_SCHEMA,
+      "Quem somos has an isolated Structured Outputs contract");
+    assert.deepEqual(AGENT_BASE_ABOUT_SECTION_SCHEMA.properties.basis.enum, ["confirmed_business_fact"]);
+    assert.equal(Reflect.get(stageTwoSchema(["about"]).properties.sections.properties.about.properties.value,
+      "description"), undefined, "shared schema remains unchanged");
+  }
+  if (key === "audience") {
+    assert.deepEqual(prompt.schema.properties.sections.properties.audience, AGENT_BASE_AUDIENCE_SECTION_SCHEMA,
+      "Público e contexto has an isolated Structured Outputs contract");
+    assert.deepEqual(AGENT_BASE_AUDIENCE_SECTION_SCHEMA.properties.basis.enum, ["strategic_hypothesis"]);
+    assert.equal(Reflect.get(stageTwoSchema(["audience"]).properties.sections.properties.audience.properties.value,
+      "description"), undefined, "shared schema remains unchanged for the legacy audience generator");
+  }
+  if (key === "market_insights") {
+    assert.deepEqual(prompt.schema.properties.sections.properties.market_insights,
+      AGENT_BASE_MARKET_INSIGHTS_SECTION_SCHEMA, "market insights has an independent Structured Outputs contract");
+    assert.deepEqual(AGENT_BASE_MARKET_INSIGHTS_SECTION_SCHEMA.properties.basis.enum, ["strategic_hypothesis"]);
+    assert.equal(Reflect.get(stageTwoSchema(["market_insights"]).properties.sections.properties.market_insights.properties.value,
+      "maxItems"), undefined, "the legacy market schema remains unchanged");
+  }
   const parsed = parseAgentBasePilotResponse({ output_text: JSON.stringify({ sections: { [key]: { value, basis: key === "about" ? "confirmed_business_fact" : "strategic_hypothesis" } } }) }, key);
   assert.equal(parsed.ok, true);
   if (parsed.ok) { assert.equal(parsed.value.researched, false); previous.push(parsed.value); }
 }
+assert.equal(parseAgentBasePilotResponse({ output_text: JSON.stringify({
+  sections: { about: { value: "Institucional", basis: "strategic_hypothesis" } },
+}) }, "about").ok, false, "institutional facts cannot claim strategic hypothesis provenance");
+assert.equal(parseAgentBasePilotResponse({ output_text: JSON.stringify({
+  sections: { audience: { value: "Compradores potenciais", basis: "confirmed_business_fact" } },
+}) }, "audience").ok, false, "strategic target audiences are not confirmed business facts");
+assert.equal(parseAgentBasePilotResponse({ output_text: JSON.stringify({
+  sections: { market_insights: { value: ["Dor: hipótese relevante"], basis: "confirmed_business_fact" } },
+}) }, "market_insights").ok, false, "market insights cannot claim confirmed business fact provenance");
+
+const valuePropositionPrompt = buildAgentBasePilotPrompt({
+  base, niche, definitions, key: "value_proposition", previous,
+});
+assert.ok(valuePropositionPrompt);
+assert.equal(valuePropositionPrompt.instructions, AGENT_BASE_PROMPT + "\n\n" + AGENT_BASE_VALUE_PROPOSITION_PROMPT);
+assert.equal(valuePropositionPrompt.promptVersion,
+  AGENT_BASE_PROMPT_VERSION + ":" + AGENT_BASE_VALUE_PROPOSITION_PROMPT_VERSION);
+assert.deepEqual(valuePropositionPrompt.schema.properties.sections.required, ["value_proposition"]);
+assert.deepEqual(valuePropositionPrompt.schema.properties.sections.properties.value_proposition,
+  AGENT_BASE_VALUE_PROPOSITION_SECTION_SCHEMA, "the section has its own Structured Outputs contract");
+assert.equal(Reflect.get(stageTwoSchema(["value_proposition"]).properties.sections.properties.value_proposition.properties.value,
+  "description"), undefined, "other flows keep the shared schema unchanged");
+assert.match(AGENT_BASE_PROMPT, /O salvamento e a revisão do conteúdo gerado são controlados pela aplicação/);
+assert.equal(parseAgentBasePilotResponse({ output_text: JSON.stringify({
+  sections: { value_proposition: { value: "Valor específico para os compradores.", basis: "strategic_hypothesis" } },
+}) }, "value_proposition").ok, true);
+assert.equal(parseAgentBasePilotResponse({ output_text: JSON.stringify({
+  sections: { value_proposition: { value: "Texto sem base válida", basis: "confirmed_business_fact" } },
+}) }, "value_proposition").ok, false);
+
+const completedSpecialized = [...previous];
+const proposalResult = parseAgentBasePilotResponse({ output_text: JSON.stringify({
+  sections: { value_proposition: { value: "Proposta específica", basis: "strategic_hypothesis" } },
+}) }, "value_proposition");
+assert.ok(proposalResult.ok);
+if (proposalResult.ok) completedSpecialized.push(proposalResult.value);
+for (const { key, promptText, version, ownSchema, value, maxItems } of [
+  { key: "benefits", promptText: AGENT_BASE_BENEFITS_PROMPT, version: AGENT_BASE_BENEFITS_PROMPT_VERSION,
+    ownSchema: AGENT_BASE_BENEFITS_SECTION_SCHEMA, value: ["Ganho comprovável para o comprador"], maxItems: COMMUNICATION_ITEMS_MAX },
+  { key: "differentiators", promptText: AGENT_BASE_DIFFERENTIATORS_PROMPT, version: AGENT_BASE_DIFFERENTIATORS_PROMPT_VERSION,
+    ownSchema: AGENT_BASE_DIFFERENTIATORS_SECTION_SCHEMA, value: ["Característica distintiva fundamentada"], maxItems: COMMUNICATION_ITEMS_MAX },
+  { key: "faq", promptText: AGENT_BASE_FAQ_PROMPT, version: AGENT_BASE_FAQ_PROMPT_VERSION,
+    ownSchema: AGENT_BASE_FAQ_SECTION_SCHEMA, value: [{ question: "Como contratar?", answer: "Consulte as condições confirmadas." }], maxItems: COMMUNICATION_FAQ_MAX },
+] as const) {
+  const prompt = buildAgentBasePilotPrompt({ base, niche, definitions, key, previous: completedSpecialized });
+  assert.ok(prompt);
+  assert.equal(prompt.instructions, AGENT_BASE_PROMPT + "\n\n" + promptText,
+    "specialized prompts are composed without changes");
+  assert.equal(prompt.promptVersion, AGENT_BASE_PROMPT_VERSION + ":" + version);
+  assert.deepEqual(prompt.schema.properties.sections.required, [key]);
+  assert.deepEqual(prompt.schema.properties.sections.properties[key], ownSchema);
+  assert.equal(Reflect.get(prompt.schema.properties.sections.properties[key].properties.value, "maxItems"), maxItems);
+  assert.equal(Reflect.get(stageTwoSchema([key]).properties.sections.properties[key].properties.value, "maxItems"),
+    undefined, "shared schema must remain unchanged");
+  const parsed = parseAgentBasePilotResponse({ output_text: JSON.stringify({
+    sections: { [key]: { value, basis: "strategic_hypothesis" } },
+  }) }, key);
+  assert.ok(parsed.ok, "the specialized result is accepted by the existing parser");
+  if (parsed.ok) completedSpecialized.push(parsed.value);
+  const invalidBasis = parseAgentBasePilotResponse({ output_text: JSON.stringify({
+    sections: { [key]: { value, basis: "confirmed_business_fact" } },
+  }) }, key);
+  assert.equal(invalidBasis.ok, false, "unconfirmed strategic content cannot claim factual authority");
+  const excessive = Array.from({ length: maxItems + 1 },
+    () => key === "faq" ? { question: "Pergunta?", answer: "Resposta." } : "Item");
+  assert.equal(parseAgentBasePilotResponse({ output_text: JSON.stringify({
+    sections: { [key]: { value: excessive, basis: "strategic_hypothesis" } },
+  }) }, key).ok, false, "over-limit section rejects the full generation");
+}
+assert.equal(completedSpecialized.length, 7, "all seven catalog sections compose and parse in sequence");
+
 const marketSchema = buildAgentBasePilotPrompt({
   base, niche, definitions, key: "market_insights", previous: previous.slice(0, 2),
 })!.schema;
-assert.equal(Reflect.get(marketSchema.properties.sections.properties.market_insights.properties.value, "maxItems"), 20,
+assert.deepEqual(marketSchema.properties.sections.properties.market_insights, AGENT_BASE_MARKET_INSIGHTS_SECTION_SCHEMA);
+assert.equal(Reflect.get(marketSchema.properties.sections.properties.market_insights.properties.value, "maxItems"), COMMUNICATION_ITEMS_MAX,
   "pilot constrains the generated item count to the existing 20-item contract");
 assert.equal(Reflect.get(stageTwoSchema(["market_insights"]).properties.sections.properties.market_insights.properties.value, "maxItems"),
   undefined, "shared schema remains unchanged");

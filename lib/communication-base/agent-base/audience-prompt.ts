@@ -26,3 +26,12 @@ export const AGENT_BASE_AUDIENCE_PROMPT = `# Prompt especializado — 3.2 Públi
 - Priorize precisão, profundidade, especificidade e utilidade comercial. O resultado deve permitir compreender quem tem potencial para comprar, em quais contextos e como decide.
 - Sustente as conclusões nas informações disponíveis, distinguindo fatos empresariais de hipóteses de mercado. Não apresente compradores potenciais como clientes comprovados da empresa.
 - Entregue somente a seção **Público e contexto**, em português brasileiro, com texto organizado e fluido. Respeite o contrato de saída e sinalize lacunas relevantes separadamente, quando houver campo apropriado.` as const;
+
+// Typed contract for this section; the wrapper "sections" is built by the existing integration.
+export const AGENT_BASE_AUDIENCE_SECTION_SCHEMA = {
+  type: "object", additionalProperties: false, required: ["value", "basis"],
+  properties: {
+    value: { type: "string", description: "Análise estratégica dos públicos compradores potenciais, seus contextos e fatores de decisão; diferenciar públicos confirmados de segmentos hipotéticos." },
+    basis: { type: "string", enum: ["strategic_hypothesis"] },
+  },
+};
