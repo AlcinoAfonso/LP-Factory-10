@@ -8,6 +8,8 @@ import type { CommunicationBase } from "../contracts";
 import { COMMUNICATION_ITEMS_MAX, parseCommunicationFacts, parseSectionValue } from "../policy";
 import type { CommunicationSectionDefinition } from "../registry";
 
+export const AGENT_BASE_PILOT_MODEL = "gpt-6.2-sol" as const;
+
 const prompts = {
   about: { text: AGENT_BASE_ABOUT_PROMPT, version: AGENT_BASE_ABOUT_PROMPT_VERSION, format: "text" },
   audience: { text: AGENT_BASE_AUDIENCE_PROMPT, version: AGENT_BASE_AUDIENCE_PROMPT_VERSION, format: "text" },
