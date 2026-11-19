@@ -12,7 +12,8 @@ export type CommunicationSectionValue = string | readonly string[] | readonly Co
 export type CommunicationSectionOrigin =
   | "user_confirmed"
   | "pending_setup_confirmed"
-  | "user_reviewed";
+  | "user_reviewed"
+  | "agent_generated";
 
 export type CommunicationSection = Readonly<{
   format: CommunicationSectionFormat;
