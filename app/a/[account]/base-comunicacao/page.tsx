@@ -12,6 +12,8 @@ import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CommunicationBaseTabs, CommunicationBaseIntroduction } from "./CommunicationBaseTabs";
 import styles from "./CommunicationBase.module.css";
+import { BaseNicheConversation } from "./_components/BaseNicheConversation";
+import { loadBaseNicheConversationAction } from "../niche-resolution-actions";
 import { CommunicationStageOne, CommunicationStageTwo, StartCommunicationBaseForm } from "./CommunicationSectionEditor";
 
 type PageProps = Readonly<{ params: Promise<{ account: string }> }>;
@@ -36,9 +38,10 @@ export default async function CommunicationBasePage({ params }: PageProps) {
 
   const definitions = await readCommunicationDefinitions();
   const structured = isCommunicationResourcesEnabled();
-  const [result, taxonomy] = await Promise.all([
+  const [result, taxonomy, nicheConversation] = await Promise.all([
     definitions.ok ? readCommunicationBase(access.value.accountId, definitions.value) : Promise.resolve({ok:false as const,error:"read_failed" as const}),
     readOfficialNicheContext({ accountId: access.value.accountId }),
+    access.value.canEdit ? loadBaseNicheConversationAction(access.value.accountSubdomain) : null,
   ]);
   const base = result.ok ? result.value : null;
   const savedBusinessName = base?.sections.business_name?.value;
@@ -74,6 +77,10 @@ export default async function CommunicationBasePage({ params }: PageProps) {
             {taxonomy.ok && taxonomy.niche ? `Nicho: ${nicheLabel}` : nicheLabel}
           </p>
         </header>
+        {nicheConversation ? <BaseNicheConversation account={access.value.accountSubdomain}
+          defined={Boolean(taxonomy.ok && taxonomy.niche?.confirmed)} state={nicheConversation} /> : access.value.canEdit ? (
+          <FeedbackMessage tone="error">Não foi possível carregar a conversa de nicho. Atualize a página para tentar novamente.</FeedbackMessage>
+        ) : null}
         {!result.ok ? (
           <FeedbackMessage tone="error">
             Não foi possível carregar a Base agora. Atualize a página e tente novamente.

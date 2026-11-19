@@ -14,6 +14,7 @@ import { readAttendanceBusinessNameCandidate, validateStoredAttendanceProposal }
 import { readPendingSetupDialogueContext } from "./pendingSetupAccountContextAdapter";
 import { resolvePreferredNameFromAuth } from "../policy";
 import { isE1011PassageEnabled, isE1012AttendanceEnabled } from "../config";
+import { z } from "zod";
 
 type ConversationRow = {
   id: string;
@@ -109,20 +110,18 @@ export async function loadPendingSetupConversation(input: {
 
   const preferredName = resolvePreferredNameFromAuth(user.user_metadata, user.email);
   const service = createServiceClient();
-  // Only existing conversations ready for the E10.11 handoff reach the start RPC guard.
-  const { data: ready, error: readyError } = await service
-    .from("account_pending_setup_conversations")
-    .select("id")
-    .eq("account_id", input.accountId)
-    .eq("user_id", input.userId)
-    .eq("stage", "ready_to_complete")
-    .maybeSingle();
-  if (readyError || !ready) return null;
+  const attendanceEnabled = isE1012AttendanceEnabled();
+  if (!attendanceEnabled) {
+    const { data: ready, error: readyError } = await service.from("account_pending_setup_conversations")
+      .select("id").eq("account_id", input.accountId).eq("user_id", input.userId)
+      .eq("stage", "ready_to_complete").maybeSingle();
+    if (readyError || !ready) return null;
+  }
 
   const columns =
     "id,account_id,user_id,preferred_name,business_context_text,stage,confirmation_kind,resolution_outcome,version,created_at,updated_at,completed_at";
   const { data: conversationId, error: startError } = await service.rpc(
-    isE1012AttendanceEnabled() ? "start_account_pending_setup_v2" : "start_account_pending_setup_v1",
+    attendanceEnabled ? "start_account_pending_setup_v2" : "start_account_pending_setup_v1",
     {
       p_account_id: input.accountId,
       p_user_id: input.userId,
@@ -130,7 +129,7 @@ export async function loadPendingSetupConversation(input: {
     },
   );
 
-  if (startError || conversationId !== ready.id) {
+  if (startError || typeof conversationId !== "string") {
     console.error("pendingSetupConversation start failed", {
       code: (startError as { code?: unknown } | null)?.code ?? "invalid_response",
     });
@@ -174,7 +173,45 @@ export async function loadPendingSetupConversation(input: {
   if (!isE1012AttendanceEnabled()) return mapped;
   const dialogue = await readPendingSetupDialogueContext({ ...input, conversationId });
   return dialogue ? { ...mapped, messages: dialogue.messages, accountContext: dialogue.context,
-    businessNameCandidate: readAttendanceBusinessNameCandidate(dialogue.context.summary) } : null;
+    dialogueState: dialogue.state, businessNameCandidate: readAttendanceBusinessNameCandidate(dialogue.context.summary) } : null;
+}
+
+type PendingTurnFence = { conversationId: string; accountId: string; userId: string; version: number; token: string };
+function turnFence(input: PendingTurnFence) {
+  return { p_conversation_id: input.conversationId, p_account_id: input.accountId, p_user_id: input.userId,
+    p_expected_version: input.version, p_turn_token: input.token };
+}
+
+export async function claimPendingNicheTurn(input: PendingTurnFence & { requestId: string; content: string }) {
+  const { data, error } = await createServiceClient().rpc("claim_account_pending_setup_turn_v3", {
+    ...turnFence(input), p_request_id: input.requestId, p_content: input.content,
+  });
+  const parsed = z.object({ version: z.number().int().positive(), replay: z.boolean() }).safeParse(data);
+  return !error && parsed.success ? parsed.data : null;
+}
+
+export async function commitPendingNicheTurn(input: PendingTurnFence & {
+  reply: string; summary: string | null; observed: NonNullable<PendingSetupConversation["accountContext"]>;
+  understanding: string; preferredName: string | null; preferredNameDeclined: boolean;
+  stage: PendingSetupStage; proposal: PendingSetupConversation["attendanceProposal"]; accept: boolean;
+  observedTaxon: string | null; observedRevision: number; nameProposal: string | null;
+  nameReaction: string; clearOperational: boolean;
+}) {
+  const { data, error } = await createServiceClient().rpc("commit_account_pending_setup_turn_v5", {
+    ...turnFence(input), p_reply: input.reply, p_summary: input.summary,
+    p_observed_summary: input.observed.summary, p_observed_summary_updated_at: input.observed.updatedAt,
+    p_understanding: input.understanding, p_preferred_name: input.preferredName,
+    p_preferred_name_declined: input.preferredNameDeclined, p_next_stage: input.stage,
+    p_proposal: input.proposal, p_accept: input.accept, p_observed_primary_taxon_id: input.observedTaxon,
+    p_observed_niche_revision: input.observedRevision, p_name_proposal: input.nameProposal,
+    p_name_reaction: input.nameReaction, p_passage_enabled: isE1011PassageEnabled(),
+    p_clear_operational: input.clearOperational,
+  });
+  return !error && Number.isSafeInteger(Number(data)) && Number(data) > input.version;
+}
+
+export async function releasePendingNicheTurn(input: PendingTurnFence) {
+  return createServiceClient().rpc("release_account_pending_setup_turn_v2", turnFence(input));
 }
 
 export async function setPendingSetupBusinessDisplayName(input: {

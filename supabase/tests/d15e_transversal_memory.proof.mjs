@@ -113,5 +113,182 @@ try{
     await assert.rejects(claim(x,{d:x.legacy}),/no rows/);
     assert.equal((await db.query('select content from account_pending_setup_messages where conversation_id=$1',[conv])).rows[0].content,'Legacy preserved');
   });
-  console.log(JSON.stringify({database,postgres:'17',migration:'20261113111515_d15e_transversal_memory.sql',cases:cases.length,result:'passed'}));
+  const migration = '20261119152000_d15e_conversational_turns.sql';
+  const attendance = '../migrations/20261007153217_e10_12_account_context_attendance.sql';
+  for (const name of ['start_account_pending_setup_v2', 'claim_account_pending_setup_turn_v2', 'release_account_pending_setup_turn_v2']) {
+    await db.query(fn(attendance, name));
+  }
+  await db.query(fn('../migrations/20260928161504_e10_11_pending_setup_business_name.sql', 'set_account_pending_setup_business_name_v1'));
+  await db.query('alter table account_pending_setup_conversations alter id set default gen_random_uuid()');
+  await db.query('alter table account_pending_setup_conversations add created_at timestamptz not null default clock_timestamp()');
+  await db.query('alter table account_pending_setup_conversations add unique(account_id,user_id)');
+  await db.query(read('../migrations/' + migration));
+  await test('versioned RPCs are restricted to the server role',async()=>{
+    const {rows}=await db.query(`select proname,
+      has_function_privilege('service_role',p.oid,'execute') as service,
+      has_function_privilege('authenticated',p.oid,'execute') as member,
+      has_function_privilege('anon',p.oid,'execute') as anon,
+      has_function_privilege('ai_readonly',p.oid,'execute') as ai
+      from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+      where n.nspname='public' and proname=any($1)`,[[
+      'claim_account_niche_turn_v2','commit_account_niche_turn_v2',
+      'claim_account_pending_setup_turn_v3','commit_account_pending_setup_turn_v5',
+    ]]);
+    assert.equal(rows.length,4);
+    assert.ok(rows.every(row=>row.service&&!row.member&&!row.anon&&!row.ai));
+  });
+
+  const proposal = 'Jardinagem para condomínios';
+  const reserve = async (f, { dialogue = id(), request = id(), token = id(), version = 0, content = 'Atendemos condomínios.', client = db } = {}) => {
+    const niche = await official(f.a);
+    const {rows} = await client.query('select claim_account_niche_turn_v2($1,$2,$3,$4,$5,$6,$7,$8) result',
+      [dialogue,f.a,f.u,version,request,token,content,niche ? 'text:' + niche.revision : null]);
+    return { ...rows[0].result, d: dialogue, request, token, user: f.u, content };
+  };
+  const write = async (f,c,{ next = null, accept = null, keep = false, summary = null, reply = next ? 'Proponho ' + next : 'Entendido.' } = {}) =>
+    (await db.query('select commit_account_niche_turn_v2($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) result',
+      [c.d,f.a,f.u,c.version,c.token,reply,'',next,summary,c.summary,c.summaryUpdatedAt,accept,keep])).rows[0].result;
+  const messages = async (c) => (await db.query('select role,content from account_pending_setup_messages where dialogue_id=$1 order by ordinal',[c.d])).rows;
+  async function propose(f) {
+    const opened = await reserve(f);
+    const written = await write(f, opened, { next: proposal });
+    return { dialogue: opened.d, version: written.version };
+  }
+  await test('v2 preserves the exact proposal across interruption; acceptance, reply and memory commit together',async()=>{
+    const f = await fixture();
+    const offered = await propose(f);
+    const c = await reserve(f,{...offered,content:'Representa exatamente o que fazemos. Também atendemos empresas pequenas.'});
+    assert.equal(c.state.proposal,proposal);
+    await release(f,c);
+    await assert.rejects(reserve(f,offered),/niche_turn_conflict/);
+    const retried = await reserve(f,{...offered,request:c.request,content:c.content});
+    assert.equal(retried.state.proposal,proposal);
+    assert.equal((await messages(c)).length,3);
+    const summary = {...JSON.parse(c.summary),contextualUnderstanding:'Atende também empresas pequenas.'};
+    const result = await write(f,retried,{accept:proposal,summary:JSON.stringify(summary)});
+    assert.deepEqual(result,{version:retried.version+2,confirmed:true});
+    assert.equal((await official(f.a)).description,proposal);
+    assert.equal(JSON.parse((await memory(f.a)).summary).classification,proposal);
+    assert.equal(JSON.parse((await memory(f.a)).summary).contextualUnderstanding,summary.contextualUnderstanding);
+    assert.equal((await messages(c)).length,4);
+    assert.deepEqual(await write(f,retried,{accept:proposal}),result);
+    assert.equal((await reserve(f,{...offered,request:c.request,content:c.content})).replay,true);
+    await assert.rejects(reserve(f,{...offered,request:c.request,content:'Resposta diferente'}),/niche_request_conflict/);
+  });
+  await test('doubt can preserve a proposal; correction replaces it without an official write',async()=>{
+    const f = await fixture();
+    const offered = await propose(f);
+    const doubt = await reserve(f,{...offered,content:'Condomínios residenciais?'});
+    const clarified = await write(f,doubt,{keep:true});
+    const c = await reserve(f,{dialogue:doubt.d,version:clarified.version,content:'Também atendemos hotéis.'});
+    const next = 'Jardinagem para condomínios e hotéis';
+    assert.equal(c.state.proposal,proposal);
+    const corrected = await write(f,c,{next});
+    await assert.rejects(reserve(f,{dialogue:c.d,version:corrected.version,request:doubt.request,content:doubt.content}),/niche_request_conflict/);
+    const newTurn = await reserve(f,{dialogue:c.d,version:corrected.version,content:'Tudo certo.'});
+    await assert.rejects(write(f,newTurn,{accept:proposal}),/niche_changed/);
+    assert.equal((await official(f.a)).revision,'1');
+    assert.equal(newTurn.state.proposal,next);
+  });
+  await test('separate concurrent sessions cannot reserve the same dialogue twice',async()=>{
+    const f = await fixture();
+    const offered = await propose(f);
+    const other = new pg.Client({...settings,database});
+    await other.connect();
+    try {
+      await db.query('begin');
+      await reserve(f,offered);
+      const racing = reserve(f,{...offered,client:other}).then(()=>null,error=>error);
+      await db.query('commit');
+      assert.match((await racing)?.message??'',/niche_turn_conflict/);
+    } finally { await db.query('rollback'); await other.end(); }
+  });
+  await test('a newer Summary discards only the stale memory delta and keeps the Base reply',async()=>{
+    const f = await fixture();
+    const c = await reserve(f);
+    const latest = { ...JSON.parse(c.summary), contextualUnderstanding:'Novo contexto de outro participante.' };
+    await db.query('update account_context_summaries set summary=$2,updated_at=clock_timestamp() where account_id=$1',[f.a,JSON.stringify(latest)]);
+    const written = await write(f,c,{summary:JSON.stringify({...latest,contextualUnderstanding:'Impedir sobrescrita.'})});
+    assert.equal(written.confirmed,false);
+    assert.equal((await messages(c)).length,2);
+    assert.equal(JSON.parse((await memory(f.a)).summary).contextualUnderstanding,latest.contextualUnderstanding);
+  });
+  await test('a draft product added after reservation blocks confirmation without a reply or partial memory',async()=>{
+    const f = await fixture();
+    const offered = await propose(f);
+    const c = await reserve(f,offered);
+    await db.query("alter table account_landing_pages add column if not exists status text default 'draft'");
+    await db.query("insert into account_landing_pages(id,account_id,status)values($1,$2,'draft')",[id(),f.a]);
+    const before = await memory(f.a);
+    await assert.rejects(write(f,c,{accept:proposal}),/niche_product_exists/);
+    assert.equal((await official(f.a)).revision,'1');
+    assert.equal((await messages(c)).length,3);
+    assert.deepEqual(await memory(f.a),before);
+  });
+  await test('failed classification leaves the submitted acceptance available and rolls back the Base reply',async()=>{
+    const f = await fixture('A');
+    const opening = await reserve(f);
+    const next = 'N'.repeat(120);
+    const offered = await write(f,opening,{next});
+    const j = {classification:'A',whatsapp:''};
+    j.whatsapp = '9'.repeat(5990-JSON.stringify(j).length);
+    await db.query('update account_context_summaries set summary=$2 where account_id=$1',[f.a,JSON.stringify(j)]);
+    const c = await reserve(f,{dialogue:opening.d,version:offered.version,content:'É isso.'});
+    await assert.rejects(write(f,c,{accept:next}),/niche_summary_capacity/);
+    assert.equal((await official(f.a)).description,'A');
+    assert.equal((await messages(c)).length,3);
+  });
+
+  async function pending() {
+    const a=id(), u=id();
+    await db.query("insert into accounts values($1,'pending_setup')",[a]);
+    await db.query("insert into account_users values($1,$2,'owner','active')",[a,u]);
+    const {rows}=await db.query('select start_account_pending_setup_v2($1,$2) d',[a,u]);
+    return {a,u,d:rows[0].d,version:1};
+  }
+  async function reservePending(f,{version=f.version,content='Uma empresa de jardinagem.',request=id(),token=id()}={}) {
+    const {rows}=await db.query('select claim_account_pending_setup_turn_v3($1,$2,$3,$4,$5,$6,$7) result',
+      [f.d,f.a,f.u,version,request,token,content]);
+    return {...rows[0].result,request,token,content};
+  }
+  async function writePending(f,c,{next=null,accept=false,stage='business_understanding',name=null,nameReaction='keep',
+    understanding='Oferecemos jardinagem.',summary=null,revision=0}={}) {
+    const prior=await memory(f.a);
+    const reply = [next?.nicheDescription ?? (next ? understanding : ''), name ?? ''].filter(Boolean).join(' ') || 'Entendido.';
+    const {rows}=await db.query('select commit_account_pending_setup_turn_v5($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21) result',
+      [f.d,f.a,f.u,c.version,c.token,reply,summary,prior.summary,prior.updated_at,understanding,null,true,stage,
+        next,accept,null,revision,name,nameReaction,true,false]);
+    return Number(rows[0].result);
+  }
+  await test('Pending Setup reserves once, decides acceptance after the turn and reuses the public name RPC',async()=>{
+    const f = await pending();
+    const c = await reservePending(f);
+    const next = {kind:'semantic',taxonId:null,taxonName:null,nicheDescription:proposal,expectedNicheRevision:0};
+    const offered = await writePending(f,c,{stage:'niche_confirmation',next,name:'Jardins do Vale'});
+    const doubt = await reservePending(f,{version:offered,content:'Ainda não. Como ficaria?'});
+    const kept = await writePending(f,doubt,{stage:'niche_confirmation',next});
+    assert.equal(await official(f.a),undefined);
+    const reserved = await reservePending(f,{version:kept,content:'O nicho e o nome estão certos.'});
+    await db.query('select release_account_pending_setup_turn_v2($1,$2,$3,$4,$5)',[f.d,f.a,f.u,reserved.version,reserved.token]);
+    const retried = await reservePending(f,{version:kept,request:reserved.request,content:reserved.content});
+    const ready=await writePending(f,retried,{stage:'ready_to_complete',accept:true,nameReaction:'accept',
+      summary:JSON.stringify({contextualUnderstanding:'Atende condomínios.',classification:'Pendente'})});
+    assert.equal((await official(f.a)).description,proposal);
+    assert.equal(JSON.parse((await memory(f.a)).summary).classification,proposal);
+    assert.equal((await reservePending(f,{version:ready,request:reserved.request,content:reserved.content})).replay,true);
+    assert.equal((await db.query('select count(*)::int n from account_pending_setup_messages where conversation_id=$1',[f.d])).rows[0].n,6);
+    assert.equal((await db.query('select business_display_name from account_pending_setup_conversations where id=$1',[f.d])).rows[0].business_display_name,'Jardins do Vale');
+    assert.equal((await db.query("select complete_account_pending_setup_attendance_v2($1,$2,$3,$4,'official',true) ok",[f.d,f.a,f.u,ready])).rows[0].ok,true);
+  });
+  await test('Pending Setup can finish without a niche after operational and name acceptance',async()=>{
+    const f = await pending();
+    const c = await reservePending(f);
+    const next = {kind:'operational_fallback',taxonId:null,taxonName:null};
+    const offered = await writePending(f,c,{stage:'niche_confirmation',next,name:'Jardins do Vale'});
+    const reserved = await reservePending(f,{version:offered,content:'Podemos seguir com esse nome e esse entendimento.'});
+    const ready = await writePending(f,reserved,{stage:'ready_to_complete',accept:true,nameReaction:'accept'});
+    assert.equal(await official(f.a),undefined);
+    assert.equal((await db.query("select complete_account_pending_setup_attendance_v2($1,$2,$3,$4,'operational_fallback',true) ok",[f.d,f.a,f.u,ready])).rows[0].ok,true);
+  });
+  console.log(JSON.stringify({database,postgres:'17',migration,cases:cases.length,result:'passed'}));
 } finally {await db.end();await admin.query('drop database '+database+' with(force)');await admin.end();}

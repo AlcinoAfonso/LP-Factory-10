@@ -7,8 +7,10 @@ import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { FormField, FormFieldError, FormFieldHint, FormFieldLabel } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import type { PendingSetupConversation as PendingSetupConversationContract } from "../../../../lib/onboarding/pending-setup/contracts";
+import { NicheConversation } from "./NicheConversation";
 import {
   completePendingSetupAction,
+  conversePendingSetupAction,
   savePendingSetupBusinessDisplayNameAction,
   type PendingSetupActionState,
 } from "../pending-setup-actions";
@@ -20,7 +22,7 @@ export function PendingSetupConversation({
 }: {
   accountSubdomain: string;
   conversation: Pick<PendingSetupConversationContract,
-    "id" | "version" | "businessDisplayName" | "businessNameCandidate" | "attendanceEnabled">;
+    "id" | "version" | "businessDisplayName" | "businessNameCandidate" | "attendanceEnabled" | "messages" | "stage" | "dialogueState">;
   passageEnabled: boolean;
 }) {
   const [completionState, completionAction, isCompletionPending] = useActionState<
@@ -37,21 +39,34 @@ export function PendingSetupConversation({
     if (nameState.fieldError) businessNameRef.current?.focus();
   }, [nameState.fieldError]);
 
+  const dialogue = conversation.dialogueState;
+  const retry = dialogue?.requestId && dialogue.requestId !== dialogue.lastRequestId
+    ? conversation.messages.find(message => message.id === dialogue.requestId && message.role === "user") : null;
+  const ready = conversation.stage === "ready_to_complete" && (!passageEnabled || Boolean(conversation.businessDisplayName));
+
   return (
     <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
       <section
         className="overflow-hidden rounded-2xl border border-surface-border bg-white shadow-card"
       >
-        {passageEnabled && !conversation.businessDisplayName ? (
+        {conversation.attendanceEnabled ? (
+          <div className="space-y-4 px-5 py-5 sm:px-8">
+            <h1 className="text-xl font-semibold text-foreground">Conte sobre seu negócio</h1>
+            <NicheConversation account={accountSubdomain} dialogueId={conversation.id} version={conversation.version}
+              messages={conversation.messages} retry={retry} ended={ready}
+              introductoryMessage="Olá! O que seu negócio oferece e para quem?" label="Sua mensagem" submit={conversePendingSetupAction} />
+          </div>
+        ) : null}
+        {!conversation.attendanceEnabled && passageEnabled && !conversation.businessDisplayName ? (
           <form action={nameAction} className="border-t border-surface-border px-5 py-5 sm:px-8">
             <ConversationHiddenFields
               accountSubdomain={accountSubdomain}
               conversationId={conversation.id}
               version={conversation.version}
             />
-            {conversation.attendanceEnabled ? <p className="text-sm text-ink-900">{conversation.businessNameCandidate ? "Confirme ou ajuste o nome que seus clientes devem ver." : "Informe o nome que seus clientes devem ver."}</p> : <FeedbackMessage tone="success">
+            <FeedbackMessage tone="success">
               Entendimento concluído. Informe o nome que seus clientes devem ver.
-            </FeedbackMessage>}
+            </FeedbackMessage>
             {nameState.formError ? (
               <FeedbackMessage tone="error" className="mt-4">{nameState.formError}</FeedbackMessage>
             ) : null}
@@ -61,7 +76,6 @@ export function PendingSetupConversation({
                 ref={businessNameRef}
                 id="business_display_name"
                 name="business_display_name"
-                defaultValue={conversation.attendanceEnabled ? conversation.businessNameCandidate ?? "" : undefined}
                 maxLength={120}
                 autoComplete="organization"
                 required
@@ -77,12 +91,12 @@ export function PendingSetupConversation({
               )}
             </FormField>
             <Button type="submit" disabled={isNamePending} className={cn("mt-5 min-h-11", attendanceButtonClass)}>
-              {isNamePending ? "Salvando…" : conversation.attendanceEnabled ? "Confirmar nome e continuar" : "Salvar e continuar"}
+              {isNamePending ? "Salvando…" : "Salvar e continuar"}
             </Button>
           </form>
         ) : null}
 
-        {!passageEnabled || conversation.businessDisplayName ? (
+        {ready ? (
           <form action={completionAction} className="border-t border-surface-border px-5 py-5 sm:px-8">
             <ConversationHiddenFields
               accountSubdomain={accountSubdomain}

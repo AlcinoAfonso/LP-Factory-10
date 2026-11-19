@@ -6,6 +6,7 @@ import { GenericCommercialPage } from "./_components/commercial-page/GenericComm
 import { PublishedCommercialActivationPage } from "./_components/commercial-page/PublishedCommercialActivationPage";
 import { loadAccountJourney } from "./account-journey-loader";
 import { redirect } from "next/navigation";
+import { FeedbackMessage } from "@/components/ui/feedback-message";
 
 type PageProps = {
   params: Promise<{ account: string }> | { account: string };
@@ -19,7 +20,11 @@ export default async function Page({ params }: PageProps) {
 
   if (journey.view === "pending_setup") {
     const { conversation } = journey;
-    if (!conversation || conversation.stage !== "ready_to_complete") return null;
+    if (!conversation) return (
+      <main className="mx-auto max-w-3xl px-4 py-8">
+        <FeedbackMessage tone="error">Não foi possível carregar a conversa. Atualize a página para tentar novamente.</FeedbackMessage>
+      </main>
+    );
 
     return (
       <PendingSetupConversation
@@ -28,8 +33,10 @@ export default async function Page({ params }: PageProps) {
           id: conversation.id,
           version: conversation.version,
           businessDisplayName: conversation.businessDisplayName,
-          businessNameCandidate: conversation.businessNameCandidate,
           attendanceEnabled: conversation.attendanceEnabled,
+          stage: conversation.stage,
+          messages: conversation.messages,
+          dialogueState: conversation.dialogueState,
         }}
         passageEnabled={journey.passageEnabled}
       />

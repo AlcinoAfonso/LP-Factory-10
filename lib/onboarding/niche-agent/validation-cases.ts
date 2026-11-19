@@ -28,6 +28,16 @@ const proposalAnswer: ModelTurn = {
   memory: [{ kind: "declaration", text: "Oferece catering vegano para eventos de empresas.", replaces: null, sourceId: null }],
 };
 const acceptance: ModelTurn = { ...clarification, reply: "Entendi, você confirmou essa descrição.", reaction: "accept" };
+const pendingContext = {
+  nameProposal: "Cozinha do Vale", acceptedName: null, preferredName: null,
+  preferredNameDeclined: false, whatsappKnown: false, operationalProposal: null, operationalAccepted: false,
+};
+const pendingOutcome = {
+  publicName: { proposal: null, reaction: "continue" },
+  operational: { proposal: null, reaction: "continue" },
+  preferredName: { value: null, declined: false },
+  whatsapp: { reference: null, declined: false },
+};
 
 function prepared(input: NicheTurnContext) {
   const result = prepareNicheTurn(input);
@@ -52,6 +62,40 @@ function success(input: NicheTurnContext, output: ModelTurn) {
   assert.ok(result.ok);
   return result.value;
 }
+
+test("Pending Setup preserva contato antecipado por referência e nunca envia os dígitos à IA", () => {
+  const content = "Sou Ana e meu WhatsApp é (21) 99999-1111. Faço catering vegano.";
+  const input = { ...context, message: { text: content, replyToProposalId: null },
+    history: [{ role: "user" as const, text: "O WhatsApp antigo começa com 3344-0000." }], pendingSetup: pendingContext };
+  const preparedTurn = prepared(input);
+  assert.equal(preparedTurn.contractVersion, 2);
+  assert.match(String(preparedTurn.request.input), /contato_1/);
+  assert.doesNotMatch(String(preparedTurn.request.input), /99999|1111|3344|0000/);
+  const output = { ...proposalAnswer, pendingSetup: {
+    ...pendingOutcome, preferredName: { value: "Ana", declined: false }, whatsapp: { reference: "contato_1", declined: false },
+  } };
+  const result = run(input, output);
+  assert.ok(result.ok);
+  assert.equal(result.value.pendingSetup?.preferredName.value, "Ana");
+  assert.equal(result.value.pendingSetup?.whatsapp.value, "(21) 99999-1111");
+  assert.equal(run(context, output).ok, false);
+  assert.equal(run(input, { ...output, pendingSetup: { ...output.pendingSetup,
+    whatsapp: { reference: "contato_2", declined: false } } }).ok, false);
+});
+
+test("Pending Setup distingue o aceite do nome e do nicho de recusas opcionais", () => {
+  const input = { ...context, officialNiche, activeProposal: proposal,
+    message: { text: "Cozinha do Vale e essa descrição estão certos. Prefiro não dar meus contatos.", replyToProposalId: proposal.id },
+    pendingSetup: pendingContext };
+  const output = { ...acceptance, pendingSetup: { ...pendingOutcome,
+    publicName: { proposal: null, reaction: "accept" }, whatsapp: { reference: null, declined: true } } };
+  const result = run(input, output);
+  assert.ok(result.ok);
+  assert.equal(result.value.confirmation?.description, proposed);
+  assert.equal(result.value.pendingSetup?.publicName.reaction, "accept");
+  assert.equal(result.value.pendingSetup?.whatsapp.declined, true);
+  assert.equal(run({ ...input, pendingSetup: { ...pendingContext, nameProposal: null } }, output).ok, false);
+});
 
 test("informa de uma vez atividade, oferta e público e aceita proposta textual sem catálogo", () => {
   const { request, promptVersion, contractVersion } = prepared(context);

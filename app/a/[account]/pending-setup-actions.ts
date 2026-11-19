@@ -7,12 +7,18 @@ import { revalidatePath } from "next/cache";
 import { getAccessContext } from "@/lib/access/getAccessContext";
 import { getConfirmedOperationalNicheResolutionLabel } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
 import { validateBusinessDisplayName } from "../../../lib/onboarding/pending-setup";
+import { conversationalMessage, mergeNicheMemory, nicheSummaryContext, requestNicheAgent } from "../../../lib/onboarding/niche-agent/runtime";
+import { readAccountOfficialNiche } from "../../../lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter";
+import { readActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import {
+  claimPendingNicheTurn,
+  commitPendingNicheTurn,
   completePendingSetup,
   loadPendingSetupConversation,
+  releasePendingNicheTurn,
   setPendingSetupBusinessDisplayName,
 } from "../../../lib/onboarding/pending-setup/adapters/pendingSetupConversationAdapter";
-import { isE1011PassageEnabled } from "../../../lib/onboarding/pending-setup/config";
+import { isE1011PassageEnabled, isE1012AttendanceEnabled } from "../../../lib/onboarding/pending-setup/config";
 
 export type PendingSetupActionState = Readonly<{
   ok: boolean;
@@ -22,10 +28,7 @@ export type PendingSetupActionState = Readonly<{
 
 const GENERIC_ERROR = "Não foi possível continuar agora. Tente novamente.";
 
-async function getPendingSetupActor(formData: FormData) {
-  const accountSubdomain = String(formData.get("account_subdomain") ?? "")
-    .trim()
-    .toLowerCase();
+async function getPendingSetupActor(accountSubdomain: string) {
   const route = accountSubdomain ? `/a/${accountSubdomain}` : "/a";
   if (!accountSubdomain) return { ok: false as const, route };
 
@@ -57,7 +60,7 @@ export async function completePendingSetupAction(
   _previousState: PendingSetupActionState,
   formData: FormData,
 ): Promise<PendingSetupActionState> {
-  const actor = await getPendingSetupActor(formData);
+  const actor = await getPendingSetupActor(String(formData.get("account_subdomain") ?? "").trim().toLowerCase());
   if (!actor.ok) return { ok: false, formError: GENERIC_ERROR };
 
   const conversationId = String(formData.get("conversation_id") ?? "").trim();
@@ -113,8 +116,8 @@ export async function savePendingSetupBusinessDisplayNameAction(
   _previousState: PendingSetupActionState,
   formData: FormData,
 ): Promise<PendingSetupActionState> {
-  if (!isE1011PassageEnabled()) return { ok: false, formError: GENERIC_ERROR };
-  const actor = await getPendingSetupActor(formData);
+  if (!isE1011PassageEnabled() || isE1012AttendanceEnabled()) return { ok: false, formError: GENERIC_ERROR };
+  const actor = await getPendingSetupActor(String(formData.get("account_subdomain") ?? "").trim().toLowerCase());
   if (!actor.ok) return { ok: false, formError: GENERIC_ERROR };
   const conversationId = String(formData.get("conversation_id") ?? "").trim();
   const expectedVersion = Number(formData.get("expected_version"));
@@ -149,4 +152,93 @@ export async function savePendingSetupBusinessDisplayNameAction(
   }
   revalidatePath(actor.route);
   return { ok: true };
+}
+
+export async function conversePendingSetupAction(raw: unknown) {
+  const input = conversationalMessage.safeParse(raw);
+  const failure = { ok: false as const, message: GENERIC_ERROR };
+  if (!input.success || !input.data.dialogueId || !isE1012AttendanceEnabled()) return failure;
+  const { account, dialogueId, version, requestId, content } = input.data;
+  const actor = await getPendingSetupActor(account);
+  if (!actor.ok) return failure;
+  const identity = { accountId: actor.accountId, userId: actor.userId, conversationId: dialogueId, token: crypto.randomUUID() };
+  const claim = await claimPendingNicheTurn({ ...identity, version, requestId, content });
+  if (!claim) return { ok: false as const, message: "A conversa mudou. Atualize a página para continuar." };
+  if (claim.replay) return { ok: true as const };
+  const fence = { ...identity, version: claim.version };
+
+  try {
+    const [conversation, official, taxonomy] = await Promise.all([
+      loadPendingSetupConversation(actor), readAccountOfficialNiche(actor.accountId),
+      readActivePrimaryAccountTaxon({ accountId: actor.accountId }),
+    ]);
+    if (conversation?.id !== dialogueId || conversation.version !== claim.version ||
+      !conversation.accountContext || !official.ok || !taxonomy.ok) throw new Error("context_unavailable");
+    const state = conversation.dialogueState;
+    const niche = official.niche;
+    const saved = conversation.attendanceProposal;
+    const officialRevision = niche?.confirmed ? niche.revision : null;
+    const active = saved?.kind === "semantic" && saved.expectedNicheRevision === (niche?.textRevision ?? 0)
+      ? { id: dialogueId + ":proposal", description: saved.nicheDescription!, expectedOfficialRevision: officialRevision }
+      : null;
+    const operationalProposal = saved?.kind === "operational_fallback" ? conversation.businessContextText : null;
+    const observed = conversation.accountContext;
+    const summary = nicheSummaryContext(observed.summary);
+    const result = await requestNicheAgent(actor.accountId, dialogueId, {
+      message: { text: content, replyToProposalId: active?.id ?? null },
+      history: conversation.messages.filter(entry => entry.id !== requestId).slice(-8)
+        .map(entry => ({ role: entry.role, text: entry.content })),
+      summary: summary.text,
+      businessContext: (conversation.businessNameCandidate
+        ? [conversation.businessContextText, "Nome anteriormente informado: " + conversation.businessNameCandidate]
+          .filter(Boolean).join("\n").slice(0, 4000)
+        : conversation.businessContextText),
+      officialNiche: niche?.confirmed ? { description: niche.name, revision: niche.revision } : null,
+      activeProposal: active,
+      pendingSetup: {
+        nameProposal: state?.nameProposal ?? null,
+        acceptedName: state?.acceptedName ?? conversation.businessDisplayName,
+        preferredName: conversation.preferredName,
+        preferredNameDeclined: Boolean(conversation.preferredNameDeclined),
+        operationalProposal,
+        operationalAccepted: Boolean(state?.operationalAccepted),
+        whatsappKnown: summary.whatsappKnown,
+      },
+    });
+    const outcome = result?.pendingSetup;
+    if (!result || !outcome) throw new Error("provider_unavailable");
+    const acceptOperational = outcome.operational.reaction === "accept" && Boolean(operationalProposal);
+    const accept = Boolean(result.confirmation) || acceptOperational;
+    const next = result.proposal
+      ? { kind: "semantic" as const, taxonId: null, taxonName: null, nicheDescription: result.proposal,
+          expectedNicheRevision: niche?.textRevision ?? 0 }
+      : outcome.operational.proposal
+        ? { kind: "operational_fallback" as const, taxonId: null, taxonName: null }
+        : !accept && ((active && result.reaction === "continue") ||
+            (operationalProposal && outcome.operational.reaction === "continue")) ? saved : null;
+    const understanding = outcome.operational.proposal ?? result.proposal ?? conversation.businessContextText ??
+      result.memory.find(entry => entry.kind === "declaration")?.text ?? "";
+    const nameReady = !isE1011PassageEnabled() || Boolean(conversation.businessDisplayName ||
+      (outcome.publicName.reaction === "accept" && state?.nameProposal) ||
+      (outcome.publicName.reaction === "continue" && !outcome.publicName.proposal && state?.acceptedName));
+    const ready = !next && nameReady && Boolean(understanding) &&
+      (accept || niche?.confirmed || (state?.operationalAccepted && outcome.operational.reaction === "continue"));
+    const written = await commitPendingNicheTurn({ ...fence, reply: result.reply,
+      summary: mergeNicheMemory(observed.summary, result, acceptOperational ? operationalProposal ?? undefined : undefined),
+      observed, understanding, preferredName: outcome.preferredName.value,
+      preferredNameDeclined: outcome.preferredName.value ? false : outcome.preferredName.declined || Boolean(conversation.preferredNameDeclined),
+      stage: next ? "niche_confirmation" : ready ? "ready_to_complete" : "business_understanding",
+      proposal: next, accept, observedTaxon: taxonomy.taxon?.taxonId ?? null,
+      observedRevision: niche?.textRevision ?? 0, nameProposal: outcome.publicName.proposal,
+      nameReaction: outcome.publicName.reaction === "continue" ? "keep" : outcome.publicName.reaction,
+      clearOperational: outcome.operational.reaction === "clear",
+    });
+    if (!written) throw new Error("turn_not_committed");
+    return { ok: true as const };
+  } catch {
+    await releasePendingNicheTurn(fence).catch(() => null);
+    return { ok: false as const, message: "A mensagem foi registrada. Tente novamente para obter a resposta." };
+  } finally {
+    revalidatePath(actor.route);
+  }
 }

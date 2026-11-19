@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { OpenAiResponsesInput, OpenAiResponsesParser } from "../../openai-responses/openAiResponsesAdapter";
 import { OFFICIAL_NICHE_MAX_LENGTH, validNicheDescription } from "../niche-resolution/official-niche-policy";
 import { redactPotentialContactDetails } from "../text-redaction";
+import { webSearchMetadata } from "../../openai-responses/web-search-metadata";
 import { NICHE_AGENT_INSTRUCTIONS, NICHE_AGENT_PROMPT_VERSION } from "./prompt";
 
 const CONTRACT_VERSION = 1;
@@ -9,6 +10,16 @@ const SUMMARY_LIMIT = 6000;
 const dialogueText = z.string().trim().min(1).max(4000);
 const reference = z.string().trim().min(1).max(160);
 const nicheDescription = z.string().min(1).max(OFFICIAL_NICHE_MAX_LENGTH).refine(validNicheDescription);
+const publicName = z.string().trim().min(1).max(120).refine(value => !/[\x00-\x1f\x7f<>]/u.test(value));
+const pendingSetupContext = z.strictObject({
+  nameProposal: publicName.nullable(),
+  acceptedName: publicName.nullable(),
+  preferredName: publicName.nullable(),
+  preferredNameDeclined: z.boolean(),
+  whatsappKnown: z.boolean(),
+  operationalProposal: dialogueText.nullable(),
+  operationalAccepted: z.boolean(),
+});
 
 const contextSchema = z.strictObject({
   message: z.strictObject({ text: dialogueText, replyToProposalId: reference.nullable() }).nullable(),
@@ -29,6 +40,7 @@ const contextSchema = z.strictObject({
     excerpt: dialogueText,
     checkedOn: z.iso.date(),
   })).max(3).readonly().optional(),
+  pendingSetup: pendingSetupContext.optional(),
 });
 
 // The caller supplies the submitted message and server-observed proposal association.
@@ -46,9 +58,25 @@ const turnSchema = z.strictObject({
     sourceId: reference.nullable(),
   })).max(6),
 });
+const journeyProposal = (text: typeof publicName | typeof dialogueText) => z.strictObject({
+  proposal: text.nullable(),
+  reaction: z.enum(["continue", "accept", "clear"]),
+});
+const pendingTurnSchema = turnSchema.extend({
+  pendingSetup: z.strictObject({
+    publicName: journeyProposal(publicName),
+    operational: journeyProposal(dialogueText),
+    preferredName: z.strictObject({ value: publicName.nullable(), declined: z.boolean() }),
+    whatsapp: z.strictObject({ reference: reference.nullable(), declined: z.boolean() }),
+  }),
+});
+type PendingTurn = z.output<typeof pendingTurnSchema>["pendingSetup"];
 
 type ModelTurn = z.output<typeof turnSchema>;
 export type NicheTurn = Readonly<ModelTurn & {
+  pendingSetup?: Omit<PendingTurn, "whatsapp"> & {
+    whatsapp: { value: string | null; declined: boolean };
+  };
   // Evidence for the caller to revalidate against the persisted proposal, actor and account.
   confirmation: Readonly<{
     proposalId: string;
@@ -67,6 +95,20 @@ const textFormat = {
   strict: true,
   schema: z.toJSONSchema(turnSchema, { target: "draft-7" }),
 } as const;
+const pendingTextFormat = { ...textFormat, schema: z.toJSONSchema(pendingTurnSchema, { target: "draft-7" }) };
+
+function projectCurrentMessage(text: string, pending: boolean) {
+  const contacts = new Map<string, string>();
+  const projected = pending
+    ? text.replace(/\[contato_\d+\]/giu, "[referência informada na mensagem]")
+      .replace(/(?:\+\s*|\()?(?:\d[\s().-]*){3,}\d/gu, match => {
+        const id = `contato_${contacts.size + 1}`;
+        contacts.set(id, match.trimEnd());
+        return `[${id}] `;
+      })
+    : text;
+  return { text: redactPotentialContactDetails(projected), contacts };
+}
 
 const responsesEnvelope = z.object({
   status: z.string(),
@@ -78,13 +120,14 @@ const responsesEnvelope = z.object({
   })).optional(),
 });
 
-export function prepareNicheTurn(raw: NicheTurnContext):
+export function prepareNicheTurn(raw: NicheTurnContext, searchLimit = 0):
   | Readonly<{ ok: true; value: PreparedNicheTurn }>
   | Readonly<{ ok: false; kind: "invalid_context" }> {
   const validated = contextSchema.safeParse(raw);
   if (!validated.success) return { ok: false, kind: "invalid_context" };
 
-  const { message, history, summary, businessContext, officialNiche, activeProposal, externalSources = [] } = validated.data;
+  const { message, history, summary, businessContext, officialNiche, activeProposal, externalSources = [], pendingSetup } = validated.data;
+  const current = message ? projectCurrentMessage(message.text, Boolean(pendingSetup)) : null;
   const currentProposal = activeProposal?.expectedOfficialRevision === (officialNiche?.revision ?? null)
     ? activeProposal : null;
   const confirmationTarget = currentProposal && message?.replyToProposalId === currentProposal.id
@@ -99,12 +142,14 @@ export function prepareNicheTurn(raw: NicheTurnContext):
     ok: true,
     value: {
       promptVersion: NICHE_AGENT_PROMPT_VERSION,
-      contractVersion: CONTRACT_VERSION,
+      contractVersion: pendingSetup ? CONTRACT_VERSION + 1 : CONTRACT_VERSION,
       request: {
         instructions: NICHE_AGENT_INSTRUCTIONS,
         input: JSON.stringify({
-          message: message ? redactPotentialContactDetails(message.text) : null,
-          history: history.map(({ role, text }) => ({ role, text: redactPotentialContactDetails(text) })),
+          message: current?.text ?? null,
+          history: history.map(({ role, text }) => ({ role, text: pendingSetup
+            ? projectCurrentMessage(text, true).text.replace(/\[contato_\d+\]/gu, "[telefone removido]")
+            : redactPotentialContactDetails(text) })),
           summary: summary === null ? null : redactPotentialContactDetails(summary),
           businessContext: businessContext === null ? null : redactPotentialContactDetails(businessContext),
           officialNiche: officialNiche?.description ?? null,
@@ -114,12 +159,14 @@ export function prepareNicheTurn(raw: NicheTurnContext):
           externalSources: externalSources.map(({ id, excerpt, checkedOn }) => ({
             id, excerpt: redactPotentialContactDetails(excerpt), checkedOn,
           })),
+          ...(pendingSetup ? { pendingSetup } : {}),
         }),
         store: false,
         background: false,
-        text: { format: textFormat },
+        text: { format: pendingSetup ? pendingTextFormat : textFormat },
       },
-      parseResponse: parseTurn(summary ?? "", message !== null, currentProposal?.description ?? null, confirmationTarget, externalSources),
+      parseResponse: parseTurn(summary ?? "", message !== null, currentProposal?.description ?? null,
+        confirmationTarget, externalSources, pendingSetup, current?.contacts, searchLimit),
     },
   };
 }
@@ -130,6 +177,9 @@ function parseTurn(
   currentDescription: string | null,
   confirmationTarget: NicheTurn["confirmation"],
   sources: readonly { id: string }[],
+  pending: z.output<typeof pendingSetupContext> | undefined,
+  contacts: ReadonlyMap<string, string> = new Map(),
+  searchLimit = 0,
 ): OpenAiResponsesParser<NicheTurn> {
   const invalid = { ok: false, kind: "invalid_response", reason: "niche_turn_invalid" } as const;
   return (payload) => {
@@ -139,7 +189,9 @@ function parseTurn(
     if (error || status === "failed" || status === "incomplete" || status === "cancelled") {
       return { ok: false, kind: "provider_error", reason: "niche_turn_unavailable" };
     }
-    if (status !== "completed" || !output || output.some(({ type }) => type !== "message" && type !== "reasoning")) return invalid;
+    const web = webSearchMetadata(payload);
+    if (!web || web.calls > searchLimit || status !== "completed" || !output ||
+      output.some(({ type }) => !["message", "reasoning", "web_search_call"].includes(type))) return invalid;
     const messages = output.filter(({ type }) => type === "message");
     const content = messages[0]?.content ?? [];
     if (messages.length !== 1 || messages[0].role !== "assistant" || content.length === 0) return invalid;
@@ -150,7 +202,8 @@ function parseTurn(
 
     let raw: unknown;
     try { raw = JSON.parse(content.map(({ text }) => text).join("")); } catch { return invalid; }
-    const turn = turnSchema.safeParse(raw);
+    const pendingResult = pending ? pendingTurnSchema.safeParse(raw) : null;
+    const turn = pendingResult ?? turnSchema.safeParse(raw);
     if (!turn.success) return invalid;
     const { reply, proposal, reaction, memory } = turn.data;
     const confirmation = reaction === "accept" ? confirmationTarget : null;
@@ -158,7 +211,27 @@ function parseTurn(
     if (!hasMessage && (reaction !== "continue" || memory.length > 0)) return invalid;
     if (proposal && (!reply.includes(proposal) || (reaction === "reject" && proposal === currentDescription))) return invalid;
     const safeMemory = validMemory(memory, priorSummary, sources) ? memory : [];
-    return { ok: true, value: { reply, proposal, reaction, memory: safeMemory, confirmation } };
+    if (!pendingResult) return { ok: true, value: { reply, proposal, reaction, memory: safeMemory, confirmation } };
+    if (!pendingResult.success || !pending || !hasMessage) return invalid;
+    const result = pendingResult.data.pendingSetup;
+    const value = result.whatsapp.reference === null ? null : contacts.get(result.whatsapp.reference);
+    if (value === undefined || (value !== null && result.whatsapp.declined) ||
+      (result.preferredName.value && result.preferredName.declined) ||
+      [result.publicName, result.operational].some(item => item.proposal &&
+        (!reply.includes(item.proposal) || item.reaction === "accept")) ||
+      (result.publicName.reaction === "accept" && !pending.nameProposal) ||
+      (result.operational.reaction === "accept" && (!pending.operationalProposal || proposal || confirmation)) ||
+      (result.operational.proposal && (proposal || confirmation))) return invalid;
+    const containsContact = (text: string) => /\[contato_\d+\]|(?:\+?\d[\s().-]*){10,15}/u.test(text);
+    if ([reply, proposal ?? "", result.publicName.proposal ?? "", result.preferredName.value ?? "",
+      result.operational.proposal ?? ""].some(containsContact)) return invalid;
+    const displayedReply = web.calls > 0
+      ? reply + "\n\nFontes consultadas em " + new Date().toISOString().slice(0, 10) + ":\n" + web.sources.map(source => source.url).join("\n")
+      : reply;
+    if (displayedReply.length > 4000) return invalid;
+    return { ok: true, value: { reply: displayedReply, proposal, reaction, confirmation,
+      memory: safeMemory.some(entry => containsContact(entry.text)) ? [] : safeMemory,
+      pendingSetup: { ...result, whatsapp: { value, declined: result.whatsapp.declined } } } };
   };
 }
 

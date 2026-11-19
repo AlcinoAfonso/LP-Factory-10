@@ -39,6 +39,13 @@ export type PendingSetupConversation = Readonly<{
   preferredNameDeclined?: boolean;
   attendanceProposal?: AttendanceProposal | null;
   accountContext?: PendingSetupAccountContext;
+  dialogueState?: Readonly<{
+    requestId?: string | null;
+    lastRequestId?: string | null;
+    nameProposal?: string | null;
+    acceptedName?: string | null;
+    operationalAccepted?: boolean;
+  }>;
   attendanceTurnIntent?: "initialize" | "message" | "confirm" | "clarify" | null;
   version: number;
   createdAt: string;
