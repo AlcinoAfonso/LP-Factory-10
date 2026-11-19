@@ -31,7 +31,7 @@ export const dialogueState = z.object({
   nicheAccepted: z.boolean().optional(),
 });
 
-export async function requestNicheAgent(accountId: string, dialogueId: string, context: NicheTurnContext) {
+export async function requestNicheAgent(accountId: string, dialogueId: string, context: NicheTurnContext, privateBusinessName?: string | null) {
   const environment = resolveOpenAiWorkloadEnvironment();
   const configuration = await resolveOpenAiProductWorkload("pending_setup_conversation", environment);
   if (!configuration.ok) return null;
@@ -62,7 +62,7 @@ export async function requestNicheAgent(accountId: string, dialogueId: string, c
   const turn = await run(context);
   const search = configuration.value.webSearch;
   if (!turn?.searchTopic || !search) return turn;
-  const publicContext = publicResearchContext(turn.searchTopic, context, turn.pendingSetup?.publicName.proposal);
+  const publicContext = publicResearchContext(turn.searchTopic, context, privateBusinessName, turn.pendingSetup?.publicName.proposal);
   if (!publicContext) return turn;
   const research = await run(publicContext, search);
   const reply = research && turn.reply + "\n\n" + research.reply;

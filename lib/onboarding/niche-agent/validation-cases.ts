@@ -174,6 +174,18 @@ test("usa mensagens relevantes antigas e permite pesquisa condicional nas duas j
   assert.equal(prepared(context).parseResponse(output).ok, false);
 });
 
+test("bloqueia o nome privado informado no contexto textual do Pending Setup", () => {
+  const privateContext = { ...context, pendingSetup: pendingContext,
+    businessContext: "Oferece jardinagem para eventos.\nNome anteriormente informado: Estúdio do Vale" };
+  assert.equal(publicResearchContext("paisagismo para estudio do vale, eventos", privateContext), null);
+  const truncatedContext = { ...privateContext, businessContext: "Nome anteriormente informado: Est" };
+  assert.equal(publicResearchContext("paisagismo para estudio do vale", truncatedContext, "Estúdio do Vale"), null);
+  const search = publicResearchContext("Diferença entre jardinagem e paisagismo", privateContext);
+  assert.ok(search);
+  assert.equal(search.researchTopic, "Diferença entre jardinagem e paisagismo");
+  assert.equal(search.businessContext, null);
+});
+
 test("corrige só o fato reexibido na síntese aceita e preserva o restante", () => {
   const id = "00000000-0000-4000-8000-000000000004";
   const shown = "Atende empresas.";

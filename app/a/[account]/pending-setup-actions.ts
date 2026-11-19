@@ -207,7 +207,7 @@ export async function conversePendingSetupAction(raw: unknown) {
         operationalAccepted: Boolean(state?.operationalAccepted),
         whatsappKnown: summary.whatsappKnown || Boolean(synthesis?.phone || synthesis?.declined),
       },
-    });
+    }, conversation.businessNameCandidate);
     const outcome = result?.pendingSetup;
     if (!result || !outcome) throw new Error("provider_unavailable");
     const acceptedSynthesis = !result.synthesisWrite.offer && !result.synthesisWrite.clear &&
