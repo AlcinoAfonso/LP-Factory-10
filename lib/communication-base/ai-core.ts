@@ -1,4 +1,4 @@
-import { communicationSections, getCommunicationSection, isBusinessLongTextSection, type CommunicationSectionKey } from "./registry";
+import { communicationSections, getCommunicationSection, isBusinessLongTextSection, type CommunicationSectionKey, type CommunicationSectionDefinition } from "./registry";
 import { parseCommunicationFacts, parseSectionValue } from "./policy";
 import type { CommunicationBase, CommunicationFact, CommunicationSectionValue } from "./contracts";
 import { isMaterialId, parseCommunicationMaterials } from "./materials";
@@ -27,30 +27,28 @@ const faqItemSchema = {
   required: ["question", "answer"],
   properties: { question: { type: "string" }, answer: { type: "string" } },
 };
-const sectionSchema = Object.fromEntries(communicationSections.filter((section) => section.stage === 2).map((section) => [
-  section.key,
-  {
-    type: "object",
-    additionalProperties: false,
-    required: ["value", "basis"],
+function stageTwoSectionSchema(section: CommunicationSectionDefinition) {
+  return {
+    type: "object", additionalProperties: false, required: ["value", "basis"],
     properties: {
-      value: section.format === "text"
-        ? { type: "string" }
+      value: section.format === "text" ? { type: "string" }
         : { type: "array", items: section.format === "faq" ? faqItemSchema : { type: "string" } },
       basis: { type: "string", enum: [section.key === "about" ? "confirmed_business_fact" : "strategic_hypothesis"] },
     },
-  },
-]));
+  };
+}
+const sectionSchema = Object.fromEntries(communicationSections.filter(section => section.stage === 2)
+  .map(section => [section.key, stageTwoSectionSchema(section)]));
 export type StageTwoTarget = Readonly<{ kind: "general" }> |
   Readonly<{ kind: "section"; key: CommunicationSectionKey }>;
 
-function targetKeys(target: StageTwoTarget): readonly CommunicationSectionKey[] | null {
+function targetKeys(target: StageTwoTarget, definitions: readonly CommunicationSectionDefinition[] = communicationSections): readonly CommunicationSectionKey[] | null {
   if (target.kind === "general") return stageTwoKeys;
-  if (target.kind !== "section" || getCommunicationSection(target.key)?.stage !== 2) return null;
+  if (target.kind !== "section" || !definitions.some(section => section.stage === 2 && section.key === target.key)) return null;
   return [target.key];
 }
 
-export function stageTwoSchema(keys: readonly CommunicationSectionKey[]) {
+export function stageTwoSchema(keys: readonly CommunicationSectionKey[], definitions: readonly CommunicationSectionDefinition[] = communicationSections) {
   return {
     type: "object",
     additionalProperties: false,
@@ -60,7 +58,8 @@ export function stageTwoSchema(keys: readonly CommunicationSectionKey[]) {
         type: "object",
         additionalProperties: false,
         required: keys,
-        properties: Object.fromEntries(keys.map((key) => [key, sectionSchema[key]])),
+        properties: Object.fromEntries(keys.map(key => [key, sectionSchema[key] ??
+          stageTwoSectionSchema(definitions.find(section => section.key === key && section.stage === 2)!)])),
       },
     },
   };
@@ -184,8 +183,9 @@ export function stageTwoPrompt(base: CommunicationBase, target: StageTwoTarget, 
 export function parseStageTwoResponse(
   payload: unknown, target: StageTwoTarget, requiresCurrentResearch: boolean,
   researchMode: "legacy" | "autonomous" = "legacy",
+  definitions: readonly CommunicationSectionDefinition[] = communicationSections,
 ) {
-  const keys = targetKeys(target);
+  const keys = targetKeys(target, definitions);
   if (!keys) return invalid("invalid_stage_two_target");
   const extracted = extractOutput(payload);
   if (!extracted.ok) return extracted;
@@ -231,7 +231,7 @@ export function parseStageTwoResponse(
       keys.some((key) => !Object.hasOwn(sections, key))) return invalid("invalid_stage_two_output");
   const suggestions: CommunicationSuggestion[] = [];
   for (const key of keys) {
-    const definition = getCommunicationSection(key);
+    const definition = definitions.find(section => section.stage === 2 && section.key === key);
     const entry = asRecord(sections[key]);
     if (!definition || !entry) return invalid("invalid_stage_two_output");
     const basis = key === "about" ? "confirmed_business_fact" : "strategic_hypothesis";
