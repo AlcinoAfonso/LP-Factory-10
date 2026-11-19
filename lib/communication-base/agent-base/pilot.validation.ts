@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { AGENT_BASE_PILOT_MODEL, agentBasePilotOrder, agentBasePilotCatalogState, buildAgentBasePilotPrompt, parseAgentBasePilotResponse, sanitizeAgentBasePilotFailureReason, selectAgentBasePilotInput } from "./pilot";
-import { AGENT_BASE_PROMPT } from "./base-prompt";
+import { AGENT_BASE_PROMPT, AGENT_BASE_PROMPT_VERSION } from "./base-prompt";
 import { AGENT_BASE_ABOUT_PROMPT } from "./about-prompt";
 import { AGENT_BASE_AUDIENCE_PROMPT } from "./audience-prompt";
 import { AGENT_BASE_MARKET_INSIGHTS_PROMPT } from "./market-insights-prompt";
+import { AGENT_BASE_VALUE_PROPOSITION_PROMPT, AGENT_BASE_VALUE_PROPOSITION_PROMPT_VERSION,
+  AGENT_BASE_VALUE_PROPOSITION_SECTION_SCHEMA } from "./value-proposition-prompt";
 import { parseStageTwoResponse, stageTwoSchema } from "../ai-core";
 import { communicationSections } from "../registry";
 import { parseStoredSections, withGeneratedIntelligence } from "../policy";
@@ -73,6 +75,26 @@ for (const [key, specialized, value] of [
   assert.equal(parsed.ok, true);
   if (parsed.ok) { assert.equal(parsed.value.researched, false); previous.push(parsed.value); }
 }
+const valuePropositionPrompt = buildAgentBasePilotPrompt({
+  base, niche, definitions, key: "value_proposition", previous,
+});
+assert.ok(valuePropositionPrompt);
+assert.equal(valuePropositionPrompt.instructions, AGENT_BASE_PROMPT + "\n\n" + AGENT_BASE_VALUE_PROPOSITION_PROMPT);
+assert.equal(valuePropositionPrompt.promptVersion,
+  AGENT_BASE_PROMPT_VERSION + ":" + AGENT_BASE_VALUE_PROPOSITION_PROMPT_VERSION);
+assert.deepEqual(valuePropositionPrompt.schema.properties.sections.required, ["value_proposition"]);
+assert.deepEqual(valuePropositionPrompt.schema.properties.sections.properties.value_proposition,
+  AGENT_BASE_VALUE_PROPOSITION_SECTION_SCHEMA, "the section has its own Structured Outputs contract");
+assert.equal(Reflect.get(stageTwoSchema(["value_proposition"]).properties.sections.properties.value_proposition.properties.value,
+  "description"), undefined, "other flows keep the shared schema unchanged");
+assert.match(AGENT_BASE_PROMPT, /O salvamento e a revisão do conteúdo gerado são controlados pela aplicação/);
+assert.equal(parseAgentBasePilotResponse({ output_text: JSON.stringify({
+  sections: { value_proposition: { value: "Valor específico para os compradores.", basis: "strategic_hypothesis" } },
+}) }, "value_proposition").ok, true);
+assert.equal(parseAgentBasePilotResponse({ output_text: JSON.stringify({
+  sections: { value_proposition: { value: "Texto sem base válida", basis: "confirmed_business_fact" } },
+}) }, "value_proposition").ok, false);
+
 const marketSchema = buildAgentBasePilotPrompt({
   base, niche, definitions, key: "market_insights", previous: previous.slice(0, 2),
 })!.schema;
