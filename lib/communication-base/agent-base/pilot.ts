@@ -18,7 +18,7 @@ const prompts = {
 } as const;
 export type AgentBasePilotKey = string;
 export type AgentBasePilotSection = Omit<CommunicationSuggestion, "key"> & Readonly<{
-  key: string; sources: readonly WebSource[]; researched: boolean;
+  key: string; sources: readonly WebSource[]; researched: boolean; proof?: string;
 }>;
 
 export function agentBasePilotOrder(definitions: readonly CommunicationSectionDefinition[]) {
@@ -96,7 +96,8 @@ export function buildAgentBasePilotPrompt(input: Readonly<{
       section_order: order!.map(({ key, label }) => ({ key, label })),
       confirmed_business_data: selected.confirmed,
       official_niche: { taxon_id: input.niche.taxonId, name: input.niche.name },
-      previous_sections: input.previous,
+      previous_sections: input.previous.map(({ key, value, basis, sources, researched }) =>
+        ({ key, value, basis, sources, researched })),
     }),
     schema,
   };
