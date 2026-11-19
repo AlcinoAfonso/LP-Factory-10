@@ -24,3 +24,12 @@ export const AGENT_BASE_ABOUT_PROMPT = `# Prompt especializado — 3.1 Quem somo
 - Priorize fidelidade factual, clareza, especificidade e leitura fluida. O resultado deve representar aquele negócio, e não servir indistintamente para empresas do mesmo nicho.
 - Quando faltarem informações, trabalhe apenas com o que estiver confirmado. Não preencha lacunas por suposição; se não houver conteúdo suficiente para uma apresentação útil, entregue o valor vazio permitido pelo contrato e indique as lacunas separadamente, quando houver campo apropriado.
 - Entregue somente o conteúdo da seção **Quem somos**, em português brasileiro, respeitando seu formato de texto e o contrato de saída correspondente.` as const;
+
+// Saída própria da seção; o invólucro "sections" continua sendo composto pela integração.
+export const AGENT_BASE_ABOUT_SECTION_SCHEMA = {
+  type: "object", additionalProperties: false, required: ["value", "basis"],
+  properties: {
+    value: { type: "string", description: "Apresentação institucional baseada exclusivamente em informações empresariais confirmadas da Categoria 1." },
+    basis: { type: "string", enum: ["confirmed_business_fact"] },
+  },
+};

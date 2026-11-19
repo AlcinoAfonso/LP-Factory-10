@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { AGENT_BASE_PILOT_MODEL, agentBasePilotOrder, agentBasePilotCatalogState, buildAgentBasePilotPrompt, parseAgentBasePilotResponse, sanitizeAgentBasePilotFailureReason, selectAgentBasePilotInput } from "./pilot";
 import { AGENT_BASE_PROMPT, AGENT_BASE_PROMPT_VERSION } from "./base-prompt";
-import { AGENT_BASE_ABOUT_PROMPT } from "./about-prompt";
+import { AGENT_BASE_ABOUT_PROMPT, AGENT_BASE_ABOUT_SECTION_SCHEMA } from "./about-prompt";
 import { AGENT_BASE_AUDIENCE_PROMPT } from "./audience-prompt";
 import { AGENT_BASE_MARKET_INSIGHTS_PROMPT } from "./market-insights-prompt";
 import { AGENT_BASE_VALUE_PROPOSITION_PROMPT, AGENT_BASE_VALUE_PROPOSITION_PROMPT_VERSION,
@@ -74,10 +74,21 @@ for (const [key, specialized, value] of [
   assert.equal(input.confirmed_business_data.business_name.origin, "user_confirmed");
   assert.deepEqual(input.confirmed_business_data.business_name.facts, base.sections.business_name?.facts);
   assert.deepEqual(prompt.schema.properties.sections.required, [key]);
+  if (key === "about") {
+    assert.deepEqual(prompt.schema.properties.sections.properties.about, AGENT_BASE_ABOUT_SECTION_SCHEMA,
+      "Quem somos has an isolated Structured Outputs contract");
+    assert.deepEqual(AGENT_BASE_ABOUT_SECTION_SCHEMA.properties.basis.enum, ["confirmed_business_fact"]);
+    assert.equal(Reflect.get(stageTwoSchema(["about"]).properties.sections.properties.about.properties.value,
+      "description"), undefined, "shared schema remains unchanged");
+  }
   const parsed = parseAgentBasePilotResponse({ output_text: JSON.stringify({ sections: { [key]: { value, basis: key === "about" ? "confirmed_business_fact" : "strategic_hypothesis" } } }) }, key);
   assert.equal(parsed.ok, true);
   if (parsed.ok) { assert.equal(parsed.value.researched, false); previous.push(parsed.value); }
 }
+assert.equal(parseAgentBasePilotResponse({ output_text: JSON.stringify({
+  sections: { about: { value: "Institucional", basis: "strategic_hypothesis" } },
+}) }, "about").ok, false, "institutional facts cannot claim strategic hypothesis provenance");
+
 const valuePropositionPrompt = buildAgentBasePilotPrompt({
   base, niche, definitions, key: "value_proposition", previous,
 });
