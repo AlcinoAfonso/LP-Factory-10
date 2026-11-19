@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { AGENT_BASE_PILOT_MODEL, agentBasePilotOrder, agentBasePilotCatalogState, buildAgentBasePilotPrompt, parseAgentBasePilotResponse, sanitizeAgentBasePilotFailureReason, selectAgentBasePilotInput } from "./pilot";
 import { AGENT_BASE_PROMPT, AGENT_BASE_PROMPT_VERSION } from "./base-prompt";
 import { AGENT_BASE_ABOUT_PROMPT, AGENT_BASE_ABOUT_SECTION_SCHEMA } from "./about-prompt";
-import { AGENT_BASE_AUDIENCE_PROMPT } from "./audience-prompt";
+import { AGENT_BASE_AUDIENCE_PROMPT, AGENT_BASE_AUDIENCE_SECTION_SCHEMA } from "./audience-prompt";
 import { AGENT_BASE_MARKET_INSIGHTS_PROMPT } from "./market-insights-prompt";
 import { AGENT_BASE_VALUE_PROPOSITION_PROMPT, AGENT_BASE_VALUE_PROPOSITION_PROMPT_VERSION,
   AGENT_BASE_VALUE_PROPOSITION_SECTION_SCHEMA } from "./value-proposition-prompt";
@@ -81,6 +81,13 @@ for (const [key, specialized, value] of [
     assert.equal(Reflect.get(stageTwoSchema(["about"]).properties.sections.properties.about.properties.value,
       "description"), undefined, "shared schema remains unchanged");
   }
+  if (key === "audience") {
+    assert.deepEqual(prompt.schema.properties.sections.properties.audience, AGENT_BASE_AUDIENCE_SECTION_SCHEMA,
+      "Público e contexto has an isolated Structured Outputs contract");
+    assert.deepEqual(AGENT_BASE_AUDIENCE_SECTION_SCHEMA.properties.basis.enum, ["strategic_hypothesis"]);
+    assert.equal(Reflect.get(stageTwoSchema(["audience"]).properties.sections.properties.audience.properties.value,
+      "description"), undefined, "shared schema remains unchanged for the legacy audience generator");
+  }
   const parsed = parseAgentBasePilotResponse({ output_text: JSON.stringify({ sections: { [key]: { value, basis: key === "about" ? "confirmed_business_fact" : "strategic_hypothesis" } } }) }, key);
   assert.equal(parsed.ok, true);
   if (parsed.ok) { assert.equal(parsed.value.researched, false); previous.push(parsed.value); }
@@ -88,6 +95,9 @@ for (const [key, specialized, value] of [
 assert.equal(parseAgentBasePilotResponse({ output_text: JSON.stringify({
   sections: { about: { value: "Institucional", basis: "strategic_hypothesis" } },
 }) }, "about").ok, false, "institutional facts cannot claim strategic hypothesis provenance");
+assert.equal(parseAgentBasePilotResponse({ output_text: JSON.stringify({
+  sections: { audience: { value: "Compradores potenciais", basis: "confirmed_business_fact" } },
+}) }, "audience").ok, false, "strategic target audiences are not confirmed business facts");
 
 const valuePropositionPrompt = buildAgentBasePilotPrompt({
   base, niche, definitions, key: "value_proposition", previous,
