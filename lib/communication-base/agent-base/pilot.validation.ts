@@ -6,9 +6,12 @@ import { AGENT_BASE_AUDIENCE_PROMPT } from "./audience-prompt";
 import { AGENT_BASE_MARKET_INSIGHTS_PROMPT } from "./market-insights-prompt";
 import { AGENT_BASE_VALUE_PROPOSITION_PROMPT, AGENT_BASE_VALUE_PROPOSITION_PROMPT_VERSION,
   AGENT_BASE_VALUE_PROPOSITION_SECTION_SCHEMA } from "./value-proposition-prompt";
+import { AGENT_BASE_BENEFITS_PROMPT, AGENT_BASE_BENEFITS_PROMPT_VERSION, AGENT_BASE_BENEFITS_SECTION_SCHEMA } from "./benefits-prompt";
+import { AGENT_BASE_DIFFERENTIATORS_PROMPT, AGENT_BASE_DIFFERENTIATORS_PROMPT_VERSION, AGENT_BASE_DIFFERENTIATORS_SECTION_SCHEMA } from "./differentiators-prompt";
+import { AGENT_BASE_FAQ_PROMPT, AGENT_BASE_FAQ_PROMPT_VERSION, AGENT_BASE_FAQ_SECTION_SCHEMA } from "./faq-prompt";
 import { parseStageTwoResponse, stageTwoSchema } from "../ai-core";
 import { communicationSections } from "../registry";
-import { parseStoredSections, withGeneratedIntelligence } from "../policy";
+import { COMMUNICATION_ITEMS_MAX, COMMUNICATION_FAQ_MAX, parseStoredSections, withGeneratedIntelligence } from "../policy";
 import type { CommunicationBase } from "../contracts";
 
 const base: CommunicationBase = {
@@ -94,6 +97,47 @@ assert.equal(parseAgentBasePilotResponse({ output_text: JSON.stringify({
 assert.equal(parseAgentBasePilotResponse({ output_text: JSON.stringify({
   sections: { value_proposition: { value: "Texto sem base válida", basis: "confirmed_business_fact" } },
 }) }, "value_proposition").ok, false);
+
+const completedSpecialized = [...previous];
+const proposalResult = parseAgentBasePilotResponse({ output_text: JSON.stringify({
+  sections: { value_proposition: { value: "Proposta específica", basis: "strategic_hypothesis" } },
+}) }, "value_proposition");
+assert.ok(proposalResult.ok);
+if (proposalResult.ok) completedSpecialized.push(proposalResult.value);
+for (const { key, promptText, version, ownSchema, value, maxItems } of [
+  { key: "benefits", promptText: AGENT_BASE_BENEFITS_PROMPT, version: AGENT_BASE_BENEFITS_PROMPT_VERSION,
+    ownSchema: AGENT_BASE_BENEFITS_SECTION_SCHEMA, value: ["Ganho comprovável para o comprador"], maxItems: COMMUNICATION_ITEMS_MAX },
+  { key: "differentiators", promptText: AGENT_BASE_DIFFERENTIATORS_PROMPT, version: AGENT_BASE_DIFFERENTIATORS_PROMPT_VERSION,
+    ownSchema: AGENT_BASE_DIFFERENTIATORS_SECTION_SCHEMA, value: ["Característica distintiva fundamentada"], maxItems: COMMUNICATION_ITEMS_MAX },
+  { key: "faq", promptText: AGENT_BASE_FAQ_PROMPT, version: AGENT_BASE_FAQ_PROMPT_VERSION,
+    ownSchema: AGENT_BASE_FAQ_SECTION_SCHEMA, value: [{ question: "Como contratar?", answer: "Consulte as condições confirmadas." }], maxItems: COMMUNICATION_FAQ_MAX },
+] as const) {
+  const prompt = buildAgentBasePilotPrompt({ base, niche, definitions, key, previous: completedSpecialized });
+  assert.ok(prompt);
+  assert.equal(prompt.instructions, AGENT_BASE_PROMPT + "\\n\\n" + promptText,
+    "specialized prompts are composed without changes");
+  assert.equal(prompt.promptVersion, AGENT_BASE_PROMPT_VERSION + ":" + version);
+  assert.deepEqual(prompt.schema.properties.sections.required, [key]);
+  assert.deepEqual(prompt.schema.properties.sections.properties[key], ownSchema);
+  assert.equal(Reflect.get(prompt.schema.properties.sections.properties[key].properties.value, "maxItems"), maxItems);
+  assert.equal(Reflect.get(stageTwoSchema([key]).properties.sections.properties[key].properties.value, "maxItems"),
+    undefined, "shared schema must remain unchanged");
+  const parsed = parseAgentBasePilotResponse({ output_text: JSON.stringify({
+    sections: { [key]: { value, basis: "strategic_hypothesis" } },
+  }) }, key);
+  assert.ok(parsed.ok, "the specialized result is accepted by the existing parser");
+  if (parsed.ok) completedSpecialized.push(parsed.value);
+  const invalidBasis = parseAgentBasePilotResponse({ output_text: JSON.stringify({
+    sections: { [key]: { value, basis: "confirmed_business_fact" } },
+  }) }, key);
+  assert.equal(invalidBasis.ok, false, "unconfirmed strategic content cannot claim factual authority");
+  const excessive = Array.from({ length: maxItems + 1 },
+    () => key === "faq" ? { question: "Pergunta?", answer: "Resposta." } : "Item");
+  assert.equal(parseAgentBasePilotResponse({ output_text: JSON.stringify({
+    sections: { [key]: { value: excessive, basis: "strategic_hypothesis" } },
+  }) }, key).ok, false, "over-limit section rejects the full generation");
+}
+assert.equal(completedSpecialized.length, 7, "all seven catalog sections compose and parse in sequence");
 
 const marketSchema = buildAgentBasePilotPrompt({
   base, niche, definitions, key: "market_insights", previous: previous.slice(0, 2),
