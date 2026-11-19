@@ -157,10 +157,11 @@ export function withGeneratedIntelligence(
   if (!targets.length || sections.length !== targets.length) return null;
   let next = current;
   for (let index = 0; index < targets.length; index++) {
-    if (sections[index]?.key !== targets[index].key ||
-        (typeof sections[index].value === "string" ? !sections[index].value.trim() :
-          !Array.isArray(sections[index].value) || sections[index].value.length === 0)) return null;
-    const updated = withSection(next, targets[index].key, sections[index].value, "agent_generated", definitions);
+    const section = sections[index];
+    const value = section?.value;
+    if (section?.key !== targets[index].key ||
+        (typeof value === "string" ? !value.trim() : !Array.isArray(value) || !value.length)) return null;
+    const updated = withSection(next, targets[index].key, value, "agent_generated", definitions);
     if (!updated) return null;
     next = updated;
   }
