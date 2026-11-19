@@ -5,8 +5,9 @@ import { AGENT_BASE_MARKET_INSIGHTS_PROMPT, AGENT_BASE_MARKET_INSIGHTS_PROMPT_VE
 import { CREDENTIAL_PATTERN, COMMUNICATION_ASSISTANCE_TEXT_MAX, parseStageTwoResponse, stageTwoSchema,
   type CommunicationSuggestion, type OfficialNicheContext, type WebSource } from "../ai-core";
 import type { CommunicationBase } from "../contracts";
-import { COMMUNICATION_ITEMS_MAX, parseCommunicationFacts, parseSectionValue } from "../policy";
-import type { CommunicationSectionDefinition } from "../registry";
+import { COMMUNICATION_FAQ_MAX, COMMUNICATION_ITEMS_MAX, parseCommunicationFacts, parseSectionValue } from "../policy";
+import { getSectionGuidance } from "../section-guidance";
+import type { CommunicationSectionDefinition, CommunicationSectionKey } from "../registry";
 
 export const AGENT_BASE_PILOT_MODEL = "gpt-6.2-sol" as const;
 
@@ -15,15 +16,16 @@ const prompts = {
   audience: { text: AGENT_BASE_AUDIENCE_PROMPT, version: AGENT_BASE_AUDIENCE_PROMPT_VERSION, format: "text" },
   market_insights: { text: AGENT_BASE_MARKET_INSIGHTS_PROMPT, version: AGENT_BASE_MARKET_INSIGHTS_PROMPT_VERSION, format: "items" },
 } as const;
-export type AgentBasePilotKey = keyof typeof prompts;
-export type AgentBasePilotSection = CommunicationSuggestion & Readonly<{
-  sources: readonly WebSource[]; researched: boolean;
+export type AgentBasePilotKey = string;
+export type AgentBasePilotSection = Omit<CommunicationSuggestion, "key"> & Readonly<{
+  key: string; sources: readonly WebSource[]; researched: boolean;
 }>;
 
 export function agentBasePilotOrder(definitions: readonly CommunicationSectionDefinition[]) {
-  const ordered = definitions.filter(section => Object.hasOwn(prompts, section.key));
-  if (ordered.length !== 3 || new Set(ordered.map(section => section.key)).size !== 3 ||
-      ordered.some(section => section.stage !== 2 || section.format !== prompts[section.key as AgentBasePilotKey].format)) return null;
+  const ordered = definitions.filter(section => section.stage === 2);
+  if (!ordered.length || new Set(ordered.map(section => section.key)).size !== ordered.length ||
+      ordered.some(section => !["text", "items", "faq"].includes(section.format) ||
+        (Object.hasOwn(prompts, section.key) && section.format !== prompts[section.key as keyof typeof prompts].format))) return null;
   return ordered;
 }
 
@@ -69,17 +71,26 @@ export function buildAgentBasePilotPrompt(input: Readonly<{
       !input.niche.confirmed || !input.niche.name.trim() ||
       input.previous.some((section, index) => section.key !== order?.[index]?.key) ||
       CREDENTIAL_PATTERN.test(JSON.stringify([input.niche, input.previous]))) return null;
-  const specialized = prompts[input.key];
-  const schema = stageTwoSchema([input.key]);
-  if (input.key === "market_insights") {
-    const section = schema.properties.sections.properties.market_insights;
-    schema.properties.sections.properties.market_insights = { ...section,
-      properties: { ...section.properties, value: Object.assign({}, section.properties.value, { maxItems: COMMUNICATION_ITEMS_MAX }) },
+  const specialized = Object.hasOwn(prompts, input.key) ? prompts[input.key as keyof typeof prompts] : null;
+  const guidance = getSectionGuidance(input.key);
+  const instructions = specialized?.text ?? [
+    "# Seção — " + target.label,
+    guidance?.description ?? "Desenvolva esta seção conforme sua finalidade comercial.",
+    guidance?.help ?? "",
+    "Produza somente esta seção, com clareza, sem redundâncias, sem inventar fatos ou promessas.",
+    "Respeite o formato " + target.format + " e o contrato de saída.",
+  ].filter(Boolean).join("\n");
+  const schema = stageTwoSchema([input.key as CommunicationSectionKey], input.definitions);
+  if (target.format === "items" || target.format === "faq") {
+    const section = schema.properties.sections.properties[input.key];
+    schema.properties.sections.properties[input.key] = { ...section,
+      properties: { ...section.properties, value: Object.assign({}, section.properties.value,
+        { maxItems: target.format === "faq" ? COMMUNICATION_FAQ_MAX : COMMUNICATION_ITEMS_MAX }) },
     };
   }
   return {
-    instructions: AGENT_BASE_PROMPT + "\n\n" + specialized.text,
-    promptVersion: AGENT_BASE_PROMPT_VERSION + ":" + specialized.version,
+    instructions: AGENT_BASE_PROMPT + "\n\n" + instructions,
+    promptVersion: AGENT_BASE_PROMPT_VERSION + ":" + (specialized?.version ?? "d14f_catalog_section_v1"),
     input: JSON.stringify({
       target_section: { key: target.key, label: target.label, format: target.format },
       section_order: order!.map(({ key, label }) => ({ key, label })),
@@ -91,13 +102,15 @@ export function buildAgentBasePilotPrompt(input: Readonly<{
   };
 }
 
-export function parseAgentBasePilotResponse(payload: unknown, key: AgentBasePilotKey) {
+export function parseAgentBasePilotResponse(payload: unknown, key: AgentBasePilotKey,
+  definitions: readonly CommunicationSectionDefinition[] = []) {
   const selected = selectPilotFinalOutput(payload);
   if (!selected.ok) return selected;
   payload = selected.value;
   const output = payload && typeof payload === "object" && "output" in payload ? payload.output : null;
   const researched = Array.isArray(output) && output.some(item => item?.type === "web_search_call");
-  const parsed = parseStageTwoResponse(payload, { kind: "section", key }, researched, "autonomous");
+  const parsed = parseStageTwoResponse(payload, { kind: "section", key: key as CommunicationSectionKey }, researched, "autonomous",
+    definitions.length ? definitions : undefined);
   if (!parsed.ok) return parsed;
   return { ok: true as const, value: {
     ...parsed.value.suggestions[0], sources: parsed.value.sources, researched: parsed.value.researched,
