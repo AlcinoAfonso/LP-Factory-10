@@ -317,6 +317,7 @@ export async function saveAgentBasePilotAction(input: Readonly<{
   const saved = await saveGeneratedIntelligence({
     accountId: access.value.accountId, expectedVersion: input.version,
     definitions: definitions.value, sections: generated,
+    catalogState: input.catalogState, niche: niche.niche,
   });
   if (!saved.ok) return fail(saved.error === "conflict" ? "A Base foi editada durante a geração. Nada foi salvo." :
     "Não foi possível salvar a Categoria 3. O conteúdo anterior foi preservado.");
