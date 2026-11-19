@@ -2,6 +2,8 @@ import { AGENT_BASE_PROMPT, AGENT_BASE_PROMPT_VERSION } from "./base-prompt";
 import { AGENT_BASE_ABOUT_PROMPT, AGENT_BASE_ABOUT_PROMPT_VERSION } from "./about-prompt";
 import { AGENT_BASE_AUDIENCE_PROMPT, AGENT_BASE_AUDIENCE_PROMPT_VERSION } from "./audience-prompt";
 import { AGENT_BASE_MARKET_INSIGHTS_PROMPT, AGENT_BASE_MARKET_INSIGHTS_PROMPT_VERSION } from "./market-insights-prompt";
+import { AGENT_BASE_VALUE_PROPOSITION_PROMPT, AGENT_BASE_VALUE_PROPOSITION_PROMPT_VERSION,
+  AGENT_BASE_VALUE_PROPOSITION_SECTION_SCHEMA } from "./value-proposition-prompt";
 import { CREDENTIAL_PATTERN, COMMUNICATION_ASSISTANCE_TEXT_MAX, parseStageTwoResponse, stageTwoSchema,
   type CommunicationSuggestion, type OfficialNicheContext, type WebSource } from "../ai-core";
 import type { CommunicationBase } from "../contracts";
@@ -15,6 +17,7 @@ const prompts = {
   about: { text: AGENT_BASE_ABOUT_PROMPT, version: AGENT_BASE_ABOUT_PROMPT_VERSION, format: "text" },
   audience: { text: AGENT_BASE_AUDIENCE_PROMPT, version: AGENT_BASE_AUDIENCE_PROMPT_VERSION, format: "text" },
   market_insights: { text: AGENT_BASE_MARKET_INSIGHTS_PROMPT, version: AGENT_BASE_MARKET_INSIGHTS_PROMPT_VERSION, format: "items" },
+  value_proposition: { text: AGENT_BASE_VALUE_PROPOSITION_PROMPT, version: AGENT_BASE_VALUE_PROPOSITION_PROMPT_VERSION, format: "text" },
 } as const;
 export type AgentBasePilotKey = string;
 export type AgentBasePilotSection = Omit<CommunicationSuggestion, "key"> & Readonly<{
@@ -81,6 +84,9 @@ export function buildAgentBasePilotPrompt(input: Readonly<{
     "Respeite o formato " + target.format + " e o contrato de saída.",
   ].filter(Boolean).join("\n");
   const schema = stageTwoSchema([input.key as CommunicationSectionKey], input.definitions);
+  if (input.key === "value_proposition") {
+    schema.properties.sections.properties.value_proposition = AGENT_BASE_VALUE_PROPOSITION_SECTION_SCHEMA;
+  }
   if (target.format === "items" || target.format === "faq") {
     const section = schema.properties.sections.properties[input.key];
     schema.properties.sections.properties[input.key] = { ...section,
