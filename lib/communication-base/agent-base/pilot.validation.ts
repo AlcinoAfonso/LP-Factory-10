@@ -114,7 +114,7 @@ for (const { key, promptText, version, ownSchema, value, maxItems } of [
 ] as const) {
   const prompt = buildAgentBasePilotPrompt({ base, niche, definitions, key, previous: completedSpecialized });
   assert.ok(prompt);
-  assert.equal(prompt.instructions, AGENT_BASE_PROMPT + "\\n\\n" + promptText,
+  assert.equal(prompt.instructions, AGENT_BASE_PROMPT + "\n\n" + promptText,
     "specialized prompts are composed without changes");
   assert.equal(prompt.promptVersion, AGENT_BASE_PROMPT_VERSION + ":" + version);
   assert.deepEqual(prompt.schema.properties.sections.required, [key]);
