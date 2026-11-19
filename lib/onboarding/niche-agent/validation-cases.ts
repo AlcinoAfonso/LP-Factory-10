@@ -97,8 +97,25 @@ test("aceites semânticos em formulações naturais recuperam a proposta e a rev
       proposalId: proposal.id, description: proposed, expectedOfficialRevision: "text:3",
     });
     assert.equal(run(input, { ...acceptance, proposal: proposed }).ok, false);
-    assert.equal(run(input, { ...acceptance, memory: proposalAnswer.memory }).ok, false);
   }
+});
+
+test("aceite pode carregar novidade de memória sem substituir a proposta vinculada", () => {
+  const input = {
+    ...context, officialNiche, activeProposal: proposal,
+    message: { text: "Sim, esse é o nosso nicho. Também atendemos empresas de pequeno porte.", replyToProposalId: proposal.id },
+  };
+  const memory: ModelTurn["memory"] = [
+    { kind: "declaration", text: "Também atende empresas de pequeno porte.", replaces: null, sourceId: null },
+  ];
+  const output = { ...acceptance, memory };
+  const confirmation = {
+    proposalId: proposal.id, description: proposed, expectedOfficialRevision: proposal.expectedOfficialRevision,
+  };
+  assert.deepEqual(success(input, output), { ...output, confirmation });
+  assert.deepEqual(success(input, { ...output, memory: [memory[0], memory[0]] }), {
+    ...acceptance, confirmation,
+  });
 });
 
 test("aceite antigo, sem vínculo, de outra proposta ou com revisão divergente é recusado pelo código", () => {
@@ -148,9 +165,17 @@ test("correção registra apenas o trecho superado e preserva contexto válido",
   assert.equal(input.summary, summary);
   assert.equal(summary.replace(change.replaces!, change.text),
     "Atende empresas, sem atuação no varejo. Entrega na região metropolitana. Oferece catering vegano.");
-  assert.equal(run(input, { ...corrected, memory: [{ ...change, replaces: "inventado" }] }).ok, false);
-  assert.equal(run(input, { ...corrected, memory: [{ ...change, kind: "hypothesis" }] }).ok, false);
-  assert.equal(run(input, { ...corrected, memory: [{ ...change, text: "Oferece catering vegano." }] }).ok, false);
+  const unsafeBatches: ModelTurn["memory"][] = [
+    [{ ...change, replaces: "inventado" }],
+    [{ ...change, kind: "hypothesis" }],
+    [{ ...change, text: "Oferece catering vegano." }],
+    [change, { ...change, text: "Atende apenas empresas.", replaces: "no varejo." }],
+  ];
+  for (const memory of unsafeBatches) {
+    assert.deepEqual(success(input, { ...corrected, memory }), {
+      ...corrected, memory: [], confirmation: null,
+    });
+  }
 });
 
 test("retomada envia histórico, Summary, nicho oficial e fatos empresariais separados", () => {
@@ -184,14 +209,16 @@ test("rejeição ou recusa não inventa aceite nem reapresenta a mesma proposta"
   assert.equal(run(input, { ...proposalAnswer, reaction: "reject" }).ok, false);
 });
 
-test("aceita referência externa fornecida como tal e rejeita fonte inventada", () => {
+test("preserva a resposta ao descartar memória com fonte externa sem comprovação", () => {
   const input = { ...context, externalSources: [{ id: "public-reference", excerpt: "Catering descreve serviço de alimentação para eventos.", checkedOn: "2026-11-18" }] };
   const change = { kind: "external", text: "Catering é serviço de alimentação para eventos.", replaces: null, sourceId: "public-reference" } as const;
   const output = success(input, { ...clarification, memory: [change] });
   assert.deepEqual(output.memory, [change]);
   assert.equal(output.confirmation, null);
-  assert.equal(run(context, { ...clarification, memory: [change] }).ok, false);
-  assert.equal(run(input, { ...clarification, memory: [{ ...change, sourceId: "inventada" }] }).ok, false);
+  assert.deepEqual(success(context, { ...clarification, memory: [change] }), { ...clarification, confirmation: null });
+  assert.deepEqual(success(input, { ...clarification, memory: [{ ...change, sourceId: "inventada" }] }), {
+    ...clarification, confirmation: null,
+  });
 });
 
 test("resposta inválida, falha e recusa do provider não devolvem efeitos nem alteram contexto", () => {

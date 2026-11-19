@@ -154,11 +154,11 @@ function parseTurn(
     if (!turn.success) return invalid;
     const { reply, proposal, reaction, memory } = turn.data;
     const confirmation = reaction === "accept" ? confirmationTarget : null;
-    if (reaction === "accept" && (!confirmation || proposal !== null || memory.length > 0)) return invalid;
+    if (reaction === "accept" && (!confirmation || proposal !== null)) return invalid;
     if (!hasMessage && (reaction !== "continue" || memory.length > 0)) return invalid;
     if (proposal && (!reply.includes(proposal) || (reaction === "reject" && proposal === currentDescription))) return invalid;
-    if (!validMemory(memory, priorSummary, sources)) return invalid;
-    return { ok: true, value: { reply, proposal, reaction, memory, confirmation } };
+    const safeMemory = validMemory(memory, priorSummary, sources) ? memory : [];
+    return { ok: true, value: { reply, proposal, reaction, memory: safeMemory, confirmation } };
   };
 }
 
