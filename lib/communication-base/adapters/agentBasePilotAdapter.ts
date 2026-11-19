@@ -4,7 +4,7 @@ import { requestOpenAiResponses } from "../../openai-responses/openAiResponsesAd
 import { clientOpenAiCostContext } from "../../openai-costs";
 import { resolveOpenAiProductWorkload } from "../../openai-workloads";
 import { agentBaseQaConfiguration } from "../agent-base/research";
-import { buildAgentBasePilotPrompt, parseAgentBasePilotResponse, sanitizeAgentBasePilotFailureReason, type AgentBasePilotSection } from "../agent-base/pilot";
+import { AGENT_BASE_PILOT_MODEL, buildAgentBasePilotPrompt, parseAgentBasePilotResponse, sanitizeAgentBasePilotFailureReason, type AgentBasePilotSection } from "../agent-base/pilot";
 
 export async function generateAgentBasePilotSection(input: Parameters<typeof buildAgentBasePilotPrompt>[0] & Readonly<{ timeoutMs: number }>) {
   if (process.env.VERCEL_ENV !== "preview") return { ok: false as const };
@@ -12,8 +12,8 @@ export async function generateAgentBasePilotSection(input: Parameters<typeof bui
   if (!prompt) return { ok: false as const };
   const active = await resolveOpenAiProductWorkload("communication_base_stage2_intelligence", "preview");
   if (!active.ok || !active.value.webSearch) return { ok: false as const };
-  // Reutiliza o par QA aprovado no #1136, sem alterar a revisão E21 ativa.
-  const configuration = agentBaseQaConfiguration(active.value);
+  // Escopo local: não altera o modelo dos experimentos nem a configuração E21.
+  const configuration = { ...agentBaseQaConfiguration(active.value), model: AGENT_BASE_PILOT_MODEL };
   const web = configuration.webSearch!;
   const requestId = randomUUID();
   const result = await requestOpenAiResponses<AgentBasePilotSection>({
