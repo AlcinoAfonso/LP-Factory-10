@@ -80,7 +80,7 @@ export function parseStoredSections(raw: unknown, definitions: readonly Communic
         ? stored.origin !== "user_confirmed" &&
           (stored.origin !== "pending_setup_confirmed" ||
             (key !== "business_context" && key !== "business_name"))
-        : stored.origin !== "user_reviewed") ||
+        : stored.origin !== "user_reviewed" && stored.origin !== "agent_generated") ||
       parseSectionValue(definition, stored.value) === null ||
       (stored.facts !== undefined && (definition.stage !== 1 || parseCommunicationFacts(stored.facts) === null))) {
       return null;
@@ -134,7 +134,7 @@ export function withSection(
   const normalized = parseSectionValue(definition, value);
   if (normalized === null) return null;
   if (definition.stage !== 2 && origin === "user_reviewed") return null;
-  if (definition.stage === 2 && origin !== "user_reviewed") return null;
+  if (definition.stage === 2 && origin !== "user_reviewed" && origin !== "agent_generated") return null;
   if (origin === "pending_setup_confirmed" &&
       key !== "business_context" && key !== "business_name") return null;
   const previous = isRecord(current[key]) ? current[key] : {};
@@ -146,6 +146,23 @@ export function withSection(
     [key]: { ...previous, format: definition.format, value: normalized, origin,
       ...(parsedFacts === undefined ? {} : { facts: parsedFacts }) },
   };
+}
+
+// Full agent delivery replaces the entire intelligence category or leaves it unchanged.
+export function withGeneratedIntelligence(
+  current: Record<string, unknown>, sections: readonly Readonly<{ key: string; value: CommunicationSectionValue }>[],
+  definitions: readonly CommunicationSectionDefinition[],
+): Record<string, unknown> | null {
+  const targets = definitions.filter(section => section.stage === 2);
+  if (!targets.length || sections.length !== targets.length) return null;
+  let next = current;
+  for (let index = 0; index < targets.length; index++) {
+    if (sections[index]?.key !== targets[index].key) return null;
+    const updated = withSection(next, targets[index].key, sections[index].value, "agent_generated", definitions);
+    if (!updated) return null;
+    next = updated;
+  }
+  return next;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
