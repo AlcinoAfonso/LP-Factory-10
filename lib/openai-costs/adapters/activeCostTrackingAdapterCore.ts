@@ -13,12 +13,6 @@ export class OpenAiCostTrackingPersistenceError extends Error {
   }
 }
 
-export function openAiCostPersistenceFailure(error: unknown) {
-  return error instanceof OpenAiCostTrackingPersistenceError && error.kind === "conflict"
-    ? { status: 409 as const, code: "persistence_conflict" as const }
-    : { status: 503 as const, code: "persistence_unavailable" as const };
-}
-
 export function executionStartRpc(input: OpenAiCostExecutionContext) {
   const event = input.economicContext.event ?? null;
   return {

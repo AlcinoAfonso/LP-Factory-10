@@ -1,6 +1,6 @@
 -- e9_phase_3_entitlements_verify.sql
 -- Objetivo: validar o schema minimo de entitlement comercial da E9 Fase 3.
--- Tipo: read-only / recorrente. Usar no Supabase Inspect ou SQL Editor.
+-- Tipo: read-only / recorrente. Usar no SQL Editor.
 
 with expected_constraints(conname, contype) as (
   values

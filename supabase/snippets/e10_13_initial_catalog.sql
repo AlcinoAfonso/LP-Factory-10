@@ -2,7 +2,7 @@
 -- V1/V2: mensagens dos commits b4ba0ec0 / 47114670; inventário e10_13_source_inventory.csv.
 -- Projeto único dpikmjgiteuafsbaubue; execução operacional postgres via conector geral.
 -- Revisar o HEAD e provar em transação com ROLLBACK antes da carga autorizada.
--- Não executar pelo pipeline-supabase-inspect/ai_readonly; não ampliar permissões.
+-- Não usar ai_readonly para a carga nem ampliar permissões.
 -- Reexecução/colisão falha fechada: reinspecionar; nunca alterar registro existente.
 -- Fonte primária dos textos: 10 pesquisas PDF históricas do acervo do titular (2025).
 -- Nenhum indicador numérico não validado ingressa como fato atual; lacunas constam no inventário.

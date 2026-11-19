@@ -77,7 +77,6 @@ export const adminAreas: AdminArea[] = [
     status: 'Disponível',
     scope: [
       'Configuração efetiva dos workloads de produto',
-      'Referência operacional do Supabase Inspect',
       'Sem mutações nem chamadas externas',
     ],
   },

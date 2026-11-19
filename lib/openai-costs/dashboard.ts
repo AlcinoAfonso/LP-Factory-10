@@ -6,7 +6,6 @@ import type {
   OpenAiActiveCostReadResult,
 } from "./active-contracts";
 import {
-  openAiOperationalWorkloadIds,
   openAiProductWorkloadIds,
 } from "../openai-workloads";
 import type {
@@ -29,7 +28,6 @@ import {
 const MAX_CUSTOM_PERIOD_DAYS = 180;
 const OPENAI_COST_WORKLOAD_IDS = [
   ...openAiProductWorkloadIds,
-  ...openAiOperationalWorkloadIds,
   ...OPENAI_RETIRED_COST_WORKLOAD_IDS,
 ] as const;
 

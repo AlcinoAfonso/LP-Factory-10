@@ -188,11 +188,11 @@ const cases = [
     },
   },
   {
-    name: "inventory exposes six unique canonical workloads",
+    name: "inventory exposes five unique canonical product workloads",
     run: () => {
       const inventory = listOpenAiWorkloadInventory();
-      assert.equal(inventory.length, 6);
-      assert.equal(new Set(inventory.map((item) => item.id)).size, 6);
+      assert.equal(inventory.length, 5);
+      assert.equal(new Set(inventory.map((item) => item.id)).size, 5);
       assert.deepEqual(
         inventory.map((item) => item.id),
         [
@@ -200,7 +200,6 @@ const cases = [
           ...productIds,
           "communication_base_stage1_assistance",
           "communication_base_stage2_intelligence",
-          "supabase_inspect",
         ],
       );
     },
@@ -239,25 +238,14 @@ const cases = [
     },
   },
   {
-    name: "operational reference stays outside the product resolver",
+    name: "retired operational workload is unavailable in the product resolver",
     run: async () => {
       const result = await resolveOpenAiProductWorkload(
         "supabase_inspect",
         "development",
       );
       assert.equal(result.ok, false);
-      assert.equal(result.error.code, "NOT_PRODUCT_RUNTIME_WORKLOAD");
-
-      const reference = listOpenAiWorkloadInventory().find(
-        (item) => item.id === "supabase_inspect",
-      );
-      assert.ok(reference);
-      assert.equal(reference.configurationKind, "inventory_reference");
-      assert.equal(reference.model, "gpt-4.1-mini");
-      assert.equal(reference.reasoningEffort, "not_applicable");
-      assert.equal(reference.source, "github_actions_default_reference");
-      assert.equal(reference.revision, "v2");
-      assert.equal(reference.effectiveConfigurationVerified, false);
+      assert.equal(result.error.code, "UNKNOWN_WORKLOAD");
     },
   },
   {

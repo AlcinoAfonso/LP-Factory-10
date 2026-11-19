@@ -3,7 +3,6 @@ import type {
   OpenAiOperationalConfiguration,
   OpenAiOperationalConfigurationReader,
   OpenAiProductWorkloadDefinition,
-  OpenAiWorkloadDefinition,
   OpenAiWorkloadEnvironment,
   OpenAiWorkloadInventoryItem,
   ResolveOpenAiProductWorkloadResult,
@@ -19,7 +18,7 @@ export type OpenAiWorkloadResolverDependencies = Readonly<{
 }>;
 
 const inventory = deepFreeze(
-  openAiWorkloadRegistry.map(toInventoryItem),
+  openAiWorkloadRegistry.map(toInventoryProductWorkload),
 ) as readonly OpenAiWorkloadInventoryItem[];
 
 export async function resolveOpenAiProductWorkload(
@@ -32,12 +31,6 @@ export async function resolveOpenAiProductWorkload(
     return failure(
       "UNKNOWN_WORKLOAD",
       `Unknown OpenAI workload: ${workloadId}`,
-    );
-  }
-  if (workload.configurationKind !== "effective") {
-    return failure(
-      "NOT_PRODUCT_RUNTIME_WORKLOAD",
-      `OpenAI workload is not available to product runtime: ${workloadId}`,
     );
   }
   if (!isTextWorkload(workload)) {
@@ -86,7 +79,7 @@ export function listOpenAiWorkloadInventory(): readonly OpenAiWorkloadInventoryI
   return inventory;
 }
 
-function findWorkload(workloadId: string): OpenAiWorkloadDefinition | undefined {
+function findWorkload(workloadId: string): OpenAiProductWorkloadDefinition | undefined {
   return openAiWorkloadRegistry.find((candidate) => candidate.id === workloadId);
 }
 
@@ -132,31 +125,9 @@ async function readOperationalConfiguration(
   return { ok: true, value: result.value };
 }
 
-function toInventoryItem(
-  workload: OpenAiWorkloadDefinition,
-): OpenAiWorkloadInventoryItem {
-  if (workload.configurationKind === "effective") {
-    return toInventoryProductWorkload(workload as OpenAiProductWorkloadDefinition);
-  }
-
-  return deepFreeze({
-    id: workload.id,
-    displayName: workload.displayName,
-    classification: workload.classification,
-    configurationKind: workload.configurationKind,
-    consumer: workload.consumer,
-    fallback: workload.fallback,
-    model: workload.configuration.model,
-    reasoningEffort: workload.configuration.reasoningEffort,
-    source: workload.configuration.source,
-    revision: workload.configuration.revision,
-    effectiveConfigurationVerified: false,
-  });
-}
-
 function toInventoryProductWorkload(
   workload: OpenAiProductWorkloadDefinition,
-): Extract<OpenAiWorkloadInventoryItem, { apiKind: "responses_text" }> {
+): OpenAiWorkloadInventoryItem {
   return deepFreeze({
     ...toResolvedProductWorkload(workload),
     source: "repo_catalog" as const,
@@ -192,7 +163,7 @@ function toResolvedProductWorkload(
 }
 
 function isTextWorkload(
-  workload: OpenAiWorkloadDefinition,
+  workload: OpenAiProductWorkloadDefinition,
 ): workload is OpenAiProductWorkloadDefinition {
   return (
     workload.configurationKind === "effective" &&

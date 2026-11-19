@@ -3,15 +3,19 @@ import type {
   OpenAiReasoningEffort,
   OpenAiWorkloadEnvironment,
   OpenAiWorkloadFailureCategory,
-  OpenAiWorkloadId,
+  OpenAiProductWorkloadId,
   OpenAiWorkloadUsage,
 } from "../openai-workloads";
 
 export const OPENAI_ACTIVE_COST_CONTRACT_VERSION = "e21.5.6-v2";
-export const OPENAI_RETIRED_COST_WORKLOAD_IDS = ["landing_page_dynamic_market_research", "taxon_input_catalog_sufficiency_evaluation"] as const;
+export const OPENAI_RETIRED_COST_WORKLOAD_IDS = [
+  "landing_page_dynamic_market_research",
+  "taxon_input_catalog_sufficiency_evaluation",
+  "supabase_inspect",
+] as const;
 
 export type OpenAiRetiredCostWorkloadId = (typeof OPENAI_RETIRED_COST_WORKLOAD_IDS)[number];
-export type OpenAiCostReadWorkloadId = OpenAiWorkloadId | OpenAiRetiredCostWorkloadId;
+export type OpenAiCostReadWorkloadId = OpenAiProductWorkloadId | OpenAiRetiredCostWorkloadId;
 
 export type OpenAiCostEnvironment = Exclude<OpenAiWorkloadEnvironment, "unknown">;
 export type OpenAiCostExecutionOrigin = "runtime" | "administrative_proof";
@@ -45,7 +49,7 @@ export type OpenAiCostEconomicContext = Readonly<{
 
 export type OpenAiCostExecutionContext = Readonly<{
   executionId: string;
-  workload: OpenAiWorkloadId;
+  workload: OpenAiProductWorkloadId;
   environment: OpenAiCostEnvironment;
   executionOrigin: OpenAiCostExecutionOrigin;
   economicContext: OpenAiCostEconomicContext;

@@ -359,7 +359,7 @@ assert.equal(allowed.dashboard?.activeFilters.accountId, null);
 assert.equal(allowed.dashboard?.globalReconciliationUsd, "0.7");
 assert.deepEqual(allowedCalls.sort(), ["active", "legacy", "official"]);
 
-for (const workload of ["taxon_input_catalog_sufficiency_evaluation", "landing_page_dynamic_market_research"] as const) {
+for (const workload of ["taxon_input_catalog_sufficiency_evaluation", "landing_page_dynamic_market_research", "supabase_inspect"] as const) {
   const historicalForm = new FormData();
   historicalForm.set("periodMode", "custom");
   historicalForm.set("startDate", "2026-08-01");

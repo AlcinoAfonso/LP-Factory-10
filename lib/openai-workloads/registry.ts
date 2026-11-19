@@ -3,8 +3,7 @@ import {
   openAiReasoningEfforts,
   openAiWebSearchContextSizes,
   type OpenAiProductWorkloadDefinition,
-  type OpenAiWorkloadDefinition,
-  type OpenAiWorkloadId,
+  type OpenAiProductWorkloadId,
   type OpenAiWorkloadPresentation,
   type ResolvedOpenAiProductWorkload,
 } from "./contracts";
@@ -97,21 +96,7 @@ export const openAiWorkloadRegistry = deepFreeze([
       revision,
     },
   },
-  {
-    id: "supabase_inspect",
-    displayName: "Supabase Inspect",
-    classification: "operational",
-    configurationKind: "inventory_reference",
-    consumer: "Workflow operacional separado do Core",
-    fallback: "Restringir a falha à execução do workflow",
-    configuration: {
-      model: "gpt-4.1-mini",
-      reasoningEffort: "not_applicable",
-      source: "github_actions_default_reference",
-      revision,
-    },
-  },
-] satisfies readonly OpenAiWorkloadDefinition[]);
+] satisfies readonly OpenAiProductWorkloadDefinition[]);
 
 assertValidRegistry(openAiWorkloadRegistry);
 
@@ -156,7 +141,7 @@ export function isValidResolvedOpenAiProductWorkload(
   actual: ResolvedOpenAiProductWorkload,
 ) {
   const workload = (
-    openAiWorkloadRegistry as readonly OpenAiWorkloadDefinition[]
+    openAiWorkloadRegistry as readonly OpenAiProductWorkloadDefinition[]
   ).find(
     (candidate) => candidate.id === actual.id,
   );
@@ -200,11 +185,11 @@ function sameWebSearchPolicy(
   );
 }
 
-function assertValidRegistry(registry: readonly OpenAiWorkloadDefinition[]) {
-  const ids = new Set<OpenAiWorkloadId>();
+function assertValidRegistry(registry: readonly OpenAiProductWorkloadDefinition[]) {
+  const ids = new Set<OpenAiProductWorkloadId>();
 
   for (const workload of registry) {
-    const workloadId: OpenAiWorkloadId = workload.id;
+    const workloadId: OpenAiProductWorkloadId = workload.id;
 
     if (ids.has(workloadId)) {
       throw new Error(`Duplicate OpenAI workload identifier: ${workloadId}`);
@@ -228,18 +213,11 @@ function assertValidRegistry(registry: readonly OpenAiWorkloadDefinition[]) {
     if (!isTechnicalModel(workload.configuration.model)) {
       throw new Error(`Invalid baseline model: ${workloadId}`);
     }
-
-    if (
-      workload.classification === "operational" &&
-      workload.configurationKind !== "inventory_reference"
-    ) {
-      throw new Error(`Invalid inventory reference: ${workloadId}`);
-    }
   }
 }
 
 function isTextDefinition(
-  workload: OpenAiWorkloadDefinition,
+  workload: OpenAiProductWorkloadDefinition,
 ): workload is OpenAiProductWorkloadDefinition {
   return (
     workload.configurationKind === "effective" &&

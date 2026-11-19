@@ -1,6 +1,6 @@
 -- e10_7_phase_7_commercial_activation_contract_verify.sql
 -- Objetivo: verificar o contrato deterministico do template commercial_activation.
--- Tipo: read-only / recorrente. Usar no Supabase Inspect ou SQL Editor.
+-- Tipo: read-only / recorrente. Usar no SQL Editor.
 
 with expected_sections(module_key, variant_key, sort_order) as (
   values

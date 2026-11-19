@@ -8,7 +8,7 @@ import {
   type OpenAiManagedWorkloadEnvironment,
   type OpenAiModelCatalogReadResult,
   type OpenAiReasoningEffort,
-  type OpenAiWorkloadId,
+  type OpenAiProductWorkloadId,
 } from "../contracts";
 import {
   readCompleteOrderedPages,
@@ -53,7 +53,7 @@ export async function readOpenAiModelCatalog(): Promise<OpenAiModelCatalogReadRe
 
 export async function checkOpenAiModelCatalogConfigurationAvailable(input: Readonly<{
   environment: OpenAiManagedWorkloadEnvironment;
-  workload: Exclude<OpenAiWorkloadId, "supabase_inspect">;
+  workload: OpenAiProductWorkloadId;
   expectedVersion: number;
 }>): Promise<Readonly<{
   ok: true;
