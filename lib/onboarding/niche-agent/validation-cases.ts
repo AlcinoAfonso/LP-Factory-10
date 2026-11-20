@@ -186,6 +186,19 @@ test("bloqueia o nome privado informado no contexto textual do Pending Setup", (
   assert.equal(search.businessContext, null);
 });
 
+test("bloqueia nomes privados declarados em minúsculas no texto livre", () => {
+  const text = "me chamo ana silva e minha empresa se chama estúdio do vale e oferecemos paisagismo.";
+  for (const input of [
+    { ...context, pendingSetup: pendingContext, message: { text, replyToProposalId: null } },
+    { ...context, history: [{ role: "user" as const, text }] },
+    { ...context, businessContext: text },
+  ]) {
+    assert.equal(publicResearchContext("paisagismo para estudio do vale", input), null);
+    assert.equal(publicResearchContext("paisagismo para ana silva", input), null);
+    assert.equal(publicResearchContext("tendências de paisagismo para eventos", input)?.researchTopic, "tendências de paisagismo para eventos");
+  }
+});
+
 test("corrige só o fato reexibido na síntese aceita e preserva o restante", () => {
   const id = "00000000-0000-4000-8000-000000000004";
   const shown = "Atende empresas.";
