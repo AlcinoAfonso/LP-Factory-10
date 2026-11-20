@@ -31,6 +31,10 @@ export type OpenAiCostEconomicEvent =
       eventId: string;
     }>
   | Readonly<{
+      kind: "category_3_generation";
+      eventId: string;
+    }>
+  | Readonly<{
       kind: "lp_factory_internal";
       eventId: string;
       taxonId: string | null;
@@ -218,7 +222,7 @@ export type OpenAiActiveCostFilters = Readonly<{
 
 export function clientOpenAiCostContext(
   accountId: string,
-  event: Extract<OpenAiCostEconomicEvent, { kind: "landing_page" | "niche_resolution" }> | null = null,
+  event: Extract<OpenAiCostEconomicEvent, { kind: "landing_page" | "niche_resolution" | "category_3_generation" }> | null = null,
 ): OpenAiCostEconomicContext {
   return { universe: "client", attributionStatus: "attributed", accountId, event };
 }

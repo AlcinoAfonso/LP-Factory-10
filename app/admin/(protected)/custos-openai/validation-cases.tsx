@@ -5,7 +5,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { OpenAiCostExecutionDetails } from "./_components/OpenAiEconomicHierarchy";
+import { buildCategory3CostDetail } from "@/openai-costs/category-3-costs";
 
 import { refreshOpenAiCostsActionCore } from "./action-core";
 import {
@@ -275,18 +275,38 @@ assert.ok(composition);
 assert.equal(composition.globalReconciliationUsd, "0.7");
 assert.equal(composition.filteredActive?.totalCalculatedUsd, "0.05");
 assert.equal(composition.filteredActive?.unavailableOperationCount, 1);
-const executionMarkup = renderToStaticMarkup(<OpenAiCostExecutionDetails execution={activeModel.executions[0]} />);
-for (const text of ["Serviço solicitado", "Fast", "Serviço aplicado", "Standard", "gpt-6.1-terra", "Subtotal calculável",
-  "Custo indisponível", "pricing_not_found", "Gravação em cache · 12 h", "Ambiente"]) assert.ok(executionMarkup.includes(text), text);
-
 // Render only sanitized financial facts; this is markup validation, not visual browser QA.
 const loader = nodeModule as unknown as { _load: (name: string, parent: unknown, isMain: boolean) => unknown };
 const originalLoader = loader._load;
 loader._load = function(name, parent, isMain) {
-  if (name === "../actions") return { readDialogueCostAction: async () => ({ ok: false, code: "NOT_CALLED_IN_RENDER" }) };
+  if (name === "../actions") return {
+    readDialogueCostAction: async () => ({ ok: false, code: "NOT_CALLED_IN_RENDER" }),
+    readCategory3CostAction: async () => ({ ok: false }),
+  };
   return originalLoader.call(this, name, parent, isMain);
 };
-const { DialogueCostDetailView, OpenAiDialogueCosts } = await import("./_components/OpenAiDialogueCosts").finally(() => { loader._load = originalLoader; });
+const [{ DialogueCostDetailView, OpenAiDialogueCosts }, { OpenAiCostExecutionDetails, Category3CostDetailView }] = await Promise.all([
+  import("./_components/OpenAiDialogueCosts"), import("./_components/OpenAiEconomicHierarchy"),
+]).finally(() => { loader._load = originalLoader; });
+const executionMarkup = renderToStaticMarkup(<OpenAiCostExecutionDetails execution={activeModel.executions[0]} />);
+for (const text of ["Serviço solicitado", "Fast", "Serviço aplicado", "Standard", "gpt-6.1-terra", "Subtotal calculável",
+  "Custo indisponível", "pricing_not_found", "Gravação em cache · 12 h", "Ambiente"]) assert.ok(executionMarkup.includes(text), text);
+
+const category = {
+  generationId: "e2155000-0000-4000-8000-000000000050",
+  accountId: activeModel.executions[0].accountId!, environment: activeModel.executions[0].environment,
+};
+const categoryExecution = { ...activeModel.executions[0], workload: "communication_base_stage2_intelligence" as const,
+  executionOrigin: "runtime" as const,
+  economicEvent: { kind: "category_3_generation" as const, eventId: category.generationId },
+};
+const categoryMarkup = renderToStaticMarkup(<Category3CostDetailView detail={buildCategory3CostDetail(category, [categoryExecution], [])} />);
+for (const text of ["Conclusão não comprovada", "Subtotal parcial", "lacunas de registro", "pricing_not_found"])
+  assert.ok(categoryMarkup.includes(text), text);
+assert.equal(categoryMarkup.includes("Custo integral"), false);
+const categoryEmpty = renderToStaticMarkup(<Category3CostDetailView detail={buildCategory3CostDetail(category, [], [])} />);
+assert.ok(categoryEmpty.includes("Sem valor comprovado"));
+assert.equal(categoryEmpty.includes("US$ 0,00"), false);
 const dialogue = { dialogueId: "e2155000-0000-4000-8000-000000000040", accountId: activeModel.executions[0].accountId!,
   origin: "account_niche" as const, startedAt: "2026-08-28T14:00:00.000Z", endedAt: "2026-08-28T14:30:00.000Z" };
 const dialogueExecution = { ...activeModel.executions[0], workload: "pending_setup_conversation" as const,

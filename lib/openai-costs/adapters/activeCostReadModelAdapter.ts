@@ -19,24 +19,21 @@ export async function readOpenAiActiveCosts(
       p_after_operation_sequence: cursor?.operationSequence ?? null,
       p_limit: limit,
     });
-    const initialV2 = await client.rpc(
-      "read_openai_active_cost_rows_v2",
-      args(null, 500),
-    );
-    const useV1 = isExpectedMissingRpcError(
-      initialV2.error,
-      "read_openai_active_cost_rows_v2",
-    );
-    if (initialV2.error && !useV1) {
+    let rpcName = "read_openai_active_cost_rows_v3";
+    let initial = await client.rpc(rpcName, args(null, 500));
+    if (isExpectedMissingRpcError(initial.error, rpcName)) {
+      rpcName = "read_openai_active_cost_rows_v2";
+      initial = await client.rpc(rpcName, args(null, 500));
+    }
+    const useV1 = rpcName === "read_openai_active_cost_rows_v2" && isExpectedMissingRpcError(initial.error, rpcName);
+    if (initial.error && !useV1) {
       return {
         ok: false,
         error: { code: "READ_FAILED", message: "OpenAI active costs could not be read" },
       };
     }
-    let firstPage = useV1 ? null : initialV2;
-    const rpcName = useV1
-      ? "read_openai_active_cost_rows_v1"
-      : "read_openai_active_cost_rows_v2";
+    let firstPage = useV1 ? null : initial;
+    if (useV1) rpcName = "read_openai_active_cost_rows_v1";
     return await readOpenAiActiveCostPages({
       period,
       economicDimensionStatus: useV1 ? "v1_fallback" : "v2_active",

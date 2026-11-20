@@ -313,6 +313,8 @@ function parseRow(
         economicDimensionStatus,
         economicEvent,
         executionId,
+        workload,
+        executionOrigin,
         universe,
         attributionStatus,
         accountId,
@@ -354,6 +356,8 @@ function validEconomicEventContext(input: Readonly<{
   economicDimensionStatus: OpenAiEconomicDimensionStatus;
   economicEvent: OpenAiCostEconomicEvent | null;
   executionId: string;
+  workload: OpenAiCostReadWorkloadId;
+  executionOrigin: OpenAiCostExecutionOrigin;
   universe: OpenAiCostUniverse;
   attributionStatus: OpenAiCostAttributionStatus;
   accountId: string | null;
@@ -370,7 +374,9 @@ function validEconomicEventContext(input: Readonly<{
     return input.universe === "client" && input.attributionStatus === "attributed" &&
       input.accountId !== null && input.landingPageName !== null && input.taxonName === null;
   }
-  if (input.economicEvent.kind === "niche_resolution") {
+  if (input.economicEvent.kind === "niche_resolution" || input.economicEvent.kind === "category_3_generation") {
+    if (input.economicEvent.kind === "category_3_generation" &&
+        (input.workload !== "communication_base_stage2_intelligence" || input.executionOrigin !== "runtime")) return false;
     return input.universe === "client" && input.attributionStatus === "attributed" &&
       input.accountId !== null && input.landingPageName === null && input.taxonName === null;
   }
@@ -384,7 +390,7 @@ function parseEconomicEvent(
 ): OpenAiCostEconomicEvent | null | undefined {
   const kind = row.economic_event_kind === null
     ? null
-    : oneOf(row.economic_event_kind, ["landing_page", "niche_resolution", "lp_factory_internal"] as const);
+    : oneOf(row.economic_event_kind, ["landing_page", "niche_resolution", "lp_factory_internal", "category_3_generation"] as const);
   const eventId = row.economic_event_id === null ? null : uuid(row.economic_event_id);
   const landingPageId = row.landing_page_id === null ? null : uuid(row.landing_page_id);
   const taxonId = row.taxon_id === null ? null : uuid(row.taxon_id);
@@ -395,7 +401,7 @@ function parseEconomicEvent(
       ? Object.freeze({ kind, eventId, landingPageId })
       : undefined;
   }
-  if (kind === "niche_resolution") {
+  if (kind === "niche_resolution" || kind === "category_3_generation") {
     return landingPageId === null && taxonId === null
       ? Object.freeze({ kind, eventId })
       : undefined;

@@ -7,8 +7,8 @@ import { buildDialogueCostDetail, dialogueIdentitySchema, DIALOGUE_PAGE_SIZE, pa
   translateDialogueLedger, type DialogueCostResult, type DialogueListResult, type OpenAiCostDialogue } from "../dialogue-costs";
 
 const metadataColumns = "id,account_id,origin,started_at,ended_at";
-const executionColumns = "id,workload,environment,execution_origin,universe,attribution_status,account_id,economic_event_kind,economic_event_id,landing_page_id,taxon_id,baseline_reference,baseline_version,started_at,finished_at,result,failure_category";
-const operationColumns = "id,execution_id,sequence,retry_of_operation_id,model,reasoning_effort,configuration_source,configuration_revision,prompt_version,contract_version,started_at,finished_at,result,failure_category,input_tokens,cached_input_tokens,cache_write_tokens,output_tokens,reasoning_tokens,total_tokens,web_search_call_count,web_search_tool_version,web_search_price_per_call_usd::text,pricing_version,pricing_effective_at,pricing_snapshot,cost_status,cost_unavailable_reason,cost_usd::text";
+export const executionColumns = "id,workload,environment,execution_origin,universe,attribution_status,account_id,economic_event_kind,economic_event_id,landing_page_id,taxon_id,baseline_reference,baseline_version,started_at,finished_at,result,failure_category";
+export const operationColumns = "id,execution_id,sequence,retry_of_operation_id,model,reasoning_effort,configuration_source,configuration_revision,prompt_version,contract_version,started_at,finished_at,result,failure_category,input_tokens,cached_input_tokens,cache_write_tokens,output_tokens,reasoning_tokens,total_tokens,web_search_call_count,web_search_tool_version,web_search_price_per_call_usd::text,pricing_version,pricing_effective_at,pricing_snapshot,cost_status,cost_unavailable_reason,cost_usd::text";
 
 export async function listOpenAiCostDialogues(period: OpenAiCostsPeriod, active: OpenAiActiveCostReadModel | null): Promise<DialogueListResult> {
   try {

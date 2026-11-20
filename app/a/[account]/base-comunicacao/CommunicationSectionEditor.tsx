@@ -399,10 +399,11 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
       let catalogState = "";
       let nicheRevision = "";
       try {
+        const generationAttemptId = crypto.randomUUID();
         for (const [index, definition] of stageTwo.entries()) {
           setPilotProgress(`Gerando ${index + 1} de ${stageTwo.length}: ${definition.label}…`);
           const result = await runAgentBasePilotAction({
-            account, version: requestedVersion, previous: sections, catalogState, nicheRevision,
+            account, version: requestedVersion, previous: sections, catalogState, nicheRevision, generationAttemptId,
           });
           if (!result.ok) { setPilotError(true); setPilotMessage(result.message); return; }
           if (result.section.key !== definition.key ||
@@ -417,7 +418,7 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
         }
         setPilotProgress("Salvando a Categoria 3…");
         const saved = await saveAgentBasePilotAction({
-          account, version: requestedVersion, sections, catalogState, nicheRevision,
+          account, version: requestedVersion, sections, catalogState, nicheRevision, generationAttemptId,
         });
         if (!saved.ok) { setPilotError(true); setPilotMessage(saved.message); return; }
         setPilotSources({ version: requestedVersion + 1, catalogKey: pilotCatalogKey, sections });

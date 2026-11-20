@@ -1,5 +1,9 @@
 "use client";
 
+import { useState, useTransition } from "react";
+import { Button } from "@/components/ui/button";
+import type { Category3CostIdentity, Category3CostResult } from "@/openai-costs/category-3-costs";
+import { readCategory3CostAction } from "../actions";
 import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 import type {
   OpenAiActiveCostExecution,
@@ -113,26 +117,77 @@ function AccountDetails({ account }: Readonly<{ account: OpenAiEconomicAccount }
       <Summary label={account.accountName} detail={`${account.events.length} eventos · ${account.executionCount} execuções/tentativas`} total={account.calculatedCostUsd} pending={account.pendingCount} unavailable={account.unavailableCount} />
       <div className="space-y-3 border-t border-border p-4">
         <p className="break-all text-xs text-muted-foreground">Conta {account.accountId}</p>
-        {account.events.map((event) => <EventDetails key={event.key} event={event} />)}
+        {account.events.map((event) => <EventDetails key={event.key} event={event} accountId={account.accountId} />)}
         <ExecutionCollection title="Sem correlação de evento" executions={account.uncorrelatedExecutions} />
       </div>
     </details>
   );
 }
 
-function EventDetails({ event }: Readonly<{ event: OpenAiEconomicEvent }>) {
+function EventDetails({ event, accountId }: Readonly<{ event: OpenAiEconomicEvent; accountId?: string }>) {
+  const category = event.kind === "category_3_generation" && accountId && event.environment
+    ? { generationId: event.eventId, environment: event.environment, accountId } : null;
+  const hasCategoryCost = event.workloads.some(workload => workload.executions.some(execution =>
+    execution.operations.some(operation => operation.costStatus === "calculated" && operation.costUsd !== null)));
   return (
     <details className="rounded-md border border-border bg-card">
-      <Summary label={event.label} detail={`${event.executionCount} execuções/tentativas`} total={event.calculatedCostUsd} pending={event.pendingCount} unavailable={event.unavailableCount} />
+      <Summary label={event.label} detail={category
+        ? `${event.startedAt ? formatTimestamp(event.startedAt) + " · " : ""}${environmentLabel(category.environment)} · Subtotal no período`
+        : `${event.executionCount} execuções/tentativas`}
+        total={category && !hasCategoryCost ? null : event.calculatedCostUsd}
+        pending={event.pendingCount} unavailable={event.unavailableCount} />
       <div className="space-y-3 border-t border-border p-4">
         <div className="flex flex-wrap items-center gap-2">
           <AdminStatusBadge tone="neutral">{sourceLabel(event.source)}</AdminStatusBadge>
           <span className="break-all text-xs text-muted-foreground">Evento {event.eventId}</span>
         </div>
+        {category ? <Category3Detail identity={category} /> : null}
         {event.workloads.map((workload) => <WorkloadDetails key={`${workload.source}:${workload.workload}`} workload={workload} />)}
       </div>
     </details>
   );
+}
+
+const category3OutcomeLabels = {
+  saved: "Salva", failed: "Falha", interrupted: "Interrompida", unconfirmed: "Conclusão não comprovada",
+} as const;
+
+function Category3Detail({ identity }: Readonly<{ identity: Category3CostIdentity }>) {
+  const [result, setResult] = useState<Category3CostResult | null>(null);
+  const [pending, startTransition] = useTransition();
+  function query() {
+    startTransition(async () => {
+      try { setResult(await readCategory3CostAction(identity)); }
+      catch { setResult({ ok: false }); }
+    });
+  }
+  const detail = result?.ok ? result.value : null;
+  return <div className="space-y-3">
+    <Button variant="secondary" className="min-h-11" onClick={query} disabled={pending}>
+      {result?.ok ? "Atualizar custo da geração" : "Consultar custo da geração completa"}
+    </Button>
+    {pending ? <p role="status" className="text-sm text-muted-foreground">Consultando operações de todos os períodos…</p> : null}
+    {result && !result.ok ? <p role="alert" className="text-sm">Consulta do custo da geração indisponível.</p> : null}
+    {detail ? <Category3CostDetailView detail={detail} /> : null}
+  </div>;
+}
+
+export function Category3CostDetailView({ detail }: Readonly<{ detail: Extract<Category3CostResult, { ok: true }>["value"] }>) {
+  return <div className="space-y-3 rounded-md border border-border bg-background p-3">
+      <dl className="grid gap-3 sm:grid-cols-2">
+        <Detail label="Resultado da geração" value={category3OutcomeLabels[detail.outcome]} />
+        <Detail label={detail.costStatus === "complete" ? "Custo integral" : detail.costStatus === "partial" ? "Subtotal parcial" : "Custo indisponível"}
+          value={detail.calculatedCostUsd === null ? "Sem valor comprovado" : formatUsd(detail.calculatedCostUsd)} />
+      </dl>
+      <p className="text-sm text-muted-foreground">
+        {detail.attemptCount} tentativas · {detail.retryCount} retries · {detail.searches} pesquisas Web
+        {detail.unknownSearchCount ? ` · ${detail.unknownSearchCount} operações sem contagem de pesquisas` : ""}
+      </p>
+      {detail.costStatus !== "complete" ? <p className="text-sm text-muted-foreground">
+        {detail.pendingCount} pendências · {detail.unavailableCount} custos indisponíveis · {detail.missingCount} lacunas de registro
+      </p> : null}
+      {detail.executions.map(execution => <OpenAiCostExecutionDetails key={execution.executionId} execution={execution} />)}
+  </div>;
 }
 
 function WorkloadDetails({ workload }: Readonly<{ workload: OpenAiEconomicWorkload }>) {
@@ -232,7 +287,7 @@ function OperationDetails({ operation }: Readonly<{ operation: OpenAiActiveCostO
 function Summary({ label, detail, total, pending, unavailable }: Readonly<{
   label: string;
   detail: string;
-  total: string;
+  total: string | null;
   pending: number;
   unavailable: number;
 }>) {
@@ -245,8 +300,8 @@ function Summary({ label, detail, total, pending, unavailable }: Readonly<{
           <span className="mt-1 block text-xs font-medium text-brand-700">Abrir detalhes</span>
         </span>
         <span className="flex flex-wrap items-center gap-2">
-          {pending > 0 || unavailable > 0 ? <AdminStatusBadge tone="warning">Subtotal calculável{pending > 0 ? ` · ${pending} pendentes` : ""}{unavailable > 0 ? ` · ${unavailable} indisponíveis` : ""}</AdminStatusBadge> : null}
-          <strong className="text-sm text-foreground">{formatUsd(total)}</strong>
+          {total !== null && (pending > 0 || unavailable > 0) ? <AdminStatusBadge tone="warning">Subtotal calculável{pending > 0 ? ` · ${pending} pendentes` : ""}{unavailable > 0 ? ` · ${unavailable} indisponíveis` : ""}</AdminStatusBadge> : null}
+          <strong className="text-sm text-foreground">{total === null ? "Sem valor comprovado" : formatUsd(total)}</strong>
         </span>
       </span>
     </summary>

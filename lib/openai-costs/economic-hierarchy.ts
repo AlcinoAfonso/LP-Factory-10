@@ -1,6 +1,9 @@
+import type { Category3ObservedStart } from "./category-3-costs";
 import type {
   OpenAiActiveCostExecution,
   OpenAiActiveCostReadModel,
+  OpenAiCostEconomicEvent,
+  OpenAiCostEnvironment,
   OpenAiCostReadWorkloadId,
   OpenAiCostUniverse,
   OpenAiEconomicDimensionStatus,
@@ -33,7 +36,8 @@ export type OpenAiEconomicWorkload = Readonly<{
 
 export type OpenAiEconomicEvent = Readonly<{
   key: string;
-  kind: "landing_page" | "niche_resolution" | "lp_factory_internal";
+  kind: OpenAiCostEconomicEvent["kind"];
+  environment?: OpenAiCostEnvironment;
   eventId: string;
   startedAt: string | null;
   label: string;
@@ -98,6 +102,7 @@ type MutableWorkload = MutableSummary & {
 type MutableEvent = MutableSummary & {
   key: string;
   kind: OpenAiEconomicEvent["kind"];
+  environment?: OpenAiCostEnvironment;
   eventId: string;
   label: string;
   source: OpenAiEconomicSource;
@@ -115,6 +120,7 @@ type MutableAccount = MutableSummary & {
 export function buildOpenAiEconomicHierarchy(
   active: OpenAiActiveCostReadModel | null,
   legacy: OpenAiLpCostReadModel | null,
+  category3Starts: readonly Category3ObservedStart[] = [],
 ): OpenAiEconomicHierarchy {
   const accounts = new Map<string, MutableAccount>();
   const lpFactoryEvents = new Map<string, MutableEvent>();
@@ -166,6 +172,14 @@ export function buildOpenAiEconomicHierarchy(
     addActiveExecution(lpFactoryEvents, execution);
   }
 
+  for (const start of category3Starts) {
+    const account = getAccount(accounts, start.accountId, start.accountName);
+    getEvent(account.events, {
+      kind: "category_3_generation", eventId: start.generationId, environment: start.environment,
+      label: "Geração da Categoria 3", source: "active", startedAt: start.startedAt,
+    });
+  }
+
   if (legacy) {
     const legacyTotal = requiredDecimal(legacy.totalUsd);
     clientSummary.total = addDecimal(clientSummary.total, legacyTotal);
@@ -205,6 +219,7 @@ function addActiveExecution(events: Map<string, MutableEvent>, execution: OpenAi
   if (!economicEvent) return;
   const event = getEvent(events, {
     kind: economicEvent.kind,
+    ...(economicEvent.kind === "category_3_generation" ? { environment: execution.environment } : {}),
     eventId: economicEvent.eventId,
     label: eventLabel(execution),
     source: "active",
@@ -252,9 +267,11 @@ function getAccount(accounts: Map<string, MutableAccount>, accountId: string, ac
 
 function getEvent(
   events: Map<string, MutableEvent>,
-  input: Pick<MutableEvent, "kind" | "eventId" | "label" | "source" | "startedAt">,
+  input: Pick<MutableEvent, "kind" | "eventId" | "environment" | "label" | "source" | "startedAt">,
 ) {
-  const key = `${input.kind}:${input.eventId}`;
+  const key = input.environment
+    ? `${input.kind}:${input.eventId}:${input.environment}`
+    : `${input.kind}:${input.eventId}`;
   const existing = events.get(key);
   if (existing) {
     if (existing.source !== input.source) existing.source = "active_and_legacy";
@@ -339,6 +356,7 @@ function finalizeEvent(event: MutableEvent): OpenAiEconomicEvent {
   return Object.freeze({
     key: event.key,
     kind: event.kind,
+    ...(event.environment ? { environment: event.environment } : {}),
     eventId: event.eventId,
     startedAt: event.startedAt || null,
     label: event.label,
@@ -419,6 +437,7 @@ function eventLabel(execution: OpenAiActiveCostExecution) {
   if (!event) return "Evento sem correlação";
   if (event.kind === "landing_page") return execution.landingPageName ?? "Landing Page sem nome";
   if (event.kind === "niche_resolution") return `Resolução de nicho — ${execution.startedAt}`;
+  if (event.kind === "category_3_generation") return "Geração da Categoria 3";
   return execution.taxonName ?? `${workloadLabel(execution.workload)} — ${execution.startedAt}`;
 }
 

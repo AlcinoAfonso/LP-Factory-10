@@ -53,6 +53,7 @@ export type OpenAiResponsesInput<T> = Readonly<{
   timeoutMs?: number;
   signal?: AbortSignal;
   financialContext: OpenAiCostEconomicContext;
+  financialExecutionId?: string;
   executionOrigin: OpenAiCostExecutionOrigin;
   baselineReference?: string;
 }>;
@@ -136,7 +137,7 @@ export async function requestOpenAiResponses<T>(
   const createId = dependencies.createId ?? newOpenAiCostId;
   const webSearchRequested = Array.isArray(input.request.tools) &&
     input.request.tools.some((tool) => asRecord(tool)?.type === "web_search");
-  const executionId = createId();
+  const executionId = input.financialExecutionId ?? createId();
   const operationId = createId();
   const financialStartedAt = nowIso();
   const financialTrackingStarted = environment !== "unknown" &&

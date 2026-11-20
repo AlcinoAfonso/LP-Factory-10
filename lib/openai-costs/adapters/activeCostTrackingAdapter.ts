@@ -28,7 +28,18 @@ async function startExecutionWithRollout(
   client: ServiceClient,
   input: Parameters<OpenAiCostTrackingAdapter["startExecution"]>[0],
 ) {
-  const { error } = await client.rpc("start_openai_cost_execution_v2", executionStartRpc(input));
+  const payload = executionStartRpc(input);
+  if (payload.p_economic_event_kind === "category_3_generation") {
+    const category = await client.rpc("start_openai_cost_execution_v3", payload);
+    if (!category.error) return;
+    if (!isExpectedMissingRpcError(category.error, "start_openai_cost_execution_v3")) {
+      throw new OpenAiCostTrackingPersistenceError(category.error.code === "23505" ? "conflict" : "unavailable");
+    }
+    // Preserve account and cost capture before the compatible reader is installed.
+    payload.p_economic_event_kind = null;
+    payload.p_economic_event_id = null;
+  }
+  const { error } = await client.rpc("start_openai_cost_execution_v2", payload);
   if (!error) return;
   if (isExpectedMissingRpcError(error, "start_openai_cost_execution_v2")) {
     await invoke(client, "start_openai_cost_execution_v1", legacyExecutionStartRpc(input));
