@@ -133,6 +133,49 @@ test("síntese referencia o texto exibido e o WhatsApp sem ocultar ano, quantida
   assert.equal(summary.confirmedUnderstanding, "Atende na zona sul.\n" + business);
 });
 
+test("WhatsApp informado após a síntese só entra no Summary com aceite da síntese atualizada", () => {
+  const originalAssistant = "00000000-0000-4000-8000-000000000021";
+  const userContact = "00000000-0000-4000-8000-000000000022";
+  const updatedAssistant = "00000000-0000-4000-8000-000000000023";
+  const finalConfirmation = "00000000-0000-4000-8000-000000000024";
+  const business = "Rede de hortifruti com seis lojas para consumidores finais.";
+  const contactText = "Meu WhatsApp é (21) 99999-1111.";
+  const prior = JSON.stringify({ confirmedUnderstanding: null, whatsapp: null });
+  const input = { ...context,
+    message: { id: userContact, text: contactText, replyToProposalId: null },
+    history: [{ id: originalAssistant, role: "assistant" as const, text: "Confirma: " + business }],
+    activeSynthesis: { id: originalAssistant, text: business, accepted: false },
+    pendingSetup: pendingContext,
+  };
+  const update = run(input, { ...clarification,
+    reply: "Posso usar o WhatsApp informado para contato? Confirma: " + business,
+    synthesis: { proposal: business, reaction: "continue" },
+    pendingSetup: { ...pendingOutcome, whatsapp: { reference: "contato_1", declined: false } },
+  });
+  assert.ok(update.ok && update.value.synthesisWrite.offer, JSON.stringify(update));
+  assert.match(update.value.reply, /WhatsApp informado \(final 11\)/);
+  const snapshot = resolveSynthesis({ ...update.value.synthesisWrite.offer, messageId: updatedAssistant }, [
+    { id: userContact, role: "user", content: contactText },
+    { id: updatedAssistant, role: "assistant", content: update.value.reply },
+  ]);
+  assert.equal(snapshot?.phone, "(21) 99999-1111");
+  assert.equal(mergeNicheMemory(prior, update.value, snapshot), null);
+
+  const accepted = run({ ...input,
+    message: { id: finalConfirmation, text: "Sim, confirmo o negócio e o uso do WhatsApp.", replyToProposalId: null },
+    history: [...input.history, { id: userContact, role: "user" as const, text: contactText },
+      { id: updatedAssistant, role: "assistant" as const, text: update.value.reply }],
+    activeSynthesis: { id: updatedAssistant, text: business, accepted: false },
+  }, { ...clarification, reply: "Obrigado, tudo confirmado.",
+    synthesis: { proposal: null, reaction: "accept" }, pendingSetup: pendingOutcome });
+  assert.ok(accepted.ok, JSON.stringify(accepted));
+  assert.equal(accepted.value.synthesisWrite.accept, updatedAssistant);
+  const summary = JSON.parse(mergeNicheMemory(prior, accepted.value, snapshot)!);
+  assert.equal(summary.confirmedUnderstanding, business);
+  assert.equal(summary.whatsapp, "(21) 99999-1111");
+  assert.equal(summary.whatsappDeclined, false);
+});
+
 test("exibe a síntese ausente na resposta do Pending Setup e referencia o trecho exibido", () => {
   const assistant = "00000000-0000-4000-8000-000000000006";
   const reply = "🌱 Você confirma este resumo do negócio?";
