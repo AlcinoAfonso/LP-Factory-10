@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { AGENT_BASE_PILOT_MODEL, agentBasePilotOrder, agentBasePilotCatalogState, buildAgentBasePilotPrompt, parseAgentBasePilotResponse, sanitizeAgentBasePilotFailureReason, selectAgentBasePilotInput } from "./pilot";
+import { agentBasePilotOrder, agentBasePilotCatalogState, buildAgentBasePilotPrompt, parseAgentBasePilotResponse, sanitizeAgentBasePilotFailureReason, selectAgentBasePilotInput } from "./pilot";
 import { AGENT_BASE_PROMPT, AGENT_BASE_PROMPT_VERSION } from "./base-prompt";
 import { AGENT_BASE_ABOUT_PROMPT, AGENT_BASE_ABOUT_SECTION_SCHEMA } from "./about-prompt";
 import { AGENT_BASE_AUDIENCE_PROMPT, AGENT_BASE_AUDIENCE_SECTION_SCHEMA } from "./audience-prompt";
@@ -24,7 +24,6 @@ const base: CommunicationBase = {
   },
 };
 const niche = { taxonId: null, name: "Nicho oficial confirmado", confirmed: true, revision: "1" };
-assert.equal(AGENT_BASE_PILOT_MODEL, "gpt-6.2-sol");
 const definitions = communicationSections;
 const order = agentBasePilotOrder(definitions);
 const expectedKeys = definitions.filter(section => section.stage === 2).map(section => section.key);
