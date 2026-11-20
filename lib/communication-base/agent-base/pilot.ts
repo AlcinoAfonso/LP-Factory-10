@@ -14,8 +14,6 @@ import { COMMUNICATION_FAQ_MAX, COMMUNICATION_ITEMS_MAX, parseCommunicationFacts
 import { getSectionGuidance } from "../section-guidance";
 import type { CommunicationSectionDefinition, CommunicationSectionKey } from "../registry";
 
-export const AGENT_BASE_PILOT_MODEL = "gpt-6.2-sol" as const;
-
 const prompts = {
   about: { text: AGENT_BASE_ABOUT_PROMPT, version: AGENT_BASE_ABOUT_PROMPT_VERSION, format: "text" },
   audience: { text: AGENT_BASE_AUDIENCE_PROMPT, version: AGENT_BASE_AUDIENCE_PROMPT_VERSION, format: "text" },

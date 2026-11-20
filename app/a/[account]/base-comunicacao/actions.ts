@@ -18,7 +18,7 @@ import {
 } from "../../../../lib/communication-base/adapters/communicationBaseAdapter";
 import { parseCommunicationFacts, parseSectionValue, withSection, withGeneratedIntelligence } from "../../../../lib/communication-base/policy";
 import { parseEditorDraft } from "../../../../lib/communication-base/manual-editor-value";
-import { isCommunicationResourcesEnabled } from "../../../../lib/communication-base/config";
+import { isCommunicationResourcesEnabled, resolveAgentBaseEnvironment, type AgentBaseEnvironment } from "../../../../lib/communication-base/config";
 import { readCommunicationDefinitions } from "../../../../lib/communication-base/adapters/communicationCatalogAdapter";
 import { getCommunicationSection } from "../../../../lib/communication-base/registry";
 import { selectStageTwoInput, type StageTwoDraft, type StageTwoTarget } from "../../../../lib/communication-base/ai-core";
@@ -204,17 +204,17 @@ async function logAgentBasePilotAccessDenial(phase: "initial" | "revalidation", 
 }
 
 // The existing OpenAI server secret authenticates each ephemeral result across requests.
-function pilotProof(accountId: string, version: number, catalogState: string, nicheRevision: string,
+function pilotProof(environment: AgentBaseEnvironment, accountId: string, version: number, catalogState: string, nicheRevision: string,
   section: AgentBasePilotSection): string | null {
   if (!process.env.OPENAI_API_KEY) return null;
   const { key, value, basis, sources, researched } = section;
-  return createHmac("sha256", process.env.OPENAI_API_KEY).update("d14f-agent-base-proof-v1")
-    .update(JSON.stringify([accountId, version, catalogState, nicheRevision,
+  return createHmac("sha256", process.env.OPENAI_API_KEY).update("d14f-agent-base-proof-v2")
+    .update(JSON.stringify([environment, accountId, version, catalogState, nicheRevision,
       { key, value, basis, sources, researched }])).digest("hex");
 }
-function verifiedPilotProof(accountId: string, version: number, catalogState: string, nicheRevision: string,
+function verifiedPilotProof(environment: AgentBaseEnvironment, accountId: string, version: number, catalogState: string, nicheRevision: string,
   section: AgentBasePilotSection) {
-  const expected = pilotProof(accountId, version, catalogState, nicheRevision, section);
+  const expected = pilotProof(environment, accountId, version, catalogState, nicheRevision, section);
   return Boolean(expected && typeof section.proof === "string" && /^[0-9a-f]{64}$/.test(section.proof) &&
     timingSafeEqual(Buffer.from(section.proof, "hex"), Buffer.from(expected, "hex")));
 }
@@ -224,17 +224,18 @@ export async function runAgentBasePilotAction(input: Readonly<{
   catalogState?: string; nicheRevision?: string;
 }>): Promise<AgentBasePilotActionResult> {
   const fail = (message: string, invalidated = false) => ({ ok: false as const, message, invalidated });
-  if (process.env.VERCEL_ENV !== "preview" || !isCommunicationResourcesEnabled()) return fail("O piloto está disponível somente no Preview.");
+  const environment = resolveAgentBaseEnvironment();
+  if (!environment) return fail("A geração da Categoria 3 não está disponível.");
   if (!input || typeof input.account !== "string" || !Number.isSafeInteger(input.version) || input.version <= 0 ||
       (input.previous !== undefined && !Array.isArray(input.previous))) return fail("Solicitação inválida. Atualize a página.");
   const access = await requireCommunicationBaseAccess(input.account, true);
   if (!access.ok) {
     await logAgentBasePilotAccessDenial("initial", access.error);
-    return fail("O piloto não está disponível para este acesso.");
+    return fail("A geração da Categoria 3 não está disponível para este acesso.");
   }
   const definitions = await readCommunicationDefinitions();
   const order = definitions.ok ? agentBasePilotOrder(definitions.value) : null;
-  if (!definitions.ok || !order) return fail("Não foi possível conferir as seções do piloto. A edição manual continua disponível.");
+  if (!definitions.ok || !order) return fail("Não foi possível conferir as seções da Categoria 3. A edição manual continua disponível.");
   const previous = input.previous ?? [];
   if (previous.length >= order.length || previous.some((section, index) =>
       !section || section.key !== order[index]?.key ||
@@ -246,21 +247,21 @@ export async function runAgentBasePilotAction(input: Readonly<{
     readCommunicationBase(access.value.accountId, definitions.value),
     readOfficialNicheContext({ accountId: access.value.accountId }),
   ]);
-  if (!base.ok || !base.value || base.value.version !== input.version) return fail("A Base mudou. Atualize a página antes de executar o piloto.", true);
-  if (!taxonomy.ok || !taxonomy.niche?.confirmed) return fail("Defina e confirme um nicho oficial antes de executar o piloto.", true);
+  if (!base.ok || !base.value || base.value.version !== input.version) return fail("A Base mudou. Atualize a página antes de gerar a Categoria 3.", true);
+  if (!taxonomy.ok || !taxonomy.niche?.confirmed) return fail("Defina e confirme um nicho oficial antes de gerar a Categoria 3.", true);
   const selected = selectAgentBasePilotInput(base.value, definitions.value);
-  if (!selected || !Object.keys(selected.confirmed).length) return fail([selected?.notice, "Não há dados confirmados compatíveis para o piloto."].filter(Boolean).join(" "));
+  if (!selected || !Object.keys(selected.confirmed).length) return fail([selected?.notice, "Não há dados confirmados compatíveis para a geração."].filter(Boolean).join(" "));
   if (selected.notice) return fail(selected.notice + " Revise esses dados antes de atualizar toda a Categoria 3.");
   const catalogState = agentBasePilotCatalogState(definitions.value);
   if (previous.length && (input.catalogState !== catalogState || input.nicheRevision !== taxonomy.niche.revision))
     return fail("A Base ou o nicho mudou durante a geração. Atualize a página.", true);
-  if (previous.some(section => !verifiedPilotProof(access.value.accountId, input.version,
+  if (previous.some(section => !verifiedPilotProof(environment, access.value.accountId, input.version,
       catalogState, taxonomy.niche!.revision, section)))
     return fail("Uma etapa da geração não pôde ser autenticada. Nada foi salvo.");
   const target = order[previous.length];
   const result = await generateAgentBasePilotSection({
     base: base.value, niche: taxonomy.niche, definitions: definitions.value,
-    key: target.key as AgentBasePilotKey, previous, timeoutMs: 120_000,
+    key: target.key as AgentBasePilotKey, previous, environment, timeoutMs: 120_000,
   });
   if (!result.ok) return fail("Não foi possível concluir a geração em " + target.label + ". Nada foi salvo.");
   const [latestAccess, latestBase, latestNiche, latestDefinitions] = await Promise.all([
@@ -274,7 +275,7 @@ export async function runAgentBasePilotAction(input: Readonly<{
       agentBasePilotCatalogState(latestDefinitions.value) !== catalogState) {
     return fail("A Base, o nicho ou o catálogo mudou durante a geração. Nada foi salvo.", true);
   }
-  const proof = pilotProof(access.value.accountId, input.version, catalogState, taxonomy.niche.revision, result.value);
+  const proof = pilotProof(environment, access.value.accountId, input.version, catalogState, taxonomy.niche.revision, result.value);
   if (!proof) return fail("Não foi possível validar a geração. Nada foi salvo.");
   return { ok: true, section: { ...result.value, proof }, catalogState, nicheRevision: taxonomy.niche.revision };
 }
@@ -284,7 +285,8 @@ export async function saveAgentBasePilotAction(input: Readonly<{
   catalogState: string; nicheRevision: string;
 }>) {
   const fail = (message: string) => ({ ok: false as const, message });
-  if (process.env.VERCEL_ENV !== "preview" || !isCommunicationResourcesEnabled()) return fail("O piloto está disponível somente no Preview.");
+  const environment = resolveAgentBaseEnvironment();
+  if (!environment) return fail("A geração da Categoria 3 não está disponível.");
   if (!input || typeof input.account !== "string" || !Number.isSafeInteger(input.version) || input.version <= 0 ||
       !Array.isArray(input.sections)) return fail("Solicitação inválida.");
   const access = await requireCommunicationBaseAccess(input.account, true);
@@ -310,7 +312,7 @@ export async function saveAgentBasePilotAction(input: Readonly<{
       !niche.ok || !niche.niche?.confirmed || input.nicheRevision !== niche.niche.revision) {
     return fail("A Base ou o nicho mudou durante a geração. Nada foi salvo.");
   }
-  if (input.sections.some(section => !verifiedPilotProof(access.value.accountId, input.version,
+  if (input.sections.some(section => !verifiedPilotProof(environment, access.value.accountId, input.version,
     input.catalogState, input.nicheRevision, section))) {
     return fail("Uma etapa da geração não pôde ser autenticada. Nada foi salvo.");
   }

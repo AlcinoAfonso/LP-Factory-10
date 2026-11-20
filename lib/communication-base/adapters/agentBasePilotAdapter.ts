@@ -3,24 +3,25 @@ import { createHash, randomUUID } from "node:crypto";
 import { requestOpenAiResponses } from "../../openai-responses/openAiResponsesAdapter";
 import { clientOpenAiCostContext } from "../../openai-costs";
 import { resolveOpenAiProductWorkload } from "../../openai-workloads";
-import { agentBaseQaConfiguration } from "../agent-base/research";
-import { AGENT_BASE_PILOT_MODEL, buildAgentBasePilotPrompt, parseAgentBasePilotResponse, sanitizeAgentBasePilotFailureReason, type AgentBasePilotSection } from "../agent-base/pilot";
+import type { AgentBaseEnvironment } from "../config";
+import { buildAgentBasePilotPrompt, parseAgentBasePilotResponse, sanitizeAgentBasePilotFailureReason, type AgentBasePilotSection } from "../agent-base/pilot";
 
-export async function generateAgentBasePilotSection(input: Parameters<typeof buildAgentBasePilotPrompt>[0] & Readonly<{ timeoutMs: number }>) {
-  if (process.env.VERCEL_ENV !== "preview") return { ok: false as const };
+export async function generateAgentBasePilotSection(input: Parameters<typeof buildAgentBasePilotPrompt>[0] & Readonly<{
+  environment: AgentBaseEnvironment; timeoutMs: number;
+}>) {
   const prompt = buildAgentBasePilotPrompt(input);
   if (!prompt) return { ok: false as const };
-  const active = await resolveOpenAiProductWorkload("communication_base_stage2_intelligence", "preview");
+  const active = await resolveOpenAiProductWorkload("communication_base_stage2_intelligence", input.environment);
   if (!active.ok || !active.value.webSearch) return { ok: false as const };
-  // Escopo local: não altera o modelo dos experimentos nem a configuração E21.
-  const configuration = { ...agentBaseQaConfiguration(active.value), model: AGENT_BASE_PILOT_MODEL };
-  const web = configuration.webSearch!;
+  // The Agent Base uses Standard from the request, independent of the shared tier.
+  const configuration = { ...active.value, model: "gpt-6.2-sol", reasoningEffort: "medium", serviceTier: null } as const;
+  const web = active.value.webSearch;
   const requestId = randomUUID();
   const result = await requestOpenAiResponses<AgentBasePilotSection>({
     apiKey: process.env.OPENAI_API_KEY,
-    configuration, environment: "preview", expectedWorkload: "communication_base_stage2_intelligence",
+    configuration, environment: input.environment, expectedWorkload: "communication_base_stage2_intelligence",
     requestId, promptVersion: prompt.promptVersion, contractVersion: 1, timeoutMs: input.timeoutMs,
-    financialContext: clientOpenAiCostContext(input.base.accountId), executionOrigin: "administrative_proof",
+    financialContext: clientOpenAiCostContext(input.base.accountId), executionOrigin: "runtime",
     baselineReference: "d14f_agent_base_pilot_" + input.key,
     request: {
       instructions: prompt.instructions, input: prompt.input, store: false, background: false,
