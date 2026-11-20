@@ -199,6 +199,13 @@ test("bloqueia nomes privados declarados em minúsculas no texto livre", () => {
   }
 });
 
+test("bloqueia nome privado em minúsculas em uma apresentação direta", () => {
+  const input = { ...context, pendingSetup: pendingContext,
+    message: { text: "minha empresa é estúdio do vale e oferece paisagismo", replyToProposalId: null } };
+  assert.equal(publicResearchContext("paisagismo para estúdio do vale", input), null);
+  assert.equal(publicResearchContext("paisagismo para hotéis", input)?.researchTopic, "paisagismo para hotéis");
+});
+
 test("corrige só o fato reexibido na síntese aceita e preserva o restante", () => {
   const id = "00000000-0000-4000-8000-000000000004";
   const shown = "Atende empresas.";

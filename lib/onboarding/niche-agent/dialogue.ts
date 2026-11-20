@@ -94,8 +94,8 @@ export function publicResearchContext(topic: string, context: NicheTurnContext, 
     names.push(...(text.match(/\p{Lu}[\p{Ll}\p{M}]+(?: +\p{Lu}[\p{Ll}\p{M}]+)+/gu) ?? []));
   }
   // Explicit name declarations are private even when their spelling has no capitals.
-  const declaration = /\b(?:(?:empresa|neg[oó]cio|loja|marca)\s+se\s+chama|nome\s+d[ao]\s+(?:empresa|neg[oó]cio|loja|marca)\s+[eé]|me\s+chamo|meu\s+nome\s+[eé])\s+(.+)/iu;
-  const clauseEnd = /[\r\n.,;!?]|\s+e\s+(?=(?:fazemos|oferecemos|vendemos|atendemos|atuamos|trabalhamos|me\s+chamo|meu\s+nome|minha\s+(?:empresa|loja|marca)|meu\s+neg[oó]cio)\b)/iu;
+  const declaration = /\b(?:(?:empresa|neg[oó]cio|loja|marca)\s+se\s+chama|(?:minha\s+(?:empresa|loja|marca)|meu\s+neg[oó]cio)\s+[eé]|nome\s+d[ao]\s+(?:empresa|neg[oó]cio|loja|marca)\s+[eé]|me\s+chamo|meu\s+nome\s+[eé])\s+(.+)/iu;
+  const clauseEnd = /[\r\n.,;!?]|\s+e\s+(?=(?:faz(?:emos)?|oferece(?:mos)?|vende(?:mos)?|atende(?:mos)?|atua(?:mos)?|trabalha(?:mos)?|me\s+chamo|meu\s+nome|minha\s+(?:empresa|loja|marca)|meu\s+neg[oó]cio)\b)/iu;
   for (const text of [businessContext, context.summary ?? "", ...context.history.map(entry => entry.text), context.message?.text ?? ""]) {
     for (const clause of text.split(clauseEnd)) {
       const name = declaration.exec(clause)?.[1];
