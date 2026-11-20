@@ -133,6 +133,29 @@ test("síntese referencia o texto exibido e o WhatsApp sem ocultar ano, quantida
   assert.equal(summary.confirmedUnderstanding, "Atende na zona sul.\n" + business);
 });
 
+test("exibe a síntese ausente na resposta do Pending Setup e referencia o trecho exibido", () => {
+  const assistant = "00000000-0000-4000-8000-000000000006";
+  const reply = "🌱 Você confirma este resumo do negócio?";
+  const business = "Venda de hortaliças para o consumidor final.";
+  const input = { ...context, message: { text: "Consumidor final. Hortifruti Central.", replyToProposalId: null },
+    pendingSetup: pendingContext };
+  const output = { ...clarification, reply, synthesis: { proposal: business, reaction: "continue" },
+    pendingSetup: pendingOutcome };
+  const result = run(input, output);
+  assert.ok(result.ok && result.value.synthesisWrite.offer, JSON.stringify(result));
+  assert.equal(result.value.reply, reply + "\n\n" + business);
+  const snapshot = resolveSynthesis({ ...result.value.synthesisWrite.offer, messageId: assistant }, [
+    { id: assistant, role: "assistant", content: result.value.reply },
+  ]);
+  assert.equal(snapshot?.text, business);
+  assert.equal(result.value.synthesisWrite.accept, null);
+  assert.equal(mergeNicheMemory(null, result.value, snapshot), null);
+  assert.deepEqual(run(input, { ...output, synthesis: { ...output.synthesis, proposal: business + " [contato_1]" } }),
+    { ok: false, kind: "invalid_response", reason: "niche_turn_contact_in_text" });
+  assert.deepEqual(run(input, { ...output, reply: business + "\n" + business }),
+    { ok: false, kind: "invalid_response", reason: "niche_turn_synthesis_repeated_in_reply" });
+});
+
 test("usa mensagens relevantes antigas e permite pesquisa condicional nas duas jornadas", () => {
   const messages = Array.from({ length: 70 }, (_, index) => ({
     id: String(index), role: "user" as const, content: index === 9 ? "Nosso serviço inclui reflorestamento." : "Outra informação " + index,
