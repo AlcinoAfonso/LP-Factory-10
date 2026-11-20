@@ -237,8 +237,8 @@ function parseTurn(
     if (proposal && reaction === "reject" && proposal === currentDescription) return invalid("niche_turn_rejected_proposal");
     if ((["accept", "partial"].includes(synthesis.reaction) && (!hasMessage || !activeSynthesis || activeSynthesis.accepted)) ||
       (synthesis.reaction === "accept" && synthesis.proposal)) return invalid("niche_turn_synthesis_acceptance");
-    if (synthesis.proposal && !reply.includes(synthesis.proposal)) return invalid("niche_turn_synthesis_not_in_reply");
-    if (synthesis.proposal && reply.split(synthesis.proposal).length !== 2) return invalid("niche_turn_synthesis_repeated_in_reply");
+    const synthesisText = synthesis.proposal;
+    if (synthesisText && reply.split(synthesisText).length > 2) return invalid("niche_turn_synthesis_repeated_in_reply");
     const result = pendingResult?.success ? pendingResult.data.pendingSetup : null;
     const contact = result?.whatsapp.reference ? contacts.get(result.whatsapp.reference) : null;
     if (result) {
@@ -257,11 +257,18 @@ function parseTurn(
     const hasAcceptance = Boolean(confirmation || synthesis.reaction === "accept" ||
       result?.publicName.reaction === "accept" || result?.operational.reaction === "accept");
     if (web.calls > 0 && (hasAcceptance || searchTopic || proposal || synthesis.proposal)) return invalid("niche_turn_research_effect");
-    const start = synthesis.proposal ? reply.indexOf(synthesis.proposal) : -1;
+    let start = synthesisText ? reply.indexOf(synthesisText) : -1;
+    let replyWithSynthesis = reply;
+    if (synthesisText && start === -1) {
+      const prefix = reply + "\n\n";
+      start = prefix.length;
+      replyWithSynthesis = prefix + synthesisText;
+      if ([synthesisText, replyWithSynthesis].some(containsContact)) return invalid("niche_turn_contact_in_text");
+    }
     const contactNote = contact?.source ? " WhatsApp informado (final " + contact.value.replace(/\D/g, "").slice(-2) + ")."
       : result?.whatsapp.declined ? " WhatsApp não informado por opção." : "";
-    const end = start + (synthesis.proposal?.length ?? 0);
-    const shown = start >= 0 ? reply.slice(0, end) + contactNote + reply.slice(end) : reply;
+    const end = start + (synthesisText?.length ?? 0);
+    const shown = start >= 0 ? replyWithSynthesis.slice(0, end) + contactNote + replyWithSynthesis.slice(end) : reply;
     const cited = new Set(content.flatMap(item => item.annotations ?? [])
       .filter(item => item.type === "url_citation").map(item => item.url));
     const sourceUrls = web.sources.map(source => source.url);
@@ -276,8 +283,8 @@ function parseTurn(
     return { ok: true, value: { reply: displayedReply, proposal, reaction, confirmation, synthesis,
       searchTopic: hasAcceptance ? null : searchTopic,
       synthesisWrite: {
-        offer: synthesis.proposal ? { start: Array.from(reply.slice(0, start)).length + 1,
-          length: Array.from(synthesis.proposal).length, contact: contact?.source ?? (result?.whatsapp.declined ? "declined" : null) } : null,
+        offer: synthesisText ? { start: Array.from(replyWithSynthesis.slice(0, start)).length + 1,
+          length: Array.from(synthesisText).length, contact: contact?.source ?? (result?.whatsapp.declined ? "declined" : null) } : null,
         accept: synthesis.reaction === "accept" ? activeSynthesis?.id ?? null : null,
         clear: synthesis.reaction === "clear",
         partial: synthesis.reaction === "partial" && !synthesis.proposal,
