@@ -57,6 +57,9 @@ export async function requestNicheAgent(accountId: string, dialogueId: string, c
         } : {}),
       },
     });
+    if (!result.ok && context.pendingSetup && result.kind === "invalid_response") {
+      console.warn("d15e_pending_setup_response_rejected", result.reason);
+    }
     return result.ok ? result.value : null;
   };
   const turn = await run(context);

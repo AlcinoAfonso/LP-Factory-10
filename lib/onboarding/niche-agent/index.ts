@@ -198,53 +198,65 @@ function parseTurn(
   activeSynthesis: NonNullable<z.output<typeof contextSchema>["activeSynthesis"]> | null | undefined,
   searchLimit = 0,
 ): OpenAiResponsesParser<NicheTurn> {
-  const invalid = { ok: false, kind: "invalid_response", reason: "niche_turn_invalid" } as const;
+  const invalid = (reason: string) => ({ ok: false, kind: "invalid_response", reason } as const);
   return (payload) => {
     const envelope = responsesEnvelope.safeParse(payload);
-    if (!envelope.success) return invalid;
+    if (!envelope.success) return invalid("niche_turn_envelope");
     const { status, error, output } = envelope.data;
     if (error || status === "failed" || status === "incomplete" || status === "cancelled") {
       return { ok: false, kind: "provider_error", reason: "niche_turn_unavailable" };
     }
     const web = webSearchMetadata(payload);
     if (!web || web.calls > searchLimit || (searchLimit > 0 && web.calls === 0) || status !== "completed" || !output ||
-      output.some(({ type }) => !["message", "reasoning", "web_search_call"].includes(type))) return invalid;
+      output.some(({ type }) => !["message", "reasoning", "web_search_call"].includes(type))) return invalid("niche_turn_output");
     const messages = output.filter(({ type }) => type === "message");
     const content = messages[0]?.content ?? [];
-    if (messages.length !== 1 || messages[0].role !== "assistant" || content.length === 0) return invalid;
+    if (messages.length !== 1) return invalid("niche_turn_message_count");
+    if (messages[0].role !== "assistant" || content.length === 0) return invalid("niche_turn_message_shape");
     if (content.some(({ type }) => type === "refusal")) {
       return { ok: false, kind: "refusal", reason: "niche_turn_refused" };
     }
-    if (content.some(({ type, text }) => type !== "output_text" || typeof text !== "string")) return invalid;
+    if (content.some(({ type, text }) => type !== "output_text" || typeof text !== "string")) return invalid("niche_turn_content");
 
     let raw: unknown;
-    try { raw = JSON.parse(content.map(({ text }) => text).join("")); } catch { return invalid; }
+    try { raw = JSON.parse(content.map(({ text }) => text).join("")); } catch { return invalid("niche_turn_json"); }
     const pendingResult = pending ? pendingTurnSchema.safeParse(raw) : null;
     const turn = pendingResult ?? turnSchema.safeParse(raw);
-    if (!turn.success) return invalid;
+    if (!turn.success) {
+      const issue = turn.error.issues[0];
+      const field = issue?.path[0];
+      const shape = pending ? pendingTurnSchema.shape : turnSchema.shape;
+      return invalid(typeof field === "string" && Object.hasOwn(shape, field)
+        ? `niche_turn_schema_${field}_${issue.code}` : "niche_turn_schema");
+    }
     const { reply, proposal, reaction, memory, synthesis, searchTopic } = turn.data;
     const confirmation = reaction === "accept" ? confirmationTarget : null;
-    if (reaction === "accept" && (!confirmation || proposal !== null)) return invalid;
-    if (!hasMessage && (reaction !== "continue" || memory.length > 0)) return invalid;
-    if (proposal && (!reply.includes(proposal) || (reaction === "reject" && proposal === currentDescription))) return invalid;
+    if (reaction === "accept" && (!confirmation || proposal !== null)) return invalid("niche_turn_acceptance");
+    if (!hasMessage && (reaction !== "continue" || memory.length > 0)) return invalid("niche_turn_without_message");
+    if (proposal && !reply.includes(proposal)) return invalid("niche_turn_proposal_not_in_reply");
+    if (proposal && reaction === "reject" && proposal === currentDescription) return invalid("niche_turn_rejected_proposal");
     if ((["accept", "partial"].includes(synthesis.reaction) && (!hasMessage || !activeSynthesis || activeSynthesis.accepted)) ||
-      (synthesis.reaction === "accept" && synthesis.proposal) ||
-      (synthesis.proposal && (!reply.includes(synthesis.proposal) || reply.split(synthesis.proposal).length !== 2))) return invalid;
+      (synthesis.reaction === "accept" && synthesis.proposal)) return invalid("niche_turn_synthesis_acceptance");
+    if (synthesis.proposal && !reply.includes(synthesis.proposal)) return invalid("niche_turn_synthesis_not_in_reply");
+    if (synthesis.proposal && reply.split(synthesis.proposal).length !== 2) return invalid("niche_turn_synthesis_repeated_in_reply");
     const result = pendingResult?.success ? pendingResult.data.pendingSetup : null;
     const contact = result?.whatsapp.reference ? contacts.get(result.whatsapp.reference) : null;
-    if (result && (!pending || !hasMessage || contact === undefined || (contact !== null && result.whatsapp.declined) ||
-      (result.preferredName.value && result.preferredName.declined) ||
-      [result.publicName, result.operational].some(item => item.proposal &&
-        (!reply.includes(item.proposal) || item.reaction === "accept")) ||
-      (result.publicName.reaction === "accept" && !pending.nameProposal) ||
-      (result.operational.reaction === "accept" && (!pending.operationalProposal || proposal || confirmation)) ||
-      (result.operational.proposal && (proposal || confirmation)))) return invalid;
+    if (result) {
+      if (!pending || !hasMessage) return invalid("niche_turn_pending_setup_without_message");
+      if (contact === undefined || (contact !== null && result.whatsapp.declined)) return invalid("niche_turn_whatsapp_state");
+      if (result.preferredName.value && result.preferredName.declined) return invalid("niche_turn_preferred_name_state");
+      if ([result.publicName, result.operational].some(item => item.proposal &&
+        (!reply.includes(item.proposal) || item.reaction === "accept"))) return invalid("niche_turn_pending_setup_proposal");
+      if (result.publicName.reaction === "accept" && !pending.nameProposal) return invalid("niche_turn_public_name_acceptance");
+      if ((result.operational.reaction === "accept" && (!pending.operationalProposal || proposal || confirmation)) ||
+        (result.operational.proposal && (proposal || confirmation))) return invalid("niche_turn_operational_state");
+    }
     const containsContact = (text: string) => /\[contato_\d+\]/iu.test(text) || redact(text) !== text;
     if ([reply, proposal ?? "", result?.publicName.proposal ?? "", result?.preferredName.value ?? "",
-      result?.operational.proposal ?? ""].some(containsContact)) return invalid;
+      result?.operational.proposal ?? ""].some(containsContact)) return invalid("niche_turn_contact_in_text");
     const hasAcceptance = Boolean(confirmation || synthesis.reaction === "accept" ||
       result?.publicName.reaction === "accept" || result?.operational.reaction === "accept");
-    if (web.calls > 0 && (hasAcceptance || searchTopic || proposal || synthesis.proposal)) return invalid;
+    if (web.calls > 0 && (hasAcceptance || searchTopic || proposal || synthesis.proposal)) return invalid("niche_turn_research_effect");
     const start = synthesis.proposal ? reply.indexOf(synthesis.proposal) : -1;
     const contactNote = contact?.source ? " WhatsApp informado (final " + contact.value.replace(/\D/g, "").slice(-2) + ")."
       : result?.whatsapp.declined ? " WhatsApp não informado por opção." : "";
@@ -254,11 +266,11 @@ function parseTurn(
       .filter(item => item.type === "url_citation").map(item => item.url));
     const sourceUrls = web.sources.map(source => source.url);
     const urls = cited.size ? sourceUrls.filter(url => cited.has(url)) : sourceUrls.slice(0, 3);
-    if (web.calls > 0 && urls.length === 0) return invalid;
+    if (web.calls > 0 && urls.length === 0) return invalid("niche_turn_research_sources");
     const displayedReply = web.calls > 0
       ? shown + "\n\nFontes consultadas em " + new Date().toISOString().slice(0, 10) + ":\n" + urls.join("\n")
       : shown;
-    if (displayedReply.length > 4000) return invalid;
+    if (displayedReply.length > 4000) return invalid("niche_turn_reply_length");
     const safeMemory = (validMemory(memory, priorSummary, sources) ? memory : [])
       .filter(entry => !containsContact(entry.text));
     return { ok: true, value: { reply: displayedReply, proposal, reaction, confirmation, synthesis,
