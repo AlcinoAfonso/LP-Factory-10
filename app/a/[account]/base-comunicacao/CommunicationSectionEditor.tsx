@@ -1,19 +1,20 @@
 "use client";
 
-import { useActionState, useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
+import { useActionState, useEffect, useId, useLayoutEffect, useRef, useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { FormField, FormFieldLabel, FormFieldHint, FormFieldError } from "@/components/ui/form-field";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
+import type { AgentBasePilotSection } from "../../../../lib/communication-base/agent-base/pilot";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CommunicationSectionCollection, type SectionDetailControls } from "./_components/CommunicationSectionCollection";
 import { getSectionGuidance } from "../../../../lib/communication-base/section-guidance";
 import { BusinessFactsFields } from "./_components/BusinessFactsFields";
 import { StructuredSectionFields, StructuredSectionContent } from "./_components/StructuredSectionFields";
 import { editorDraftValue } from "../../../../lib/communication-base/manual-editor-value";
-import { sectionEditState } from "./_components/section-edit-state";
+import { hasSectionContent, sectionEditState } from "./_components/section-edit-state";
 
 import type { CommunicationBase, CommunicationSection, CommunicationSectionValue } from "../../../../lib/communication-base/contracts";
 import { hasStageTwoContent, type CommunicationSuggestion, type WebSource } from "../../../../lib/communication-base/ai-core";
@@ -28,6 +29,8 @@ import {
   saveCommunicationSectionAction,
   startCommunicationBaseAction,
   generateCommunicationIntelligenceAction,
+  runAgentBasePilotAction,
+  saveAgentBasePilotAction,
   type CommunicationActionState,
 } from "./actions";
 
@@ -334,14 +337,22 @@ export function CommunicationStageOne({ account, base, canEdit, structured = fal
       current={base.sections[definition.key as CommunicationSectionKey]} canEdit={canEdit} structured={structured} nicheLabel={nicheLabel} />} />;
 }
 
-export function CommunicationStageTwo({ account, base, canEdit, canGenerate = false, structured = false, definitions = communicationSections }: Readonly<{
+export function CommunicationStageTwo({ account, base, canEdit, canGenerate = false, structured = false, definitions = communicationSections, pilotEnabled = false, pilotCatalogKey = "" }: Readonly<{
   account: string;
   base: CommunicationBase;
   canEdit: boolean;
   canGenerate?: boolean;
+  pilotEnabled?: boolean;
+  pilotCatalogKey?: string;
   structured?: boolean;
   definitions?: readonly CommunicationSectionDefinition[];
 }>) {
+  const router = useRouter();
+  const [pilotPending, startPilotTransition] = useTransition();
+  const [pilotSources, setPilotSources] = useState<Readonly<{ version: number; catalogKey: string; sections: readonly AgentBasePilotSection[] }> | null>(null);
+  const [pilotProgress, setPilotProgress] = useState("");
+  const [pilotMessage, setPilotMessage] = useState("");
+  const [pilotError, setPilotError] = useState(false);
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState("");
   const [messageIsError, setMessageIsError] = useState(false);
@@ -353,6 +364,7 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
   const [generationInFlight, setGenerationInFlight] = useState(false);
   const generationGateRef = useRef(createStageTwoGenerationGate());
   const currentVersionRef = useRef(base.version);
+  const currentCatalogKeyRef = useRef(pilotCatalogKey);
   const saveRevisionRef = useRef(0);
   const pendingSavesRef = useRef(0);
   const tryStartStageTwoGeneration = () => {
@@ -364,15 +376,134 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
     generationGateRef.current.finish();
     setGenerationInFlight(false);
   };
-  useLayoutEffect(() => { currentVersionRef.current = base.version; }, [base.version]);
+  useLayoutEffect(() => { currentVersionRef.current = base.version; currentCatalogKeyRef.current = pilotCatalogKey; }, [base.version, pilotCatalogKey]);
   const stageTwo = definitions.filter((section) => section.stage === 2);
+  const pilotEffectId = useId();
+  const pilotConfirmationDialog = useRef<HTMLDialogElement>(null);
+  const pilotConfirmation = useRef<{ version: number; catalogKey: string; saveRevision: number } | null>(null);
+  const hasSavedPilotContent = stageTwo.some(({ key }) => hasSectionContent(base.sections[key]?.value));
+  const pilotBlocked = generationInFlight || saveInFlightCount > 0 || pilotPending;
+  const SuggestionOptions = pilotEnabled ? "details" : "div";
+  const pilotSections = pilotSources?.version === base.version && pilotSources.catalogKey === pilotCatalogKey ? pilotSources.sections : [];
+
+  function startPilotGeneration() {
+    if (!canStartGeneralGeneration(pendingSavesRef.current) || !tryStartStageTwoGeneration()) return;
+    const requestedVersion = base.version;
+    const requestSaveRevision = saveRevisionRef.current;
+    setPilotMessage("");
+    setPilotError(false);
+    setPilotSources(null);
+    setPilotProgress("Preparando a Categoria 3…");
+    startPilotTransition(async () => {
+      const sections: AgentBasePilotSection[] = [];
+      let catalogState = "";
+      let nicheRevision = "";
+      try {
+        for (const [index, definition] of stageTwo.entries()) {
+          setPilotProgress(`Gerando ${index + 1} de ${stageTwo.length}: ${definition.label}…`);
+          const result = await runAgentBasePilotAction({
+            account, version: requestedVersion, previous: sections, catalogState, nicheRevision,
+          });
+          if (!result.ok) { setPilotError(true); setPilotMessage(result.message); return; }
+          if (result.section.key !== definition.key ||
+              !canInstallGeneralSuggestion(requestedVersion, currentVersionRef.current,
+                requestSaveRevision, saveRevisionRef.current) ||
+              pilotCatalogKey !== currentCatalogKeyRef.current) {
+            setPilotError(true); setPilotMessage("A Base ou o catálogo mudou. Nada foi salvo."); return;
+          }
+          sections.push(result.section);
+          catalogState = result.catalogState;
+          nicheRevision = result.nicheRevision;
+        }
+        setPilotProgress("Salvando a Categoria 3…");
+        const saved = await saveAgentBasePilotAction({
+          account, version: requestedVersion, sections, catalogState, nicheRevision,
+        });
+        if (!saved.ok) { setPilotError(true); setPilotMessage(saved.message); return; }
+        setPilotSources({ version: requestedVersion + 1, catalogKey: pilotCatalogKey, sections });
+        setPilotMessage("Categoria 3 atualizada e salva. Você pode editar cada seção.");
+        router.refresh();
+      } catch {
+        setPilotError(true); setPilotMessage("Não foi possível concluir a geração. O conteúdo salvo foi preservado.");
+      } finally {
+        setPilotProgress("");
+        finishStageTwoGeneration();
+      }
+    });
+  }
+
+  function requestPilotGeneration() {
+    if (pilotBlocked || !canStartGeneralGeneration(pendingSavesRef.current)) return;
+    if (!hasSavedPilotContent) {
+      startPilotGeneration();
+      return;
+    }
+    const dialog = pilotConfirmationDialog.current;
+    if (!dialog || dialog.open) return;
+    pilotConfirmation.current = { version: base.version, catalogKey: pilotCatalogKey, saveRevision: saveRevisionRef.current };
+    dialog.showModal();
+    dialog.querySelector("button")?.focus({ preventScroll: true });
+  }
+
+  function cancelPilotConfirmation() {
+    pilotConfirmation.current = null;
+    pilotConfirmationDialog.current?.close();
+  }
+
+  function confirmPilotGeneration() {
+    const confirmed = pilotConfirmation.current;
+    if (!confirmed || !pilotConfirmationDialog.current?.open) return;
+    cancelPilotConfirmation();
+    if (confirmed.catalogKey !== currentCatalogKeyRef.current ||
+        !canInstallGeneralSuggestion(confirmed.version, currentVersionRef.current, confirmed.saveRevision, saveRevisionRef.current)) {
+      setPilotError(true);
+      setPilotMessage("A Base mudou. Confira o conteúdo atual antes de gerar novamente.");
+      return;
+    }
+    startPilotGeneration();
+  }
+
   return (
     <section aria-label="Inteligência de comunicação" className="space-y-2">
-      <div className="space-y-2">
-        {canEdit && !canGenerate ? <div className="rounded-lg border border-border px-3 py-2">
-          <p className="text-sm text-muted-foreground">Defina e confirme um nicho oficial para gerar sugestões com IA. A edição manual continua disponível.</p>
+      {canEdit && !canGenerate ? <div className="rounded-lg border border-border px-3 py-2">
+        <p className="text-sm text-muted-foreground">Defina e confirme um nicho oficial para gerar sugestões com IA. A edição manual continua disponível.</p>
+      </div> : null}
+      {canEdit && canGenerate ? <div className="rounded-lg border border-border bg-background px-3 py-2">
+        {pilotEnabled ? <div className="space-y-2">
+          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
+            <Button type="button" aria-describedby={pilotEffectId} aria-haspopup={hasSavedPilotContent ? "dialog" : undefined}
+              aria-busy={pilotPending} className="min-h-11 shrink-0" disabled={pilotBlocked}
+              onClick={requestPilotGeneration}>Gerar Categoria 3</Button>
+            <p id={pilotEffectId} className="text-xs leading-5 text-muted-foreground">
+              Ao concluir, substitui e salva toda a Categoria 3, inclusive edições anteriores.
+              Se uma seção falhar ou a Base mudar, nada será salvo.
+            </p>
+          </div>
+          <p role="status" className="text-sm text-muted-foreground empty:sr-only">{pilotProgress}</p>
+          {!pilotPending && pilotMessage ? <FeedbackMessage tone={pilotError ? "error" : "success"}>{pilotMessage}</FeedbackMessage> : null}
+          <dialog ref={pilotConfirmationDialog} aria-labelledby={pilotEffectId + "-title"} aria-describedby={pilotEffectId + "-confirmation"}
+            className="m-auto w-[calc(100%-2rem)] max-w-md rounded-xl border border-border bg-background p-4 text-left text-foreground shadow-xl backdrop:bg-black/40"
+            onCancel={(event) => { event.preventDefault(); cancelPilotConfirmation(); }}
+            onClick={(event) => {
+              if (event.target !== event.currentTarget) return;
+              const rect = event.currentTarget.getBoundingClientRect();
+              if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) cancelPilotConfirmation();
+            }}>
+            <h2 id={pilotEffectId + "-title"} className="text-lg font-semibold">Substituir a Categoria 3?</h2>
+            <p id={pilotEffectId + "-confirmation"} className="mt-2 text-sm text-muted-foreground">
+              Ao concluir a geração, todas as seções serão substituídas, inclusive suas edições anteriores.
+              Se a geração falhar, o conteúdo atual será preservado.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button variant="secondary" className="min-h-11" onClick={cancelPilotConfirmation}>Cancelar</Button>
+              <Button className="min-h-11" disabled={pilotBlocked} onClick={confirmPilotGeneration}>Gerar e substituir</Button>
+            </div>
+          </dialog>
         </div> : null}
-        {canEdit && canGenerate ? <div className="rounded-lg border border-border bg-background px-3 py-2">
+        <SuggestionOptions className={pilotEnabled ? "mt-2 border-t border-border" : undefined}>
+          {pilotEnabled ? <summary className="min-h-11 cursor-pointer rounded-sm py-3 text-sm leading-5 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            Sugestões sem salvar
+          </summary> : null}
           <p className="text-xs leading-5 text-muted-foreground">
             Sugestões para as sete seções da Etapa 2. Revise cada uma antes de usar ou salvar.
           </p>
@@ -424,17 +555,24 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
               });
             }}
             className="mt-0.5 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-2 py-1 text-xs font-medium leading-4 text-foreground disabled:cursor-wait disabled:opacity-60 sm:ml-3 sm:mt-0">
-            {pending ? "Preparando sugestões..." : hasStageTwoContent(base) ? "Atualizar inteligência com IA" : "Gerar inteligência com IA"}
+            {pending ? "Preparando sugestões..." : pilotEnabled ? "Gerar sugestões"
+              : hasStageTwoContent(base) ? "Atualizar inteligência com IA" : "Gerar inteligência com IA"}
           </button>
-          {generationInFlight && !pending ? <p role="status" className="mt-2 text-xs text-muted-foreground">
-            Aguarde a revisão em andamento antes de gerar sugestões para toda a Etapa 2.
-          </p> : null}
-          {message ? <p role={messageIsError ? "alert" : "status"} className="mt-2 text-sm">{message}</p> : null}
-          <Sources sources={sources} />
-        </div> : null}
-      </div>
+        </SuggestionOptions>
+        {generationInFlight && !pending && !pilotPending ? <p role="status" className="mt-2 text-xs text-muted-foreground">
+          Aguarde a revisão em andamento antes de gerar sugestões para toda a Etapa 2.
+        </p> : null}
+        {message ? <p role={messageIsError ? "alert" : "status"} className="mt-2 text-sm">{message}</p> : null}
+        <Sources sources={sources} />
+      </div> : null}
       <CommunicationSectionCollection definitions={stageTwo} base={base} showGuidance={structured} suggestedKeys={Object.keys(suggestions)}
-        renderDetail={(section, controls) => <CommunicationSectionEditor {...controls}
+        pilotKeys={pilotSections.map(section => section.key)}
+        renderDetail={(section, controls) => <>
+          {pilotSections.filter(result => result.key === section.key && result.sources.length).map(result => <section key={result.key} aria-label="Fontes desta geração" className="mb-4 space-y-2 border-b border-border pb-3">
+            <h3 className="text-sm font-medium">Fontes consultadas nesta geração</h3>
+            <Sources sources={result.sources} />
+          </section>)}
+          <CommunicationSectionEditor {...controls}
           account={account} version={base.version} definition={section} current={base.sections[section.key as CommunicationSectionKey]}
           canEdit={canEdit} canGenerate={canGenerate} structured={structured} suggestedSuggestion={suggestions[section.key]} generalRevision={generalRevision}
           stageTwoGenerationInFlight={generationInFlight}
@@ -448,7 +586,7 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
           onStageTwoSaveFinished={() => {
             pendingSavesRef.current = Math.max(0, pendingSavesRef.current - 1);
             setSaveInFlightCount(pendingSavesRef.current);
-          }} />} />
+          }} /></>} />
     </section>
   );
 }

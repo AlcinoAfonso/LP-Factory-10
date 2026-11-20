@@ -126,11 +126,28 @@ export const OPENAI_COST_PRICING_CATALOG: OpenAiCostPricingCatalog = Object.free
   webSearch: WEB_SEARCH_PRICING,
 });
 
+// The verified cut applies only to GPT-6.2 Sol. Other models retain their existing tariff versions.
+const GPT_6_2_SOL_STANDARD_EFFECTIVE_AT = "2026-11-20T14:09:20.000Z";
+const GPT_6_2_SOL_STANDARD_CATALOG: OpenAiCostPricingCatalog = Object.freeze({
+  version: "2026-11-20-gpt-6.2-sol-standard-v4",
+  effectiveAt: GPT_6_2_SOL_STANDARD_EFFECTIVE_AT,
+  verifiedAt: GPT_6_2_SOL_STANDARD_EFFECTIVE_AT,
+  sourceUrls: Object.freeze([
+    "https://developers.openai.com/api/docs/models/gpt-6.2-sol",
+    "https://developers.openai.com/api/docs/pricing",
+  ]),
+  modelRules: Object.freeze([
+    currentRule("gpt-6.2-sol", "default", ["2", "0.1", "2.5", "5", "10"], ["4", "0.2", "5", "10", "15"]),
+  ]),
+  webSearch: WEB_SEARCH_PRICING,
+});
+
 // Old tariff versions remain recoverable; terminal reads never call the calculator.
 export const OPENAI_COST_PRICING_CATALOGS = Object.freeze([
   { ...LEGACY_PRICING_CATALOG, effectiveUntil: PREVIOUS_PRICING_EFFECTIVE_AT },
   { ...PREVIOUS_PRICING_CATALOG, effectiveUntil: OPENAI_COST_PRICING_EFFECTIVE_AT },
   OPENAI_COST_PRICING_CATALOG,
+  GPT_6_2_SOL_STANDARD_CATALOG,
 ]);
 
 type PricingInput = Readonly<{
@@ -148,7 +165,7 @@ type PricingInput = Readonly<{
 }>;
 
 export function calculateOpenAiOperationCost(input: PricingInput,
-  catalog: OpenAiCostPricingCatalog = selectPricingCatalog(input.startedAt)): OpenAiCostFinancialTerminal {
+  catalog: OpenAiCostPricingCatalog = selectPricingCatalog(input.startedAt, input.appliedModel)): OpenAiCostFinancialTerminal {
   const evidence = Object.freeze({
     requestedServiceTier: safeTier(input.requestedServiceTier),
     appliedServiceTier: safeTier(input.appliedServiceTier),
@@ -265,16 +282,17 @@ export function calculateOpenAiOperationCost(input: PricingInput,
   });
 }
 
-function selectPricingCatalog(startedAt: string): OpenAiCostPricingCatalog {
+function selectPricingCatalog(startedAt: string, appliedModel?: string | null): OpenAiCostPricingCatalog {
   const normalized = timestamp(startedAt);
-  return [...OPENAI_COST_PRICING_CATALOGS].reverse().find((entry) => normalized && normalized >= entry.effectiveAt)
+  return [...OPENAI_COST_PRICING_CATALOGS].reverse().find((entry) => normalized && normalized >= entry.effectiveAt &&
+    (entry !== GPT_6_2_SOL_STANDARD_CATALOG || appliedModel === "gpt-6.2-sol"))
     ?? OPENAI_COST_PRICING_CATALOGS[0];
 }
 
 // Informative financial coverage only. E21.2 retains every activation decision.
 export function openAiFinancialCoverage(model: string, serviceTier: string | null | undefined,
   at = new Date().toISOString()) {
-  const catalog = selectPricingCatalog(at);
+  const catalog = selectPricingCatalog(at, model);
   const tier = serviceTier === "priority" ? "fast" : serviceTier;
   const covered = Boolean(tier && catalog.modelRules.some((entry) => entry.model === financialModelId(model) &&
     (entry.serviceTier ?? "default") === tier && (!entry.effectiveUntil || at < entry.effectiveUntil)) &&

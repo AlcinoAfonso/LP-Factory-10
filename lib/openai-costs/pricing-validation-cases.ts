@@ -102,15 +102,65 @@ export async function validatePricingCorrection() {
     "replay must retain the exact closed amount rather than recalculate it");
   assert.throws(() => operationFinancialTerminal(closed, { ...terminal, appliedServiceTier: "default" }), /conflict/);
   assert.equal(operationFinishRpc(terminal, financial).p_cost_usd, "0.0399");
+  validateGpt62SolStandard();
   await validateTransportEvidence();
   console.log("PASS D10 pricing: official tiers/context/mixed retention/search/missing evidence/closed replay");
+}
+
+function validateGpt62SolStandard() {
+  const model = "gpt-6.2-sol";
+  const startedAt = "2026-11-20T14:09:20.000Z";
+  const before = "2026-11-20T14:09:19.999Z";
+  const input = { ...base, model, appliedModel: model, startedAt, requestedServiceTier: "default",
+    cacheWriteTokens30m: 3000, cacheWriteTokens12h: 4000, webSearchRequested: true, webSearchCallCount: 2 };
+  const cases = [
+    [272_000, "short", "0.5799", ["2", "0.1", "2.5", "5", "10"]],
+    [272_001, "long", "1.134804", ["4", "0.2", "5", "10", "15"]],
+  ] as const;
+  for (const [inputTokens, band, total, rates] of cases) {
+    const actual = calculateOpenAiOperationCost({ ...input, usage: { inputTokens, cachedInputTokens: 4000,
+      cacheWriteTokens: 7000, outputTokens: 1000, reasoningTokens: 500, totalTokens: inputTokens + 1000 } });
+    const snapshot = actual.pricingSnapshot;
+    assert.equal(actual.costStatus, "calculated");
+    assert.equal(actual.costUsd, total);
+    assert.equal(actual.pricingVersion, "2026-11-20-gpt-6.2-sol-standard-v4");
+    assert.equal(actual.pricingEffectiveAt, startedAt);
+    assert.equal(snapshot?.currency, "usd");
+    assert.equal(snapshot?.processing, "standard");
+    assert.equal(snapshot?.contextBand, band);
+    assert.equal(snapshot?.ordinaryInputTokens, inputTokens - 11_000);
+    assert.deepEqual([snapshot?.inputPerMillionUsd, snapshot?.cachedInputPerMillionUsd, snapshot?.cacheWritePerMillionUsd,
+      snapshot?.cacheWrite12hPerMillionUsd, snapshot?.outputPerMillionUsd], rates);
+    assert.equal(actual.webSearchPricePerCallUsd, "0.01");
+  }
+  const plain = { ...input, cacheWriteTokens30m: 0, cacheWriteTokens12h: 0 };
+  for (const [patch, reason] of [
+    [{ startedAt: before }, "pricing_not_found"],
+    [{ appliedServiceTier: "fast" }, "pricing_not_found"],
+    [{ appliedServiceTier: "ultrafast" }, "pricing_not_found"],
+    [{ appliedServiceTier: null }, "applied_service_tier_missing"],
+    [{ appliedModel: "gpt-6.2-sol-2099-01-01" }, "pricing_not_found"],
+    [{ usage: null }, "usage_missing"],
+    [{ webSearchCallCount: null }, "web_search_usage_missing"],
+    [{ usage: { ...usage, cacheWriteTokens: 1 }, cacheWriteTokens12h: null }, "cache_retention_usage_missing"],
+  ] as const) {
+    const actual = calculateOpenAiOperationCost({ ...plain, ...patch });
+    assert.equal(actual.costUnavailableReason, reason);
+    assert.equal(actual.costUsd, null);
+  }
+  assert.equal(openAiFinancialCoverage(model, "default", startedAt).covered, true);
+  assert.equal(openAiFinancialCoverage(model, "default", before).covered, false);
+  assert.equal(openAiFinancialCoverage(model, "fast", startedAt).covered, false);
+  assert.deepEqual(calculateOpenAiOperationCost({ ...base, startedAt }), calculateOpenAiOperationCost(base),
+    "the scoped tariff must leave existing models' prices and snapshot versions intact");
 }
 
 async function validateTransportEvidence() {
   const resolved = await resolveOpenAiProductWorkload("communication_base_stage2_intelligence", "development");
   assert.ok(resolved.ok);
   const terminals: OpenAiCostOperationTerminal[] = [];
-  const recorder: OpenAiCostTrackingAdapter = { startExecution: async () => {}, startOperation: async () => {},
+  const contexts: Parameters<OpenAiCostTrackingAdapter["startExecution"]>[0]["economicContext"][] = [];
+  const recorder: OpenAiCostTrackingAdapter = { startExecution: async ({ economicContext }) => { contexts.push(economicContext); }, startOperation: async () => {},
     finishOperation: async (terminal) => { terminals.push(terminal); }, finishExecution: async () => {} };
   for (const responseTier of ["fast", "default", null]) {
     const result: OpenAiResponsesResult<string> = await requestOpenAiResponses<string>({ apiKey: "fake-test-only-key", environment: "preview",
@@ -128,4 +178,22 @@ async function validateTransportEvidence() {
     const calculated = calculateOpenAiOperationCost({ ...terminal, model: base.model, startedAt: base.startedAt });
     assert.equal(calculated.costUsd, responseTier === "fast" ? "0.017" : responseTier === "default" ? "0.0135" : null);
   }
+  const model = "gpt-6.2-sol";
+  const startedAt = "2026-11-20T14:09:20.000Z";
+  const financialContext = { universe: "client", attributionStatus: "attributed",
+    accountId: "40000000-0000-4000-8000-000000000099" } as const;
+  const result = await requestOpenAiResponses({ apiKey: "fake-test-only-key", environment: "preview",
+    // E21.2 has no explicit tier configured for this model. Standard comes from the provider response.
+    configuration: { ...resolved.value, model, serviceTier: null }, request: {},
+    parseResponse: () => ({ ok: true, value: "valid" }), financialContext, executionOrigin: "runtime" }, {
+    costRecorder: recorder, emitEvent: () => {}, nowIso: () => startedAt,
+    fetchImpl: async () => new Response(JSON.stringify({ model, service_tier: "default", status: "completed",
+      usage: { input_tokens: 1000, input_tokens_details: { cached_tokens: 0, cache_write_tokens: 0 },
+        output_tokens: 500, total_tokens: 1500 }, output: [] })),
+  });
+  assert.ok(result.ok);
+  assert.deepEqual(contexts.at(-1), financialContext);
+  const terminal = terminals.at(-1)!;
+  const cost = operationFinancialTerminal({ model, started_at: startedAt, finished_at: null }, terminal);
+  assert.equal(operationFinishRpc(terminal, cost).p_cost_usd, "0.007");
 }

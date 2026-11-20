@@ -1,5 +1,6 @@
 // D14F — Prompt especializado 3.3 (Dores, desejos, crenças e objeções), aprovado para integração futura.
 // Não altera a geração nem os testes experimentais existentes.
+import { COMMUNICATION_ITEMS_MAX } from "../policy";
 export const AGENT_BASE_MARKET_INSIGHTS_PROMPT_VERSION = "d14f_agent_base_market_insights_33_v1" as const;
 
 export const AGENT_BASE_MARKET_INSIGHTS_PROMPT = `# Prompt especializado — 3.3 Dores, desejos, crenças e objeções
@@ -29,3 +30,17 @@ export const AGENT_BASE_MARKET_INSIGHTS_PROMPT = `# Prompt especializado — 3.3
 - Produza itens objetivos, claros e suficientemente específicos para orientar decisões futuras de comunicação. Cada item deve expressar uma descoberta relevante, sem explicações extensas, generalidades ou recomendações de campanhas.
 - Mantenha as quatro categorias conceitualmente distintas. Não apresente hipóteses como fatos comprovados nem invente informações para preencher categorias.
 - Entregue somente a seção **Dores, desejos, crenças e objeções**, em português brasileiro, respeitando o formato de itens e o contrato de saída correspondente. Sinalize lacunas relevantes separadamente, quando houver campo apropriado.` as const;
+
+// Saída específica da seção; a integração compõe o invólucro "sections".
+export const AGENT_BASE_MARKET_INSIGHTS_SECTION_SCHEMA = {
+  type: "object", additionalProperties: false, required: ["value", "basis"],
+  properties: {
+    value: {
+      type: "array",
+      description: "Descobertas distintas sobre dores, desejos, crenças e objeções dos compradores; indicar público quando relevante, sem impor quantidades por categoria.",
+      items: { type: "string" },
+      maxItems: COMMUNICATION_ITEMS_MAX,
+    },
+    basis: { type: "string", enum: ["strategic_hypothesis"] },
+  },
+};
