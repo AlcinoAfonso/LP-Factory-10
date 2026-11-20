@@ -233,17 +233,19 @@ function parseTurn(
     const confirmation = reaction === "accept" ? confirmationTarget : null;
     if (reaction === "accept" && (!confirmation || proposal !== null)) return invalid("niche_turn_acceptance");
     if (!hasMessage && (reaction !== "continue" || memory.length > 0)) return invalid("niche_turn_without_message");
-    if (proposal && !reply.includes(proposal)) return invalid("niche_turn_proposal_not_in_reply");
+    const replyWithProposal = proposal && !reply.includes(proposal)
+      ? reply + "\n\nProposta de nicho: " + proposal : reply;
     if (proposal && reaction === "reject" && proposal === currentDescription) return invalid("niche_turn_rejected_proposal");
     if ((["accept", "partial"].includes(synthesis.reaction) && (!hasMessage || !activeSynthesis || activeSynthesis.accepted)) ||
       (synthesis.reaction === "accept" && synthesis.proposal)) return invalid("niche_turn_synthesis_acceptance");
     const synthesisText = synthesis.proposal;
     if (synthesisText && reply.split(synthesisText).length > 2) return invalid("niche_turn_synthesis_repeated_in_reply");
     const result = pendingResult?.success ? pendingResult.data.pendingSetup : null;
-    const contact = result?.whatsapp.reference ? contacts.get(result.whatsapp.reference) : null;
+    const suggestedContact = result?.whatsapp.reference ? contacts.get(result.whatsapp.reference) : null;
+    const contact = result?.whatsapp.declined ? null : suggestedContact ?? null;
+    const whatsappDeclined = Boolean(result?.whatsapp.declined && suggestedContact === null);
     if (result) {
       if (!pending || !hasMessage) return invalid("niche_turn_pending_setup_without_message");
-      if (contact === undefined || (contact !== null && result.whatsapp.declined)) return invalid("niche_turn_whatsapp_state");
       if (result.preferredName.value && result.preferredName.declined) return invalid("niche_turn_preferred_name_state");
       if ([result.publicName, result.operational].some(item => item.proposal &&
         (!reply.includes(item.proposal) || item.reaction === "accept"))) return invalid("niche_turn_pending_setup_proposal");
@@ -257,18 +259,18 @@ function parseTurn(
     const hasAcceptance = Boolean(confirmation || synthesis.reaction === "accept" ||
       result?.publicName.reaction === "accept" || result?.operational.reaction === "accept");
     if (web.calls > 0 && (hasAcceptance || searchTopic || proposal || synthesis.proposal)) return invalid("niche_turn_research_effect");
-    let start = synthesisText ? reply.indexOf(synthesisText) : -1;
-    let replyWithSynthesis = reply;
+    let start = synthesisText ? replyWithProposal.indexOf(synthesisText) : -1;
+    let replyWithSynthesis = replyWithProposal;
     if (synthesisText && start === -1) {
-      const prefix = reply + "\n\n";
+      const prefix = replyWithProposal + "\n\n";
       start = prefix.length;
       replyWithSynthesis = prefix + synthesisText;
       if ([synthesisText, replyWithSynthesis].some(containsContact)) return invalid("niche_turn_contact_in_text");
     }
     const contactNote = contact?.source ? " WhatsApp informado (final " + contact.value.replace(/\D/g, "").slice(-2) + ")."
-      : result?.whatsapp.declined ? " WhatsApp não informado por opção." : "";
+      : whatsappDeclined ? " WhatsApp não informado por opção." : "";
     const end = start + (synthesisText?.length ?? 0);
-    const shown = start >= 0 ? replyWithSynthesis.slice(0, end) + contactNote + replyWithSynthesis.slice(end) : reply;
+    const shown = start >= 0 ? replyWithSynthesis.slice(0, end) + contactNote + replyWithSynthesis.slice(end) : replyWithProposal;
     const cited = new Set(content.flatMap(item => item.annotations ?? [])
       .filter(item => item.type === "url_citation").map(item => item.url));
     const sourceUrls = web.sources.map(source => source.url);
@@ -284,14 +286,14 @@ function parseTurn(
       searchTopic: hasAcceptance ? null : searchTopic,
       synthesisWrite: {
         offer: synthesisText ? { start: Array.from(replyWithSynthesis.slice(0, start)).length + 1,
-          length: Array.from(synthesisText).length, contact: contact?.source ?? (result?.whatsapp.declined ? "declined" : null) } : null,
+          length: Array.from(synthesisText).length, contact: contact?.source ?? (whatsappDeclined ? "declined" : null) } : null,
         accept: synthesis.reaction === "accept" ? activeSynthesis?.id ?? null : null,
         clear: synthesis.reaction === "clear",
         partial: synthesis.reaction === "partial" && !synthesis.proposal,
         nicheReaction: confirmation ? "accept" : reaction === "continue" ? "continue" : "clear",
       },
       memory: safeMemory,
-      ...(result ? { pendingSetup: { ...result, whatsapp: { value: contact?.value ?? null, declined: result.whatsapp.declined } } } : {}) } };
+      ...(result ? { pendingSetup: { ...result, whatsapp: { value: contact?.value ?? null, declined: whatsappDeclined } } } : {}) } };
   };
 }
 
