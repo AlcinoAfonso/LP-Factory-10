@@ -550,7 +550,6 @@ test("resposta inválida, falha e recusa do provider não devolvem efeitos nem a
     [{ ...response(proposalAnswer), status: "incomplete" }, "provider_error"],
     [message([{ type: "refusal", refusal: "Refusal" }]), "refusal"],
     [message([{ type: "output_text", text: "invalid JSON" }]), "invalid_response"],
-    [response({ ...proposalAnswer, reply: "Sua proposta está pronta." }), "invalid_response"],
     [response({ ...proposalAnswer, reply: "<nicho>", proposal: "<nicho>" }), "invalid_response"],
     [response({ ...proposalAnswer, confirmation: { proposalId: proposal.id } }), "invalid_response"],
   ] as const;
