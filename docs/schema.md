@@ -394,6 +394,7 @@
 - `release_account_niche_turn_v1(uuid,uuid,uuid,bigint,uuid) → void`: reautoriza e libera somente a reserva exata; conserva mensagens e requestId para retomada.
 - `confirm_account_niche_dialogue_v1(uuid,uuid,uuid,bigint,boolean) → bigint`: exige confirmação explícita, Diálogo/participante/versão válidos e proposta persistida sem turno pendente. Consome a descrição exibida, chama confirm_account_official_niche_v1 e atualiza a mesma descrição em classification, ou c no formato compacto, do Summary atual sob lock. Preserva seus demais campos; escrita material atualiza proveniência. Falha de capacidade, concorrência ou persistência reverte também o efeito oficial. Sucesso encerra o Diálogo; repetição reconhecida é idempotente. Não altera Base, taxonomia ou consumidores legados.
 - As seis funções são SECURITY INVOKER com search_path vazio. A migration concede EXECUTE a service_role e revoga PUBLIC, anon, authenticated, ai_readonly e readonly quando existentes; não altera RLS/policies das tabelas privadas nem cria trigger ou backfill.
+- A migration `20261119152000_d15e_conversational_turns.sql` da Etapa 4 aguarda apply. As versões de reserva e gravação do Pending Setup (v3/v5) e da Base (v2/v2) mantêm o vínculo da síntese com a mensagem exibida e os aceites em `niche_state`. A gravação revalida o aceite da síntese antes de atualizar o Summary e aplica eventual aceite específico de nicho na mesma transação. Contratos anteriores, tabelas e grants de tabela permanecem vigentes.
 
 1.14 content_templates
 
@@ -653,7 +654,6 @@
 1.19B account_pending_setup_messages
 
 1.19B.1 Chaves, constraints e relacionamentos
-- A extensão versionada de 1.13.7 está pendente de apply remoto.
 - PK: id uuid; ordinal >= 1. Preserva UNIQUE (conversation_id, ordinal) e acrescenta UNIQUE (dialogue_id, ordinal).
 - conversation_id passa a nullable, preservando FK → account_pending_setup_conversations(id) ON UPDATE CASCADE ON DELETE RESTRICT. dialogue_id nullable referencia account_dialogues(id), com ON UPDATE NO ACTION e ON DELETE RESTRICT. CHECK exige exatamente um dos dois vínculos.
 - role: user | assistant; content: 1–4.000 caracteres após trim; created_at: timestamptz NOT NULL DEFAULT now(). O participante e a jornada vêm do Diálogo account_niche ou da conversa Pending Setup correspondente.
@@ -668,7 +668,6 @@
 1.19C.1 Chaves, campos e relacionamentos
 - PK: id uuid, sem default; UNIQUE auxiliar: (id, account_id, user_id).
 - account_id e user_id: uuid NOT NULL; FK composta → account_users(account_id, user_id) ON UPDATE CASCADE ON DELETE RESTRICT.
-- A extensão versionada de 1.13.7 está pendente de apply remoto.
 - origin: text NOT NULL, CHECK admite pending_setup ou account_niche.
 - started_at: timestamptz NOT NULL DEFAULT now(); ended_at: timestamptz nullable, com CHECK ended_at IS NULL OR ended_at >= started_at.
 - version: bigint NOT NULL DEFAULT 0, entre 0 e 9007199254740991. niche_state: jsonb NOT NULL DEFAULT {}, restrito a objeto; conserva contexto, revisão observada, requestId, resposta e proposta persistidas do nicho.
@@ -690,7 +689,7 @@
 - source_dialogue_id e source_user_id: uuid nullable; CHECK exige ambos nulos ou ambos preenchidos.
 - FK composta (source_dialogue_id, account_id, source_user_id) → account_dialogues(id, account_id, user_id) ON UPDATE CASCADE ON DELETE RESTRICT.
 - updated_at: timestamptz NOT NULL DEFAULT now(), atualizado explicitamente pela RPC; sem trigger próprio.
-- A extensão pendente de 1.13.7 acrescenta o consumidor account_niche às escritas autorizadas; estrutura, singleton, teto de 6.000 caracteres, FK de proveniência e RLS permanecem iguais.
+- Para escritas autorizadas em `account_niche`, ver §1.13.7.
 
 1.19D.2 Segurança
 - RLS ativo, sem policies; PUBLIC, anon, authenticated e ai_readonly sem grants.

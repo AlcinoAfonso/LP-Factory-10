@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useId, useLayoutEffect, useRef, useState, useTransition, type ReactNode } from "react";
+import { useActionState, useEffect, useId, useLayoutEffect, useRef, useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -337,12 +337,11 @@ export function CommunicationStageOne({ account, base, canEdit, structured = fal
       current={base.sections[definition.key as CommunicationSectionKey]} canEdit={canEdit} structured={structured} nicheLabel={nicheLabel} />} />;
 }
 
-export function CommunicationStageTwo({ account, base, canEdit, canGenerate = false, nicheControl, structured = false, definitions = communicationSections, pilotEnabled = false, pilotCatalogKey = "" }: Readonly<{
+export function CommunicationStageTwo({ account, base, canEdit, canGenerate = false, structured = false, definitions = communicationSections, pilotEnabled = false, pilotCatalogKey = "" }: Readonly<{
   account: string;
   base: CommunicationBase;
   canEdit: boolean;
   canGenerate?: boolean;
-  nicheControl?: ReactNode;
   pilotEnabled?: boolean;
   pilotCatalogKey?: string;
   structured?: boolean;
@@ -468,7 +467,6 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
     <section aria-label="Inteligência de comunicação" className="space-y-2">
       {canEdit && !canGenerate ? <div className="rounded-lg border border-border px-3 py-2">
         <p className="text-sm text-muted-foreground">Defina e confirme um nicho oficial para gerar sugestões com IA. A edição manual continua disponível.</p>
-        {nicheControl}
       </div> : null}
       {canEdit && canGenerate ? <div className="rounded-lg border border-border bg-background px-3 py-2">
         {pilotEnabled ? <div className="space-y-2">

@@ -2,11 +2,9 @@ import { z } from "zod";
 import { semanticNicheInstructions } from "./semantic-niche-instructions";
 import { validNicheDescription } from "../niche-resolution/official-niche-policy";
 import { validateBusinessDisplayName, validatePreferredName } from "./policy";
-import type { PendingSetupConversation } from "./contracts";
 
 export const ATTENDANCE_PROMPT_VERSION = "d15e_r3_onboarding_v3";
 export const ATTENDANCE_CONTRACT_VERSION = 15;
-export const ATTENDANCE_LEASE_SECONDS = 360;
 
 export const attendanceOutputSchema = z.object({
   reply: z.string().trim().min(1).max(4000),
@@ -112,37 +110,15 @@ export function attendancePrompt(context: AttendanceContext) {
 function escapeContactReferenceTokens(text: string): string {
   return text.replace(/\[?\bphone_\d+_\d+\b\]?/giu, "[referência de contato literal removida]");
 }
-export function projectAttendanceText(input: string, replaceContact: (raw: string) => string = () => "[telefone removido]",
-  contactReply = false): string {
-  // Remove addresses before creating references; retain the literal value only in the server-side map.
+export function projectAttendanceText(input: string): string {
   const source = escapeContactReferenceTokens(input
     .replace(/(?:"(?:\\[^\r\n]|[^"\\\r\n])*"|[^\s<>()\[\]{}";,:@]+)@(?:\[[^\]\r\n]*\]?|[^\s<>()\[\]{}";,:@]+)/gu, "[email removido]")
     .replace(/\bhttps?:\/\/\S+|\bwww\.\S+/giu, "[url removida]"));
-  const contactSource = contactReply
-    ? source.replace(/^(\s*(?:(?:é|o\s+número\s+é|pode\s+anotar)\s*)?)(\+?\(?\p{Nd}(?:(?:[\s\p{Cf}()\/\p{Pd}]|[.,](?=\p{Nd}))*\p{Nd})*\)?(?=\s*$)|\+?\(?\p{Nd}[\p{Nd}\s\p{Cf}().]*\p{Pd}\p{Nd}[\p{Nd}\s\p{Cf}().\p{Pd}]*\)?(?=\s*[,;.!?]|\s*$))/iu,
-      (_match, prefix: string, raw: string) => prefix + replaceContact(raw))
-    : source;
-  return contactSource
+  return source
     .replace(/((?:\b(?:whatsapp|zap|telefone|celular|contato|fone)\b|\btel\b\.?|\bmeu\s+número\b)(?:\s*(?:é|:)\s*|\s+))(\+?\(?\p{Nd}(?:(?:[\s\p{Cf}()\/\p{Pd}]|[.,](?=\p{Nd}))*\p{Nd})*\)?)/giu,
-      (_match, label: string, raw: string) => label + replaceContact(raw))
-    .replace(/\+?\(?\p{Nd}(?:(?:[\s\p{Cf}()\/\p{Pd}]|[.,](?=\p{Nd}))*\p{Nd}){9,}\)?/gu, replaceContact)
+      (_match, label: string) => label + "[telefone removido]")
+    .replace(/\+?\(?\p{Nd}(?:(?:[\s\p{Cf}()\/\p{Pd}]|[.,](?=\p{Nd}))*\p{Nd}){9,}\)?/gu, "[telefone removido]")
     .replace(/\s+/g, " ").trim();
-}
-// Contact references are scoped to this projection; the provider never receives the numbers.
-export function attendanceContactProjection(messages: AttendanceContext["recent"]) {
-  const contacts = new Map<string, string>();
-  const recent = messages.slice(-8).map(({ role, content }, index, bounded) => {
-    let occurrence = 0;
-    const projected = projectAttendanceText(content, role === "user" ? raw => {
-      const reference = `phone_${index}_${occurrence++}`;
-      contacts.set(reference, raw);
-      return `[${reference}] (formato informado: ${raw.replace(/\p{Nd}/gu, "X")})`;
-    } : undefined, index > 0 && bounded[index - 1].role === "assistant"
-      && /\bwhatsapp\b/iu.test(bounded[index - 1].content));
-    return { role, content: projected.slice(0, role === "user" && index === bounded.length - 1 ? 4000 : 1200) };
-  });
-  // contactReferences keeps provenance available even when display text is bounded.
-  return { recent, contacts };
 }
 export function projectAttendanceSummary(raw: string | null | undefined): string | null {
   const summary = readAccountSummary(raw);
@@ -153,32 +129,6 @@ export function projectAttendanceSummary(raw: string | null | undefined): string
   return projectedSummary ? JSON.stringify(projectedSummary) : null;
 }
 
-export function attendanceProjection(conversation: PendingSetupConversation, catalog: readonly AttendanceTaxon[]): AttendanceContext {
-  const projectedSummary = projectAttendanceSummary(conversation.accountContext?.summary);
-  const summary = readAccountSummary(conversation.accountContext?.summary);
-  const projectText = (text: string) => projectAttendanceText(text);
-  const contactProjection = attendanceContactProjection(conversation.messages);
-  return {
-    preferredName: conversation.preferredName ? projectText(conversation.preferredName) : null, preferredNameDeclined: conversation.preferredNameDeclined ?? false,
-    greetedByName: conversation.messages.some(message => message.role === "assistant" && /^\s*Prazer,/iu.test(message.content)),
-    summary: projectedSummary,
-    publicName: conversation.businessDisplayName ? projectText(conversation.businessDisplayName) : null,
-    displayedUnderstanding: conversation.businessContextText ? projectText(conversation.businessContextText) : null,
-    recent: contactProjection.recent, contactReferences: [...contactProjection.contacts.keys()], whatsappProvided: Boolean(summary?.whatsapp),
-    catalog,
-  };
-}
-export function normalizedTaxonText(value: string) {
-  return value.toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ").trim();
-}
-export function activeAncestors(taxon: AttendanceTaxon, catalog: readonly AttendanceTaxon[]): boolean {
-  if (!taxon.active) return false;
-  if (taxon.level === "segment") return taxon.parentId === null;
-  const parent = catalog.find(candidate => candidate.id === taxon.parentId);
-  return Boolean(parent?.active && parent.level === (taxon.level === "niche" ? "segment" : "niche")
-    && activeAncestors(parent, catalog));
-}
 export function parseAttendanceOutput(raw: unknown, context: Pick<AttendanceContext, "purpose">) {
   if (context.purpose === "account_niche") {
     // Ignore obsolete contact controls, including forged values; never carry them into persistence.
@@ -306,10 +256,6 @@ const accountSummarySchema = z.union([fullAccountSummarySchema, compactAccountSu
   fullAccountSummarySchema.omit({ contextualUnderstanding: true, suggestions: true })
     .extend({ pendingReason: z.literal("Sem avanço útil.").nullable() }).strict(),
 ]);
-export function readAttendanceContactInput(raw: string | null | undefined) {
-  const summary = readAccountSummary(raw);
-  return { requested: summary?.requestWhatsapp === true, value: summary?.whatsapp ?? null };
-}
 export function readAttendanceBusinessNameCandidate(raw: string | null | undefined): string | null {
   const candidate = readAccountSummary(raw)?.businessNameCandidate;
   return candidate && validateBusinessDisplayName(candidate).ok ? candidate : null;

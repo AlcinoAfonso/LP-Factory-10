@@ -6,6 +6,11 @@ import { readAccountOfficialNiche, confirmAccountNicheDialogue } from "../../../
 import { officialNichePromptContext, type OfficialAccountNiche } from "../../../lib/onboarding/niche-resolution/official-niche-policy";
 import { z } from "zod";
 import { claimAccountNicheTurn, commitAccountNicheTurn, releaseAccountNicheTurn } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheDialogueAdapter";
+import {
+  claimNicheConversation, commitNicheConversation, readNicheConversation, readNicheDialogueMessages,
+} from "../../../lib/onboarding/niche-resolution/adapters/accountNicheDialogueAdapter";
+import { conversationalMessage, currentSynthesis, mergeNicheMemory, nicheSummaryContext, requestNicheAgent } from "../../../lib/onboarding/niche-agent/runtime";
+import { relevantNicheHistory } from "../../../lib/onboarding/niche-agent/dialogue";
 import { attendanceSummary, projectAttendanceSummary, projectAttendanceText, type AttendanceContext } from "../../../lib/onboarding/pending-setup/attendance-core";
 import { requestAttendance } from "../../../lib/onboarding/pending-setup/attendance-provider";
 import { readBusinessContextForNiche } from "../../../lib/communication-base/adapters/communicationBaseAdapter";
@@ -41,6 +46,80 @@ async function nicheEditorContext(account: string) {
   const member = ctx?.member as MemberInfo | null | undefined;
   return ctx && !ctx.blocked && ctx.account?.status === "active" && member?.status === "active" && member.userId
     ? { ...ctx, member } : null;
+}
+
+export async function loadBaseNicheConversationAction(account: string) {
+  try {
+    const ctx = await nicheEditorContext(account);
+    if (!ctx?.account || !["owner", "admin", "editor"].includes(ctx.member.role)) return null;
+    const [current, products, conversation] = await Promise.all([
+      readNicheForEditor({ accountId: ctx.account.id }), readAccountNicheProductGuard(ctx.account.id),
+      readNicheConversation(ctx.account.id, ctx.member.userId),
+    ]);
+    return current.ok && products !== null && conversation.ok
+      ? { blocked: Boolean(current.taxon && products), dialogue: conversation.dialogue } : null;
+  } catch { return null; }
+}
+
+export async function converseBaseNicheAction(raw: unknown) {
+  const parsed = conversationalMessage.safeParse(raw);
+  const failure = { ok: false as const, message: GENERIC_ERROR };
+  if (!parsed.success) return failure;
+  const input = parsed.data;
+  let fence: { accountId: string; userId: string; dialogueId: string; expectedVersion: number; turnToken: string } | null = null;
+  try {
+    const ctx = await nicheEditorContext(input.account);
+    if (!ctx?.account || !["owner", "admin", "editor"].includes(ctx.member.role)) return failure;
+    const identity = { accountId: ctx.account.id, userId: ctx.member.userId, dialogueId: input.dialogueId ?? input.requestId };
+    const [current, business] = await Promise.all([
+      readNicheForEditor({ accountId: identity.accountId }),
+      readBusinessContextForNiche({ accountId: identity.accountId, actorUserId: identity.userId }),
+    ]);
+    if (!current.ok || !business.ok) return failure;
+    const niche = current.taxon;
+    const expectedRevision = niche?.revision ?? null;
+    const turnToken = crypto.randomUUID();
+    const claim = await claimNicheConversation({ ...identity, turnToken, expectedRevision,
+      expectedVersion: input.version, requestId: input.requestId, content: input.content });
+    if (!claim) return { ok: false as const, message: "A conversa ou o nicho mudou. Atualize a página para continuar." };
+    if (claim.replay) return { ok: true as const };
+    fence = { ...identity, expectedVersion: claim.version, turnToken };
+    const messages = await readNicheDialogueMessages(identity.dialogueId);
+    if (!claim.summaryUpdatedAt || !messages) throw new Error("context_unavailable");
+    const synthesis = currentSynthesis(claim.state, messages);
+    const active = claim.state.proposal ? {
+      id: identity.dialogueId + ":proposal", description: claim.state.proposal, expectedOfficialRevision: niche?.confirmed ? expectedRevision : null,
+    } : null;
+    const prior = claim.summary ?? null;
+    const reply = await requestNicheAgent(identity.accountId, identity.dialogueId, {
+      message: { id: input.requestId, text: input.content, replyToProposalId: active?.id ?? null },
+      history: relevantNicheHistory(messages, input.requestId, input.content),
+      activeSynthesis: synthesis && { id: synthesis.id, text: synthesis.text, accepted: synthesis.accepted, partialReply: synthesis.partialReply },
+      nicheAccepted: claim.state.nicheAccepted,
+      summary: nicheSummaryContext(prior).text,
+      businessContext: JSON.stringify(business.value).slice(0, 4000),
+      officialNiche: niche?.confirmed ? { description: niche.name, revision: niche.revision } : null,
+      activeProposal: active,
+    });
+    if (!reply) throw new Error("provider_unavailable");
+    const keep = Boolean(active && !reply.proposal && (reply.reaction === "continue" || reply.reaction === "accept"));
+    const acceptedProposal = keep && !reply.synthesisWrite.offer && !reply.synthesisWrite.clear &&
+      (reply.synthesisWrite.accept || synthesis?.accepted) && (reply.confirmation || claim.state.nicheAccepted)
+      ? active!.description : null;
+    const written = await commitNicheConversation({ ...fence, reply: reply.reply,
+      proposal: reply.proposal, understanding: "", summary: mergeNicheMemory(prior, reply, synthesis),
+      observedSummary: prior, observedSummaryUpdatedAt: claim.summaryUpdatedAt,
+      acceptedProposal, keepProposal: keep && !acceptedProposal, synthesis: reply.synthesisWrite,
+    });
+    if (!written) throw new Error("turn_not_committed");
+    return { ok: true as const };
+  } catch {
+    if (fence) await releaseAccountNicheTurn(fence).catch(() => false);
+    return { ok: false as const, message: fence
+      ? "A mensagem foi registrada. Tente novamente para obter a resposta." : GENERIC_ERROR };
+  } finally {
+    revalidatePath("/a/" + input.account + "/base-comunicacao");
+  }
 }
 
 export async function loadAccountNicheEditorAction(account: string): Promise<AccountNicheEditorState> {

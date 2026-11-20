@@ -23,8 +23,8 @@ import {
 type NicheMessage = Readonly<{ role: "user" | "assistant"; content: string }>;
 type NicheChoice = Readonly<{ taxonId: string | null; name: string }>;
 
-export function AccountNicheEditor({ account, state, hasIntelligence = false }: Readonly<{
-  account: string; state: AccountNicheEditorState; hasIntelligence?: boolean;
+export function AccountNicheEditor({ account, state }: Readonly<{
+  account: string; state: AccountNicheEditorState;
 }>) {
   const id = useId();
   const router = useRouter();
@@ -132,7 +132,6 @@ export function AccountNicheEditor({ account, state, hasIntelligence = false }: 
         <input type="checkbox" className="mt-1 h-5 w-5 shrink-0" checked={confirmed} disabled={pending !== null || Boolean(message.trim())} onChange={event => setConfirmed(event.target.checked)} />
         <span className="break-words">Confirmo que <strong>{chosen.name}</strong> representa o nicho do meu negócio.</span>
       </label> : null}
-      {hasIntelligence && changed ? <FeedbackMessage tone="warning" className="mt-3">Os conteúdos de Inteligência e copy serão preservados. Revise-os para adequá-los ao novo nicho antes de reutilizá-los.</FeedbackMessage> : null}
       {error ? <FeedbackMessage tone="error" className="mt-3">{error}</FeedbackMessage> : null}
       <div className="mt-4 flex flex-wrap justify-end gap-2">
         <Button variant="secondary" className="min-h-11" disabled={pending === "save"} onClick={requestClose}>Cancelar</Button>
@@ -142,7 +141,7 @@ export function AccountNicheEditor({ account, state, hasIntelligence = false }: 
           try {
             const result = await saveAccountNicheAction({ account, dialogueId: dialogueId.current, expectedVersion: dialogueVersion.current, confirmed: true });
             if (!result.ok) { setError(result.message); return; }
-            setNotice(hasIntelligence && changed ? "Nicho confirmado e contexto atualizado. Revise os conteúdos de Inteligência e copy antes de reutilizá-los." : "Nicho confirmado e contexto do negócio atualizado.");
+            setNotice("Nicho confirmado e contexto do negócio atualizado.");
             close(); router.refresh();
           } catch { setError("Não foi possível salvar o nicho agora. Tente novamente."); }
           finally { setPending(null); }

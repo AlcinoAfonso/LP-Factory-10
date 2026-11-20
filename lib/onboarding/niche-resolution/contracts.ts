@@ -88,43 +88,6 @@ export type AiNicheResolutionOutput = {
 
 export const AI_NICHE_RESOLUTION_SCHEMA_VERSION = "v1";
 
-export type PersistedAiNicheResolutionStatus = "skipped" | "resolved" | "failed";
-
-export type UpdateAccountNicheResolutionAiResultInput = {
-  accountId: string;
-  status: PersistedAiNicheResolutionStatus;
-  errorCode: string | null;
-  model: string | null;
-  schemaVersion: typeof AI_NICHE_RESOLUTION_SCHEMA_VERSION;
-  result: AiNicheResolutionOutput | null;
-  uxMode: AiNicheResolutionUxMode | null;
-  suggestedTaxonId: string | null;
-  suggestedNewTaxonLabel: string | null;
-  needsUserConfirmation: boolean;
-  needsAdminReview: boolean;
-  reason: string | null;
-};
-
-export type AccountNicheResolutionStatus =
-  | "deterministic_high_confidence"
-  | "review_required"
-  | "unclassified";
-
-export type UpsertAccountNicheResolutionInput = {
-  accountId: string;
-  rawInput: string;
-  selectedTaxonId: string | null;
-  confidence: DeterministicMatchConfidence;
-  shouldUseDeterministicMatch: boolean;
-  shouldEscalateToAi: boolean;
-  aiEscalationMode: AiEscalationMode;
-  needsAdminReview: boolean;
-  reason: DeterministicMatchReason;
-  resolutionStatus: AccountNicheResolutionStatus;
-  matchSource: string | null;
-  score: number | null;
-};
-
 export type UserNicheResolutionStatus =
   | "pending_confirmation"
   | "confirmed"

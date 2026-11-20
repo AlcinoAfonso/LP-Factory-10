@@ -6,15 +6,16 @@ import type {
   PendingSetupConversation,
   PendingSetupConfirmationKind,
   PendingSetupMessage,
-  PendingSetupOpenAiCallClaimResult,
   PendingSetupResolutionOutcome,
   PendingSetupStage,
   PendingSetupWriteResult,
 } from "../contracts";
-import { readAttendanceContactInput, readAttendanceBusinessNameCandidate, validateStoredAttendanceProposal } from "../attendance-core";
+import { readAttendanceBusinessNameCandidate, validateStoredAttendanceProposal } from "../attendance-core";
 import { readPendingSetupDialogueContext } from "./pendingSetupAccountContextAdapter";
 import { resolvePreferredNameFromAuth } from "../policy";
 import { isE1011PassageEnabled, isE1012AttendanceEnabled } from "../config";
+import { z } from "zod";
+import type { SynthesisWrite } from "../../niche-agent/dialogue";
 
 type ConversationRow = {
   id: string;
@@ -29,7 +30,6 @@ type ConversationRow = {
   preferred_name_declined?: boolean;
   attendance_proposal?: PendingSetupConversation["attendanceProposal"];
   pending_turn_intent?: PendingSetupConversation["attendanceTurnIntent"];
-  openai_call_count: number;
   version: number | string;
   created_at: string;
   updated_at: string;
@@ -72,7 +72,6 @@ function mapConversation(
     preferredNameDeclined: row.preferred_name_declined ?? false,
     attendanceProposal: row.attendance_proposal ?? null,
     attendanceTurnIntent: row.pending_turn_intent ?? null,
-    openAiCallCount: Number(row.openai_call_count),
     version: Number(row.version),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -112,10 +111,18 @@ export async function loadPendingSetupConversation(input: {
 
   const preferredName = resolvePreferredNameFromAuth(user.user_metadata, user.email);
   const service = createServiceClient();
+  const attendanceEnabled = isE1012AttendanceEnabled();
+  if (!attendanceEnabled) {
+    const { data: ready, error: readyError } = await service.from("account_pending_setup_conversations")
+      .select("id").eq("account_id", input.accountId).eq("user_id", input.userId)
+      .eq("stage", "ready_to_complete").maybeSingle();
+    if (readyError || !ready) return null;
+  }
+
   const columns =
-    "id,account_id,user_id,preferred_name,business_context_text,stage,confirmation_kind,resolution_outcome,openai_call_count,version,created_at,updated_at,completed_at";
+    "id,account_id,user_id,preferred_name,business_context_text,stage,confirmation_kind,resolution_outcome,version,created_at,updated_at,completed_at";
   const { data: conversationId, error: startError } = await service.rpc(
-    isE1012AttendanceEnabled() ? "start_account_pending_setup_v2" : "start_account_pending_setup_v1",
+    attendanceEnabled ? "start_account_pending_setup_v2" : "start_account_pending_setup_v1",
     {
       p_account_id: input.accountId,
       p_user_id: input.userId,
@@ -166,32 +173,47 @@ export async function loadPendingSetupConversation(input: {
   const mapped = mapConversation(conversation as unknown as ConversationRow, ((messages ?? []) as MessageRow[]));
   if (!isE1012AttendanceEnabled()) return mapped;
   const dialogue = await readPendingSetupDialogueContext({ ...input, conversationId });
-  const contact = readAttendanceContactInput(dialogue?.context.summary);
-  return dialogue ? { ...mapped, whatsappRequested: contact.requested, whatsappValue: contact.value, messages: dialogue.messages, accountContext: dialogue.context,
-    businessNameCandidate: readAttendanceBusinessNameCandidate(dialogue.context.summary) } : null;
+  return dialogue ? { ...mapped, messages: dialogue.messages, accountContext: dialogue.context,
+    dialogueState: dialogue.state, businessNameCandidate: readAttendanceBusinessNameCandidate(dialogue.context.summary) } : null;
 }
 
-export async function setPendingSetupPreferredName(input: {
-  conversationId: string;
-  accountId: string;
-  userId: string;
-  preferredName: string | null;
-  expectedVersion: number;
-}): Promise<PendingSetupWriteResult> {
-  const service = createServiceClient();
-  const { data, error } = await service.rpc("set_account_pending_setup_preferred_name_v1", {
-    p_conversation_id: input.conversationId,
-    p_account_id: input.accountId,
-    p_user_id: input.userId,
-    p_preferred_name: input.preferredName,
-    p_expected_version: input.expectedVersion,
-  });
+type PendingTurnFence = { conversationId: string; accountId: string; userId: string; version: number; token: string };
+function turnFence(input: PendingTurnFence) {
+  return { p_conversation_id: input.conversationId, p_account_id: input.accountId, p_user_id: input.userId,
+    p_expected_version: input.version, p_turn_token: input.token };
+}
 
-  if (error) return writeFailure(error);
-  const version = Number(data);
-  return Number.isSafeInteger(version) && version >= 1
-    ? { ok: true, version }
-    : { ok: false, reason: "write_failed" };
+export async function claimPendingNicheTurn(input: PendingTurnFence & { requestId: string; content: string }) {
+  const { data, error } = await createServiceClient().rpc("claim_account_pending_setup_turn_v3", {
+    ...turnFence(input), p_request_id: input.requestId, p_content: input.content,
+  });
+  const parsed = z.object({ version: z.number().int().positive(), replay: z.boolean() }).safeParse(data);
+  return !error && parsed.success ? parsed.data : null;
+}
+
+export async function commitPendingNicheTurn(input: PendingTurnFence & {
+  reply: string; summary: string | null; observed: NonNullable<PendingSetupConversation["accountContext"]>;
+  understanding: string; preferredName: string | null; preferredNameDeclined: boolean;
+  stage: PendingSetupStage; proposal: PendingSetupConversation["attendanceProposal"]; accept: boolean;
+  observedTaxon: string | null; observedRevision: number; nameProposal: string | null;
+  nameReaction: string; clearOperational: boolean; synthesis: SynthesisWrite;
+}) {
+  const { data, error } = await createServiceClient().rpc("commit_account_pending_setup_turn_v5", {
+    ...turnFence(input), p_reply: input.reply, p_summary: input.summary,
+    p_observed_summary: input.observed.summary, p_observed_summary_updated_at: input.observed.updatedAt,
+    p_understanding: input.understanding, p_preferred_name: input.preferredName,
+    p_preferred_name_declined: input.preferredNameDeclined, p_next_stage: input.stage,
+    p_proposal: input.proposal, p_accept: input.accept, p_observed_primary_taxon_id: input.observedTaxon,
+    p_observed_niche_revision: input.observedRevision, p_name_proposal: input.nameProposal,
+    p_name_reaction: input.nameReaction, p_passage_enabled: isE1011PassageEnabled(),
+    p_clear_operational: input.clearOperational,
+    p_synthesis: input.synthesis,
+  });
+  return !error && Number.isSafeInteger(Number(data)) && Number(data) > input.version;
+}
+
+export async function releasePendingNicheTurn(input: PendingTurnFence) {
+  return createServiceClient().rpc("release_account_pending_setup_turn_v2", turnFence(input));
 }
 
 export async function setPendingSetupBusinessDisplayName(input: {
@@ -216,98 +238,6 @@ export async function setPendingSetupBusinessDisplayName(input: {
   const version = Number(data);
   return Number.isSafeInteger(version) && version >= 1
     ? { ok: true, version }
-    : { ok: false, reason: "write_failed" };
-}
-
-export async function appendPendingSetupTurn(input: {
-  conversationId: string;
-  accountId: string;
-  userId: string;
-  expectedVersion: number;
-  turnToken: string;
-  userContent: string;
-  assistantContent: string;
-  nextStage: Exclude<PendingSetupStage, "identity" | "completed">;
-  confirmationKind: PendingSetupConfirmationKind | null;
-  businessContextText: string;
-}): Promise<PendingSetupWriteResult> {
-  const service = createServiceClient();
-  const { data, error } = await service.rpc("append_account_pending_setup_turn_v1", {
-    p_conversation_id: input.conversationId,
-    p_account_id: input.accountId,
-    p_user_id: input.userId,
-    p_expected_version: input.expectedVersion,
-    p_turn_token: input.turnToken,
-    p_user_content: input.userContent,
-    p_assistant_content: input.assistantContent,
-    p_next_stage: input.nextStage,
-    p_confirmation_kind: input.confirmationKind,
-    p_business_context_text: input.businessContextText,
-  });
-
-  if (error) return writeFailure(error);
-  const version = Number(data);
-  return Number.isSafeInteger(version) && version >= 1
-    ? { ok: true, version }
-    : { ok: false, reason: "write_failed" };
-}
-
-export async function claimPendingSetupTurn(input: {
-  conversationId: string;
-  accountId: string;
-  userId: string;
-  expectedVersion: number;
-  turnToken: string;
-}): Promise<PendingSetupWriteResult> {
-  const service = createServiceClient();
-  const { data, error } = await service.rpc("claim_account_pending_setup_turn_v1", {
-    p_conversation_id: input.conversationId,
-    p_account_id: input.accountId,
-    p_user_id: input.userId,
-    p_expected_version: input.expectedVersion,
-    p_turn_token: input.turnToken,
-  });
-
-  if (error) return writeFailure(error);
-  const version = Number(data);
-  return Number.isSafeInteger(version) && version >= 1
-    ? { ok: true, version }
-    : { ok: false, reason: "write_failed" };
-}
-
-export async function claimPendingSetupOpenAiCall(input: {
-  conversationId: string;
-  accountId: string;
-  userId: string;
-  expectedVersion: number;
-  turnToken: string;
-}): Promise<PendingSetupOpenAiCallClaimResult> {
-  const service = createServiceClient();
-  const { data, error } = await service.rpc("claim_account_pending_setup_openai_call_v1", {
-    p_conversation_id: input.conversationId,
-    p_account_id: input.accountId,
-    p_user_id: input.userId,
-    p_expected_version: input.expectedVersion,
-    p_turn_token: input.turnToken,
-  });
-
-  if (error) {
-    const message = String((error as { message?: unknown } | null)?.message ?? "");
-    if (message.includes("pending_setup_openai_call_limit_reached")) {
-      return { ok: false, reason: "limit_reached" };
-    }
-    const failure = writeFailure(error);
-    return !failure.ok
-      ? {
-          ok: false,
-          reason: failure.reason === "not_found" ? "write_failed" : failure.reason,
-        }
-      : { ok: false, reason: "write_failed" };
-  }
-
-  const count = Number(data);
-  return Number.isSafeInteger(count) && count >= 1 && count <= 3
-    ? { ok: true, count }
     : { ok: false, reason: "write_failed" };
 }
 
