@@ -13,7 +13,8 @@ export async function generateAgentBasePilotSection(input: Parameters<typeof bui
   if (!prompt) return { ok: false as const };
   const active = await resolveOpenAiProductWorkload("communication_base_stage2_intelligence", input.environment);
   if (!active.ok || !active.value.webSearch) return { ok: false as const };
-  const configuration = active.value;
+  // The Agent Base uses Standard from the request, independent of the shared tier.
+  const configuration = { ...active.value, model: "gpt-6.2-sol", reasoningEffort: "medium", serviceTier: null } as const;
   const web = active.value.webSearch;
   const requestId = randomUUID();
   const result = await requestOpenAiResponses<AgentBasePilotSection>({
