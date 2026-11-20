@@ -199,11 +199,16 @@ test("bloqueia nomes privados declarados em minúsculas no texto livre", () => {
   }
 });
 
-test("bloqueia nome privado em minúsculas em uma apresentação direta", () => {
-  const input = { ...context, pendingSetup: pendingContext,
-    message: { text: "minha empresa é estúdio do vale e oferece paisagismo", replyToProposalId: null } };
-  assert.equal(publicResearchContext("paisagismo para estúdio do vale", input), null);
-  assert.equal(publicResearchContext("paisagismo para hotéis", input)?.researchTopic, "paisagismo para hotéis");
+test("bloqueia nome privado em minúsculas na apresentação da empresa ou do local de trabalho", () => {
+  for (const text of [
+    "minha empresa é estúdio do vale e oferece paisagismo",
+    "a empresa estúdio do vale oferece paisagismo",
+    "trabalho no estúdio do vale com paisagismo",
+  ]) {
+    const input = { ...context, pendingSetup: pendingContext, message: { text, replyToProposalId: null } };
+    assert.equal(publicResearchContext("paisagismo para estúdio do vale", input), null);
+    assert.equal(publicResearchContext("paisagismo para hotéis", input)?.researchTopic, "paisagismo para hotéis");
+  }
 });
 
 test("corrige só o fato reexibido na síntese aceita e preserva o restante", () => {
