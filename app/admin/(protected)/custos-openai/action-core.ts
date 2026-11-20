@@ -1,4 +1,4 @@
-import type { Category3ObservedStart } from "@/openai-costs/category-3-costs";
+import type { Category3CostResult } from "@/openai-costs/category-3-costs";
 import type { DialogueCostResult, DialogueListResult } from "@/openai-costs/dialogue-costs";
 import { dialogueIdentitySchema } from "@/openai-costs/dialogue-costs";
 import type { OpenAiActiveCostReadResult } from "@/openai-costs/active-contracts";
@@ -19,6 +19,7 @@ export type OpenAiCostsActionState = Readonly<{
   code: string | null;
   message: string;
   dashboard: OpenAiCostsFinancialComposition | null;
+  category3Cost?: Category3CostResult;
 }>;
 
 export type OpenAiCostsActionDependencies = Readonly<{
@@ -27,7 +28,6 @@ export type OpenAiCostsActionDependencies = Readonly<{
   readActive: (period: OpenAiCostsPeriod) => Promise<OpenAiActiveCostReadResult>;
   readLegacy: (period: OpenAiCostsPeriod) => Promise<OpenAiLpCostReadResult>;
   readDialogues?: (period: OpenAiCostsPeriod, active: OpenAiActiveCostReadResult) => Promise<DialogueListResult>;
-  readCategory3Starts?: (period: OpenAiCostsPeriod, active: OpenAiActiveCostReadResult) => Promise<readonly Category3ObservedStart[]>;
 }>;
 
 export async function refreshOpenAiCostsActionCore(
@@ -70,18 +70,13 @@ export async function refreshOpenAiCostsActionCore(
     );
   }
 
-  const [dialogues, category3Starts] = await Promise.all([
-    dependencies.readDialogues?.(selection.period, active),
-    dependencies.readCategory3Starts?.(selection.period, active),
-  ]);
   const dashboard = buildOpenAiCostsFinancialComposition({
     selection,
     official,
     active,
     legacy,
     activeFilters,
-    dialogues,
-    category3Starts,
+    dialogues: dependencies.readDialogues ? await dependencies.readDialogues(selection.period, active) : null,
   });
   if (!dashboard) return failure("INVALID_RESPONSE", "A resposta de custos não pôde ser validada.");
   return {

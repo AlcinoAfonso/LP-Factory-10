@@ -281,7 +281,7 @@ const originalLoader = loader._load;
 loader._load = function(name, parent, isMain) {
   if (name === "../actions") return {
     readDialogueCostAction: async () => ({ ok: false, code: "NOT_CALLED_IN_RENDER" }),
-    readCategory3CostAction: async () => ({ ok: false }),
+    refreshOpenAiCostsAction: async () => ({ status: "error", category3Cost: { ok: false } }),
   };
   return originalLoader.call(this, name, parent, isMain);
 };
@@ -300,11 +300,13 @@ const categoryExecution = { ...activeModel.executions[0], workload: "communicati
   executionOrigin: "runtime" as const,
   economicEvent: { kind: "category_3_generation" as const, eventId: category.generationId },
 };
-const categoryMarkup = renderToStaticMarkup(<Category3CostDetailView detail={buildCategory3CostDetail(category, [categoryExecution], [])} />);
-for (const text of ["Conclusão não comprovada", "Subtotal parcial", "lacunas de registro", "pricing_not_found"])
+const categoryMarkup = renderToStaticMarkup(<Category3CostDetailView detail={buildCategory3CostDetail(category, {
+  ...activeModel, executions: [categoryExecution], totalCalculatedUsd: categoryExecution.calculatedCostUsd,
+})} />);
+for (const text of ["Conclusão não comprovada", "Subtotal parcial", "execuções sem operação", "pricing_not_found"])
   assert.ok(categoryMarkup.includes(text), text);
 assert.equal(categoryMarkup.includes("Custo integral"), false);
-const categoryEmpty = renderToStaticMarkup(<Category3CostDetailView detail={buildCategory3CostDetail(category, [], [])} />);
+const categoryEmpty = renderToStaticMarkup(<Category3CostDetailView detail={buildCategory3CostDetail(category, { ...activeModel, executions: [], pendingOperationCount: 0, unavailableOperationCount: 0 })} />);
 assert.ok(categoryEmpty.includes("Sem valor comprovado"));
 assert.equal(categoryEmpty.includes("US$ 0,00"), false);
 const dialogue = { dialogueId: "e2155000-0000-4000-8000-000000000040", accountId: activeModel.executions[0].accountId!,

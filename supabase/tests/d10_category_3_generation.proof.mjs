@@ -13,10 +13,9 @@ const stages = ["2026-11-20T23:58:00Z", "2026-11-21T00:02:00Z"];
 const readSignature = "(timestamptz,timestamptz,timestamptz,uuid,integer,integer)";
 const startSignature = "(uuid,text,text,text,text,text,uuid,text,uuid,uuid,uuid,text,text,timestamptz)";
 const readMigration = path => readFileSync(new URL("../migrations/" + path, import.meta.url), "utf8");
-const start = (version, executionId, eventId, timestamp, workload = "communication_base_stage2_intelligence", origin = "runtime",
+const start = (executionId, eventId, timestamp, workload = "communication_base_stage2_intelligence", origin = "runtime",
   kind = "category_3_generation") => db.query(
-  "select public.start_openai_cost_execution_" + version +
-  "($1,$2,'preview',$3,'client','attributed',$4,$5,$6,null,null,null,null,$7)",
+  "select public.start_openai_cost_execution_v2($1,$2,'preview',$3,'client','attributed',$4,$5,$6,null,null,null,null,$7)",
   [executionId, workload, origin, account, kind, eventId, timestamp],
 );
 try {
@@ -39,46 +38,45 @@ try {
   const workloadsMigration = readMigration("20260927163500_e21_2_communication_base_workloads.sql");
   await db.exec(workloadsMigration.slice(workloadsMigration.indexOf("alter table public.openai_cost_executions"),
     workloadsMigration.indexOf("alter table public.openai_cost_coverage")));
-  await start("v2", id(10), id(20), stages[0], "niche_resolution", "runtime", "niche_resolution");
-  await assert.rejects(() => start("v2", id(11), id(21), stages[0]), { code: "23514" });
+  await start(id(10), id(20), stages[0], "niche_resolution", "runtime", "niche_resolution");
+  await assert.rejects(() => start(id(11), id(21), stages[0]), { code: "23514" });
   const before = (await db.query("select * from public.openai_cost_executions")).rows;
   await db.exec(readMigration("20261120174450_d10_category_3_generation.sql"));
   assert.deepEqual((await db.query("select * from public.openai_cost_executions")).rows, before);
 
   for (const role of ["anon", "authenticated", "ai_readonly", "service_role"]) {
-    for (const procedure of ["read_openai_active_cost_rows_v2" + readSignature, "read_openai_active_cost_rows_v3" + readSignature,
-      "start_openai_cost_execution_v3" + startSignature]) {
+    for (const procedure of ["read_openai_active_cost_rows_v2" + readSignature, "start_openai_cost_execution_v2" + startSignature]) {
       assert.equal((await db.query("select has_function_privilege($1,$2,'EXECUTE') as allowed", [role, "public." + procedure])).rows[0].allowed,
         role === "service_role");
     }
   }
   await db.exec("set role service_role");
-  await start("v3", id(11), id(21), stages[0]);
-  await start("v3", id(11), id(21), stages[0]);
-  await start("v3", id(12), id(21), stages[1]);
-  await start("v3", id(13), id(22), stages[1]);
-  await assert.rejects(() => start("v3", id(11), id(22), stages[0]), { code: "23505" });
-  await assert.rejects(() => start("v3", id(14), id(14), stages[0]), { code: "23514" });
-  await assert.rejects(() => start("v3", id(15), id(21), stages[0], "niche_resolution"), { code: "23514" });
-  await assert.rejects(() => start("v3", id(15), id(21), stages[0], undefined, "administrative_proof"), { code: "23514" });
+  await start(id(11), id(21), stages[0]);
+  await start(id(11), id(21), stages[0]);
+  await start(id(12), id(21), stages[1]);
+  await start(id(13), id(22), stages[1]);
+  await assert.rejects(() => start(id(11), id(22), stages[0]), { code: "23505" });
+  await assert.rejects(() => start(id(14), id(14), stages[0]), { code: "23514" });
+  await assert.rejects(() => start(id(15), id(21), stages[0], "niche_resolution"), { code: "23514" });
+  await assert.rejects(() => start(id(15), id(21), stages[0], undefined, "administrative_proof"), { code: "23514" });
   await db.query(`insert into public.openai_cost_operations
     (id,execution_id,sequence,model,reasoning_effort,configuration_source,configuration_revision,
      started_at,finished_at,result,cost_status,cost_unavailable_reason,cost_usd,pricing_version,pricing_effective_at,pricing_snapshot)
     values ($1,$2,1,'gpt-6.2-sol','medium','supabase_operational','fixture',$3,$3,'success','calculated',null,0.123456789123,'fixture',$3,'{}')`,
   [id(50), id(12), stages[1]]);
   const from = "2026-11-20T00:00:00Z", to = "2026-11-22T00:00:00Z";
-  const read = async version => (await db.query("select * from public.read_openai_active_cost_rows_" + version + "($1,$2)", [from, to])).rows;
-  const old = await read("v2");
-  const current = await read("v3");
-  assert.deepEqual(current.map(row => row.economic_event_id), [id(20), id(21), id(21), id(22)]);
-  assert.deepEqual(old, current.map(row => row.economic_event_kind === "category_3_generation"
-    ? { ...row, economic_event_kind: null, economic_event_id: null } : row));
+  const current = (await db.query("select * from public.read_openai_active_cost_rows_v2($1,$2)", [from, to])).rows;
+  assert.deepEqual(current.map(row => row.economic_event_id), [id(20), null, null, null]);
+  assert.deepEqual(current.map(row => row.account_id), [account, account, account, account]);
+  const links = (await db.query("select id, economic_event_id from public.openai_cost_executions where economic_event_kind = 'category_3_generation' order by id")).rows;
+  assert.deepEqual(links, [[11, 21], [12, 21], [13, 22]].map(([execution, event]) => ({ id: id(execution), economic_event_id: id(event) })));
+  assert.equal((await db.query("select count(*)::int n from pg_proc where pronamespace='public'::regnamespace and proname in ('read_openai_active_cost_rows_v3','start_openai_cost_execution_v3')")).rows[0].n, 0);
   assert.equal(current[2].cost_usd, "0.123456789123");
   const next = await db.query("select * from public.read_openai_active_cost_rows_v2($1,$2,$3,$4,$5,1)",
     [from, to, current[1].cursor_started_at, id(11), 0]);
   assert.equal(next.rows[0].execution_id, id(12));
   assert.equal((await db.query("select count(*)::int n from public.openai_cost_executions where economic_event_id = $1 and account_id = $2", [id(21), account])).rows[0].n, 2);
-  console.log("PASS PostgreSQL 17 Category 3 full migration, type constraints, replay, historical rows, period paging, decimal values and v2/v3 ACL");
+  console.log("PASS PostgreSQL 17 Category 3 full migration, type constraints, replay, historical rows, period paging, decimal values and preserved v2 ACL");
 } finally {
   await db.close();
 }

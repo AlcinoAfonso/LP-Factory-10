@@ -1,9 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { randomUUID } from "node:crypto";
-import { category3GenerationId, category3SectionsMatchCatalog, category3Uuid, signCategory3Section, verifyCategory3Section } from "@/communication-base/agent-base/generation-identity";
-import { recordCategory3Evidence, type Category3FunctionalOutcome } from "@/communication-base/agent-base/generation-evidence";
+import { category3GenerationId, category3Uuid, signCategory3Section, verifyCategory3Section } from "@/communication-base/agent-base/generation-identity";
 import { createClient } from "../../../../lib/supabase/server";
 import { generateAgentBasePilotSection } from "../../../../lib/communication-base/adapters/agentBasePilotAdapter";
 import { agentBasePilotOrder, agentBasePilotCatalogState, selectAgentBasePilotInput,
@@ -207,9 +205,8 @@ async function logAgentBasePilotAccessDenial(phase: "initial" | "revalidation", 
 
 function category3Proofs(
   environment: AgentBaseEnvironment, accountId: string, input: Readonly<{
-    version: number; generationAttemptId?: string; catalogState?: string; nicheRevision?: string;
+    version: number; generationAttemptId?: string;
   }>,
-  sections: readonly AgentBasePilotSection[],
 ) {
   const secret = process.env.OPENAI_API_KEY;
   const generationId = input.generationAttemptId && secret
@@ -218,25 +215,14 @@ function category3Proofs(
     Boolean(secret && verifyCategory3Section(secret, {
       environment, accountId, version: input.version, catalogState, nicheRevision, generationId,
     }, section));
-  const known = generationId && sections.length && typeof input.catalogState === "string" && typeof input.nicheRevision === "string" &&
-    sections.every(section => verify(input.catalogState!, input.nicheRevision!, section));
-  const record = async (outcome: Category3FunctionalOutcome, executionId?: string) => {
-    if (!generationId || (!known && !executionId)) return;
-    const executionIds = [...(known ? sections.map(section => section.costExecutionId!) : []), ...(executionId ? [executionId] : [])];
-    await recordCategory3Evidence({ generationId, accountId, environment, evidence: { outcome, executionIds } });
-  };
-  return { generationId, secret, verify, record };
+  return { generationId, secret, verify };
 }
 
 export async function runAgentBasePilotAction(input: Readonly<{
   account: string; version: number; previous?: readonly AgentBasePilotSection[];
   catalogState?: string; nicheRevision?: string; generationAttemptId?: string;
 }>): Promise<AgentBasePilotActionResult> {
-  let evidence: ReturnType<typeof category3Proofs> | undefined;
-  const fail = async (message: string, invalidated = false, executionId?: string, outcome: Category3FunctionalOutcome = "failed") => {
-    await evidence?.record(outcome, executionId);
-    return { ok: false as const, message, invalidated };
-  };
+  const fail = (message: string, invalidated = false) => ({ ok: false as const, message, invalidated });
   const environment = resolveAgentBaseEnvironment();
   if (!environment) return fail("A geração da Categoria 3 não está disponível.");
   if (!input || typeof input.account !== "string" || !Number.isSafeInteger(input.version) || input.version <= 0 ||
@@ -247,11 +233,10 @@ export async function runAgentBasePilotAction(input: Readonly<{
     await logAgentBasePilotAccessDenial("initial", access.error);
     return fail("A geração da Categoria 3 não está disponível para este acesso.");
   }
-  const previous = input.previous ?? [];
-  evidence = category3Proofs(environment, access.value.accountId, input, previous);
   const definitions = await readCommunicationDefinitions();
   const order = definitions.ok ? agentBasePilotOrder(definitions.value) : null;
   if (!definitions.ok || !order) return fail("Não foi possível conferir as seções da Categoria 3. A edição manual continua disponível.");
+  const previous = input.previous ?? [];
   if (previous.length >= order.length || previous.some((section, index) =>
       !section || section.key !== order[index]?.key ||
       section.basis !== (section.key === "about" ? "confirmed_business_fact" : "strategic_hypothesis") ||
@@ -270,16 +255,15 @@ export async function runAgentBasePilotAction(input: Readonly<{
   const catalogState = agentBasePilotCatalogState(definitions.value);
   if (previous.length && (input.catalogState !== catalogState || input.nicheRevision !== taxonomy.niche.revision))
     return fail("A Base ou o nicho mudou durante a geração. Atualize a página.", true);
-  if (previous.some(section => !evidence!.verify(catalogState, taxonomy.niche!.revision, section)))
+  const proofs = category3Proofs(environment, access.value.accountId, input);
+  if (previous.some(section => !proofs.verify(catalogState, taxonomy.niche!.revision, section)))
     return fail("Uma etapa da geração não pôde ser autenticada. Nada foi salvo.");
   const target = order[previous.length];
-  const generation = evidence.generationId ? { id: evidence.generationId, executionId: randomUUID() } : undefined;
   const result = await generateAgentBasePilotSection({
     base: base.value, niche: taxonomy.niche, definitions: definitions.value,
-    key: target.key as AgentBasePilotKey, previous, environment, timeoutMs: 120_000, generation,
+    key: target.key as AgentBasePilotKey, previous, environment, timeoutMs: 120_000, generationId: proofs.generationId,
   });
-  if (!result.ok) return fail("Não foi possível concluir a geração em " + target.label + ". Nada foi salvo.",
-    false, generation?.executionId, "interrupted" in result && result.interrupted ? "interrupted" : "failed");
+  if (!result.ok) return fail("Não foi possível concluir a geração em " + target.label + ". Nada foi salvo.");
   const [latestAccess, latestBase, latestNiche, latestDefinitions] = await Promise.all([
     requireCommunicationBaseAccess(input.account, true), readCommunicationBase(access.value.accountId, definitions.value),
     readOfficialNicheContext({ accountId: access.value.accountId }), readCommunicationDefinitions(),
@@ -289,26 +273,21 @@ export async function runAgentBasePilotAction(input: Readonly<{
       !isCurrentGenerationVersion(input.version, latestBase.value.version) || !latestNiche.ok ||
       !isCurrentGenerationNiche(taxonomy.niche, latestNiche.niche) || !latestDefinitions.ok ||
       agentBasePilotCatalogState(latestDefinitions.value) !== catalogState) {
-    return fail("A Base, o nicho ou o catálogo mudou durante a geração. Nada foi salvo.", true, generation?.executionId);
+    return fail("A Base, o nicho ou o catálogo mudou durante a geração. Nada foi salvo.", true);
   }
-  if (!evidence.secret) return fail("Não foi possível validar a geração. Nada foi salvo.", false, generation?.executionId);
-  const section = { ...result.value, ...(generation ? { costExecutionId: generation.executionId } : {}) };
-  const proof = signCategory3Section(evidence.secret, {
+  if (!proofs.secret) return fail("Não foi possível validar a geração. Nada foi salvo.");
+  const proof = signCategory3Section(proofs.secret, {
     environment, accountId: access.value.accountId, version: input.version,
-    catalogState, nicheRevision: taxonomy.niche.revision, generationId: evidence.generationId,
-  }, section);
-  return { ok: true, section: { ...section, proof }, catalogState, nicheRevision: taxonomy.niche.revision };
+    catalogState, nicheRevision: taxonomy.niche.revision, generationId: proofs.generationId,
+  }, result.value);
+  return { ok: true, section: { ...result.value, proof }, catalogState, nicheRevision: taxonomy.niche.revision };
 }
 
 export async function saveAgentBasePilotAction(input: Readonly<{
   account: string; version: number; sections: readonly AgentBasePilotSection[];
   catalogState: string; nicheRevision: string; generationAttemptId?: string;
 }>) {
-  let evidence: ReturnType<typeof category3Proofs> | undefined;
-  const fail = async (message: string, confirmed = true) => {
-    if (confirmed) await evidence?.record("failed");
-    return { ok: false as const, message };
-  };
+  const fail = (message: string) => ({ ok: false as const, message });
   const environment = resolveAgentBaseEnvironment();
   if (!environment) return fail("A geração da Categoria 3 não está disponível.");
   if (!input || typeof input.account !== "string" || !Number.isSafeInteger(input.version) || input.version <= 0 ||
@@ -316,8 +295,6 @@ export async function saveAgentBasePilotAction(input: Readonly<{
       (input.generationAttemptId !== undefined && !category3Uuid.safeParse(input.generationAttemptId).success)) return fail("Solicitação inválida.");
   const access = await requireCommunicationBaseAccess(input.account, true);
   if (!access.ok) return fail("O acesso à Base mudou. Nada foi salvo.");
-  const proofs = category3Proofs(environment, access.value.accountId, input, input.sections);
-  if (category3SectionsMatchCatalog(input.catalogState, input.sections)) evidence = proofs;
   const definitions = await readCommunicationDefinitions();
   const order = definitions.ok ? agentBasePilotOrder(definitions.value) : null;
   if (!definitions.ok || !order || input.catalogState !== agentBasePilotCatalogState(definitions.value)) {
@@ -339,6 +316,7 @@ export async function saveAgentBasePilotAction(input: Readonly<{
       !niche.ok || !niche.niche?.confirmed || input.nicheRevision !== niche.niche.revision) {
     return fail("A Base ou o nicho mudou durante a geração. Nada foi salvo.");
   }
+  const proofs = category3Proofs(environment, access.value.accountId, input);
   if (input.sections.some(section => !proofs.verify(input.catalogState, input.nicheRevision, section))) {
     return fail("Uma etapa da geração não pôde ser autenticada. Nada foi salvo.");
   }
@@ -348,8 +326,7 @@ export async function saveAgentBasePilotAction(input: Readonly<{
     catalogState: input.catalogState, niche: niche.niche,
   });
   if (!saved.ok) return fail(saved.error === "conflict" ? "A Base foi editada durante a geração. Nada foi salvo." :
-    "Não foi possível salvar a Categoria 3. O conteúdo anterior foi preservado.", saved.error === "conflict");
-  await proofs.record("saved");
+    "Não foi possível salvar a Categoria 3. O conteúdo anterior foi preservado.");
   revalidatePath(`/a/${access.value.accountSubdomain}/base-comunicacao`);
   return { ok: true as const };
 }

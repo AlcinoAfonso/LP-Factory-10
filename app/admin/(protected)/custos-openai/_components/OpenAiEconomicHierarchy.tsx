@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import type { Category3CostIdentity, Category3CostResult } from "@/openai-costs/category-3-costs";
-import { readCategory3CostAction } from "../actions";
+import { refreshOpenAiCostsAction } from "../actions";
 import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 import type {
   OpenAiActiveCostExecution,
@@ -148,17 +148,19 @@ function EventDetails({ event, accountId }: Readonly<{ event: OpenAiEconomicEven
   );
 }
 
-const category3OutcomeLabels = {
-  saved: "Salva", failed: "Falha", interrupted: "Interrompida", unconfirmed: "Conclusão não comprovada",
-} as const;
-
 function Category3Detail({ identity }: Readonly<{ identity: Category3CostIdentity }>) {
   const [result, setResult] = useState<Category3CostResult | null>(null);
   const [pending, startTransition] = useTransition();
   function query() {
     startTransition(async () => {
-      try { setResult(await readCategory3CostAction(identity)); }
-      catch { setResult({ ok: false }); }
+      try {
+        const form = new FormData();
+        form.set("category3GenerationId", identity.generationId);
+        form.set("accountId", identity.accountId);
+        form.set("environment", identity.environment);
+        const state = await refreshOpenAiCostsAction({ status: "idle", code: null, message: "", dashboard: null }, form);
+        setResult(state.category3Cost ?? { ok: false });
+      } catch { setResult({ ok: false }); }
     });
   }
   const detail = result?.ok ? result.value : null;
@@ -173,19 +175,21 @@ function Category3Detail({ identity }: Readonly<{ identity: Category3CostIdentit
 }
 
 export function Category3CostDetailView({ detail }: Readonly<{ detail: Extract<Category3CostResult, { ok: true }>["value"] }>) {
+  const costLabel = detail.calculatedCostUsd === null ? "Custo indisponível"
+    : detail.pendingCount || detail.unavailableCount || detail.missingCount ? "Subtotal parcial" : "Subtotal registrado";
   return <div className="space-y-3 rounded-md border border-border bg-background p-3">
       <dl className="grid gap-3 sm:grid-cols-2">
-        <Detail label="Resultado da geração" value={category3OutcomeLabels[detail.outcome]} />
-        <Detail label={detail.costStatus === "complete" ? "Custo integral" : detail.costStatus === "partial" ? "Subtotal parcial" : "Custo indisponível"}
+        <Detail label="Resultado da geração" value="Conclusão não comprovada" />
+        <Detail label={costLabel}
           value={detail.calculatedCostUsd === null ? "Sem valor comprovado" : formatUsd(detail.calculatedCostUsd)} />
       </dl>
       <p className="text-sm text-muted-foreground">
         {detail.attemptCount} tentativas · {detail.retryCount} retries · {detail.searches} pesquisas Web
         {detail.unknownSearchCount ? ` · ${detail.unknownSearchCount} operações sem contagem de pesquisas` : ""}
       </p>
-      {detail.costStatus !== "complete" ? <p className="text-sm text-muted-foreground">
-        {detail.pendingCount} pendências · {detail.unavailableCount} custos indisponíveis · {detail.missingCount} lacunas de registro
-      </p> : null}
+      <p className="text-sm text-muted-foreground">
+        {detail.pendingCount} pendências · {detail.unavailableCount} custos indisponíveis · {detail.missingCount} execuções sem operação
+      </p>
       {detail.executions.map(execution => <OpenAiCostExecutionDetails key={execution.executionId} execution={execution} />)}
   </div>;
 }

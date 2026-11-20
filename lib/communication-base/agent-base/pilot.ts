@@ -34,7 +34,7 @@ const sectionSchemas = {
 } as const;
 export type AgentBasePilotKey = string;
 export type AgentBasePilotSection = Omit<CommunicationSuggestion, "key"> & Readonly<{
-  key: string; sources: readonly WebSource[]; researched: boolean; proof?: string; costExecutionId?: string;
+  key: string; sources: readonly WebSource[]; researched: boolean; proof?: string;
 }>;
 
 export function agentBasePilotOrder(definitions: readonly CommunicationSectionDefinition[]) {

@@ -1,4 +1,3 @@
-import type { Category3ObservedStart } from "./category-3-costs";
 import type { DialogueListResult } from "./dialogue-costs";
 import { OPENAI_RETIRED_COST_WORKLOAD_IDS } from "./active-contracts";
 import type {
@@ -153,7 +152,6 @@ export function buildOpenAiCostsFinancialComposition(input: Readonly<{
   legacy: OpenAiLpCostReadResult;
   activeFilters?: OpenAiActiveCostFilters;
   dialogues?: DialogueListResult | null;
-  category3Starts?: readonly Category3ObservedStart[];
 }>): OpenAiCostsFinancialComposition | null {
   if (!input.official.ok) return null;
   const official = decimalFromNonNegativeString(input.official.value.totalUsd);
@@ -182,8 +180,8 @@ export function buildOpenAiCostsFinancialComposition(input: Readonly<{
     dialogues: input.dialogues ?? null,
     legacy,
     legacyErrorCode: input.legacy.ok ? null : input.legacy.error.code,
-    economicHierarchy: active || legacy || input.category3Starts?.length
-      ? buildOpenAiEconomicHierarchy(active, legacy, input.category3Starts)
+    economicHierarchy: active || legacy
+      ? buildOpenAiEconomicHierarchy(active, legacy)
       : null,
     globalReconciliationUsd: reconciliationUsd,
     globalReconciliationAnomalous: anomalous,

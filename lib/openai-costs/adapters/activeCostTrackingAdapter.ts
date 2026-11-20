@@ -29,18 +29,16 @@ async function startExecutionWithRollout(
   input: Parameters<OpenAiCostTrackingAdapter["startExecution"]>[0],
 ) {
   const payload = executionStartRpc(input);
-  if (payload.p_economic_event_kind === "category_3_generation") {
-    const category = await client.rpc("start_openai_cost_execution_v3", payload);
-    if (!category.error) return;
-    if (!isExpectedMissingRpcError(category.error, "start_openai_cost_execution_v3")) {
-      throw new OpenAiCostTrackingPersistenceError(category.error.code === "23505" ? "conflict" : "unavailable");
-    }
-    // Preserve account and cost capture before the compatible reader is installed.
-    payload.p_economic_event_kind = null;
-    payload.p_economic_event_id = null;
-  }
   const { error } = await client.rpc("start_openai_cost_execution_v2", payload);
   if (!error) return;
+  if (error.code === "23514" && error.message.includes('"openai_cost_executions_economic_event_chk"') &&
+      payload.p_economic_event_kind === "category_3_generation" && payload.p_workload === "communication_base_stage2_intelligence" &&
+      payload.p_execution_origin === "runtime" && payload.p_universe === "client" && payload.p_attribution_status === "attributed" &&
+      payload.p_account_id && payload.p_economic_event_id && payload.p_economic_event_id !== payload.p_id) {
+    // The prior constraint rejects the new kind. Keep the account's financial record during rollout.
+    await invoke(client, "start_openai_cost_execution_v2", { ...payload, p_economic_event_kind: null, p_economic_event_id: null });
+    return;
+  }
   if (isExpectedMissingRpcError(error, "start_openai_cost_execution_v2")) {
     await invoke(client, "start_openai_cost_execution_v1", legacyExecutionStartRpc(input));
     return;

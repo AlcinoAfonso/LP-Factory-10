@@ -4,17 +4,6 @@ import type { AgentBaseEnvironment } from "../config";
 import type { AgentBasePilotSection } from "./pilot";
 
 export const category3Uuid = z.uuid();
-const category3Catalog = z.object({ targets: z.array(z.object({ key: z.string() })).nonempty() });
-
-export function category3SectionsMatchCatalog(catalogState: string, sections: readonly AgentBasePilotSection[]) {
-  try {
-    const targets = category3Catalog.parse(JSON.parse(catalogState)).targets;
-    return sections.length === targets.length && sections.every((section, index) => section?.key === targets[index].key);
-  } catch {
-    return false;
-  }
-}
-
 export function category3GenerationId(
   secret: string,
   attemptId: string,
@@ -34,17 +23,16 @@ type ProofContext = Readonly<{
 
 export function signCategory3Section(secret: string, context: ProofContext, section: AgentBasePilotSection) {
   const { environment, accountId, version, catalogState, nicheRevision, generationId } = context;
-  const { key, value, basis, sources, researched, costExecutionId } = section;
+  const { key, value, basis, sources, researched } = section;
   const scope = [environment, accountId, version, catalogState, nicheRevision];
   // Preserve the previous proof format for a sequence already in flight during deployment.
   const proof = createHmac("sha256", secret).update(generationId ? "d14f-agent-base-proof-v3" : "d14f-agent-base-proof-v2");
-  const identity = generationId ? [generationId, costExecutionId] : [];
+  const identity = generationId ? [generationId] : [];
   return proof.update(JSON.stringify([...scope, ...identity, { key, value, basis, sources, researched }])).digest("hex");
 }
 
 export function verifyCategory3Section(secret: string, context: ProofContext, section: AgentBasePilotSection) {
-  if (!section || typeof section.proof !== "string" || !/^[0-9a-f]{64}$/.test(section.proof) ||
-      (context.generationId ? !category3Uuid.safeParse(section.costExecutionId).success : section.costExecutionId !== undefined)) return false;
+  if (!section || typeof section.proof !== "string" || !/^[0-9a-f]{64}$/.test(section.proof)) return false;
   const expected = signCategory3Section(secret, context, section);
   return timingSafeEqual(Buffer.from(section.proof, "hex"), Buffer.from(expected, "hex"));
 }

@@ -34,12 +34,9 @@ alter table public.openai_cost_executions
     )
   ) is true);
 
--- Keep the existing result shape and all money visible to older readers.
--- The same migration makes the raw projection available before the writer.
-alter function public.read_openai_active_cost_rows_v2(timestamptz,timestamptz,timestamptz,uuid,integer,integer)
-  rename to read_openai_active_cost_rows_v3;
-
-create function public.read_openai_active_cost_rows_v2(
+-- Preserve compatibility with applications whose v2 parser predates this event.
+-- The Admin recovers the association by the execution's exact ID in the ledger.
+create or replace function public.read_openai_active_cost_rows_v2(
   p_start_at timestamptz,
   p_end_at timestamptz,
   p_after_started_at timestamptz default null,
@@ -101,97 +98,49 @@ create function public.read_openai_active_cost_rows_v2(
   http_status integer,
   provider_error_code text,
   provider_error_type text
-) language sql stable security invoker set search_path = pg_catalog as $$
-  select
-    r.cursor_started_at,
-    r.execution_id,
-    r.operation_sequence,
-    r.workload,
-    r.environment,
-    r.execution_origin,
-    r.universe,
-    r.attribution_status,
-    r.account_id,
-    r.account_name,
-    case when r.economic_event_kind = 'category_3_generation' then null else r.economic_event_kind end,
-    case when r.economic_event_kind = 'category_3_generation' then null else r.economic_event_id end,
-    r.landing_page_id,
-    r.landing_page_name,
-    r.taxon_id,
-    r.taxon_name,
-    r.baseline_reference,
-    r.baseline_version,
-    r.execution_finished_at,
-    r.execution_result,
-    r.execution_failure_category,
-    r.operation_id,
-    r.retry_of_operation_id,
-    r.model,
-    r.reasoning_effort,
-    r.configuration_source,
-    r.configuration_revision,
-    r.prompt_version,
-    r.contract_version,
-    r.request_id,
-    r.provider_response_id,
-    r.provider_request_id,
-    r.input_tokens,
-    r.cached_input_tokens,
-    r.cache_write_tokens,
-    r.output_tokens,
-    r.reasoning_tokens,
-    r.total_tokens,
-    r.web_search_call_count,
-    r.web_search_tool_version,
-    r.web_search_price_per_call_usd,
-    r.pricing_version,
-    r.pricing_effective_at,
-    r.pricing_snapshot,
-    r.cost_status,
-    r.cost_unavailable_reason,
-    r.cost_usd,
-    r.operation_started_at,
-    r.operation_finished_at,
-    r.operation_result,
-    r.operation_failure_category,
-    r.http_status,
-    r.provider_error_code,
-    r.provider_error_type
-  from public.read_openai_active_cost_rows_v3(
-    p_start_at, p_end_at, p_after_started_at, p_after_execution_id, p_after_operation_sequence, p_limit
-  ) as r
-  order by r.cursor_started_at, r.execution_id, r.operation_sequence;
-$$;
-
-create function public.start_openai_cost_execution_v3(
-  p_id uuid, p_workload text, p_environment text, p_execution_origin text,
-  p_universe text, p_attribution_status text, p_account_id uuid,
-  p_economic_event_kind text, p_economic_event_id uuid,
-  p_landing_page_id uuid, p_taxon_id uuid,
-  p_baseline_reference text, p_baseline_version text, p_started_at timestamptz
-) returns uuid language sql security invoker set search_path = pg_catalog as $$
-  select public.start_openai_cost_execution_v2(
-    p_id, p_workload, p_environment, p_execution_origin, p_universe, p_attribution_status,
-    p_account_id, p_economic_event_kind, p_economic_event_id, p_landing_page_id, p_taxon_id,
-    p_baseline_reference, p_baseline_version, p_started_at
-  );
-$$;
-
-revoke all on function public.read_openai_active_cost_rows_v2(timestamptz,timestamptz,timestamptz,uuid,integer,integer)
-  from public, anon, authenticated, service_role;
-revoke all on function public.start_openai_cost_execution_v3(uuid,text,text,text,text,text,uuid,text,uuid,uuid,uuid,text,text,timestamptz)
-  from public, anon, authenticated, service_role;
-do $$
+) language plpgsql stable security invoker set search_path = pg_catalog as $$
 begin
-  if to_regrole('ai_readonly') is not null then
-    execute 'revoke all on function public.read_openai_active_cost_rows_v2(timestamptz,timestamptz,timestamptz,uuid,integer,integer) from ai_readonly';
-    execute 'revoke all on function public.start_openai_cost_execution_v3(uuid,text,text,text,text,text,uuid,text,uuid,uuid,uuid,text,text,timestamptz) from ai_readonly';
+  if p_start_at is null or p_end_at is null or p_start_at >= p_end_at
+     or p_limit is null or p_limit < 1 or p_limit > 500
+     or ((p_after_started_at is null) <> (p_after_execution_id is null))
+     or ((p_after_started_at is null) <> (p_after_operation_sequence is null)) then
+    raise exception using errcode = '22023', message = 'openai_active_cost_read_input_invalid';
   end if;
+  return query
+  select
+    e.started_at, e.id, coalesce(o.sequence, 0), e.workload, e.environment,
+    e.execution_origin, e.universe, e.attribution_status, e.account_id,
+    a.name,
+    case when e.economic_event_kind = 'category_3_generation' then null else e.economic_event_kind end,
+    case when e.economic_event_kind = 'category_3_generation' then null else e.economic_event_id end,
+    e.landing_page_id,
+    lp.name, e.taxon_id, taxon.name,
+    e.baseline_reference, e.baseline_version, e.finished_at, e.result,
+    e.failure_category, o.id, o.retry_of_operation_id, o.model,
+    o.reasoning_effort, o.configuration_source, o.configuration_revision,
+    o.prompt_version, o.contract_version, o.request_id, o.provider_response_id,
+    o.provider_request_id, o.input_tokens, o.cached_input_tokens,
+    o.cache_write_tokens, o.output_tokens, o.reasoning_tokens, o.total_tokens,
+    o.web_search_call_count, o.web_search_tool_version,
+    o.web_search_price_per_call_usd::text, o.pricing_version, o.pricing_effective_at,
+    o.pricing_snapshot, o.cost_status, o.cost_unavailable_reason, o.cost_usd::text,
+    o.started_at, o.finished_at, o.result, o.failure_category, o.http_status,
+    o.provider_error_code, o.provider_error_type
+  from public.openai_cost_executions e
+  left join public.openai_cost_operations o on o.execution_id = e.id
+  left join public.accounts a on a.id = e.account_id
+  left join public.account_landing_pages lp
+    on lp.id = e.landing_page_id and lp.account_id = e.account_id
+  left join public.business_taxons taxon on taxon.id = e.taxon_id
+  where e.started_at >= p_start_at and e.started_at < p_end_at
+    and (
+      p_after_started_at is null
+      or (e.started_at, e.id, coalesce(o.sequence, 0))
+        > (p_after_started_at, p_after_execution_id, p_after_operation_sequence)
+    )
+  order by e.started_at, e.id, coalesce(o.sequence, 0)
+  limit p_limit;
 end;
 $$;
-grant execute on function public.read_openai_active_cost_rows_v2(timestamptz,timestamptz,timestamptz,uuid,integer,integer)
-  to service_role;
-grant execute on function public.start_openai_cost_execution_v3(uuid,text,text,text,text,text,uuid,text,uuid,uuid,uuid,text,text,timestamptz)
-  to service_role;
 
 commit;

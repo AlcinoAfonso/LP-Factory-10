@@ -1,4 +1,3 @@
-import type { Category3ObservedStart } from "./category-3-costs";
 import type {
   OpenAiActiveCostExecution,
   OpenAiActiveCostReadModel,
@@ -120,7 +119,6 @@ type MutableAccount = MutableSummary & {
 export function buildOpenAiEconomicHierarchy(
   active: OpenAiActiveCostReadModel | null,
   legacy: OpenAiLpCostReadModel | null,
-  category3Starts: readonly Category3ObservedStart[] = [],
 ): OpenAiEconomicHierarchy {
   const accounts = new Map<string, MutableAccount>();
   const lpFactoryEvents = new Map<string, MutableEvent>();
@@ -170,14 +168,6 @@ export function buildOpenAiEconomicHierarchy(
       continue;
     }
     addActiveExecution(lpFactoryEvents, execution);
-  }
-
-  for (const start of category3Starts) {
-    const account = getAccount(accounts, start.accountId, start.accountName);
-    getEvent(account.events, {
-      kind: "category_3_generation", eventId: start.generationId, environment: start.environment,
-      label: "Geração da Categoria 3", source: "active", startedAt: start.startedAt,
-    });
   }
 
   if (legacy) {

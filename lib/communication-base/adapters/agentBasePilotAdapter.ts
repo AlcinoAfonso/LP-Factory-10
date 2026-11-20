@@ -4,17 +4,13 @@ import { requestOpenAiResponses } from "../../openai-responses/openAiResponsesAd
 import { clientOpenAiCostContext } from "../../openai-costs";
 import { resolveOpenAiProductWorkload } from "../../openai-workloads";
 import type { AgentBaseEnvironment } from "../config";
-import { recordCategory3Evidence } from "../agent-base/generation-evidence";
 import { buildAgentBasePilotPrompt, parseAgentBasePilotResponse, sanitizeAgentBasePilotFailureReason, type AgentBasePilotSection } from "../agent-base/pilot";
 
 export async function generateAgentBasePilotSection(input: Parameters<typeof buildAgentBasePilotPrompt>[0] & Readonly<{
   environment: AgentBaseEnvironment; timeoutMs: number;
-  generation?: Readonly<{ id: string; executionId: string }>;
+  generationId?: string | null;
 }>) {
-  const { generation, environment } = input;
-  const prompt = buildAgentBasePilotPrompt({
-    ...input, previous: input.previous.map(({ costExecutionId: _costExecutionId, ...section }) => section),
-  });
+  const prompt = buildAgentBasePilotPrompt(input);
   if (!prompt) return { ok: false as const };
   const active = await resolveOpenAiProductWorkload("communication_base_stage2_intelligence", input.environment);
   if (!active.ok || !active.value.webSearch) return { ok: false as const };
@@ -22,17 +18,12 @@ export async function generateAgentBasePilotSection(input: Parameters<typeof bui
   const configuration = { ...active.value, model: "gpt-6.2-sol", reasoningEffort: "medium", serviceTier: null } as const;
   const web = active.value.webSearch;
   const requestId = randomUUID();
-  if (generation) await recordCategory3Evidence({
-    generationId: generation.id, accountId: input.base.accountId, environment,
-    evidence: { executionId: generation.executionId },
-  });
   const result = await requestOpenAiResponses<AgentBasePilotSection>({
     apiKey: process.env.OPENAI_API_KEY,
     configuration, environment: input.environment, expectedWorkload: "communication_base_stage2_intelligence",
     requestId, promptVersion: prompt.promptVersion, contractVersion: 1, timeoutMs: input.timeoutMs,
-    financialContext: clientOpenAiCostContext(input.base.accountId, generation
-      ? { kind: "category_3_generation", eventId: generation.id } : null),
-    financialExecutionId: generation?.executionId, executionOrigin: "runtime",
+    financialContext: clientOpenAiCostContext(input.base.accountId, input.generationId
+      ? { kind: "category_3_generation", eventId: input.generationId } : null), executionOrigin: "runtime",
     baselineReference: "d14f_agent_base_pilot_" + input.key,
     request: {
       instructions: prompt.instructions, input: prompt.input, store: false, background: false,
@@ -47,6 +38,5 @@ export async function generateAgentBasePilotSection(input: Parameters<typeof bui
   if (!result.ok) console.warn("agent_base_pilot_failure", {
     requestId, section: input.key, kind: result.kind, reason: sanitizeAgentBasePilotFailureReason(result.reason),
   });
-  return result.ok ? { ok: true as const, value: result.value }
-    : { ok: false as const, interrupted: result.kind === "timeout" };
+  return result.ok ? { ok: true as const, value: result.value } : { ok: false as const };
 }
