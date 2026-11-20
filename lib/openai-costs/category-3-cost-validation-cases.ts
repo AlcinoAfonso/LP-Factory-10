@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import nodeModule from "node:module";
-import { category3GenerationId, signCategory3Section, verifyCategory3Section } from "../communication-base/agent-base/generation-identity";
+import { category3GenerationId, category3SectionsMatchCatalog, signCategory3Section, verifyCategory3Section } from "../communication-base/agent-base/generation-identity";
 import type { AgentBasePilotSection } from "../communication-base/agent-base/pilot";
 import { buildCategory3CostDetail, type Category3CostIdentity } from "./category-3-costs";
 import { buildOpenAiEconomicHierarchy } from "./economic-hierarchy";
@@ -40,9 +40,10 @@ export async function validateCategory3Costs() {
   const identity = category3GenerationId(secret, id(1000), "preview", accountId, 5);
   assert.equal(identity, category3GenerationId(secret, id(1000), "preview", accountId, 5), "transport replay keeps the same initiation");
   assert.notEqual(identity, category3GenerationId(secret, id(1001), "preview", accountId, 5));
-  const proofContext = { accountId, environment: "preview", version: 5, generationId: identity, catalogState: "catalogue", nicheRevision: "5" } as const;
   const keys = ["about", "audience", "market_insights", "value_proposition", "benefits", "differentiators", "faq"];
-  const attempts = keys.map((key, index) => {
+  const catalogState = JSON.stringify({ targets: keys.map(key => ({ key })) });
+  const proofContext = { accountId, environment: "preview", version: 5, generationId: identity, catalogState, nicheRevision: "5" } as const;
+  const signedSections = keys.map((key, index) => {
     const section: AgentBasePilotSection = { key, value: "fixture", basis: "strategic_hypothesis", sources: [], researched: false,
       costExecutionId: id(10 + index) };
     const signed = { ...section, proof: signCategory3Section(secret, proofContext, section) };
@@ -51,8 +52,13 @@ export async function validateCategory3Costs() {
       assert.equal(verifyCategory3Section(secret, { ...proofContext, ...mismatched }, signed), false);
     }
     assert.equal(verifyCategory3Section(secret, proofContext, { ...signed, costExecutionId: id(999) }), false);
-    return signed.costExecutionId!;
+    return signed;
   });
+  assert.ok(category3SectionsMatchCatalog(catalogState, signedSections), "a complete signed generation survives a subsequent catalog change as outcome evidence");
+  assert.equal(category3SectionsMatchCatalog(catalogState, signedSections.slice(0, -1)), false);
+  assert.equal(category3SectionsMatchCatalog(catalogState, [...signedSections].reverse()), false);
+  assert.equal(category3SectionsMatchCatalog("{}", signedSections), false);
+  const attempts = signedSections.map(section => section.costExecutionId!);
   const firstExecutions = keys.map((_, index) => execution(10 + index, first, index === 0 ? priorDay : nextDay));
   const secondExecutions = [execution(30, second), { ...execution(31, second), result: "failure", failure_category: "provider_error" }];
   const firstOps = keys.map((_, index) => operation(100 + index, 10 + index, "0.03"));

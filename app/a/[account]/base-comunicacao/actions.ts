@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "node:crypto";
-import { category3GenerationId, category3Uuid, signCategory3Section, verifyCategory3Section } from "@/communication-base/agent-base/generation-identity";
+import { category3GenerationId, category3SectionsMatchCatalog, category3Uuid, signCategory3Section, verifyCategory3Section } from "@/communication-base/agent-base/generation-identity";
 import { recordCategory3Evidence, type Category3FunctionalOutcome } from "@/communication-base/agent-base/generation-evidence";
 import { createClient } from "../../../../lib/supabase/server";
 import { generateAgentBasePilotSection } from "../../../../lib/communication-base/adapters/agentBasePilotAdapter";
@@ -316,6 +316,8 @@ export async function saveAgentBasePilotAction(input: Readonly<{
       (input.generationAttemptId !== undefined && !category3Uuid.safeParse(input.generationAttemptId).success)) return fail("Solicitação inválida.");
   const access = await requireCommunicationBaseAccess(input.account, true);
   if (!access.ok) return fail("O acesso à Base mudou. Nada foi salvo.");
+  const proofs = category3Proofs(environment, access.value.accountId, input, input.sections);
+  if (category3SectionsMatchCatalog(input.catalogState, input.sections)) evidence = proofs;
   const definitions = await readCommunicationDefinitions();
   const order = definitions.ok ? agentBasePilotOrder(definitions.value) : null;
   if (!definitions.ok || !order || input.catalogState !== agentBasePilotCatalogState(definitions.value)) {
@@ -327,7 +329,6 @@ export async function saveAgentBasePilotAction(input: Readonly<{
         section.basis !== (section.key === "about" ? "confirmed_business_fact" : "strategic_hypothesis"))) {
     return fail("A geração não foi concluída integralmente. Nada foi salvo.");
   }
-  evidence = category3Proofs(environment, access.value.accountId, input, input.sections);
   const generated = input.sections.map(({ key, value }) => ({ key, value }));
   if (!withGeneratedIntelligence({}, generated, definitions.value)) return fail("Conteúdo inválido. Nada foi salvo.");
   const [base, niche] = await Promise.all([
@@ -338,7 +339,7 @@ export async function saveAgentBasePilotAction(input: Readonly<{
       !niche.ok || !niche.niche?.confirmed || input.nicheRevision !== niche.niche.revision) {
     return fail("A Base ou o nicho mudou durante a geração. Nada foi salvo.");
   }
-  if (input.sections.some(section => !evidence!.verify(input.catalogState, input.nicheRevision, section))) {
+  if (input.sections.some(section => !proofs.verify(input.catalogState, input.nicheRevision, section))) {
     return fail("Uma etapa da geração não pôde ser autenticada. Nada foi salvo.");
   }
   const saved = await saveGeneratedIntelligence({
@@ -348,7 +349,7 @@ export async function saveAgentBasePilotAction(input: Readonly<{
   });
   if (!saved.ok) return fail(saved.error === "conflict" ? "A Base foi editada durante a geração. Nada foi salvo." :
     "Não foi possível salvar a Categoria 3. O conteúdo anterior foi preservado.", saved.error === "conflict");
-  await evidence.record("saved");
+  await proofs.record("saved");
   revalidatePath(`/a/${access.value.accountSubdomain}/base-comunicacao`);
   return { ok: true as const };
 }

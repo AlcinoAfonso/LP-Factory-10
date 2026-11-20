@@ -4,6 +4,16 @@ import type { AgentBaseEnvironment } from "../config";
 import type { AgentBasePilotSection } from "./pilot";
 
 export const category3Uuid = z.uuid();
+const category3Catalog = z.object({ targets: z.array(z.object({ key: z.string() })).nonempty() });
+
+export function category3SectionsMatchCatalog(catalogState: string, sections: readonly AgentBasePilotSection[]) {
+  try {
+    const targets = category3Catalog.parse(JSON.parse(catalogState)).targets;
+    return sections.length === targets.length && sections.every((section, index) => section?.key === targets[index].key);
+  } catch {
+    return false;
+  }
+}
 
 export function category3GenerationId(
   secret: string,
