@@ -134,6 +134,7 @@ test("síntese referencia o texto exibido e o WhatsApp sem ocultar ano, quantida
 });
 
 test("WhatsApp informado após a síntese só entra no Summary com aceite da síntese atualizada", () => {
+  assert.match(NICHE_AGENT_INSTRUCTIONS, /Se um WhatsApp chegar após uma síntese/u);
   const originalAssistant = "00000000-0000-4000-8000-000000000021";
   const userContact = "00000000-0000-4000-8000-000000000022";
   const updatedAssistant = "00000000-0000-4000-8000-000000000023";
