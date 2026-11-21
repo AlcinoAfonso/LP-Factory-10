@@ -141,10 +141,6 @@ export function prepareNicheTurn(raw: NicheTurnContext, searchLimit = 0):
     }, true);
   }
   const current = message ? pendingSetup ? project(message.text, message.id) : redact(message.text) : null;
-  const fieldPhone = pendingSetup && message?.id
-    ? message.text.match(/(?:^|\n)WhatsApp para contato: (\(\d{2}\) 9\d{4}-\d{4})(?:\n|$)/u)?.[1] : null;
-  const enteredContact = fieldPhone ? [...contacts.values()].find(item =>
-    item.value === fieldPhone && item.source?.messageId === message?.id) ?? null : null;
   const currentProposal = activeProposal?.expectedOfficialRevision === (officialNiche?.revision ?? null)
     ? activeProposal : null;
   const confirmationTarget = currentProposal && message?.replyToProposalId === currentProposal.id
@@ -186,7 +182,7 @@ export function prepareNicheTurn(raw: NicheTurnContext, searchLimit = 0):
         text: { format: pendingSetup ? pendingTextFormat : textFormat },
       },
       parseResponse: parseTurn(summary ?? "", message !== null, currentProposal?.description ?? null,
-        confirmationTarget, externalSources, pendingSetup, contacts, enteredContact, activeSynthesis, searchLimit),
+        confirmationTarget, externalSources, pendingSetup, contacts, activeSynthesis, searchLimit),
     },
   };
 }
@@ -199,7 +195,6 @@ function parseTurn(
   sources: readonly { id: string }[],
   pending: z.output<typeof pendingSetupContext> | undefined,
   contacts: ReadonlyMap<string, Contact>,
-  enteredContact: Contact | null,
   activeSynthesis: NonNullable<z.output<typeof contextSchema>["activeSynthesis"]> | null | undefined,
   searchLimit = 0,
 ): OpenAiResponsesParser<NicheTurn> {
@@ -247,8 +242,8 @@ function parseTurn(
     if (synthesisText && reply.split(synthesisText).length > 2) return invalid("niche_turn_synthesis_repeated_in_reply");
     const result = pendingResult?.success ? pendingResult.data.pendingSetup : null;
     const suggestedContact = result?.whatsapp.reference ? contacts.get(result.whatsapp.reference) : null;
-    const contact = enteredContact ?? (result?.whatsapp.declined ? null : suggestedContact ?? null);
-    const whatsappDeclined = Boolean(result?.whatsapp.declined && !enteredContact && suggestedContact === null);
+    const contact = result?.whatsapp.declined ? null : suggestedContact ?? null;
+    const whatsappDeclined = Boolean(result?.whatsapp.declined && suggestedContact === null);
     if (result) {
       if (!pending || !hasMessage) return invalid("niche_turn_pending_setup_without_message");
       if (result.preferredName.value && result.preferredName.declined) return invalid("niche_turn_preferred_name_state");
