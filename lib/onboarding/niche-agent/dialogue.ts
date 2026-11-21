@@ -141,7 +141,18 @@ export function nicheSummaryContext(raw: string | null) {
   };
 }
 
-export function mergeNicheMemory(raw: string | null, turn: NicheTurn, snapshot: ReturnType<typeof resolveSynthesis>) {
+export function submittedWhatsApp(messages: readonly DialogueText[]): string | null {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const entry = messages[i];
+    if (entry.role !== "user") continue;
+    const phone = entry.content.match(/(?:^|\n)WhatsApp para contato: (\(\d{2}\) 9\d{4}-\d{4})(?:\n|$)/u)?.[1];
+    if (phone) return phone;
+  }
+  return null;
+}
+
+export function mergeNicheMemory(raw: string | null, turn: NicheTurn,
+  snapshot: ReturnType<typeof resolveSynthesis>, submittedPhone: string | null = null) {
   if (!snapshot || turn.synthesisWrite.accept !== snapshot.id) return null;
   const previous = readSummary(raw);
   if (!previous) return null;
@@ -167,8 +178,9 @@ export function mergeNicheMemory(raw: string | null, turn: NicheTurn, snapshot: 
   if (!summary.confirmedUnderstanding?.includes(snapshot.text)) {
     summary.confirmedUnderstanding = [summary.confirmedUnderstanding, snapshot.text].filter(Boolean).join("\n");
   }
-  if (snapshot.phone || snapshot.declined) {
-    summary.whatsapp = snapshot.phone;
+  const phone = snapshot.declined ? null : submittedPhone ?? snapshot.phone;
+  if (phone || snapshot.declined) {
+    summary.whatsapp = phone;
     summary.whatsappDeclined = snapshot.declined;
   }
   const joined = JSON.stringify(summary);
