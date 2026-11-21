@@ -26,7 +26,7 @@ Reconstruir o Agente Nicho como competência única e independente das jornadas:
 
 ## 3.6. Rodada 6 — WhatsApp independente e nicho específico (21/11/2026)
 
-- O WhatsApp aparece em campo opcional com máscara desde a abertura do Pending Setup. Número incompleto recebe aviso local e não bloqueia a conversa. O envio voluntário válido confirma o próprio contato e o grava no Summary independentemente da síntese empresarial; correções posteriores substituem o número. A IA não solicita, valida nem reconfirma o dado; não há disparo automático.
+- Conforme a regra original desta rodada, o WhatsApp aparecia em campo opcional com máscara desde a abertura do Pending Setup. Número incompleto recebe aviso local e não bloqueia a conversa. O envio voluntário válido confirma o próprio contato e o grava no Summary independentemente da síntese empresarial; correções posteriores substituem o número. A IA não solicita, valida nem reconfirma o dado; não há disparo automático.
 - O nicho proposto identifica atividade principal concreta e público em frase breve; financiamento, troca e condições acessórias ficam no entendimento/ofertas, salvo se definirem a atividade. Nome público, síntese empresarial, aceite específico do nicho, permissões, concorrência e autoridade da Base permanecem.
 - Esta rodada substitui apenas a vinculação do WhatsApp ao aceite da síntese em 3.5. Não cria banco, rota, agente, automação ou preenchimento automático de Ofertas.
 
@@ -36,6 +36,10 @@ Reconstruir o Agente Nicho como competência única e independente das jornadas:
 - O agente utiliza desde a abertura o contexto real da conversa, pergunta só o indispensável, propõe nicho breve e específico e interpreta naturalmente confirmações, dúvidas e correções, sem administrar estados operacionais artificiais ou repetir informações recebidas.
 - A aplicação vincula cada proposta ao conteúdo efetivamente apresentado e só executa efeitos com aceite inequívoco, autorização, revisão e concorrência válidos. “Sim” confirma um alvo claro; ressalvas não confirmam informação superada. Inconsistência auxiliar descarta apenas o efeito inseguro, preservando uma resposta conversacional segura sem anunciar gravação não realizada.
 - Continuam obrigatórias as garantias vigentes de 3.4–3.6: duas jornadas, nome opcional, WhatsApp independente da IA, Summary somente após síntese confirmada, correção sem perda de fatos válidos, Diálogo com retomada, nicho oficial, passagem operacional quando cabível e Web Search condicional com privacidade. Falha sem saída aproveitável preserva a mensagem para retomada.
+
+## 3.8. Rodada 8 — WhatsApp opcional somente ao final (21/11/2026)
+
+- No Pending Setup, mostrar o campo opcional com máscara junto da primeira síntese empresarial para confirmação. Após o usuário prosseguir com ou sem número, não reapresentar o campo automaticamente em correções, recargas ou retomadas. Número incompleto tem aviso local e não impede a conversa. A gravação independente no Summary e a correção posterior sem IA permanecem. Nenhum passo ou aceite adicional é obrigatório.
 
 ## 4. Escopo negativo
 
@@ -52,5 +56,6 @@ Base de implementação `a66272de` (#1169), que mantém #1168 e introduz a admis
 1. Substituir o protocolo conversacional por uma resposta curta com proposta, aceite e dados auxiliares opcionais. Fornecer contexto autorizado desde o primeiro turno. Exibir síntese, nicho e nome público juntos, quando aplicáveis, e vincular o aceite ao trecho e à mensagem registrados no Diálogo. Resposta segura sobrevive a metadados inválidos. Pesquisa opcional recebe apenas tópico público e apresenta fontes nas duas jornadas.
 2. Reutilizar as transações de claim e commit para autorização, concorrência, retomada e gravação. O WhatsApp usa a transação do PR #1168. A passagem operacional permanece possível com entendimento suficiente e nicho inconclusivo. O titular autorizou nesta rodada migrar a home D14D apenas para eliminar o motor anterior, mantendo acesso e capacidades. A home reutiliza o Diálogo da conta ativa com seu gate e a prova administrativa usa o mesmo contrato de IA. A migration incremental permite confirmar no chat apenas a descrição legada ainda não confirmada quando há produto, com a redefinição bloqueada. O Gestor Estrutural avaliou o reaproveitamento e o Gestor Design definiu a reutilização do chat inline.
 3. Comparar o delta líquido do código produtivo com a base, executar `npm ci`, `npm run check` e os casos focados. Validar Pending Setup e Base em Preview, incluindo contexto inicial, aceite simples, dúvida, correção, retomada, contato independente, Summary e produto que impede redefinição. Submeter o HEAD publicado a Code Review independente.
+4. Rodada 8. Usar a referência da síntese e as mensagens persistidas para a exibição única. Reaproveitar o mesmo campo, envio e transação para a correção voluntária durante o Diálogo. Validar a transição e a persistência do contato no Preview.
 
 A revisão do prompt aplicou o template do LP Factory e as orientações oficiais de [saída estruturada](https://developers.openai.com/api/docs/guides/structured-outputs) e [pesquisa Web](https://developers.openai.com/api/docs/guides/tools-web-search). Os casos de validação cobrem as duas jornadas, oferta exibida, “sim” com alvo claro, ressalva, correção, resposta aproveitável com efeito inválido e ausência de dados privados na pesquisa.

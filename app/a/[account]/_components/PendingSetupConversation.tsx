@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { FormField, FormFieldError, FormFieldHint, FormFieldLabel } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
+import { pendingSetupWhatsApp } from "../../../../lib/onboarding/niche-agent/dialogue";
 import type { PendingSetupConversation as PendingSetupConversationContract } from "../../../../lib/onboarding/pending-setup/contracts";
 import { NicheConversation } from "./NicheConversation";
 import {
@@ -54,7 +55,7 @@ export function PendingSetupConversation({
             <h1 className="text-xl font-semibold text-foreground">Conte sobre seu negócio</h1>
             <NicheConversation account={accountSubdomain} dialogueId={conversation.id} version={conversation.version}
               messages={conversation.messages} retry={retry} ended={ready}
-              showWhatsApp
+              whatsappMode={pendingSetupWhatsApp(conversation.messages, dialogue?.synthesis)}
               introductoryMessage={conversation.businessNameCandidate
                 ? "Vamos identificar o nicho de " + conversation.businessNameCandidate + ". O que você gostaria de destacar?"
                 : "Vamos identificar o nicho do seu negócio. O que você gostaria de destacar sobre o que faz?"}

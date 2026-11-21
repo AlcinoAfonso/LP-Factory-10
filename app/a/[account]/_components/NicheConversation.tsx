@@ -20,7 +20,7 @@ function formatWhatsApp(raw: string) {
 }
 
 export function NicheConversation({
-  account, dialogueId, version, messages, retry, introductoryMessage, label, ended, showWhatsApp, focusOnOpen, submit,
+  account, dialogueId, version, messages, retry, introductoryMessage, label, ended, whatsappMode, focusOnOpen, submit,
 }: {
   account: string;
   dialogueId: string | null;
@@ -30,24 +30,30 @@ export function NicheConversation({
   introductoryMessage: string;
   label: string;
   ended?: boolean;
-  showWhatsApp?: boolean;
+  whatsappMode?: "first-synthesis" | "correction";
   focusOnOpen?: boolean;
   submit: (input: Submission) => Promise<{ ok: true } | { ok: false; message: string }>;
 }) {
   const router = useRouter();
   const input = useRef<HTMLTextAreaElement>(null);
+  const contactInput = useRef<HTMLInputElement>(null);
   const retryButton = useRef<HTMLButtonElement>(null);
   const log = useRef<HTMLDivElement>(null);
   const follow = useRef(true);
   const restoreFocus = useRef(false);
   const [draft, setDraft] = useState("");
   const [whatsApp, setWhatsApp] = useState("");
+  const [correctingWhatsApp, setCorrectingWhatsApp] = useState(false);
   const [failed, setFailed] = useState<Pick<Submission, "requestId" | "content"> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   useEffect(() => {
     if (focusOnOpen) (input.current ?? retryButton.current)?.focus();
   }, [focusOnOpen]);
+
+  useEffect(() => {
+    if (correctingWhatsApp) contactInput.current?.focus();
+  }, [correctingWhatsApp]);
 
   useEffect(() => {
     if (!draft.trim() && !whatsApp) return;
@@ -85,7 +91,8 @@ export function NicheConversation({
     if (follow.current && log.current) log.current.scrollTop = log.current.scrollHeight;
   }, [messages]);
 
-  const whatsAppComplete = /^\(\d{2}\) 9\d{4}-\d{4}$/u.test(whatsApp);
+  const showWhatsApp = whatsappMode === "first-synthesis" || (whatsappMode === "correction" && correctingWhatsApp);
+  const whatsAppComplete = showWhatsApp && /^\(\d{2}\) 9\d{4}-\d{4}$/u.test(whatsApp);
   const pendingMessage = retry ? { requestId: retry.id, content: retry.content } : failed;
   const composing = !pendingMessage && !ended;
   useEffect(() => {
@@ -111,7 +118,8 @@ export function NicheConversation({
         if (result.ok) {
           restoreFocus.current = input.current === null;
           setDraft("");
-          setWhatsApp(whatsAppComplete ? "" : whatsApp);
+          setWhatsApp("");
+          setCorrectingWhatsApp(false);
           setFailed(null);
           input.current?.focus();
         } else {
@@ -160,7 +168,7 @@ export function NicheConversation({
           </FormField> : null}
           {showWhatsApp && !pendingMessage ? <FormField>
             <FormFieldLabel htmlFor="niche-whatsapp">WhatsApp para contato com a LP Factory (opcional)</FormFieldLabel>
-            <Input id="niche-whatsapp" type="tel" inputMode="numeric" autoComplete="tel"
+            <Input ref={contactInput} id="niche-whatsapp" type="tel" inputMode="numeric" autoComplete="tel"
               placeholder="(99) 99999-9999" maxLength={15} value={whatsApp}
               aria-describedby={whatsApp && !whatsAppComplete ? "niche-whatsapp-hint" : undefined}
               onChange={event => setWhatsApp(formatWhatsApp(event.target.value))} disabled={pending} />
@@ -171,6 +179,11 @@ export function NicheConversation({
           <Button ref={retryButton} className="min-h-11" type="submit" disabled={pending || (!pendingMessage && !draft.trim() && !whatsAppComplete)}>
             {pendingMessage ? "Tentar novamente" : "Enviar mensagem"}
           </Button>
+          {whatsappMode === "correction" && !showWhatsApp && !pendingMessage ? (
+            <Button variant="secondary" className="ml-2 min-h-11" disabled={pending} onClick={() => setCorrectingWhatsApp(true)}>
+              Corrigir WhatsApp
+            </Button>
+          ) : null}
         </form>
       )}
     </div>

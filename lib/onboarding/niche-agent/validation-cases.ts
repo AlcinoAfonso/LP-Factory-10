@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { contactTurn, fixedNicheTurn, prepareNicheTurn, publicResearchTopic, readNicheResearch, type NicheContext } from "./index";
 import {
-  CONTACT_RECEIPT, displayedOffer, nicheHistory, nicheSummaryContext, presentOffer, type DialogueText,
+  CONTACT_RECEIPT, displayedOffer, nicheHistory, nicheSummaryContext, pendingSetupWhatsApp, presentOffer, type DialogueText,
 } from "./dialogue";
 import { validateNicheConversationActions, validatePendingConfirmedName } from "../niche-resolution/niche-conversation-validation-cases";
 
@@ -65,6 +65,23 @@ test("WhatsApp é independente, invisível no input e sem efeito sobre o alvo de
   assert.deepEqual(displayedOffer(ref, [assistant, { role: "assistant", id: "ack", content: CONTACT_RECEIPT }], proposal), anchor);
   assert.equal(turn({ ...withContact, message: "Sim.\nWhatsApp para contato: (21) 99999-9876", displayed: anchor },
     { reply: "Entendido." }).synthesis.accept, anchor.id);
+});
+
+test("WhatsApp aparece uma vez na primeira síntese e só reabre por ação de correção", () => {
+  const { assistant, ref } = shown();
+  const collection: DialogueText = { id: "question", role: "assistant", content: "Quem são seus clientes?" };
+  const continued: DialogueText = { id: "next", role: "user", content: "Atendo crianças, não adultos." };
+  const corrected: DialogueText = { ...assistant, id: "revised", content: assistant.content.replaceAll("adultos", "crianças") };
+  const history = [collection, assistant];
+  assert.equal(pendingSetupWhatsApp([], null), undefined);
+  assert.equal(pendingSetupWhatsApp([collection], null), undefined);
+  assert.equal(pendingSetupWhatsApp(history, null), undefined);
+  assert.equal(pendingSetupWhatsApp(history, ref), "first-synthesis");
+  assert.equal(pendingSetupWhatsApp([...history, continued], ref), undefined);
+  assert.equal(pendingSetupWhatsApp([...history, continued, corrected], { ...ref, messageId: corrected.id }), undefined);
+  const contact: DialogueText = { ...continued, content: "WhatsApp para contato: (21) 99999-9876" };
+  const receipt: DialogueText = { ...assistant, id: "receipt", content: CONTACT_RECEIPT };
+  assert.equal(pendingSetupWhatsApp([...history, contact, receipt], ref), "correction");
 });
 
 test("sim confirma apenas a proposta ancorada ao texto exibido", () => {

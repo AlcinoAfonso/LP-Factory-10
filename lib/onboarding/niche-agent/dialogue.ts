@@ -18,14 +18,14 @@ export type SynthesisWrite = Readonly<{
 }>;
 
 export const CONTACT_RECEIPT = "Recebi o WhatsApp. Podemos continuar a conversa.";
-const QUESTION = "Essa síntese está correta?";
+const SYNTHESIS_QUESTION = "\n\nEssa síntese está correta?";
 const offerDetails = ({ niche, publicName }: NicheOffer) =>
   [publicName && "Nome público: " + publicName, niche && "Nicho proposto: " + niche].filter(Boolean);
 
 export function presentOffer(offer: NicheOffer) {
   const text = [offer.summary, ...offerDetails(offer)].join("\n");
   const length = Array.from(text).length;
-  return length <= 1000 ? { reply: text + "\n\n" + QUESTION, range: { start: 1, length, contact: null } } : null;
+  return length <= 1000 ? { reply: text + SYNTHESIS_QUESTION, range: { start: 1, length, contact: null } } : null;
 }
 
 export function displayedOffer(ref: SynthesisReference | null | undefined, messages: readonly DialogueText[],
@@ -37,7 +37,7 @@ export function displayedOffer(ref: SynthesisReference | null | undefined, messa
   const text = points.slice(ref.start - 1, end).join("");
   const offer = { ...fields, summary: text, id: ref.messageId };
   const suffix = offerDetails(offer).map(detail => "\n" + detail).join("");
-  if (end > points.length || points.slice(end).join("") !== "\n\n" + QUESTION || !text.endsWith(suffix)) return null;
+  if (end > points.length || points.slice(end).join("") !== SYNTHESIS_QUESTION || !text.endsWith(suffix)) return null;
   const summary = text.slice(0, text.length - suffix.length);
   return summary ? { ...offer, summary } : null;
 }
@@ -49,6 +49,15 @@ export function nicheHistory(messages: readonly DialogueText[], currentId: strin
 
 export function withoutWhatsAppField(text: string) {
   return text.replace(/(?:^|\n)WhatsApp para contato: \(\d{2}\) 9\d{4}-\d{4}$/u, "").trim();
+}
+
+export function pendingSetupWhatsApp(messages: readonly DialogueText[], synthesis?: SynthesisReference | null) {
+  if (synthesis && synthesis.messageId === messages.at(-1)?.id &&
+    messages.find(message => message.role === "assistant" && message.content.endsWith(SYNTHESIS_QUESTION))?.id === synthesis.messageId) {
+    return "first-synthesis" as const;
+  }
+  return messages.some(({ role, content }) => role === "user" && withoutWhatsAppField(content) !== content.trim())
+    ? "correction" as const : undefined;
 }
 
 export function redactNicheText(text: string) {
