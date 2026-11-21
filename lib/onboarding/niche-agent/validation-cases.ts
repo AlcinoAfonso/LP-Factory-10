@@ -131,6 +131,8 @@ test("metadados inválidos não derrubam a resposta nem são promovidos a efeito
   assert.equal(result.synthesis.accept, null);
   assert.doesNotMatch(turn(context, { reply: "Salvei seu nicho.", accept: "forjado" }).reply, /salvei/i);
   assert.doesNotMatch(turn(context, { reply: "O novo nicho já consta no cadastro.", accept: "Sim" }).reply, /já consta/iu);
+  assert.doesNotMatch(turn(context, { reply: "Pode considerar o nicho oficializado.", accept: "Sim" }).reply, /oficializado/iu);
+  assert.equal(turn(opening, { reply: safe, offer: { ...proposal, summary: "O nicho está confirmado." } }).offer, null);
   const anchor = shown().anchor;
   assert.equal(turn({ ...opening, message: "Sim.", displayed: anchor },
     { reply: "Entendi.", offer: { niche: 19 } }).synthesis.accept, anchor.id);
@@ -215,6 +217,10 @@ test("Web Search envia assunto público e agrega somente fontes válidas em amba
     assert.equal(turn({ ...journey, message: "Pode pesquisar a diferença entre prótese e implante?", displayed: shown().anchor },
       { reply: "A diferença pode ajudar a escolher a descrição.", searchTopic: topic }).searchTopic, topic);
   }
+  const lowercaseName = { ...opening, displayed: { ...shown().anchor, publicName: "clínica vale" } };
+  assert.equal(publicResearchTopic("clínica vale avaliações", lowercaseName), null);
+  assert.equal(publicResearchTopic("clínica vale avaliações", { ...opening,
+    history: [{ role: "assistant", id: assistantId, content: "Síntese\nNome público: clínica vale" }] }), null);
   const envelope = output("irrelevante");
   const search = { ...envelope, output: [{ type: "web_search_call", status: "completed", action: {
     type: "search", sources: [{ url: "https://example.org/fonte" }, { url: "http://localhost/private" }],

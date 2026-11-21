@@ -62,7 +62,7 @@ export const contactTurn: NicheTurn = {
 
 const project = (value: string | null | undefined) => value ? redactNicheText(value) : null;
 const safeName = (value: unknown) => validNicheDescription(value) && project(value) === value ? value : null;
-const claimsWrite = /\b(?:registrei|gravei|salvei|atualizei|já consta|foi feita a (?:gravação|atualização)|(?:ficou|foi|está) (?:salv[oa]|registrad[oa]|atualizad[oa]|confirmad[oa])|nicho atualizad[oa])\b/iu;
+const claimsWrite = /\b(?:registrei|gravei|salvei|atualizei|já consta|oficializad[oa]|foi feita a (?:gravação|atualização)|(?:ficou|foi|está) (?:salv[oa]|registrad[oa]|atualizad[oa]|confirmad[oa])|nicho atualizad[oa])\b/iu;
 
 function safeReply(value: unknown) {
   if (typeof value !== "string") return null;
@@ -96,7 +96,7 @@ function interpret(raw: RawTurn, context: NicheContext, observedSummary: string 
   const niche = safeName(proposed?.niche);
   const name = context.pendingSetup ? safeName(proposed?.publicName) : null;
   const understanding = fragment.safeParse(proposed?.summary);
-  const offer = proposed && understanding.success && project(understanding.data) === understanding.data &&
+  const offer = proposed && understanding.success && project(understanding.data) === understanding.data && !claimsWrite.test(understanding.data) &&
     (proposed.niche === null || niche) && (!context.pendingSetup || proposed.publicName === null || name) &&
     (!context.pendingSetup?.publicNameRequired || context.pendingSetup.publicName || name)
     ? { summary: understanding.data, niche, publicName: name } : null;
@@ -116,7 +116,7 @@ function interpret(raw: RawTurn, context: NicheContext, observedSummary: string 
       : shown?.reply ?? safeReply(raw.reply);
   if (!reply) return null;
   const rejectedAcceptance = !context.fixedNiche && raw.accept != null && !candidate;
-  const clarification = /^(?:vamos (?:esclarecer|conferir|ajustar)\b|(?:qual|que|como|o que|quem|você|pode)\b)[^.!?\n]{0,280}[.?]?$/iu;
+  const clarification = /^(?:vamos (?:esclarecer|conferir|ajustar)\b[^.!?\n]{0,240}[.?]?|(?:qual|que|como|o que|quem|você|pode)\b[^.!?\n]{0,240}\?)$/iu;
   const unsafeReply = !accepted && !shown && (claimsWrite.test(reply) || (rejectedAcceptance && !clarification.test(reply)));
   const personal = context.pendingSetup ? safeName(raw.preferredName) : null;
   const preferredName = personal && message.toLocaleLowerCase("pt-BR").includes(personal.toLocaleLowerCase("pt-BR"))
@@ -180,7 +180,7 @@ export function readNicheResearch(payload: unknown, limit: number) {
 export function publicResearchTopic(topic: string, context: NicheContext) {
   if (!/^[\p{L}\p{M}][\p{L}\p{M} ,?()-]{3,159}$/u.test(topic) ||
     /\b(?:rua|avenida|cep|whatsapp|telefone|endereço|e-mail|cpf|cnpj)\b/iu.test(topic)) return null;
-  const names = [context.pendingSetup?.preferredName || null, context.pendingSetup?.publicName];
+  const names = [context.pendingSetup?.preferredName || null, context.pendingSetup?.publicName, context.displayed?.publicName];
   const businessContext = context.businessContext ?? "";
   try {
     const business = JSON.parse(businessContext || "{}") as Record<string, unknown>;
@@ -196,6 +196,7 @@ export function publicResearchTopic(topic: string, context: NicheContext) {
   const conversation = [...context.history.map(entry => entry.content), context.message];
   for (const text of conversation) {
     names.push(...(text.match(/\p{Lu}[\p{Ll}\p{M}]+(?: +\p{Lu}[\p{Ll}\p{M}]+)+/gu) ?? []));
+    for (const [, name] of text.matchAll(/^Nome público:[ \t]*([^\r\n]+)/gimu)) names.push(name);
   }
   // Explicit name declarations are private even when their spelling has no capitals.
   const declaration = /\b(?:(?:empresa|neg[oó]cio|loja|marca)\s+se\s+chama|(?:minha\s+(?:empresa|loja|marca)|meu\s+neg[oó]cio)\s+[eé]|nome\s+d[ao]\s+(?:empresa|neg[oó]cio|loja|marca)\s+[eé]|me\s+chamo|meu\s+nome\s+[eé])\s+(.+)/iu;
