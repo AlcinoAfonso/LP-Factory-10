@@ -40,7 +40,7 @@ try {
   ]) await apply(path);
   await db.query("select public.start_openai_cost_execution_v2($1,'niche_resolution','preview','runtime','client','attributed',$2,null,null,null,null,null,null,$3)", [id(9), id(1), time]);
   const row = (await db.query("select to_jsonb(e) as snapshot from public.openai_cost_executions e")).rows[0].snapshot;
-  await apply("20261121120000_d10d_occurrence_admission.sql");
+  await apply("20261121162900_d10d_occurrence_admission.sql");
   const legacy = (await db.query("select to_jsonb(e) as snapshot from public.openai_cost_executions e")).rows[0].snapshot;
   assert.deepEqual(legacy, { ...row, occurrence_id: null });
 
