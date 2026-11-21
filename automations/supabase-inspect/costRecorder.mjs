@@ -1,7 +1,9 @@
 import { createHmac, randomUUID } from "node:crypto";
 
 const VERSION = "e21.5.3-v1";
-const TIMEOUT_MS = 1_500;
+// Covers the runner-to-ingress round trip, function startup and the Supabase RPC.
+const ADMISSION_TIMEOUT_MS = 5_000;
+const FINALIZATION_TIMEOUT_MS = 1_500;
 
 export function createCostRecorder(env = process.env, fetchImpl = fetch) {
   const enabled = env.OPENAI_COST_INGESTION_ENABLED?.trim().toLowerCase() === "true";
@@ -24,8 +26,10 @@ export function createCostRecorder(env = process.env, fetchImpl = fetch) {
     const timestamp = Date.now().toString();
     const signature = createHmac("sha256", secret).update(`${timestamp}.${body}`).digest("hex");
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-    try {
+    const admission = action === "startExecution" || action === "startOperation";
+    const budget = admission ? ADMISSION_TIMEOUT_MS : FINALIZATION_TIMEOUT_MS;
+    const deadline = performance.now() + budget;
+    async function requestReceipt() {
       const response = await fetchImpl(url, {
         method: "POST",
         redirect: "error",
@@ -39,13 +43,27 @@ export function createCostRecorder(env = process.env, fetchImpl = fetch) {
         signal: controller.signal,
       });
       if (!response.ok) throw new Error(`http_${response.status}`);
-      if (action === "startExecution" || action === "startOperation") {
+      if (admission) {
         const receipt = await response.json();
         return !controller.signal.aborted && receipt?.ok === true && (action === "startExecution"
           ? receipt.recorded === true && receipt.executionId === executionId
           : receipt.admitted === true && receipt.operationId === payload.operationId);
       }
       return true;
+    }
+    let timer;
+    try {
+      const confirmed = await Promise.race([
+        requestReceipt(),
+        new Promise((_, reject) => {
+          timer = setTimeout(() => {
+            controller.abort();
+            reject(new DOMException("Financial ingress timed out", "AbortError"));
+          }, budget);
+        }),
+      ]);
+      if (performance.now() >= deadline) throw new DOMException("Financial ingress timed out", "AbortError");
+      return confirmed;
     } catch (error) {
       console.warn(JSON.stringify({
         event: "openai_cost_recording_failed",

@@ -70,6 +70,8 @@ const env = {
 let providerSends = 0;
 const operations = [];
 const executions = [];
+let lateReceipt;
+let terminalSignal;
 const attempt = async (mode) => {
   const costs = createCostRecorder(env, async (_url, request) => {
     const envelope = JSON.parse(request.body);
@@ -83,8 +85,26 @@ const attempt = async (mode) => {
     if (action === "startOperation") {
       operations.push(payload);
       assert.equal(payload.requireAdmission, true);
+      if (mode === "error") return new Response(null, { status: 503 });
+      if (mode === "late") {
+        // Simulate a receipt body that arrives after abort even if the fetch ignores it.
+        return {
+          ok: true,
+          json: () => {
+            lateReceipt = new Promise(resolve => setTimeout(
+              () => resolve({ ok: true, admitted: true, operationId: payload.operationId }), 5_100,
+            ));
+            return lateReceipt;
+          },
+        };
+      }
+      if (mode === "slow") await new Promise(resolve => setTimeout(resolve, 1_650));
       return Response.json({ ok: true, admitted: mode !== "replay",
         operationId: mode === "other" ? "other-id" : payload.operationId });
+    }
+    if (mode === "slow") {
+      terminalSignal = request.signal;
+      return new Promise(() => {});
     }
     return new Response(null, { status: 503 });
   });
@@ -94,9 +114,14 @@ const attempt = async (mode) => {
     return Response.json({ id: "test-provider-response" });
   }});
 };
-for (const mode of ["old", "replay", "other"]) await assert.rejects(() => attempt(mode), /financial_admission_unconfirmed/);
+for (const mode of ["old", "replay", "other", "error", "late"]) {
+  await assert.rejects(() => attempt(mode), /financial_admission_unconfirmed/);
+}
+assert.ok(lateReceipt);
+await lateReceipt;
 assert.equal(providerSends, 0);
-assert.equal((await attempt("success")).id, "test-provider-response");
+assert.equal((await attempt("slow")).id, "test-provider-response");
+assert.equal(terminalSignal?.aborted, true);
 assert.equal(providerSends, 1);
 assert.equal(new Set(executions.map(item => item.occurrenceId)).size, executions.length);
 assert.equal(new Set(operations.map(item => item.operationId)).size, operations.length);

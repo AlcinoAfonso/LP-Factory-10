@@ -243,6 +243,25 @@ async function main() {
   assert.deepEqual(admittedOccurrences.slice(2), [shared, shared]);
   assert.equal(sends, 4);
 
+  const terminalFailures: string[] = [];
+  const slowAdmission = createOpenAiCostRecorder({
+    adapter: {
+      ...admitted,
+      startOperation: async (operation) => {
+        await new Promise(resolve => setTimeout(resolve, 425));
+        return admitted.startOperation(operation);
+      },
+      finishOperation: () => new Promise(() => {}),
+    },
+    enabled: () => true,
+    emitFailure: ({ phase, code }) => terminalFailures.push(`${phase}:${code}`),
+  });
+  calls.length = 0;
+  assert.deepEqual(await send(slowAdmission), { ok: true, value: "functional-result", responseId: "resp_test" });
+  assert.deepEqual(calls, ["execution", "operation", "provider"]);
+  assert.equal(sends, 5);
+  assert.deepEqual(terminalFailures, ["finishOperation:timeout", "finishExecution:adapter_error"]);
+
   const secret = "test-ingestion-secret";
   const now = Date.parse("2026-09-11T12:00:00.000Z");
   const timestamp = now.toString();

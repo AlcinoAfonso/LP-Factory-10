@@ -63,7 +63,9 @@ type RecorderDependencies = Readonly<{
   }>) => void;
 }>;
 
-const DEFAULT_BUDGET_MS = 350;
+// Two sequential admission writes can add up to four seconds before transport.
+const ADMISSION_BUDGET_MS = 2_000;
+const FINALIZATION_BUDGET_MS = 350;
 
 export function createOpenAiCostRecorder(
   dependencies: RecorderDependencies = {},
@@ -91,15 +93,23 @@ export function createOpenAiCostRecorder(
 
     const operationId = "operationId" in input ? input.operationId : null;
     const executionId = "executionId" in input ? input.executionId : "unknown";
-    const budget = Math.max(25, Math.min(dependencies.timeoutMs ?? DEFAULT_BUDGET_MS, 2_000));
+    const admission = phase === "startExecution" || phase === "startOperation";
+    const phaseBudget = admission ? ADMISSION_BUDGET_MS : FINALIZATION_BUDGET_MS;
+    const override = dependencies.timeoutMs;
+    const budget = override !== undefined && Number.isFinite(override)
+      ? Math.max(25, Math.min(override, phaseBudget))
+      : phaseBudget;
+    const deadline = performance.now() + budget;
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
-      return await Promise.race([
+      const confirmed = await Promise.race([
         adapter().then(async (value) => (await value[phase](input as never)) === true),
         new Promise<never>((_, reject) => {
           timer = setTimeout(() => reject(new Error("timeout")), budget);
         }),
       ]);
+      if (performance.now() >= deadline) throw new Error("timeout");
+      return confirmed;
     } catch (error) {
       emitFailure({
         event: "openai_cost_recording_failed",
