@@ -43,8 +43,14 @@ export function createCostRecorder(env = process.env, fetchImpl = fetch) {
         signal: controller.signal,
       });
       if (!response.ok) throw new Error(`http_${response.status}`);
-      if (admission) {
+      if (admission || action === "closeOccurrence") {
         const receipt = await response.json();
+        if (action === "closeOccurrence") {
+          if (receipt?.ok !== true || receipt.closed !== true || receipt.occurrenceId !== occurrenceId) {
+            throw new Error("financial_closure_unconfirmed");
+          }
+          return !controller.signal.aborted;
+        }
         return !controller.signal.aborted && receipt?.ok === true && (action === "startExecution"
           ? receipt.recorded === true && receipt.executionId === executionId
           : receipt.admitted === true && receipt.operationId === payload.operationId);
@@ -129,13 +135,17 @@ export function createCostRecorder(env = process.env, fetchImpl = fetch) {
         finishedAt: new Date().toISOString(),
       });
     },
-    finish(result, failureCategory = null) {
-      return send("finishExecution", {
+    async finish(result, failureCategory = null) {
+      const recorded = send("finishExecution", {
         executionId,
         result,
         failureCategory,
         finishedAt: new Date().toISOString(),
       });
+      if (executionRecorded) {
+        await Promise.all([recorded, send("closeOccurrence", { executionId, occurrenceId })]);
+      }
+      return recorded;
     },
   });
 }

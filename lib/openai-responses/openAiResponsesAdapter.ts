@@ -19,6 +19,7 @@ import {
   openAiCostResponseEvidence,
   openAiCostWebSearchCallCount,
   confirmOpenAiCostAdmission,
+  closeOpenAiCostOccurrence,
   resolveOpenAiOccurrenceId,
   type OpenAiCostEconomicContext,
   type OpenAiCostExecutionOrigin,
@@ -57,6 +58,7 @@ export type OpenAiResponsesInput<T> = Readonly<{
   executionOrigin: OpenAiCostExecutionOrigin;
   baselineReference?: string;
   occurrenceId?: string;
+  closeOccurrenceOnCompletion?: true;
 }>;
 
 export type OpenAiResponsesDependencies = Readonly<{
@@ -141,13 +143,16 @@ export async function requestOpenAiResponses<T>(
   const executionId = createId();
   const operationId = createId();
   const financialStartedAt = nowIso();
-  if (environment === "unknown" || !await confirmOpenAiCostAdmission(recorder, {
-    executionId,
+  const occurrence = environment === "unknown" ? null : {
     occurrenceId: input.occurrenceId ?? resolveOpenAiOccurrenceId(input.financialContext, environment),
-    workload: input.configuration.id,
     environment,
     executionOrigin: input.executionOrigin,
     economicContext: input.financialContext,
+  };
+  if (!occurrence || !await confirmOpenAiCostAdmission(recorder, {
+    ...occurrence,
+    executionId,
+    workload: input.configuration.id,
     baselineReference: input.baselineReference,
     startedAt: financialStartedAt,
   }, {
@@ -163,6 +168,7 @@ export async function requestOpenAiResponses<T>(
     requestId: input.requestId,
     startedAt: financialStartedAt,
   })) {
+    if (occurrence && input.closeOccurrenceOnCompletion) await closeOpenAiCostOccurrence(occurrence, recorder);
     emitEvent(createOpenAiWorkloadFailureEvent(eventContext, "configuration_invalid"));
     return { ok: false, kind: "configuration_invalid", reason: "financial_admission_unconfirmed" };
   }
@@ -377,6 +383,7 @@ export async function requestOpenAiResponses<T>(
   } finally {
     clearTimeout(timeout);
     input.signal?.removeEventListener("abort", abortFromParent);
+    if (input.closeOccurrenceOnCompletion) await closeOpenAiCostOccurrence(occurrence, recorder);
   }
 }
 

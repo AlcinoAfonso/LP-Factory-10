@@ -16,6 +16,7 @@ export async function runOpenAiTechnicalConfigurationProof(
   const result = await requestOpenAiResponses({
     apiKey, configuration: workload, environment, requestId,
     executionOrigin: "administrative_proof",
+    closeOccurrenceOnCompletion: true,
     financialContext: lpFactoryOpenAiCostContext,
     request: {
       store: false, background: false, tools: [],

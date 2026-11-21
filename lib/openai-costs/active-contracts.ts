@@ -99,11 +99,19 @@ export type OpenAiCostExecutionTerminal = Readonly<{
   finishedAt: string;
 }>;
 
+export type OpenAiCostOccurrenceContext = Readonly<{
+  occurrenceId: string;
+  environment: OpenAiCostEnvironment;
+  executionOrigin: OpenAiCostExecutionOrigin;
+  economicContext: Pick<OpenAiCostEconomicContext, "universe" | "accountId">;
+}>;
+
 export type OpenAiCostTrackingAdapter = Readonly<{
   startExecution(input: OpenAiCostExecutionContext): Promise<boolean>;
   startOperation(input: OpenAiCostOperationContext): Promise<boolean>;
   finishOperation(input: OpenAiCostOperationTerminal): Promise<void>;
   finishExecution(input: OpenAiCostExecutionTerminal): Promise<void>;
+  closeOccurrence?(input: OpenAiCostOccurrenceContext): Promise<boolean>;
 }>;
 
 export type OpenAiCostRecorder = OpenAiCostTrackingAdapter;

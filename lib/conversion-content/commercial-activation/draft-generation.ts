@@ -3,6 +3,7 @@ import "server-only";
 import { z } from "zod";
 
 import { createServiceClient } from "@/lib/supabase/service";
+import { closeOpenAiCostOccurrence, lpFactoryOpenAiCostContext } from "../../openai-costs";
 import {
   createOpenAiWorkloadFailureEvent,
   emitOpenAiWorkloadEvent,
@@ -352,10 +353,13 @@ export async function generateCommercialActivationDraftForTaxon(input: {
     };
   }
 
+  let economicEventId: string | null = null;
   try {
     const context = await readDraftContext({ taxonSlug });
+    economicEventId = crypto.randomUUID();
     const generated = await generateWithOpenAi({
       context,
+      economicEventId,
       configuration: configuration.value,
       environment,
       apiKey,
@@ -418,6 +422,12 @@ export async function generateCommercialActivationDraftForTaxon(input: {
       stage: inferFailureStage(safeError),
       reason: safeError,
     };
+  } finally {
+    if (economicEventId && environment !== "unknown") {
+      await closeOpenAiCostOccurrence({
+        occurrenceId: economicEventId, environment, executionOrigin: "runtime", economicContext: lpFactoryOpenAiCostContext,
+      });
+    }
   }
 }
 
@@ -558,17 +568,17 @@ async function readPlans(): Promise<CommercialPlan[]> {
 
 async function generateWithOpenAi(input: {
   context: DraftContext;
+  economicEventId: string;
   configuration: ResolvedOpenAiProductWorkload;
   environment: OpenAiWorkloadEnvironment;
   apiKey: string;
 }): Promise<GeneratedOutput> {
-  const economicEventId = crypto.randomUUID();
   const result = await requestCommercialActivationOpenAi({
     apiKey: input.apiKey,
     configuration: input.configuration,
     environment: input.environment,
     economicEvent: {
-      eventId: economicEventId,
+      eventId: input.economicEventId,
       taxonId: input.context.taxon.id,
     },
     request: {

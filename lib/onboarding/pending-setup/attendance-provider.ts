@@ -27,6 +27,7 @@ export async function requestAttendance(input: Readonly<{
     environment, configuration: resolved.value, expectedWorkload: "pending_setup_conversation",
     requestId: randomUUID(), promptVersion: input.context.purpose === "account_niche" ? NICHE_ATTENDANCE_PROMPT_VERSION : ATTENDANCE_PROMPT_VERSION, contractVersion: input.context.purpose === "account_niche" ? NICHE_ATTENDANCE_CONTRACT_VERSION : ATTENDANCE_CONTRACT_VERSION,
     occurrenceId: input.occurrenceId,
+    closeOccurrenceOnCompletion: input.executionOrigin === "administrative_proof" && !input.occurrenceId ? true : undefined,
     financialContext: input.financialContext ?? clientOpenAiCostContext(input.accountId),
     executionOrigin: input.executionOrigin ?? "runtime", baselineReference: "e10_12_attendance",
     timeoutMs: 120_000,

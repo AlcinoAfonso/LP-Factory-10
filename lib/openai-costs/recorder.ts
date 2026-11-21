@@ -1,14 +1,16 @@
 import { createHash } from "node:crypto";
 import {
+  clientOpenAiCostContext,
   type OpenAiCostExecutionContext,
   type OpenAiCostExecutionTerminal,
+  type OpenAiCostOccurrenceContext,
   type OpenAiCostOperationContext,
   type OpenAiCostOperationTerminal,
   type OpenAiCostRecorder,
   type OpenAiCostTrackingAdapter,
 } from "./active-contracts";
 import { isOpenAiActiveCostTrackingEnabled } from "./active-gate";
-import { normalizeOpenAiAppliedServiceTier, normalizeOpenAiResponseUsage } from "../openai-workloads";
+import { normalizeOpenAiAppliedServiceTier, normalizeOpenAiResponseUsage, resolveOpenAiWorkloadEnvironment } from "../openai-workloads";
 
 // Financial allowlist only: never forward a provider payload into the ledger.
 export function openAiCostResponseEvidence(payload: unknown) {
@@ -59,6 +61,7 @@ type RecorderDependencies = Readonly<{
     phase: RecorderPhase;
     executionId: string;
     operationId: string | null;
+    occurrenceId?: string;
     code: "timeout" | "adapter_error";
   }>) => void;
 }>;
@@ -85,7 +88,7 @@ export function createOpenAiCostRecorder(
   async function attempt(
     phase: RecorderPhase,
     input: OpenAiCostExecutionContext | OpenAiCostExecutionTerminal |
-      OpenAiCostOperationContext | OpenAiCostOperationTerminal,
+      OpenAiCostOperationContext | OpenAiCostOperationTerminal | OpenAiCostOccurrenceContext,
   ) {
     const environment = "environment" in input ? input.environment : null;
     if (environment && !enabled(environment)) return false;
@@ -103,7 +106,7 @@ export function createOpenAiCostRecorder(
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       const confirmed = await Promise.race([
-        adapter().then(async (value) => (await value[phase](input as never)) === true),
+        adapter().then(async (value) => (await value[phase]?.(input as never)) === true),
         new Promise<never>((_, reject) => {
           timer = setTimeout(() => reject(new Error("timeout")), budget);
         }),
@@ -116,6 +119,7 @@ export function createOpenAiCostRecorder(
         phase,
         executionId,
         operationId,
+        ...(phase === "closeOccurrence" && "occurrenceId" in input ? { occurrenceId: input.occurrenceId } : {}),
         code: error instanceof Error && error.message === "timeout" ? "timeout" : "adapter_error",
       });
       return false;
@@ -129,10 +133,29 @@ export function createOpenAiCostRecorder(
     startOperation: (input) => attempt("startOperation", input),
     finishOperation: async (input) => { await attempt("finishOperation", input); },
     finishExecution: async (input) => { await attempt("finishExecution", input); },
+    closeOccurrence: (input) => attempt("closeOccurrence", input),
   });
 }
 
 export const openAiCostRecorder = createOpenAiCostRecorder();
+
+export async function closeOpenAiCostOccurrence(input: OpenAiCostOccurrenceContext, recorder = openAiCostRecorder) {
+  try {
+    return await recorder.closeOccurrence?.(input) === true;
+  } catch {
+    return false;
+  }
+}
+
+export async function closeOpenAiNicheDialogueOccurrence(accountId: string, dialogueId: string) {
+  const environment = resolveOpenAiWorkloadEnvironment();
+  if (environment === "unknown") return false;
+  const economicContext = clientOpenAiCostContext(accountId, { kind: "niche_resolution", eventId: dialogueId });
+  return closeOpenAiCostOccurrence({
+    occurrenceId: resolveOpenAiOccurrenceId(economicContext, environment),
+    environment, executionOrigin: "runtime", economicContext,
+  });
+}
 
 export function newOpenAiCostId() {
   return crypto.randomUUID();

@@ -2,6 +2,7 @@ import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { closeOpenAiNicheDialogueOccurrence } from "../../../openai-costs/recorder";
 import type {
   PendingSetupConversation,
   PendingSetupConfirmationKind,
@@ -262,9 +263,9 @@ export async function completePendingSetup(input: {
   });
 
   if (error) return writeFailure(error);
-  return data === true
-    ? { ok: true, version: input.expectedVersion + 1 }
-    : { ok: false, reason: "write_failed" };
+  if (data !== true) return { ok: false, reason: "write_failed" };
+  await closeOpenAiNicheDialogueOccurrence(input.accountId, input.conversationId);
+  return { ok: true, version: input.expectedVersion + 1 };
 }
 
 // Presentation only: the caller has already authorized an active account and member.

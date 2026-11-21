@@ -16,7 +16,7 @@ import {
   type OpenAiCandidateProofMetadata,
 } from "./proofCore";
 import { parseCommercialProof } from "./commercialProof";
-import { lpFactoryOpenAiCostContext } from "@/openai-costs";
+import { closeOpenAiCostOccurrence, lpFactoryOpenAiCostContext } from "@/openai-costs";
 import { generateCommunicationIntelligence } from "@/communication-base/adapters/communicationAiAdapter";
 import type { CommunicationBase } from "@/communication-base/contracts";
 
@@ -178,6 +178,7 @@ async function proveCommercialActivation(
       },
       parseResponse: parseCommercialProof,
       executionOrigin: "administrative_proof",
+      closeOccurrenceOnCompletion: true,
     },
     { emitEvent: (event) => events.push(event) },
   );
@@ -205,9 +206,19 @@ async function proveAttendance(
     { id: segmentId, name: "Serviços", level: "segment", parentId: null, active: true, aliases: [] },
     { id: nicheId, name: "Manutenção de jardins", level: "niche", parentId: segmentId, active: true, aliases: ["Jardinagem"] },
   ];
-  // Disposable conversations exercise the useful completion, without any business writes.
-  const runConversation = async (identified: boolean): Promise<ProofAttempt> => {
+  const closeScenario = (occurrenceId: string) => closeOpenAiCostOccurrence({
+    occurrenceId, environment, executionOrigin: "administrative_proof", economicContext: lpFactoryOpenAiCostContext,
+  });
+  const runScenario = async (run: (occurrenceId: string) => Promise<ProofAttempt>) => {
     const occurrenceId = crypto.randomUUID();
+    try {
+      return await run(occurrenceId);
+    } finally {
+      await closeScenario(occurrenceId);
+    }
+  };
+  // Disposable conversations exercise the useful completion, without any business writes.
+  const runConversation = async (identified: boolean, occurrenceId: string): Promise<ProofAttempt> => {
     let context: AttendanceContext = {
       preferredName: "Ana", summary: null, catalog, currentPrimaryTaxonId: null,
       recent: [{ role: "user", content: identified
@@ -254,9 +265,8 @@ async function proveAttendance(
     }
     return { ok: true, providerRequestId, latencyMs };
   };
-  const runSemanticClosure = async (): Promise<ProofAttempt> => {
+  const runSemanticClosure = async (occurrenceId: string): Promise<ProofAttempt> => {
     const understanding = "Manutenção de jardins para condomínios; quer comunicar o diferencial do serviço.";
-    const occurrenceId = crypto.randomUUID();
     let context: AttendanceContext = { preferredName: "Ana", catalog, currentPrimaryTaxonId: nicheId,
       officialNiche:{name:"Manutenção de jardins",revision:"legacy:"+nicheId+":1",confirmed:true},
       displayedUnderstanding: understanding,
@@ -295,12 +305,11 @@ async function proveAttendance(
       return { ok: false, code: "contract" };
     return { ok: true, providerRequestId, latencyMs };
   };
-  const runWholeMessage = async (): Promise<ProofAttempt> => {
+  const runWholeMessage = async (occurrenceId: string): Promise<ProofAttempt> => {
     const dentistryId = "10000000-0000-4000-8000-000000000004";
     const dentalCatalog: AttendanceContext["catalog"] = [catalog[0], {
       id: dentistryId, name: "Odontologia", level: "niche", parentId: segmentId, active: true, aliases: [],
     }];
-    const occurrenceId = crypto.randomUUID();
     let context: AttendanceContext = { preferredName: null, summary: null, catalog: dentalCatalog,
       recent: [{ role: "assistant", content: "Olá! Como prefere ser chamado?" },
         { role: "user", content: "João. Tenho a Clínica Sorriso e fazemos clareamento, tratamento de canal e implantes. Sou flamenguista, mas futebol não tem relação com o negócio." }] };
@@ -410,20 +419,24 @@ async function proveAttendance(
         marketContext: [{ taxonId: test.id, researchId: segmentId, version: 1, updatedAt: "2026-10-01",
           items: [{ key: "opportunity", text: test.insight, notes: "Possibilidade contextual; não comprova característica nem oferta." }] }],
         recent: [{ role: "user", content: test.need }] };
-      for (let turn = 0; turn < 2; turn++) {
-        const result = await requestAttendance({ accountId, context, configurationOverride: workload, environment, apiKey,
-          occurrenceId, financialContext: lpFactoryOpenAiCostContext, executionOrigin: "administrative_proof" });
-        if (!result.ok) return { ok: false, code: "provider" };
-        const output = result.output;
-        if (output.action !== "ask" || output.closureReason || !output.sufficientUnderstanding
-          || (turn === 1 && !output.readyToComplete)) {
-          console.warn("pending_setup_attendance_proof_failed", { scenario: 5, check: "commercial_advance", code: "contract" });
-          return { ok: false, code: "contract" };
+      try {
+        for (let turn = 0; turn < 2; turn++) {
+          const result = await requestAttendance({ accountId, context, configurationOverride: workload, environment, apiKey,
+            occurrenceId, financialContext: lpFactoryOpenAiCostContext, executionOrigin: "administrative_proof" });
+          if (!result.ok) return { ok: false, code: "provider" };
+          const output = result.output;
+          if (output.action !== "ask" || output.closureReason || !output.sufficientUnderstanding
+            || (turn === 1 && !output.readyToComplete)) {
+            console.warn("pending_setup_attendance_proof_failed", { scenario: 5, check: "commercial_advance", code: "contract" });
+            return { ok: false, code: "contract" };
+          }
+          latencyMs += result.latencyMs ?? 0; providerRequestId = result.responseId;
+          context = { ...context, summary: attendanceSummary(output, test.name, null, context.summary),
+            recent: [...context.recent, { role: "assistant", content: output.reply },
+              { role: "user", content: "A oportunidade de organizar o conhecimento e apoiar a comunicação fez sentido. Prefiro não informar WhatsApp. Não tenho outras dúvidas; quero seguir ao próximo passo comercial. Entendi que serviços e condições específicos precisam de confirmação competente." }] };
         }
-        latencyMs += result.latencyMs ?? 0; providerRequestId = result.responseId;
-        context = { ...context, summary: attendanceSummary(output, test.name, null, context.summary),
-          recent: [...context.recent, { role: "assistant", content: output.reply },
-            { role: "user", content: "A oportunidade de organizar o conhecimento e apoiar a comunicação fez sentido. Prefiro não informar WhatsApp. Não tenho outras dúvidas; quero seguir ao próximo passo comercial. Entendi que serviços e condições específicos precisam de confirmação competente." }] };
+      } finally {
+        await closeScenario(occurrenceId);
       }
     }
     // Persuasion, relevance and value before accessory questions are reviewed in hosted QA, not a phrase parser.
@@ -456,7 +469,12 @@ async function proveAttendance(
     }
     return { ok: true, providerRequestId, latencyMs };
   };
-  const results = await Promise.all([runConversation(true), runConversation(false), runSemanticClosure(), runWholeMessage(), runNameSemantics(), runCommercialAdvance(), runOptionalWhatsapp()]);
+  const results = await Promise.all([
+    runScenario(id => runConversation(true, id)),
+    runScenario(id => runConversation(false, id)),
+    runScenario(runSemanticClosure), runScenario(runWholeMessage),
+    runNameSemantics(), runCommercialAdvance(), runOptionalWhatsapp(),
+  ]);
   for (const [scenario, result] of results.entries()) if (!result.ok) {
     console.warn("pending_setup_attendance_proof_failed", { scenario, code: result.code });
   }

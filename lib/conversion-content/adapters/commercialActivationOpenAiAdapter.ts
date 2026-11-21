@@ -19,6 +19,7 @@ type CommercialActivationOpenAiInput<T> = Readonly<{
   request: Readonly<Record<string, unknown>>;
   parseResponse: OpenAiResponsesParser<T>;
   executionOrigin?: "runtime" | "administrative_proof";
+  closeOccurrenceOnCompletion?: true;
   economicEvent?: Readonly<{ eventId: string; taxonId: string | null }>;
 }>;
 

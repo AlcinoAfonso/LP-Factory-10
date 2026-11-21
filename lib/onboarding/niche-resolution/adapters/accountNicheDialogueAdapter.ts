@@ -1,6 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/service";
+import { closeOpenAiNicheDialogueOccurrence } from "../../../openai-costs/recorder";
 import { dialogueState, turnText } from "../../niche-agent/runtime";
 import type { SynthesisWrite } from "../../niche-agent/dialogue";
 
@@ -76,7 +77,7 @@ export async function claimNicheConversation(input: Parameters<typeof claimAccou
 export async function commitNicheConversation(input: Parameters<typeof commitAccountNicheTurn>[0] & {
   acceptedProposal: string | null; keepProposal: boolean; synthesis: SynthesisWrite;
 }) {
-  const { error } = await createServiceClient().rpc("commit_account_niche_turn_v2", {
+  const { data, error } = await createServiceClient().rpc("commit_account_niche_turn_v2", {
     p_dialogue_id: input.dialogueId, p_account_id: input.accountId, p_user_id: input.userId,
     p_expected_version: input.expectedVersion, p_turn_token: input.turnToken, p_reply: input.reply,
     p_understanding: input.understanding, p_proposal: input.proposal, p_summary: input.summary,
@@ -84,6 +85,9 @@ export async function commitNicheConversation(input: Parameters<typeof commitAcc
     p_accepted_proposal: input.acceptedProposal, p_keep_proposal: input.keepProposal,
     p_synthesis: input.synthesis,
   });
+  if (!error && data?.confirmed === true) {
+    await closeOpenAiNicheDialogueOccurrence(input.accountId, input.dialogueId);
+  }
   return !error;
 }
 
