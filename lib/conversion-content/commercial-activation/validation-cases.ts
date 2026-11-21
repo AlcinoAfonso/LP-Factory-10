@@ -1,3 +1,4 @@
+import { confirmedCostRecorder } from "../../openai-costs/fixtures/confirmed-recorder";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
@@ -50,6 +51,7 @@ const cases: Case[] = [
       const events: OpenAiWorkloadEvent[] = [];
       const result = await requestCommercialActivationOpenAi({
         apiKey: "test-key",
+        environment: "development",
         configuration: configuration.value,
         request: {
           input: [{ role: "system", content: "test prompt" }],
@@ -58,6 +60,7 @@ const cases: Case[] = [
         },
         parseResponse: (payload) => ({ ok: true, value: payload }),
       }, {
+        costRecorder: confirmedCostRecorder,
         fetchImpl: async (_url, init) => {
           requestBody = JSON.parse(String(init?.body));
           return new Response(JSON.stringify({

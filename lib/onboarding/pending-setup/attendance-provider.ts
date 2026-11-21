@@ -12,6 +12,7 @@ export async function requestAttendance(input: Readonly<{
   accountId: string; context: AttendanceContext;
   configurationOverride?: ResolvedOpenAiProductWorkload; environment?: OpenAiWorkloadEnvironment;
   apiKey?: string; financialContext?: OpenAiCostEconomicContext;
+  occurrenceId?: string;
   executionOrigin?: "runtime" | "administrative_proof";
 }>, dependencies: OpenAiResponsesDependencies = {}) {
   const environment = input.environment ?? resolveOpenAiWorkloadEnvironment();
@@ -25,6 +26,7 @@ export async function requestAttendance(input: Readonly<{
     apiKey: input.apiKey ?? process.env.OPENAI_API_KEY,
     environment, configuration: resolved.value, expectedWorkload: "pending_setup_conversation",
     requestId: randomUUID(), promptVersion: input.context.purpose === "account_niche" ? NICHE_ATTENDANCE_PROMPT_VERSION : ATTENDANCE_PROMPT_VERSION, contractVersion: input.context.purpose === "account_niche" ? NICHE_ATTENDANCE_CONTRACT_VERSION : ATTENDANCE_CONTRACT_VERSION,
+    occurrenceId: input.occurrenceId,
     financialContext: input.financialContext ?? clientOpenAiCostContext(input.accountId),
     executionOrigin: input.executionOrigin ?? "runtime", baselineReference: "e10_12_attendance",
     timeoutMs: 120_000,

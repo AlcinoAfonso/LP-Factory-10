@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { createOpenAiCostRecorder } from "./recorder";
+import { createOpenAiCostRecorder, resolveOpenAiOccurrenceId } from "./recorder";
 import {
   executionStartRpc,
   isExpectedMissingRpcError,
@@ -39,6 +39,13 @@ const failingAdapter: OpenAiCostTrackingAdapter = {
 };
 
 async function main() {
+  const dialogueContext = { ...execution.economicContext,
+    event: { kind: "niche_resolution", eventId: "10000000-0000-4000-8000-000000000006" } as const };
+  const dialogue = resolveOpenAiOccurrenceId(dialogueContext, "preview");
+  assert.equal(resolveOpenAiOccurrenceId(dialogueContext, "preview"), dialogue);
+  assert.notEqual(resolveOpenAiOccurrenceId(dialogueContext, "production"), dialogue);
+  assert.notEqual(resolveOpenAiOccurrenceId({ ...dialogueContext, accountId: execution.executionId }, "preview"), dialogue);
+
   const failures: unknown[] = [];
   const recorder = createOpenAiCostRecorder({
     adapter: failingAdapter,
@@ -175,22 +182,66 @@ async function main() {
   if (!commercialConfiguration || commercialConfiguration.configurationKind !== "effective") {
     throw new Error("commercial configuration missing");
   }
-  const functional = await requestCommercialActivationOpenAi({
+  let sends = 0;
+  const calls: string[] = [];
+  const admittedOccurrences: string[] = [];
+  const send = (costRecorder: OpenAiCostTrackingAdapter, eventId?: string) => requestCommercialActivationOpenAi({
     apiKey: "test-key",
     configuration: commercialConfiguration,
     environment: "development",
     request: { input: "test" },
     parseResponse: () => ({ ok: true, value: "functional-result" }),
+    ...(eventId ? { economicEvent: { eventId, taxonId: null } } : {}),
   }, {
-    fetchImpl: async () => new Response(JSON.stringify({
-      id: "resp_test",
-      output_text: "ok",
-      usage: { input_tokens: 1, output_tokens: 1, total_tokens: 2 },
-    }), { status: 200, headers: { "content-type": "application/json" } }),
-    costRecorder: recorder,
+    fetchImpl: async (_url, init) => {
+      assert.equal(init?.redirect, "error");
+      calls.push("provider");
+      sends++;
+      return new Response(JSON.stringify({ id: "resp_test", usage: { input_tokens: 1, output_tokens: 1 } }));
+    },
+    costRecorder,
     emitEvent: () => undefined,
   });
-  assert.deepEqual(functional, { ok: true, value: "functional-result", responseId: "resp_test" });
+
+  const admitted: OpenAiCostTrackingAdapter = {
+    ...failingAdapter,
+    startExecution: async ({ occurrenceId, executionId }) => {
+      assert.ok(occurrenceId);
+      assert.notEqual(occurrenceId, executionId);
+      admittedOccurrences.push(occurrenceId);
+      calls.push("execution");
+      return true;
+    },
+    startOperation: async ({ admissionScope, operationId, executionId }) => {
+      assert.deepEqual(admissionScope, { environment: "development", workload: "commercial_activation_draft_generation" });
+      assert.notEqual(operationId, executionId);
+      calls.push("operation");
+      return true;
+    },
+  };
+  for (const blocked of [
+    recorder, timeoutRecorder, { ...admitted, startOperation: async () => false },
+    { ...admitted, startOperation: async () => { throw new Error("unconfirmed"); } },
+    createOpenAiCostRecorder({ adapter: admitted, enabled: () => false }),
+    createOpenAiCostRecorder({ adapter: { ...admitted, startOperation: () => new Promise(resolve => setTimeout(() => resolve(true), 60)) },
+      enabled: () => true, timeoutMs: 25, emitFailure: () => {} }),
+  ]) {
+    assert.equal((await send(blocked)).ok, false);
+  }
+  await new Promise(resolve => setTimeout(resolve, 65));
+  assert.equal(sends, 0);
+  calls.length = 0;
+  admittedOccurrences.length = 0;
+
+  assert.deepEqual(await send(admitted), { ok: true, value: "functional-result", responseId: "resp_test" });
+  assert.deepEqual(calls, ["execution", "operation", "provider"]);
+  await send(admitted);
+  assert.notEqual(admittedOccurrences[0], admittedOccurrences[1]);
+  const shared = "10000000-0000-4000-8000-000000000099";
+  await send(admitted, shared);
+  await send(admitted, shared);
+  assert.deepEqual(admittedOccurrences.slice(2), [shared, shared]);
+  assert.equal(sends, 4);
 
   const secret = "test-ingestion-secret";
   const now = Date.parse("2026-09-11T12:00:00.000Z");
@@ -215,6 +266,7 @@ async function main() {
       operationId: "10000000-0000-4000-8000-000000000004",
       executionId: "10000000-0000-4000-8000-000000000005",
       sequence: 1,
+      requireAdmission: true,
       model: inventory.model,
       reasoningEffort: inventory.reasoningEffort,
       configurationSource: inventory.source,

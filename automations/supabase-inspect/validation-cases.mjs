@@ -1,3 +1,4 @@
+import { createCostRecorder } from "./costRecorder.mjs";
 import assert from "node:assert/strict";
 import { callResponsesApi } from "./responsesClient.mjs";
 
@@ -58,3 +59,44 @@ assert.equal(response.id, "resp_1");
 assert.deepEqual(successEvents, [["start"], ["finish", "success", null]]);
 
 console.log("PASS supabase_inspect OpenAI lifecycle");
+
+const env = {
+  OPENAI_COST_INGESTION_ENABLED: "true",
+  OPENAI_COST_INGESTION_URL: "https://test.example/ingress",
+  OPENAI_COST_INGESTION_PROTOCOL_VERSION: "e21.5.3-v1",
+  OPENAI_COST_INGESTION_ENVIRONMENT: "production",
+  OPENAI_COST_INGESTION_HMAC_SECRET: "test-only",
+};
+let providerSends = 0;
+const operations = [];
+const executions = [];
+const attempt = async (mode) => {
+  const costs = createCostRecorder(env, async (_url, request) => {
+    const envelope = JSON.parse(request.body);
+    const { action, payload } = envelope;
+    assert.ok(request.headers["x-openai-cost-signature"]);
+    if (action === "startExecution") {
+      executions.push(payload);
+      return Response.json(mode === "old" ? { ok: true }
+        : { ok: true, recorded: true, executionId: payload.executionId });
+    }
+    if (action === "startOperation") {
+      operations.push(payload);
+      assert.equal(payload.requireAdmission, true);
+      return Response.json({ ok: true, admitted: mode !== "replay",
+        operationId: mode === "other" ? "other-id" : payload.operationId });
+    }
+    return new Response(null, { status: 503 });
+  });
+  await costs.start();
+  return await callResponsesApi({ model: "gpt-4.1-mini", costRecorder: costs, fetchImpl: async () => {
+    providerSends++;
+    return Response.json({ id: "test-provider-response" });
+  }});
+};
+for (const mode of ["old", "replay", "other"]) await assert.rejects(() => attempt(mode), /financial_admission_unconfirmed/);
+assert.equal(providerSends, 0);
+assert.equal((await attempt("success")).id, "test-provider-response");
+assert.equal(providerSends, 1);
+assert.equal(new Set(executions.map(item => item.occurrenceId)).size, executions.length);
+assert.equal(new Set(operations.map(item => item.operationId)).size, operations.length);

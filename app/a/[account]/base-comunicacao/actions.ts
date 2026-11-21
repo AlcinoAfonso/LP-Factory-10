@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { pilotProof, resolveAgentBaseGenerationId, verifiedPilotProof } from "../../../../lib/communication-base/agent-base/generation-proof";
 import { createClient } from "../../../../lib/supabase/server";
 import { generateAgentBasePilotSection } from "../../../../lib/communication-base/adapters/agentBasePilotAdapter";
 import { agentBasePilotOrder, agentBasePilotCatalogState, selectAgentBasePilotInput,
@@ -18,7 +18,7 @@ import {
 } from "../../../../lib/communication-base/adapters/communicationBaseAdapter";
 import { parseCommunicationFacts, parseSectionValue, withSection, withGeneratedIntelligence } from "../../../../lib/communication-base/policy";
 import { parseEditorDraft } from "../../../../lib/communication-base/manual-editor-value";
-import { isCommunicationResourcesEnabled, resolveAgentBaseEnvironment, type AgentBaseEnvironment } from "../../../../lib/communication-base/config";
+import { isCommunicationResourcesEnabled, resolveAgentBaseEnvironment } from "../../../../lib/communication-base/config";
 import { readCommunicationDefinitions } from "../../../../lib/communication-base/adapters/communicationCatalogAdapter";
 import { getCommunicationSection } from "../../../../lib/communication-base/registry";
 import { selectStageTwoInput, type StageTwoDraft, type StageTwoTarget } from "../../../../lib/communication-base/ai-core";
@@ -203,22 +203,6 @@ async function logAgentBasePilotAccessDenial(phase: "initial" | "revalidation", 
   console.warn(JSON.stringify({ event: "agent_base_pilot_access_denied", phase, reason, authState }));
 }
 
-// The existing OpenAI server secret authenticates each ephemeral result across requests.
-function pilotProof(environment: AgentBaseEnvironment, accountId: string, version: number, catalogState: string, nicheRevision: string,
-  section: AgentBasePilotSection): string | null {
-  if (!process.env.OPENAI_API_KEY) return null;
-  const { key, value, basis, sources, researched } = section;
-  return createHmac("sha256", process.env.OPENAI_API_KEY).update("d14f-agent-base-proof-v2")
-    .update(JSON.stringify([environment, accountId, version, catalogState, nicheRevision,
-      { key, value, basis, sources, researched }])).digest("hex");
-}
-function verifiedPilotProof(environment: AgentBaseEnvironment, accountId: string, version: number, catalogState: string, nicheRevision: string,
-  section: AgentBasePilotSection) {
-  const expected = pilotProof(environment, accountId, version, catalogState, nicheRevision, section);
-  return Boolean(expected && typeof section.proof === "string" && /^[0-9a-f]{64}$/.test(section.proof) &&
-    timingSafeEqual(Buffer.from(section.proof, "hex"), Buffer.from(expected, "hex")));
-}
-
 export async function runAgentBasePilotAction(input: Readonly<{
   account: string; version: number; previous?: readonly AgentBasePilotSection[];
   catalogState?: string; nicheRevision?: string;
@@ -255,13 +239,16 @@ export async function runAgentBasePilotAction(input: Readonly<{
   const catalogState = agentBasePilotCatalogState(definitions.value);
   if (previous.length && (input.catalogState !== catalogState || input.nicheRevision !== taxonomy.niche.revision))
     return fail("A Base ou o nicho mudou durante a geração. Atualize a página.", true);
-  if (previous.some(section => !verifiedPilotProof(environment, access.value.accountId, input.version,
+  const generationId = resolveAgentBaseGenerationId(previous);
+  if (!generationId)
+    return fail("A identidade da geração não pôde ser confirmada. Reinicie a geração.");
+  if (previous.some(section => !verifiedPilotProof(process.env.OPENAI_API_KEY, environment, access.value.accountId, input.version,
       catalogState, taxonomy.niche!.revision, section)))
     return fail("Uma etapa da geração não pôde ser autenticada. Nada foi salvo.");
   const target = order[previous.length];
   const result = await generateAgentBasePilotSection({
     base: base.value, niche: taxonomy.niche, definitions: definitions.value,
-    key: target.key as AgentBasePilotKey, previous, environment, timeoutMs: 120_000,
+    key: target.key as AgentBasePilotKey, previous, environment, timeoutMs: 120_000, generationId,
   });
   if (!result.ok) return fail("Não foi possível concluir a geração em " + target.label + ". Nada foi salvo.");
   const [latestAccess, latestBase, latestNiche, latestDefinitions] = await Promise.all([
@@ -275,9 +262,10 @@ export async function runAgentBasePilotAction(input: Readonly<{
       agentBasePilotCatalogState(latestDefinitions.value) !== catalogState) {
     return fail("A Base, o nicho ou o catálogo mudou durante a geração. Nada foi salvo.", true);
   }
-  const proof = pilotProof(environment, access.value.accountId, input.version, catalogState, taxonomy.niche.revision, result.value);
+  const section = { ...result.value, generationId };
+  const proof = pilotProof(process.env.OPENAI_API_KEY, environment, access.value.accountId, input.version, catalogState, taxonomy.niche.revision, section);
   if (!proof) return fail("Não foi possível validar a geração. Nada foi salvo.");
-  return { ok: true, section: { ...result.value, proof }, catalogState, nicheRevision: taxonomy.niche.revision };
+  return { ok: true, section: { ...section, proof }, catalogState, nicheRevision: taxonomy.niche.revision };
 }
 
 export async function saveAgentBasePilotAction(input: Readonly<{
@@ -312,7 +300,7 @@ export async function saveAgentBasePilotAction(input: Readonly<{
       !niche.ok || !niche.niche?.confirmed || input.nicheRevision !== niche.niche.revision) {
     return fail("A Base ou o nicho mudou durante a geração. Nada foi salvo.");
   }
-  if (input.sections.some(section => !verifiedPilotProof(environment, access.value.accountId, input.version,
+  if (input.sections.some(section => section.generationId !== input.sections[0].generationId || !verifiedPilotProof(process.env.OPENAI_API_KEY, environment, access.value.accountId, input.version,
     input.catalogState, input.nicheRevision, section))) {
     return fail("Uma etapa da geração não pôde ser autenticada. Nada foi salvo.");
   }

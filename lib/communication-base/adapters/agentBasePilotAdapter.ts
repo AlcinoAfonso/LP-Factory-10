@@ -7,9 +7,9 @@ import type { AgentBaseEnvironment } from "../config";
 import { buildAgentBasePilotPrompt, parseAgentBasePilotResponse, sanitizeAgentBasePilotFailureReason, type AgentBasePilotSection } from "../agent-base/pilot";
 
 export async function generateAgentBasePilotSection(input: Parameters<typeof buildAgentBasePilotPrompt>[0] & Readonly<{
-  environment: AgentBaseEnvironment; timeoutMs: number;
+  environment: AgentBaseEnvironment; timeoutMs: number; generationId: string;
 }>) {
-  const prompt = buildAgentBasePilotPrompt(input);
+  const prompt = buildAgentBasePilotPrompt({ ...input, previous: input.previous.map(({ generationId: _generationId, ...section }) => section) });
   if (!prompt) return { ok: false as const };
   const active = await resolveOpenAiProductWorkload("communication_base_stage2_intelligence", input.environment);
   if (!active.ok || !active.value.webSearch) return { ok: false as const };
@@ -22,6 +22,7 @@ export async function generateAgentBasePilotSection(input: Parameters<typeof bui
     configuration, environment: input.environment, expectedWorkload: "communication_base_stage2_intelligence",
     requestId, promptVersion: prompt.promptVersion, contractVersion: 1, timeoutMs: input.timeoutMs,
     financialContext: clientOpenAiCostContext(input.base.accountId), executionOrigin: "runtime",
+    occurrenceId: input.generationId,
     baselineReference: "d14f_agent_base_pilot_" + input.key,
     request: {
       instructions: prompt.instructions, input: prompt.input, store: false, background: false,

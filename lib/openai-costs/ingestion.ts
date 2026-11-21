@@ -59,7 +59,9 @@ function validateEnvelope(value: unknown, expectedEnvironment: string, inventory
     return { ok: false, code: "identity_invalid" };
   }
   if (action === "startExecution") {
-    if (!exactKeys(payload, ["executionId", "workload", "environment", "executionOrigin", "economicContext", "startedAt"]) ||
+    const occurrenceKeys = Object.hasOwn(payload, "occurrenceId") ? ["occurrenceId"] : [];
+    if (!exactKeys(payload, ["executionId", "workload", "environment", "executionOrigin", "economicContext", "startedAt", ...occurrenceKeys]) ||
+        (occurrenceKeys.length > 0 && !uuid(payload.occurrenceId)) ||
         payload.workload !== "supabase_inspect" || payload.executionOrigin !== "runtime" || !iso(payload.startedAt) ||
         payload.environment !== expectedEnvironment ||
         !exactKeys(record(payload.economicContext) ?? {}, ["universe", "attributionStatus", "accountId"]) ||
@@ -69,7 +71,9 @@ function validateEnvelope(value: unknown, expectedEnvironment: string, inventory
     }
   }
   if (action === "startOperation") {
-    if (!exactKeys(payload, ["operationId", "executionId", "sequence", "model", "reasoningEffort", "configurationSource", "configurationRevision", "startedAt"]) ||
+    const admissionKeys = Object.hasOwn(payload, "requireAdmission") ? ["requireAdmission"] : [];
+    if (!exactKeys(payload, ["operationId", "executionId", "sequence", "model", "reasoningEffort", "configurationSource", "configurationRevision", "startedAt", ...admissionKeys]) ||
+        (admissionKeys.length > 0 && payload.requireAdmission !== true) ||
         !Number.isSafeInteger(payload.sequence) || Number(payload.sequence) < 1 || Number(payload.sequence) > 1000 || !iso(payload.startedAt) ||
         payload.model !== inventory.model || payload.reasoningEffort !== inventory.reasoningEffort ||
         payload.configurationSource !== inventory.source || payload.configurationRevision !== inventory.revision) {

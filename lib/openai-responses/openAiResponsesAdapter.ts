@@ -18,7 +18,8 @@ import {
   openAiCostRecorder,
   openAiCostResponseEvidence,
   openAiCostWebSearchCallCount,
-  isOpenAiActiveCostTrackingEnabled,
+  confirmOpenAiCostAdmission,
+  resolveOpenAiOccurrenceId,
   type OpenAiCostEconomicContext,
   type OpenAiCostExecutionOrigin,
   type OpenAiCostRecorder,
@@ -55,6 +56,7 @@ export type OpenAiResponsesInput<T> = Readonly<{
   financialContext: OpenAiCostEconomicContext;
   executionOrigin: OpenAiCostExecutionOrigin;
   baselineReference?: string;
+  occurrenceId?: string;
 }>;
 
 export type OpenAiResponsesDependencies = Readonly<{
@@ -139,31 +141,30 @@ export async function requestOpenAiResponses<T>(
   const executionId = createId();
   const operationId = createId();
   const financialStartedAt = nowIso();
-  const financialTrackingStarted = environment !== "unknown" &&
-    (Boolean(dependencies.costRecorder) || isOpenAiActiveCostTrackingEnabled(environment));
-  if (financialTrackingStarted) {
-    await recorder.startExecution({
-      executionId,
-      workload: input.configuration.id,
-      environment,
-      executionOrigin: input.executionOrigin,
-      economicContext: input.financialContext,
-      baselineReference: input.baselineReference,
-      startedAt: financialStartedAt,
-    });
-    await recorder.startOperation({
-      operationId,
-      executionId,
-      sequence: 1,
-      model: input.configuration.model,
-      reasoningEffort: input.configuration.reasoningEffort,
-      configurationSource: input.configuration.source,
-      configurationRevision: input.configuration.revision,
-      promptVersion: input.promptVersion,
-      contractVersion: input.contractVersion?.toString(),
-      requestId: input.requestId,
-      startedAt: financialStartedAt,
-    });
+  if (environment === "unknown" || !await confirmOpenAiCostAdmission(recorder, {
+    executionId,
+    occurrenceId: input.occurrenceId ?? resolveOpenAiOccurrenceId(input.financialContext, environment),
+    workload: input.configuration.id,
+    environment,
+    executionOrigin: input.executionOrigin,
+    economicContext: input.financialContext,
+    baselineReference: input.baselineReference,
+    startedAt: financialStartedAt,
+  }, {
+    operationId,
+    executionId,
+    sequence: 1,
+    model: input.configuration.model,
+    reasoningEffort: input.configuration.reasoningEffort,
+    configurationSource: input.configuration.source,
+    configurationRevision: input.configuration.revision,
+    promptVersion: input.promptVersion,
+    contractVersion: input.contractVersion?.toString(),
+    requestId: input.requestId,
+    startedAt: financialStartedAt,
+  })) {
+    emitEvent(createOpenAiWorkloadFailureEvent(eventContext, "configuration_invalid"));
+    return { ok: false, kind: "configuration_invalid", reason: "financial_admission_unconfirmed" };
   }
   let financialResponse: unknown = null;
   const finishFinancial = async (input: Readonly<{
@@ -177,9 +178,8 @@ export async function requestOpenAiResponses<T>(
     usage?: unknown;
     webSearchCallCount?: number | null;
   }>) => {
-    if (!financialTrackingStarted) return;
     const finishedAt = nowIso();
-    await recorder.finishOperation({
+    await Promise.resolve().then(() => recorder.finishOperation({
       operationId,
       ...openAiCostResponseEvidence(financialResponse),
       requestedServiceTier: normalizeOpenAiAppliedServiceTier(eventContext.requestedServiceTier),
@@ -194,13 +194,13 @@ export async function requestOpenAiResponses<T>(
       webSearchCallCount: openAiCostWebSearchCallCount(financialResponse, webSearchRequested),
       webSearchRequested,
       finishedAt,
-    });
-    await recorder.finishExecution({
+    })).catch(() => undefined);
+    await Promise.resolve().then(() => recorder.finishExecution({
       executionId,
       result: input.result,
       failureCategory: input.failureCategory,
       finishedAt,
-    });
+    })).catch(() => undefined);
   };
   const startedAt = now();
   const controller = new AbortController();
@@ -209,8 +209,10 @@ export async function requestOpenAiResponses<T>(
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
+    if (input.signal?.aborted) throw new DOMException("Aborted", "AbortError");
     const response = await fetchImpl("https://api.openai.com/v1/responses", {
       method: "POST",
+      redirect: "error",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",

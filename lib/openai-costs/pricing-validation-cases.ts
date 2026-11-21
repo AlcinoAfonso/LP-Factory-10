@@ -160,7 +160,7 @@ async function validateTransportEvidence() {
   assert.ok(resolved.ok);
   const terminals: OpenAiCostOperationTerminal[] = [];
   const contexts: Parameters<OpenAiCostTrackingAdapter["startExecution"]>[0]["economicContext"][] = [];
-  const recorder: OpenAiCostTrackingAdapter = { startExecution: async ({ economicContext }) => { contexts.push(economicContext); }, startOperation: async () => {},
+  const recorder: OpenAiCostTrackingAdapter = { startExecution: async ({ economicContext }) => { contexts.push(economicContext); return true; }, startOperation: async () => true,
     finishOperation: async (terminal) => { terminals.push(terminal); }, finishExecution: async () => {} };
   for (const responseTier of ["fast", "default", null]) {
     const result: OpenAiResponsesResult<string> = await requestOpenAiResponses<string>({ apiKey: "fake-test-only-key", environment: "preview",

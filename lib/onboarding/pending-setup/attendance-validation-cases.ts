@@ -1,3 +1,4 @@
+import { confirmedCostRecorder } from "../../openai-costs/fixtures/confirmed-recorder";
 import assert from "node:assert/strict";
 import { officialNichePromptContext } from "../niche-resolution/official-niche-policy";
 import nodeModule from "node:module";
@@ -387,6 +388,7 @@ async function main() {
   const wires: Record<string, unknown>[] = [];
   const events: unknown[] = [];
   assert.equal((await requestAttendance({ accountId, context, environment: "development", apiKey: "test-key" }, {
+    costRecorder: confirmedCostRecorder,
     fetchImpl: async (_url, init) => { wires.push(JSON.parse(String(init?.body))); return new Response(JSON.stringify(response(base)), { status: 200 }); },
     emitEvent: event => events.push(event),
   })).ok, true);
@@ -472,6 +474,7 @@ async function main() {
   const nicheWires: Record<string, unknown>[] = [];
   const nicheEvents: unknown[] = [];
   assert.equal((await requestAttendance({ accountId, context: nicheContext, environment: "development", apiKey: "test-key" }, {
+    costRecorder: confirmedCostRecorder,
     fetchImpl: async (_url, init) => { nicheWires.push(JSON.parse(String(init?.body))); return new Response(JSON.stringify(response(nicheOutput)), { status: 200 }); },
     emitEvent: event => nicheEvents.push(event),
   })).ok, true);

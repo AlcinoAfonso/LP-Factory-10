@@ -50,7 +50,16 @@ export async function POST(request: Request) {
 
   const { action, payload } = validated.value;
   try {
-    await activeCostTrackingAdapter[action](payload as never);
+    if (action === "startOperation" && payload.requireAdmission === true) {
+      const receipt = await activeCostTrackingAdapter.startOperation({
+        ...payload, admissionScope: { environment: expectedEnvironment, workload: "supabase_inspect" },
+      } as Parameters<typeof activeCostTrackingAdapter.startOperation>[0]);
+      return NextResponse.json({ ok: true, admitted: receipt === true, operationId: payload.operationId });
+    }
+    const receipt = await activeCostTrackingAdapter[action](payload as never);
+    if (action === "startExecution" && payload.occurrenceId) {
+      return NextResponse.json({ ok: true, recorded: receipt === true, executionId: payload.executionId });
+    }
   } catch (error) {
     const failure = openAiCostPersistenceFailure(error);
     return NextResponse.json({ ok: false, code: failure.code }, { status: failure.status });

@@ -24,7 +24,8 @@ import {
   newOpenAiCostId,
   openAiCostRecorder,
   openAiCostResponseEvidence,
-  isOpenAiActiveCostTrackingEnabled,
+  confirmOpenAiCostAdmission,
+  resolveOpenAiOccurrenceId,
   type OpenAiCostEconomicContext,
   type OpenAiCostExecutionOrigin,
   type OpenAiCostRecorder,
@@ -239,28 +240,28 @@ export async function resolveNicheWithOpenAi(input: {
   const executionId = createId();
   const operationId = createId();
   const financialStartedAt = nowIso();
-  const financialTrackingStarted = Boolean(financialContext) && environment !== "unknown" &&
-    (Boolean(dependencies.costRecorder) || isOpenAiActiveCostTrackingEnabled(environment));
-  if (financialContext && environment !== "unknown" && financialTrackingStarted) {
-    await recorder.startExecution({
-      executionId,
-      workload: workload.id,
-      environment,
-      executionOrigin: input.executionOrigin ?? "runtime",
-      economicContext: financialContext,
-      startedAt: financialStartedAt,
-    });
-    await recorder.startOperation({
-      operationId,
-      executionId,
-      sequence: 1,
-      model: workload.model,
-      reasoningEffort: workload.reasoningEffort,
-      configurationSource: workload.source,
-      configurationRevision: workload.revision,
-      contractVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION.toString(),
-      startedAt: financialStartedAt,
-    });
+  if (!financialContext || environment === "unknown" || !await confirmOpenAiCostAdmission(recorder, {
+    executionId,
+    occurrenceId: resolveOpenAiOccurrenceId(financialContext, environment),
+    workload: workload.id,
+    environment,
+    executionOrigin: input.executionOrigin ?? "runtime",
+    economicContext: financialContext,
+    startedAt: financialStartedAt,
+  }, {
+    operationId,
+    executionId,
+    sequence: 1,
+    model: workload.model,
+    reasoningEffort: workload.reasoningEffort,
+    configurationSource: workload.source,
+    configurationRevision: workload.revision,
+    contractVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION.toString(),
+    startedAt: financialStartedAt,
+  })) {
+    emitEvent(createOpenAiWorkloadFailureEvent(eventContext, "configuration_invalid"));
+    return { ok: false, status: "failed", model: workload.model,
+      schemaVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION, reason: "financial_admission_unconfirmed" };
   }
   const finishFinancial = async (
     result: "success" | "failure",
@@ -268,9 +269,8 @@ export async function resolveNicheWithOpenAi(input: {
     data?: ResponsesApiResponse,
     httpStatus?: number,
   ) => {
-    if (!financialTrackingStarted) return;
     const finishedAt = nowIso();
-    await recorder.finishOperation({
+    await Promise.resolve().then(() => recorder.finishOperation({
       operationId,
       ...openAiCostResponseEvidence(data),
       requestedServiceTier: workload.serviceTier ?? null,
@@ -280,8 +280,8 @@ export async function resolveNicheWithOpenAi(input: {
       providerResponseId: typeof data?.id === "string" ? data.id : null,
       usage: normalizeOpenAiResponseUsage(data?.usage),
       finishedAt,
-    });
-    await recorder.finishExecution({ executionId, result, failureCategory, finishedAt });
+    })).catch(() => undefined);
+    await Promise.resolve().then(() => recorder.finishExecution({ executionId, result, failureCategory, finishedAt })).catch(() => undefined);
   };
   const startedAt = now();
   const abortController = new AbortController();
@@ -294,6 +294,7 @@ export async function resolveNicheWithOpenAi(input: {
     const promptPayload = buildPromptPayload(input);
     const response = await fetchImpl(OPENAI_RESPONSES_ENDPOINT, {
       method: "POST",
+      redirect: "error",
       signal: abortController.signal,
       headers: {
         Authorization: `Bearer ${apiKey}`,
