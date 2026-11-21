@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { prepareNicheTurn, type NicheTurn, type NicheTurnContext } from "./index";
 import { NICHE_AGENT_INSTRUCTIONS, NICHE_AGENT_PROMPT_VERSION } from "./prompt";
-import { mergeNicheMemory, publicResearchContext, relevantNicheHistory, resolveSynthesis, submittedWhatsApp } from "./dialogue";
+import { mergeNicheMemory, mergeSubmittedWhatsApp, publicResearchContext, relevantNicheHistory, resolveSynthesis, submittedWhatsApp } from "./dialogue";
 
 type ModelTurn = Omit<NicheTurn, "confirmation" | "synthesisWrite" | "synthesis" | "searchTopic">;
 const proposed = "Catering vegano para eventos corporativos";
@@ -137,7 +137,7 @@ test("síntese referencia o texto exibido e o WhatsApp sem ocultar ano, quantida
 });
 
 test("WhatsApp informado após a síntese só entra no Summary com aceite da síntese atualizada", () => {
-  assert.match(NICHE_AGENT_INSTRUCTIONS, /Se um WhatsApp chegar após uma síntese/u);
+  assert.match(NICHE_AGENT_INSTRUCTIONS, /corrigido espontaneamente no chat/u);
   const originalAssistant = "00000000-0000-4000-8000-000000000021";
   const userContact = "00000000-0000-4000-8000-000000000022";
   const updatedAssistant = "00000000-0000-4000-8000-000000000023";
@@ -180,16 +180,22 @@ test("WhatsApp informado após a síntese só entra no Summary com aceite da sí
   assert.equal(summary.whatsappDeclined, false);
 });
 
-test("campo WhatsApp persiste no Summary apenas após síntese aceita, sem depender do modelo", () => {
+test("campo WhatsApp persiste independentemente da síntese; correções respeitam ordem", () => {
   assert.match(NICHE_AGENT_INSTRUCTIONS, /nicho breve e fiel/u);
-  assert.match(NICHE_AGENT_INSTRUCTIONS, /não solicite WhatsApp no chat/u);
+  assert.match(NICHE_AGENT_INSTRUCTIONS, /não solicite nem valide WhatsApp/u);
   const user = "00000000-0000-4000-8000-000000000041";
   const assistant = "00000000-0000-4000-8000-000000000042";
+  const corrected = "00000000-0000-4000-8000-000000000043";
   const business = "Revenda de seminovos para pessoas físicas. Ofertas: financiamento e troca.";
-  const content = "WhatsApp para contato: (21) 99999-1111";
-  const contactMessage = { id: user, role: "user" as const, content };
+  const contactMessage = { id: user, role: "user" as const, content: "WhatsApp para contato: (21) 99999-1111" };
+  const prior = JSON.stringify({ confirmedUnderstanding: null });
+  const phone = submittedWhatsApp([contactMessage]);
+  assert.equal(phone, "(21) 99999-1111");
+  const stored = mergeSubmittedWhatsApp(prior, phone!);
+  assert.equal(JSON.parse(stored!).whatsapp, phone);
+  assert.equal(mergeSubmittedWhatsApp(stored, phone!), null);
   const input = { ...context, pendingSetup: pendingContext,
-    message: { id: user, text: content, replyToProposalId: null } };
+    message: { id: user, text: contactMessage.content, replyToProposalId: null } };
   const request = String(prepared(input).request.input);
   assert.match(request, /WhatsApp para contato: \[contato_1\]/u);
   assert.doesNotMatch(request, /99999-1111/u);
@@ -202,30 +208,24 @@ test("campo WhatsApp persiste no Summary apenas após síntese aceita, sem depen
   const snapshot = resolveSynthesis({ ...offer.value.synthesisWrite.offer, messageId: assistant }, [
     contactMessage, { id: assistant, role: "assistant", content: offer.value.reply },
   ]);
-  assert.equal(snapshot?.phone, null);
-  const prior = JSON.stringify({ confirmedUnderstanding: null });
-  assert.equal(submittedWhatsApp([contactMessage]), "(21) 99999-1111");
-  assert.equal(mergeNicheMemory(prior, offer.value, snapshot, submittedWhatsApp([contactMessage])), null);
+  assert.equal(mergeNicheMemory(stored, offer.value, snapshot, phone), null);
   const accepted = run({ ...input, activeSynthesis: { id: assistant, text: business, accepted: false },
-    message: { id: "00000000-0000-4000-8000-000000000043", text: "Sim", replyToProposalId: null },
+    message: { id: "00000000-0000-4000-8000-000000000044", text: "Sim", replyToProposalId: null },
   }, { ...clarification, reply: "Obrigado!", synthesis: { proposal: null, reaction: "accept" },
     pendingSetup: pendingOutcome });
   assert.ok(accepted.ok, JSON.stringify(accepted));
-  const summary = JSON.parse(mergeNicheMemory(prior, accepted.value, snapshot,
-    submittedWhatsApp([contactMessage, { id: "confirm", role: "user", content: "Sim" }]))!);
-  assert.equal(summary.whatsapp, "(21) 99999-1111");
-  assert.equal(summary.whatsappDeclined, false);
+  const summary = JSON.parse(mergeNicheMemory(stored, accepted.value, snapshot, phone)!);
+  assert.equal(summary.whatsapp, phone);
   assert.equal(summary.confirmedUnderstanding, business);
-  const simultaneous = run({ ...input, activeSynthesis: { id: assistant, text: business, accepted: false },
-    message: { id: "00000000-0000-4000-8000-000000000044",
-      text: "Sim\n" + content, replyToProposalId: null },
-  }, { ...clarification, reply: "Tudo confirmado.",
-    synthesis: { proposal: null, reaction: "accept" }, pendingSetup: pendingOutcome });
-  assert.ok(simultaneous.ok, JSON.stringify(simultaneous));
-  assert.equal(JSON.parse(mergeNicheMemory(prior, simultaneous.value,
-    { id: assistant, text: business, phone: null, declined: false },
-    submittedWhatsApp([{ id: "combined", role: "user", content: "Sim\n" + content }]))!).whatsapp,
-    "(21) 99999-1111");
+  const later = { id: corrected, role: "user" as const, content: "Meu WhatsApp é (21) 98888-2222." };
+  assert.equal(submittedWhatsApp([contactMessage, later], corrected), null);
+  const correctedSnapshot = { id: assistant, text: business, phone: "(21) 98888-2222", declined: false };
+  const correctedSummary = JSON.parse(mergeNicheMemory(stored, accepted.value, correctedSnapshot,
+    submittedWhatsApp([contactMessage, later], corrected))!);
+  assert.equal(correctedSummary.whatsapp, "(21) 98888-2222");
+  assert.equal(submittedWhatsApp([contactMessage, later,
+    { id: "new-field", role: "user", content: "WhatsApp para contato: (21) 97777-3333" }], corrected),
+    "(21) 97777-3333");
 });
 
 test("exibe a síntese ausente na resposta do Pending Setup e referencia o trecho exibido", () => {
