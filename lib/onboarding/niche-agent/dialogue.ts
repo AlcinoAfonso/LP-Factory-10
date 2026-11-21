@@ -18,7 +18,7 @@ export type SynthesisWrite = Readonly<{
 }>;
 
 export const CONTACT_RECEIPT = "Recebi o WhatsApp. Podemos continuar a conversa.";
-const SYNTHESIS_QUESTION = "\n\nEssa síntese está correta?";
+export const SYNTHESIS_QUESTION = "\n\nEssa síntese está correta?";
 const offerDetails = ({ niche, publicName }: NicheOffer) =>
   [publicName && "Nome público: " + publicName, niche && "Nicho proposto: " + niche].filter(Boolean);
 
@@ -52,12 +52,13 @@ export function withoutWhatsAppField(text: string) {
 }
 
 export function pendingSetupWhatsApp(messages: readonly DialogueText[], synthesis?: SynthesisReference | null) {
+  if (messages.some(({ role, content }) => role === "user" && withoutWhatsAppField(content) !== content.trim())) {
+    return "correction" as const;
+  }
   if (synthesis && synthesis.messageId === messages.at(-1)?.id &&
     messages.find(message => message.role === "assistant" && message.content.endsWith(SYNTHESIS_QUESTION))?.id === synthesis.messageId) {
     return "first-synthesis" as const;
   }
-  return messages.some(({ role, content }) => role === "user" && withoutWhatsAppField(content) !== content.trim())
-    ? "correction" as const : undefined;
 }
 
 export function redactNicheText(text: string) {

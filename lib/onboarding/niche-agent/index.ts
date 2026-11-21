@@ -3,7 +3,7 @@ import type { OpenAiResponsesInput } from "../../openai-responses/openAiResponse
 import { webSearchMetadata } from "../../openai-responses/web-search-metadata";
 import { validNicheDescription } from "../niche-resolution/official-niche-policy";
 import {
-  CONTACT_RECEIPT, mergeNicheMemory, presentOffer, redactNicheText, withoutWhatsAppField,
+  CONTACT_RECEIPT, SYNTHESIS_QUESTION, mergeNicheMemory, presentOffer, redactNicheText, withoutWhatsAppField,
   type DialogueText, type DisplayedOffer, type NicheOffer, type SynthesisWrite,
 } from "./dialogue";
 import { NICHE_AGENT_INSTRUCTIONS, NICHE_AGENT_PROMPT_VERSION } from "./prompt";
@@ -66,7 +66,7 @@ const claimsWrite = /\b(?:registrei|gravei|salvei|atualizei|já consta|oficializ
 
 function safeReply(value: unknown) {
   if (typeof value !== "string") return null;
-  const reply = redactNicheText(value).trim();
+  const reply = redactNicheText(value).replaceAll(SYNTHESIS_QUESTION, "").trim();
   return reply && reply.length <= 4000 ? reply : null;
 }
 

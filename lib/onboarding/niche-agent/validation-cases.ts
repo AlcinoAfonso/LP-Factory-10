@@ -82,6 +82,11 @@ test("WhatsApp aparece uma vez na primeira síntese e só reabre por ação de c
   const contact: DialogueText = { ...continued, content: "WhatsApp para contato: (21) 99999-9876" };
   const receipt: DialogueText = { ...assistant, id: "receipt", content: CONTACT_RECEIPT };
   assert.equal(pendingSetupWhatsApp([...history, contact, receipt], ref), "correction");
+  assert.equal(pendingSetupWhatsApp([contact, receipt, ...history], ref), "correction");
+
+  const freeReply = turn(opening, { reply: "Já entendi a atividade.\n\nEssa síntese está correta?\n\nEssa síntese está correta?" });
+  assert.equal(freeReply.reply, "Já entendi a atividade.");
+  assert.equal(pendingSetupWhatsApp([{ ...collection, content: freeReply.reply }, ...history], ref), "first-synthesis");
 });
 
 test("sim confirma apenas a proposta ancorada ao texto exibido", () => {
