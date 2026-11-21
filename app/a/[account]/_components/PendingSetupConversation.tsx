@@ -55,7 +55,10 @@ export function PendingSetupConversation({
             <NicheConversation account={accountSubdomain} dialogueId={conversation.id} version={conversation.version}
               messages={conversation.messages} retry={retry} ended={ready}
               showWhatsApp
-              introductoryMessage="Olá! Sou o agente da LP Factory responsável por validar o nicho do seu negócio. Como posso chamar você?" label="Sua mensagem" submit={conversePendingSetupAction} />
+              introductoryMessage={conversation.businessNameCandidate
+                ? "Vamos identificar o nicho de " + conversation.businessNameCandidate + ". O que você gostaria de destacar?"
+                : "Vamos identificar o nicho do seu negócio. O que você gostaria de destacar sobre o que faz?"}
+              label="Sua mensagem" submit={conversePendingSetupAction} />
           </div>
         ) : null}
         {!conversation.attendanceEnabled && passageEnabled && !conversation.businessDisplayName ? (

@@ -1,22 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { clientOpenAiCostContext } from "../../../lib/openai-costs/active-contracts";
-import { readAccountOfficialNiche, confirmAccountNicheDialogue } from "../../../lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter";
-import { officialNichePromptContext, type OfficialAccountNiche } from "../../../lib/onboarding/niche-resolution/official-niche-policy";
-import { z } from "zod";
-import { claimAccountNicheTurn, commitAccountNicheTurn, releaseAccountNicheTurn } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheDialogueAdapter";
+import { readAccountOfficialNiche } from "../../../lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter";
 import {
-  claimNicheConversation, commitNicheConversation, readNicheConversation, readNicheDialogueMessages,
+  claimNicheConversation, commitNicheConversation, readNicheConversation, readNicheDialogueMessages, releaseAccountNicheTurn,
 } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheDialogueAdapter";
-import { conversationalMessage, currentSynthesis, mergeNicheMemory, nicheSummaryContext, requestNicheAgent } from "../../../lib/onboarding/niche-agent/runtime";
-import { relevantNicheHistory } from "../../../lib/onboarding/niche-agent/dialogue";
-import { attendanceSummary, projectAttendanceSummary, projectAttendanceText, type AttendanceContext } from "../../../lib/onboarding/pending-setup/attendance-core";
-import { requestAttendance } from "../../../lib/onboarding/pending-setup/attendance-provider";
+import { conversationalMessage, requestNicheAgent } from "../../../lib/onboarding/niche-agent/runtime";
+import { displayedOffer, nicheHistory, nicheSummaryContext } from "../../../lib/onboarding/niche-agent/dialogue";
 import { readBusinessContextForNiche } from "../../../lib/communication-base/adapters/communicationBaseAdapter";
 import { getAccessContext } from "@/lib/access/getAccessContext";
 import type { MemberInfo } from "@/lib/access/adapters/accountAdapter";
-import { readAccountNicheProductGuard } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
+import { isAccountNicheEditingEnabled, readAccountNicheProductGuard } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import {
   confirmAiOptionForAccount,
   confirmAiSuggestedTaxonForAccount,
@@ -31,15 +25,6 @@ export type NicheResolutionActionState = {
 
 const GENERIC_ERROR = "Não foi possível registrar sua resposta agora. Tente novamente.";
 
-export type AccountNicheEditorState =
-  | { ok: true; taxon: OfficialAccountNiche | null; hasProducts: boolean; canEdit: boolean }
-  | { ok: false; message: string };
-
-async function readNicheForEditor(input: { accountId: string }) {
-  const read = await readAccountOfficialNiche(input.accountId);
-  return read.ok ? { ok: true as const, taxon: read.niche } : { ok: false as const };
-}
-
 async function nicheEditorContext(account: string) {
   if (!/^[a-z0-9][a-z0-9-]{0,62}$/.test(account) || account === "home") return null;
   const ctx = await getAccessContext({ params: { account }, throwOnReadError: true });
@@ -48,35 +33,59 @@ async function nicheEditorContext(account: string) {
     ? { ...ctx, member } : null;
 }
 
-export async function loadBaseNicheConversationAction(account: string) {
+async function loadAccountNicheConversation(account: string, home: boolean) {
   try {
+    if (home && !isAccountNicheEditingEnabled()) return null;
     const ctx = await nicheEditorContext(account);
     if (!ctx?.account || !["owner", "admin", "editor"].includes(ctx.member.role)) return null;
     const [current, products, conversation] = await Promise.all([
-      readNicheForEditor({ accountId: ctx.account.id }), readAccountNicheProductGuard(ctx.account.id),
+      readAccountOfficialNiche(ctx.account.id), readAccountNicheProductGuard(ctx.account.id),
       readNicheConversation(ctx.account.id, ctx.member.userId),
     ]);
-    return current.ok && products !== null && conversation.ok
-      ? { blocked: Boolean(current.taxon && products), dialogue: conversation.dialogue } : null;
+    if (!current.ok || products === null || !conversation.ok) return null;
+    const niche = current.niche;
+    const existingOnly = Boolean(home && products && niche && !niche.confirmed);
+    return { blocked: Boolean(niche && products && !existingOnly), existingOnly,
+      confirmed: Boolean(niche?.confirmed), hasNiche: Boolean(niche), dialogue: conversation.dialogue };
   } catch { return null; }
 }
 
+export async function loadBaseNicheConversationAction(account: string) {
+  return loadAccountNicheConversation(account, false);
+}
+
+export async function loadHomeNicheConversationAction(account: string) {
+  return loadAccountNicheConversation(account, true);
+}
+
 export async function converseBaseNicheAction(raw: unknown) {
+  return converseNiche(raw, false);
+}
+
+export async function converseHomeNicheAction(raw: unknown) {
+  return converseNiche(raw, true);
+}
+
+async function converseNiche(raw: unknown, home: boolean) {
   const parsed = conversationalMessage.safeParse(raw);
   const failure = { ok: false as const, message: GENERIC_ERROR };
-  if (!parsed.success) return failure;
+  if (!parsed.success || (home && !isAccountNicheEditingEnabled())) return failure;
   const input = parsed.data;
   let fence: { accountId: string; userId: string; dialogueId: string; expectedVersion: number; turnToken: string } | null = null;
   try {
     const ctx = await nicheEditorContext(input.account);
     if (!ctx?.account || !["owner", "admin", "editor"].includes(ctx.member.role)) return failure;
     const identity = { accountId: ctx.account.id, userId: ctx.member.userId, dialogueId: input.dialogueId ?? input.requestId };
-    const [current, business] = await Promise.all([
-      readNicheForEditor({ accountId: identity.accountId }),
+    const [current, business, products] = await Promise.all([
+      readAccountOfficialNiche(identity.accountId),
       readBusinessContextForNiche({ accountId: identity.accountId, actorUserId: identity.userId }),
+      readAccountNicheProductGuard(identity.accountId),
     ]);
-    if (!current.ok || !business.ok) return failure;
-    const niche = current.taxon;
+    if (!current.ok || !business.ok || products === null) return failure;
+    const niche = current.niche;
+    const fixedNiche = home && products && niche && !niche.confirmed ? niche.name : null;
+    if (products && niche && !fixedNiche)
+      return { ok: false as const, message: "A redefinição está indisponível porque a conta tem um produto cadastrado." };
     const expectedRevision = niche?.revision ?? null;
     const turnToken = crypto.randomUUID();
     const claim = await claimNicheConversation({ ...identity, turnToken, expectedRevision,
@@ -86,30 +95,23 @@ export async function converseBaseNicheAction(raw: unknown) {
     fence = { ...identity, expectedVersion: claim.version, turnToken };
     const messages = await readNicheDialogueMessages(identity.dialogueId);
     if (!claim.summaryUpdatedAt || !messages) throw new Error("context_unavailable");
-    const synthesis = currentSynthesis(claim.state, messages);
-    const active = claim.state.proposal ? {
-      id: identity.dialogueId + ":proposal", description: claim.state.proposal, expectedOfficialRevision: niche?.confirmed ? expectedRevision : null,
-    } : null;
+    if (fixedNiche && (claim.state.official?.description !== fixedNiche ||
+      claim.state.official.legacyTaxonId !== niche?.taxonId ||
+      claim.state.official.legacyUpdatedAt !== niche?.legacyUpdatedAt)) throw new Error("niche_changed");
+    const proposed = claim.state.proposal ?? null;
+    const shown = !fixedNiche || proposed === fixedNiche
+      ? displayedOffer(claim.state.synthesis, messages, { niche: proposed, publicName: null }) : null;
     const prior = claim.summary ?? null;
-    const reply = await requestNicheAgent(identity.accountId, identity.dialogueId, {
-      message: { id: input.requestId, text: input.content, replyToProposalId: active?.id ?? null },
-      history: relevantNicheHistory(messages, input.requestId, input.content),
-      activeSynthesis: synthesis && { id: synthesis.id, text: synthesis.text, accepted: synthesis.accepted, partialReply: synthesis.partialReply },
-      nicheAccepted: claim.state.nicheAccepted,
-      summary: nicheSummaryContext(prior).text,
-      businessContext: JSON.stringify(business.value).slice(0, 4000),
-      officialNiche: niche?.confirmed ? { description: niche.name, revision: niche.revision } : null,
-      activeProposal: active,
-    });
-    if (!reply) throw new Error("provider_unavailable");
-    const keep = Boolean(active && !reply.proposal && (reply.reaction === "continue" || reply.reaction === "accept"));
-    const acceptedProposal = keep && !reply.synthesisWrite.offer && !reply.synthesisWrite.clear &&
-      (reply.synthesisWrite.accept || synthesis?.accepted) && (reply.confirmation || claim.state.nicheAccepted)
-      ? active!.description : null;
-    const written = await commitNicheConversation({ ...fence, reply: reply.reply,
-      proposal: reply.proposal, understanding: "", summary: mergeNicheMemory(prior, reply, synthesis),
-      observedSummary: prior, observedSummaryUpdatedAt: claim.summaryUpdatedAt,
-      acceptedProposal, keepProposal: keep && !acceptedProposal, synthesis: reply.synthesisWrite,
+    const turn = await requestNicheAgent(identity.accountId, identity.dialogueId, {
+      message: input.content, history: nicheHistory(messages, input.requestId),
+      displayed: shown, summary: nicheSummaryContext(prior),
+      businessContext: JSON.stringify(business.value),
+      officialNiche: niche?.confirmed ? niche.name : null, fixedNiche,
+    }, prior);
+    if (!turn) throw new Error("provider_unavailable");
+    const written = await commitNicheConversation({ ...fence, reply: turn.reply, proposal: turn.offer?.niche ?? null,
+      summary: turn.summary, observedSummary: prior, observedSummaryUpdatedAt: claim.summaryUpdatedAt,
+      acceptedProposal: turn.synthesis.accept ? shown?.niche ?? null : null, synthesis: turn.synthesis,
     });
     if (!written) throw new Error("turn_not_committed");
     return { ok: true as const };
@@ -118,102 +120,8 @@ export async function converseBaseNicheAction(raw: unknown) {
     return { ok: false as const, message: fence
       ? "A mensagem foi registrada. Tente novamente para obter a resposta." : GENERIC_ERROR };
   } finally {
-    revalidatePath("/a/" + input.account + "/base-comunicacao");
+    revalidatePath("/a/" + input.account + (home ? "" : "/base-comunicacao"));
   }
-}
-
-export async function loadAccountNicheEditorAction(account: string): Promise<AccountNicheEditorState> {
-  try {
-    const ctx = await nicheEditorContext(account);
-    if (!ctx?.account) return { ok: false, message: "A definição de nicho não está disponível para este acesso." };
-    const [taxonomy, hasProducts] = await Promise.all([
-      readNicheForEditor({ accountId: ctx.account.id }), readAccountNicheProductGuard(ctx.account.id),
-    ]);
-    if (!taxonomy.ok || hasProducts === null) return { ok: false, message: "Não foi possível consultar o nicho agora. Tente novamente." };
-    return { ok: true, taxon: taxonomy.taxon, hasProducts, canEdit: ["owner", "admin", "editor"].includes(ctx.member!.role) };
-  } catch { return { ok: false, message: GENERIC_ERROR }; }
-}
-
-const nicheTurnInput = z.object({
-  account: z.string(), dialogueId: z.uuid(), requestId: z.uuid(), expectedVersion: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
-  expectedRevision: z.string().max(160).nullable(), content: z.string().trim().min(1).max(4000).nullable(),
-}).strict();
-
-export async function converseAccountNicheAction(raw: z.input<typeof nicheTurnInput>) {
-  const parsed = nicheTurnInput.safeParse(raw);
-  if (!parsed.success) return { ok: false as const, message: "Não foi possível enviar a mensagem. Use até 4.000 caracteres." };
-  const input = parsed.data;
-  let fence: { accountId: string; userId: string; dialogueId: string; expectedVersion: number; turnToken: string } | null = null;
-  try {
-    const ctx = await nicheEditorContext(input.account);
-    if (!ctx?.account || !["owner","admin","editor"].includes(ctx.member.role)) throw new Error("not_authorized");
-    const [current, products, savedContext] = await Promise.all([
-      readNicheForEditor({ accountId: ctx.account.id }), readAccountNicheProductGuard(ctx.account.id),
-      readBusinessContextForNiche({ accountId: ctx.account.id, actorUserId: ctx.member.userId }),
-    ]);
-    if (!current.ok || products === null || !savedContext.ok) throw new Error("context_unavailable");
-    if ((current.taxon?.revision ?? null) !== input.expectedRevision)
-      return { ok: false as const, message: "O nicho mudou. Reabra a conversa para conferir o vínculo atual." };
-    if (current.taxon && products && input.content !== null)
-      return { ok: false as const, message: "A redefinição não está disponível porque esta conta já possui produto desenvolvido." };
-    const identity = { accountId: ctx.account.id, userId: ctx.member.userId, dialogueId: input.dialogueId };
-    const turnToken = crypto.randomUUID();
-    const claimed = await claimAccountNicheTurn({ ...identity, ...input, turnToken });
-    if (!claimed.ok) throw new Error("turn_not_claimed");
-    const reserved = claimed.value;
-    if (reserved.replay && reserved.state.reply) return { ok: true as const, version: reserved.version,
-      reply: reserved.state.reply, proposal: reserved.state.proposal ? { taxonId: null, name: reserved.state.proposal } : null };
-    fence = { ...identity, expectedVersion: reserved.version, turnToken };
-    if (!reserved.summaryUpdatedAt || !reserved.recent) throw new Error("reserved_context_invalid");
-    if (reserved.summary && !projectAttendanceSummary(reserved.summary)) throw new Error("summary_invalid");
-    const businessData = Object.fromEntries(Object.entries(savedContext.value).map(([key,value]) => [key,projectAttendanceText(value)]));
-    const context: AttendanceContext = { purpose: "account_niche", preferredName: null,
-      officialNiche: officialNichePromptContext(current.taxon), summary: projectAttendanceSummary(reserved.summary),
-      currentPrimaryTaxonId: current.taxon?.taxonId ?? null, publicName: businessData.business_name ?? null,
-      businessData, catalog: [], displayedUnderstanding: projectAttendanceText(reserved.state.understanding ?? ""),
-      recent: reserved.recent.map(entry => ({ ...entry, content: projectAttendanceText(entry.content) })),
-    };
-    const result = current.taxon && products ? { ok: true as const, output: null } : await requestAttendance({ accountId: ctx.account.id, context,
-      financialContext: clientOpenAiCostContext(ctx.account.id, { kind: "niche_resolution", eventId: identity.dialogueId }) });
-    if (!result.ok) throw new Error("provider_unavailable");
-    const output = result.output;
-    const reply = output?.reply ?? "Confirme o nicho atual: " + current.taxon!.name + ".";
-    const proposal = output ? (output.action === "existing" ? output.nicheDescription : null) : current.taxon!.name;
-    // Opening only reads existing context; no submitted company information can justify a memory write.
-    const summary = input.content !== null && output && (output.businessUnderstanding || output.suggestions.length)
-      ? attendanceSummary(output,current.taxon?.confirmed ? current.taxon.name : null,null,reserved.summary)
-      : null;
-    const written = await commitAccountNicheTurn({ ...fence, reply, proposal,
-      understanding: output?.businessUnderstanding ?? "", summary, observedSummary: reserved.summary ?? null,
-      observedSummaryUpdatedAt: reserved.summaryUpdatedAt });
-    if (!written.ok) throw new Error("turn_not_committed");
-    return { ok: true as const, version: written.version, reply,
-      proposal: proposal ? { taxonId: null, name: proposal } : null };
-  } catch {
-    const released = fence ? await releaseAccountNicheTurn(fence).catch(() => false) : null;
-    console.warn("account_niche_turn_failed", { outcome: "not_committed", submitted: Boolean(fence && input.content), release: released });
-    return { ok: false as const, ...(fence ? { version: fence.expectedVersion } : {}),
-      message: fence && input.content ? "Sua mensagem foi registrada no histórico. Não foi possível concluir a resposta; tente novamente."
-        : "Não foi possível conversar agora. O texto continua disponível para tentar novamente." };
-  }
-}
-
-const nicheSaveInput = z.object({ account: z.string(), dialogueId: z.uuid(),
-  expectedVersion: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER), confirmed: z.literal(true) }).strict();
-export async function saveAccountNicheAction(raw: z.input<typeof nicheSaveInput>) {
-  try {
-    const input = nicheSaveInput.safeParse(raw);
-    if (!input.success) return { ok: false as const, message: GENERIC_ERROR };
-    const ctx = await nicheEditorContext(input.data.account);
-    if (!ctx?.account || !["owner","admin","editor"].includes(ctx.member.role)) return { ok: false as const, message: GENERIC_ERROR };
-    const saved = await confirmAccountNicheDialogue({ accountId: ctx.account.id, actorUserId: ctx.member.userId,
-      dialogueId: input.data.dialogueId, expectedVersion: input.data.expectedVersion });
-    if (!saved.ok) return { ok: false as const, message: saved.reason === "product_exists"
-      ? "A redefinição não está disponível porque esta conta já possui produto desenvolvido."
-      : saved.reason === "conflict" ? "O nicho ou a conversa mudou. Reabra e confirme novamente." : GENERIC_ERROR };
-    revalidatePath("/a/" + input.data.account, "layout");
-    return { ok: true as const };
-  } catch { return { ok: false as const, message: GENERIC_ERROR }; }
 }
 
 async function getAllowedAccountContext(formData: FormData) {

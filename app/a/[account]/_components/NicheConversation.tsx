@@ -7,6 +7,7 @@ import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { FormField, FormFieldHint, FormFieldLabel } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { AssistantMessageText } from "./AssistantMessageText";
 
 type Message = Readonly<{ id: string; role: "user" | "assistant"; content: string }>;
 type Submission = Readonly<{ account: string; dialogueId: string | null; version: number; requestId: string; content: string }>;
@@ -19,7 +20,7 @@ function formatWhatsApp(raw: string) {
 }
 
 export function NicheConversation({
-  account, dialogueId, version, messages, retry, introductoryMessage, label, ended, showWhatsApp, submit,
+  account, dialogueId, version, messages, retry, introductoryMessage, label, ended, showWhatsApp, focusOnOpen, submit,
 }: {
   account: string;
   dialogueId: string | null;
@@ -30,10 +31,12 @@ export function NicheConversation({
   label: string;
   ended?: boolean;
   showWhatsApp?: boolean;
+  focusOnOpen?: boolean;
   submit: (input: Submission) => Promise<{ ok: true } | { ok: false; message: string }>;
 }) {
   const router = useRouter();
   const input = useRef<HTMLTextAreaElement>(null);
+  const retryButton = useRef<HTMLButtonElement>(null);
   const log = useRef<HTMLDivElement>(null);
   const follow = useRef(true);
   const restoreFocus = useRef(false);
@@ -42,12 +45,40 @@ export function NicheConversation({
   const [failed, setFailed] = useState<Pick<Submission, "requestId" | "content"> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  useEffect(() => {
+    if (focusOnOpen) (input.current ?? retryButton.current)?.focus();
+  }, [focusOnOpen]);
 
   useEffect(() => {
     if (!draft.trim() && !whatsApp) return;
+    const here = window.location.href;
+    const entry = window.history.state;
+    const discard = () => window.confirm("Sair desta conversa e descartar a mensagem ainda não enviada?");
     const keepDraft = (event: BeforeUnloadEvent) => event.preventDefault();
+    function onBack(event: PopStateEvent) {
+      if (window.location.href === here || discard()) return;
+      event.stopImmediatePropagation();
+      window.history.pushState(entry, "", here);
+    }
+    function onNavigate(event: MouseEvent) {
+      if (event.button !== 0 || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+      const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[href]") : null;
+      if (!link || (link.target && link.target !== "_self") || link.hasAttribute("download")) return;
+      const destination = new URL(link.href);
+      const current = new URL(here);
+      if (destination.origin === current.origin && destination.href.split("#")[0] !== current.href.split("#")[0] && !discard()) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    }
     window.addEventListener("beforeunload", keepDraft);
-    return () => window.removeEventListener("beforeunload", keepDraft);
+    window.addEventListener("popstate", onBack, true);
+    document.addEventListener("click", onNavigate, true);
+    return () => {
+      window.removeEventListener("beforeunload", keepDraft);
+      window.removeEventListener("popstate", onBack, true);
+      document.removeEventListener("click", onNavigate, true);
+    };
   }, [draft, whatsApp]);
 
   useEffect(() => {
@@ -109,7 +140,9 @@ export function NicheConversation({
             ? "ml-auto max-w-[92%] rounded-xl bg-muted px-4 py-3 sm:max-w-[85%]"
             : "max-w-[92%] rounded-xl border border-border px-4 py-3 sm:max-w-[85%]"}>
             <p className="mb-1 text-xs font-semibold text-muted-foreground">{message.role === "user" ? "Você" : "LP Factory"}</p>
-            <p className="whitespace-pre-wrap break-words text-sm text-foreground [overflow-wrap:anywhere]">{message.content}</p>
+            <p className="whitespace-pre-wrap break-words text-sm text-foreground [overflow-wrap:anywhere]">
+              {message.role === "assistant" ? <AssistantMessageText text={message.content} /> : message.content}
+            </p>
           </div>
         ))}
       </div>
@@ -135,7 +168,7 @@ export function NicheConversation({
               Número incompleto. A conversa pode continuar sem ele.
             </FormFieldHint> : null}
           </FormField> : null}
-          <Button className="min-h-11" type="submit" disabled={pending || (!pendingMessage && !draft.trim() && !whatsAppComplete)}>
+          <Button ref={retryButton} className="min-h-11" type="submit" disabled={pending || (!pendingMessage && !draft.trim() && !whatsAppComplete)}>
             {pendingMessage ? "Tentar novamente" : "Enviar mensagem"}
           </Button>
         </form>

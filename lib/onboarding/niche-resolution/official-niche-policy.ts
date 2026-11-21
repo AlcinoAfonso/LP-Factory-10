@@ -9,8 +9,3 @@ export type OfficialAccountNiche = Readonly<{
   confirmedBy: string | null; taxonId: string | null;
   textRevision: number; legacyUpdatedAt: string | null;
 }>;
-
-
-export function officialNichePromptContext(niche: Pick<OfficialAccountNiche, "name" | "revision" | "confirmed"> | null) {
-  return niche ? { name: niche.name, revision: niche.revision, confirmed: niche.confirmed } : null;
-}

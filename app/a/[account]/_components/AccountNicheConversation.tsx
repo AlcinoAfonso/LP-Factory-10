@@ -1,0 +1,48 @@
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { NicheConversation } from "./NicheConversation";
+import { converseBaseNicheAction, converseHomeNicheAction, type loadBaseNicheConversationAction } from "../niche-resolution-actions";
+
+const blockedMessage = "A redefinição está indisponível porque a conta tem um produto cadastrado.";
+
+export function AccountNicheConversation({ account, state, home }: {
+  account: string;
+  state: NonNullable<Awaited<ReturnType<typeof loadBaseNicheConversationAction>>>;
+  home?: boolean;
+}) {
+  const [hiddenDialogue, setHiddenDialogue] = useState<string | null>(null);
+  const [opened, setOpened] = useState(Boolean(state.dialogue && !state.dialogue.ended));
+  const [focus, setFocus] = useState(false);
+  const dialogue = state.dialogue?.id === hiddenDialogue ? null : state.dialogue;
+  if (state.blocked && !dialogue) return <p className="text-sm text-muted-foreground">{blockedMessage}</p>;
+
+  const label = dialogue?.ended ? "Ver conversa de nicho" : state.confirmed ? "Redefinir nicho"
+    : state.hasNiche && home ? "Confirmar nicho" : "Definir nicho";
+  const introduction = state.existingOnly ? "Vamos conferir o nicho cadastrado. Com um produto na conta, só é possível confirmar a descrição atual."
+    : state.confirmed ? "O que mudou no seu negócio desde a última definição do nicho?"
+      : "O que você gostaria de destacar sobre seu negócio para definirmos o nicho?";
+
+  return (
+    <div className="space-y-3">
+      {!opened ? <Button variant="secondary" className="min-h-11" type="button" onClick={() => {
+        setFocus(true);
+        setOpened(true);
+      }}>{label}</Button> : (
+        <section aria-label="Conversa sobre o nicho" className="space-y-3 rounded-xl border border-border bg-card p-4 sm:p-6">
+          <NicheConversation key={dialogue?.ended ? "ended" : "open"} account={account} dialogueId={dialogue?.id ?? null}
+            version={dialogue?.version ?? 0} messages={dialogue?.messages ?? []} retry={dialogue?.retry}
+            ended={state.blocked || dialogue?.ended} introductoryMessage={introduction} focusOnOpen={focus}
+            label="Sua mensagem" submit={home ? converseHomeNicheAction : converseBaseNicheAction} />
+          {state.blocked ? <p className="text-sm text-muted-foreground">{blockedMessage}</p> : dialogue?.ended ? (
+            <Button variant="secondary" className="min-h-11" type="button" onClick={() => {
+              setFocus(true);
+              setHiddenDialogue(dialogue.id);
+            }}>Redefinir nicho</Button>
+          ) : null}
+        </section>
+      )}
+    </div>
+  );
+}

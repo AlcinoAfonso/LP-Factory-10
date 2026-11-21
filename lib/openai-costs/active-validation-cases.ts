@@ -365,7 +365,7 @@ async function main() {
     "lib/onboarding/niche-resolution/adapters/openAiResolver.ts",
     "automations/supabase-inspect/run.mjs",
     "automations/supabase-inspect/costRecorder.mjs",
-    "app/a/[account]/niche-resolution-actions.ts",
+    "lib/onboarding/niche-agent/runtime.ts",
   ].map((path) => readFileSync(path, "utf8")).join("\n");
   for (const workload of [
     "niche_resolution",

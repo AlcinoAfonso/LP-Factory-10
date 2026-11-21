@@ -7,51 +7,17 @@ import type { SynthesisWrite } from "../../niche-agent/dialogue";
 
 export type NicheDialogueIdentity = Readonly<{ accountId: string; userId: string; dialogueId: string }>;
 
-export async function allowsLegacyNicheDialogue(input: NicheDialogueIdentity & {
-  expectedVersion: number; requestId?: string;
-}) {
-  const { data, error } = await createServiceClient().from("account_dialogues").select("version,niche_state")
-    .eq("id", input.dialogueId).eq("account_id", input.accountId).eq("user_id", input.userId)
-    .eq("origin", "account_niche").maybeSingle();
-  if (error) return false;
-  if (!data) return input.expectedVersion === 0 && Boolean(input.requestId);
-  const state = data.niche_state as { synthesisRequired?: boolean; requestId?: string; confirmedVersion?: number };
-  return !state.synthesisRequired && (Number(data.version) === input.expectedVersion ||
-    (input.requestId ? state.requestId === input.requestId : state.confirmedVersion === input.expectedVersion));
-}
-const stateSchema = z.object({ reply: z.string().optional(), understanding: z.string().optional(),
-  proposal: z.string().nullable().optional() });
-const claimSchema = z.object({ replay: z.boolean(), version: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
-  state: stateSchema, summary: z.string().max(6000).nullable().optional(), summaryUpdatedAt: z.string().optional(),
-  recent: z.array(z.object({ role: z.enum(["user","assistant"]), content: z.string().max(4000) })).optional() });
-export async function claimAccountNicheTurn(input: NicheDialogueIdentity & Readonly<{
-  expectedVersion: number; requestId: string; turnToken: string; content: string | null; expectedRevision: string | null;
-}>) {
-  if (!await allowsLegacyNicheDialogue(input)) return { ok: false as const };
-  const { data, error } = await createServiceClient().rpc("claim_account_niche_turn_v1", {
-    p_dialogue_id: input.dialogueId, p_account_id: input.accountId, p_user_id: input.userId,
-    p_expected_version: input.expectedVersion, p_request_id: input.requestId, p_turn_token: input.turnToken,
-    p_content: input.content, p_expected_revision: input.expectedRevision,
-  });
-  const parsed = claimSchema.safeParse(data);
-  return !error && parsed.success ? { ok: true as const, value: parsed.data } : { ok: false as const };
-}
-export async function commitAccountNicheTurn(input: NicheDialogueIdentity & Readonly<{
-  expectedVersion: number; turnToken: string; reply: string; understanding: string; proposal: string | null;
-  summary: string | null; observedSummary: string | null; observedSummaryUpdatedAt: string;
-}>) {
-  if (!await allowsLegacyNicheDialogue(input)) return { ok: false as const };
-  const { data, error } = await createServiceClient().rpc("commit_account_niche_turn_v1", {
-    p_dialogue_id: input.dialogueId, p_account_id: input.accountId, p_user_id: input.userId,
-    p_expected_version: input.expectedVersion, p_turn_token: input.turnToken, p_reply: input.reply,
-    p_understanding: input.understanding, p_proposal: input.proposal, p_summary: input.summary,
-    p_observed_summary: input.observedSummary, p_observed_summary_updated_at: input.observedSummaryUpdatedAt,
-  });
-  const version = Number(data);
-  return !error && Number.isSafeInteger(version) && version > input.expectedVersion
-    ? { ok: true as const, version } : { ok: false as const };
-}
-export async function releaseAccountNicheTurn(input: NicheDialogueIdentity & Readonly<{ expectedVersion: number; turnToken: string }>) {
+type TurnFence = NicheDialogueIdentity & Readonly<{ expectedVersion: number; turnToken: string }>;
+
+const conversationClaim = z.object({
+  replay: z.boolean(),
+  version: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
+  state: dialogueState,
+  summary: z.string().max(6000).nullable().optional(),
+  summaryUpdatedAt: z.string().optional(),
+});
+
+export async function releaseAccountNicheTurn(input: TurnFence) {
   const { error } = await createServiceClient().rpc("release_account_niche_turn_v1", {
     p_dialogue_id: input.dialogueId, p_account_id: input.accountId, p_user_id: input.userId,
     p_expected_version: input.expectedVersion, p_turn_token: input.turnToken,
@@ -59,12 +25,7 @@ export async function releaseAccountNicheTurn(input: NicheDialogueIdentity & Rea
   return !error;
 }
 
-const conversationClaim = claimSchema.extend({
-  state: dialogueState,
-  recent: z.array(turnText).optional(),
-});
-
-export async function claimNicheConversation(input: Parameters<typeof claimAccountNicheTurn>[0] & { content: string }) {
+export async function claimNicheConversation(input: TurnFence & { requestId: string; content: string; expectedRevision: string | null }) {
   const { data, error } = await createServiceClient().rpc("claim_account_niche_turn_v2", {
     p_dialogue_id: input.dialogueId, p_account_id: input.accountId, p_user_id: input.userId,
     p_expected_version: input.expectedVersion, p_request_id: input.requestId, p_turn_token: input.turnToken,
@@ -74,15 +35,16 @@ export async function claimNicheConversation(input: Parameters<typeof claimAccou
   return !error && parsed.success ? parsed.data : null;
 }
 
-export async function commitNicheConversation(input: Parameters<typeof commitAccountNicheTurn>[0] & {
-  acceptedProposal: string | null; keepProposal: boolean; synthesis: SynthesisWrite;
+export async function commitNicheConversation(input: TurnFence & {
+  reply: string; proposal: string | null; summary: string | null; observedSummary: string | null;
+  observedSummaryUpdatedAt: string; acceptedProposal: string | null; synthesis: SynthesisWrite;
 }) {
   const { data, error } = await createServiceClient().rpc("commit_account_niche_turn_v2", {
     p_dialogue_id: input.dialogueId, p_account_id: input.accountId, p_user_id: input.userId,
     p_expected_version: input.expectedVersion, p_turn_token: input.turnToken, p_reply: input.reply,
-    p_understanding: input.understanding, p_proposal: input.proposal, p_summary: input.summary,
+    p_understanding: "", p_proposal: input.proposal, p_summary: input.summary,
     p_observed_summary: input.observedSummary, p_observed_summary_updated_at: input.observedSummaryUpdatedAt,
-    p_accepted_proposal: input.acceptedProposal, p_keep_proposal: input.keepProposal,
+    p_accepted_proposal: input.acceptedProposal, p_keep_proposal: false,
     p_synthesis: input.synthesis,
   });
   if (!error && data?.confirmed === true) {

@@ -1,6 +1,7 @@
 import { PendingSetupConversation } from "./_components/PendingSetupConversation";
-import { AccountNicheEditor, NicheResolutionCard } from "./_components/NicheResolutionCard";
-import { loadAccountNicheEditorAction } from "./niche-resolution-actions";
+import { NicheResolutionCard } from "./_components/NicheResolutionCard";
+import { AccountNicheConversation } from "./_components/AccountNicheConversation";
+import { loadHomeNicheConversationAction } from "./niche-resolution-actions";
 import { isAccountNicheEditingEnabled } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import { GenericCommercialPage } from "./_components/commercial-page/GenericCommercialPage";
 import { PublishedCommercialActivationPage } from "./_components/commercial-page/PublishedCommercialActivationPage";
@@ -33,6 +34,7 @@ export default async function Page({ params }: PageProps) {
           id: conversation.id,
           version: conversation.version,
           businessDisplayName: conversation.businessDisplayName,
+          businessNameCandidate: conversation.businessNameCandidate,
           attendanceEnabled: conversation.attendanceEnabled,
           stage: conversation.stage,
           messages: conversation.messages,
@@ -58,8 +60,8 @@ export default async function Page({ params }: PageProps) {
     );
   }
   if (journey.view === "waiting") {
-    const nicheEditor = isAccountNicheEditingEnabled() ? await loadAccountNicheEditorAction(accountSubdomain) : null;
-    return <>{nicheEditor ? <div className="mx-auto max-w-5xl px-4 pt-4"><AccountNicheEditor account={accountSubdomain} state={nicheEditor} /></div> : null}<CommercialWaitingState /></>;
+    const nicheEditor = isAccountNicheEditingEnabled() ? await loadHomeNicheConversationAction(accountSubdomain) : null;
+    return <>{nicheEditor ? <div className="mx-auto max-w-5xl px-4 pt-4"><AccountNicheConversation account={accountSubdomain} state={nicheEditor} home /></div> : null}<CommercialWaitingState /></>;
   }
   if (journey.view === "journey_unavailable") {
     return (
@@ -77,7 +79,8 @@ export default async function Page({ params }: PageProps) {
     );
   }
   if (journey.view === "commercial") {
-    const nicheEditor = isAccountNicheEditingEnabled() ? await loadAccountNicheEditorAction(accountSubdomain) : null;
+    const editorEnabled = isAccountNicheEditingEnabled();
+    const nicheEditor = editorEnabled ? await loadHomeNicheConversationAction(accountSubdomain) : null;
     const commercialPage =
       journey.bundle ? (
         <PublishedCommercialActivationPage
@@ -95,7 +98,7 @@ export default async function Page({ params }: PageProps) {
     return (
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10">
         <div className="space-y-6">
-          {nicheEditor ? <AccountNicheEditor account={accountSubdomain} state={nicheEditor} /> : journey.nicheResolution ? (
+          {nicheEditor ? <AccountNicheConversation account={accountSubdomain} state={nicheEditor} home /> : !editorEnabled && journey.nicheResolution ? (
             <NicheResolutionCard
               accountSubdomain={accountSubdomain}
               resolution={journey.nicheResolution}

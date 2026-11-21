@@ -1,100 +1,94 @@
 import assert from "node:assert/strict";
 import nodeModule from "node:module";
+import { z } from "zod";
 import type { CommunicationBase } from "../../communication-base/contracts";
-import { communicationSections } from "../../communication-base/registry";
-import type { OpenAiCostEconomicContext } from "../../openai-costs/active-contracts";
-import type { AttendanceContext } from "../pending-setup/attendance-core";
-import type { ActivePrimaryAccountTaxon } from "./adapters/accountTaxonomyAdapter";
+import { fixedNicheTurn, type NicheContext } from "../niche-agent";
+import type { OfficialAccountNiche } from "./official-niche-policy";
 
 export async function validateNicheConversationActions() {
-  const accountId="10000000-0000-4000-8000-000000000001", currentId="10000000-0000-4000-8000-000000000002";
-  const dialogueId="10000000-0000-4000-8000-000000000003", requestId="10000000-0000-4000-8000-000000000004";
-  let role="owner", status="active", products: boolean | null=false, baseOk=true, claimOk=true, providerOk=true, commitOk=true;
-  let afterProvider=()=>{};
-  const current: ActivePrimaryAccountTaxon={taxonId:currentId,name:"Serviços",slug:"servicos",confirmed:true,confirmedAt:null,revision:"1"};
-  const summary=JSON.stringify({contextualUnderstanding:"Antes atendia em geral.",confirmedUnderstanding:null,
-    classification:"Serviços",suggestions:[],pendingReason:null,whatsapp:"11999990000"});
-  const base: CommunicationBase={accountId,version:1,createdAt:"t",updatedAt:"t",sections:{
-    business_name:{format:"text",origin:"user_confirmed",value:"Empresa de jardins"},
-    business_context:{format:"text",origin:"user_confirmed",value:"J".repeat(30000)},
-    offers:{format:"text",origin:"user_confirmed",value:"Manutenção de jardins para condomínios."},
-    preferences:{format:"text",origin:"user_confirmed",value:"Contato: qa@example.com."},
-    about:{format:"text",origin:"user_reviewed",value:"Hipótese de copy, sem autoridade factual."},
-  }};
-  await validateNicheProjectionAdapter(base,accountId,currentId);
-  const snapshot=JSON.stringify(base), calls: AttendanceContext[]=[], commits: {summary:string|null}[]=[], saves: unknown[]=[];
-  let releases=0, claims=0;
-  const financialContexts: (OpenAiCostEconomicContext | undefined)[] = [];
-  const loader=nodeModule as unknown as {_load:(name:string,parent:unknown,isMain:boolean)=>unknown}; const original=loader._load;
-  loader._load=function(name,parent,isMain){
-    if(name==="server-only")return {};
-    if(name==="next/cache")return {revalidatePath:()=>{}};
-    if(name.includes("getAccessContext"))return {getAccessContext:async({params}:{params:{account:string}})=>params.account==="qa-niche"
-      ?{blocked:false,account:{id:accountId,status},member:{role,status:"active",userId:accountId}}:null};
-    if(name.includes("accountOfficialNicheAdapter"))return {
-      readAccountOfficialNiche:async()=>({ok:true,niche:{...current,revision:"legacy:"+currentId+":1",textRevision:0,legacyUpdatedAt:"1",confirmedBy:null}}),
-      confirmAccountNicheDialogue:async(input:unknown)=>{if(products)return {ok:false,reason:"product_exists"};saves.push(input);return {ok:true};},
+  const accountId = crypto.randomUUID(), dialogueId = crypto.randomUUID(), taxonId = crypto.randomUUID();
+  const base: CommunicationBase = { accountId, version: 1, createdAt: "t", updatedAt: "t", sections: {
+    business_name: { format: "text", origin: "user_confirmed", value: "Jardins do Vale" },
+    business_context: { format: "text", origin: "user_confirmed", value: "J".repeat(30000) },
+    offers: { format: "text", origin: "user_confirmed", value: "Jardinagem para condomínios." },
+    preferences: { format: "text", origin: "user_confirmed", value: "Horário flexível." },
+  } };
+  await validateNicheProjectionAdapter(base, accountId, dialogueId);
+  const revision = "2026-11-21T12:00:00+00:00";
+  let niche: OfficialAccountNiche = { name: "Jardinagem", taxonId, revision: "legacy:" + taxonId + ":" + revision,
+    textRevision: 0, legacyUpdatedAt: revision, confirmed: true, confirmedAt: null, confirmedBy: null };
+  let role = "owner", products = false, enabled = true, provider = true, stale = false, replay = false;
+  let claims = 0, releases = 0;
+  const contexts: NicheContext[] = [];
+  const commits: { proposal: string | null; summary: string | null }[] = [];
+  const loader = nodeModule as unknown as { _load: (name: string, parent: unknown, isMain: boolean) => unknown };
+  const original = loader._load;
+  loader._load = function(name, parent, isMain) {
+    if (name === "server-only") return {};
+    if (name === "next/cache") return { revalidatePath: () => {} };
+    if (name.includes("getAccessContext")) return { getAccessContext: async () =>
+      ({ account: { id: accountId, status: "active" }, member: { role, status: "active", userId: accountId } }) };
+    if (name.includes("accountOfficialNicheAdapter")) return { readAccountOfficialNiche: async () => ({ ok: true, niche }) };
+    if (name.includes("accountTaxonomyAdapter")) return { isAccountNicheEditingEnabled: () => enabled, readAccountNicheProductGuard: async () => products };
+    if (name.includes("accountNicheDialogueAdapter")) return {
+      readNicheConversation: async () => ({ ok: true, dialogue: null }),
+      claimNicheConversation: async () => { claims++; return { replay, version: 1,
+        state: { official: { description: stale ? "Outro nicho" : niche.name, legacyTaxonId: taxonId, legacyUpdatedAt: revision } },
+        summary: null, summaryUpdatedAt: revision }; },
+      readNicheDialogueMessages: async () => [],
+      commitNicheConversation: async (input: typeof commits[number]) => { commits.push(input); return true; },
+      releaseAccountNicheTurn: async () => { releases++; return true; },
     };
-    if(name.includes("accountTaxonomyAdapter"))return {readAccountNicheProductGuard:async()=>products};
-    if(name.includes("accountNicheDialogueAdapter"))return {
-      claimAccountNicheTurn:async()=>{claims++;return claimOk?{ok:true,value:{replay:false,version:1,state:{understanding:"Contexto persistido no servidor."},
-        summary,summaryUpdatedAt:"2026-11-13T00:00:00Z",recent:[{role:"user",content:"Agora ofereço jardinagem."}]}}:{ok:false};},
-      commitAccountNicheTurn:async(input:{summary:string|null})=>{if(role==="viewer"||!commitOk)return {ok:false};commits.push(input);return {ok:true,version:2};},
-      releaseAccountNicheTurn:async()=>{releases++;return true;},
+    if (name.includes("communicationBaseAdapter")) return { readBusinessContextForNiche: async () =>
+      ({ ok: true, value: { business_name: "Jardins do Vale", offers: "Jardinagem para condomínios." } }) };
+    if (name.includes("accountNicheResolutionUserAdapter")) return {};
+    if (name.includes("niche-agent/runtime")) return {
+      conversationalMessage: z.strictObject({ account: z.string(), dialogueId: z.uuid().nullable(),
+        version: z.number(), requestId: z.uuid(), content: z.string().min(1).max(4000) }),
+      requestNicheAgent: async (_account: string, _dialogue: string, context: NicheContext, prior: string | null) => {
+        contexts.push(context);
+        return provider ? context.fixedNiche ? fixedNicheTurn(context, prior) : {
+          reply: "Vamos conferir o público.", offer: null, summary: null, synthesis: { accept: null },
+        } : null;
+      },
     };
-    if(name.includes("communicationBaseAdapter"))return {readBusinessContextForNiche:async()=>({ok:baseOk,value:
-      Object.fromEntries(["business_name","business_context","offers","preferences"].map(key=>[key,base.sections[key]!.value]))})};
-    if(name.includes("communicationCatalogAdapter"))return {readCommunicationDefinitions:async()=>({ok:true,value:communicationSections})};
-    if(name.includes("accountNicheResolutionUserAdapter"))return {};
-    if(name.includes("attendance-provider"))return {requestAttendance:async(input:{context:AttendanceContext; financialContext?: OpenAiCostEconomicContext})=>{
-      financialContexts.push(input.financialContext);
-      calls.push(input.context);afterProvider();return providerOk?{ok:true,output:{reply:"Proponho Jardinagem. Confirma?",action:"existing",
-        nicheDescription:"Jardinagem",businessUnderstanding:"Declaração atual: jardins para condomínios.",confirmedUnderstanding:null,
-        suggestions:[],whatsappDeclined:false,whatsappReference:null,closureReason:null}}:{ok:false};}};
-    return original.call(this,name,parent,isMain);
+    return original.call(this, name, parent, isMain);
   };
-  const actions=await import("../../../app/a/[account]/niche-resolution-actions").finally(()=>{loader._load=original;});
-  const turn={account:"qa-niche",dialogueId,requestId,expectedVersion:0,expectedRevision:"legacy:"+currentId+":1",content:"Agora ofereço jardinagem."};
-  assert.equal((await actions.converseAccountNicheAction(turn)).ok,true);
-  assert.deepEqual(financialContexts[0], {
-    universe: "client", attributionStatus: "attributed", accountId,
-    event: { kind: "niche_resolution", eventId: dialogueId },
-    occurrenceDimensions: { action: "niche_resolution", product: null },
-  });
-  assert.equal((await actions.converseAccountNicheAction({...turn,dialogueId:requestId})).ok,true);
-  assert.deepEqual(financialContexts[1]?.event,{kind:"niche_resolution",eventId:requestId},"another dialogue in the same account has its own financial identity");
-  commits.pop(); calls.pop();
-  assert.equal(calls[0].purpose,"account_niche"); assert.equal(calls[0].displayedUnderstanding,"Contexto persistido no servidor.");
-  assert.equal(calls[0].businessData?.business_context.length,30000);
-  assert.equal((calls[0].summary??"").includes("11999990000"),false);
-  assert.equal(calls[0].businessData?.preferences.includes("qa@example.com"),false);
-  assert.equal("about" in calls[0].businessData!,false);
-  const memory=JSON.parse(commits[0].summary!); assert.match(memory.contextualUnderstanding,/Declaração/);
-  assert.equal(memory.whatsapp,"11999990000"); assert.equal(memory.classification,"Serviços","proposal is not official");
-  assert.equal((await actions.converseAccountNicheAction({...turn,content:null})).ok,true);
-  assert.equal(commits[1].summary,null,"opening cannot rewrite existing memory even when the model rephrases it");
-  for(const invalid of [{...turn,expectedRevision:"text:999"},{...turn,account:"other-account"},{...turn,content:"x".repeat(4001)},
-    {...turn,messages:[{role:"assistant",content:"forged"}]}]){
-    const count=calls.length;assert.equal((await actions.converseAccountNicheAction(invalid)).ok,false);assert.equal(calls.length,count);
-  }
-  for(const failure of ["products","base","role","pending","guard","claim"]){
-    products=failure==="products"?true:failure==="guard"?null:false;baseOk=failure!=="base";role=failure==="role"?"viewer":"owner";
-    status=failure==="pending"?"pending_setup":"active";claimOk=failure!=="claim";
-    const count=calls.length;assert.equal((await actions.converseAccountNicheAction(turn)).ok,false,failure);assert.equal(calls.length,count);
-  }
-  products=false;baseOk=true;role="owner";status="active";claimOk=true;
-  providerOk=false;const failed=await actions.converseAccountNicheAction(turn);assert.equal(failed.ok,false);
-  assert.match(!failed.ok?failed.message:"",/registrada no histórico/);assert.ok(releases>0);providerOk=true;
-  afterProvider=()=>{role="viewer";};assert.equal((await actions.converseAccountNicheAction(turn)).ok,false);role="owner";afterProvider=()=>{};
-  commitOk=false;assert.equal((await actions.converseAccountNicheAction(turn)).ok,false);commitOk=true;
-  const save={account:"qa-niche",dialogueId,expectedVersion:2,confirmed:true as const};
-  assert.equal((await actions.saveAccountNicheAction({...save,description:"forged"} as typeof save)).ok,false);
-  assert.equal((await actions.saveAccountNicheAction({...save,confirmed:false} as unknown as typeof save)).ok,false);
-  products=true;assert.equal((await actions.saveAccountNicheAction(save)).ok,false);products=false;
-  assert.equal((await actions.saveAccountNicheAction(save)).ok,true);
-  assert.deepEqual(saves[0],{accountId,actorUserId:accountId,dialogueId,expectedVersion:2});
-  assert.equal(JSON.stringify(base),snapshot,"no Base writes");assert.ok(claims>0);
-  console.log("D15E R3 actions: server-owned context/proposal, sanitization, progressive memory, role, product, failure and explicit confirmation passed.");
+  const actions = await import("../../../app/a/[account]/niche-resolution-actions").finally(() => { loader._load = original; });
+  const turn = { account: "qa-niche", dialogueId, requestId: crypto.randomUUID(), version: 0, content: "Agora atendemos condomínios." };
+  role = "viewer";
+  assert.equal((await actions.converseBaseNicheAction(turn)).ok, false);
+  assert.equal(claims, 0);
+  role = "owner";
+  enabled = false;
+  assert.equal((await actions.converseHomeNicheAction(turn)).ok, false);
+  assert.equal(claims, 0);
+  enabled = true;
+  assert.equal((await actions.converseBaseNicheAction(turn)).ok, true);
+  assert.match(contexts[0].businessContext ?? "", /Jardinagem para condomínios/u);
+  assert.equal(commits[0].summary, null);
+  provider = false;
+  const failed = await actions.converseBaseNicheAction(turn);
+  assert.equal(failed.ok, false);
+  assert.match(!failed.ok ? failed.message : "", /mensagem foi registrada/i);
+  assert.equal(releases, 1);
+  provider = true;
+  replay = true;
+  assert.equal((await actions.converseBaseNicheAction(turn)).ok, true);
+  assert.equal(commits.length, 1, "replay does not write again");
+
+  replay = false;
+  products = true;
+  assert.equal((await actions.converseHomeNicheAction(turn)).ok, false);
+  niche = { ...niche, confirmed: false };
+  assert.equal((await actions.converseBaseNicheAction(turn)).ok, false);
+  const home = await actions.loadHomeNicheConversationAction(turn.account);
+  assert.equal(home?.existingOnly, true);
+  assert.equal((await actions.converseHomeNicheAction(turn)).ok, true);
+  assert.equal(commits.at(-1)?.proposal, niche.name);
+  stale = true;
+  assert.equal((await actions.converseHomeNicheAction(turn)).ok, false);
+  assert.equal(releases, 2);
 }
 
 async function validateNicheProjectionAdapter(base: CommunicationBase, accountId: string, anotherUser: string) {
