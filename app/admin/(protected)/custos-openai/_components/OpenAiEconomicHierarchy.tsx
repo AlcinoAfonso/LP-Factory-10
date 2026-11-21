@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import type { Category3CostIdentity, Category3CostResult } from "@/openai-costs/category-3-costs";
 import { refreshOpenAiCostsAction } from "../actions";
 import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
@@ -30,6 +31,10 @@ export function OpenAiEconomicHierarchyView({
           Abra cada nível para percorrer universo, responsável econômico, evento, workload e execução/operação.
         </p>
       </div>
+      <details className="rounded-md border border-border bg-card p-4">
+        <summary className="cursor-pointer text-sm font-medium">Consultar geração da Categoria 3 por UUID</summary>
+        <div className="mt-3"><Category3Detail /></div>
+      </details>
       <div className="grid gap-4 sm:grid-cols-2">
         <UniverseCard label="Clientes" universe={hierarchy.clients} complete={hierarchy.activeAvailable && hierarchy.legacyAvailable} />
         <UniverseCard label="LP Factory" universe={hierarchy.lpFactory} complete={hierarchy.activeAvailable} />
@@ -148,16 +153,13 @@ function EventDetails({ event, accountId }: Readonly<{ event: OpenAiEconomicEven
   );
 }
 
-function Category3Detail({ identity }: Readonly<{ identity: Category3CostIdentity }>) {
+function Category3Detail({ identity }: Readonly<{ identity?: Category3CostIdentity }>) {
   const [result, setResult] = useState<Category3CostResult | null>(null);
   const [pending, startTransition] = useTransition();
-  function query() {
+  function query(form: FormData) {
+    setResult(null);
     startTransition(async () => {
       try {
-        const form = new FormData();
-        form.set("category3GenerationId", identity.generationId);
-        form.set("accountId", identity.accountId);
-        form.set("environment", identity.environment);
         const state = await refreshOpenAiCostsAction({ status: "idle", code: null, message: "", dashboard: null }, form);
         setResult(state.category3Cost ?? { ok: false });
       } catch { setResult({ ok: false }); }
@@ -165,11 +167,37 @@ function Category3Detail({ identity }: Readonly<{ identity: Category3CostIdentit
   }
   const detail = result?.ok ? result.value : null;
   return <div className="space-y-3">
-    <Button variant="secondary" className="min-h-11" onClick={query} disabled={pending}>
-      {result?.ok ? "Atualizar custo da geração" : "Consultar custo da geração completa"}
-    </Button>
+    {identity ? (
+      <Button variant="secondary" className="min-h-11" onClick={() => {
+        const form = new FormData();
+        form.set("category3GenerationId", identity.generationId);
+        form.set("accountId", identity.accountId);
+        form.set("environment", identity.environment);
+        query(form);
+      }} disabled={pending}>
+        {result?.ok ? "Atualizar custo da geração" : "Consultar custo da geração completa"}
+      </Button>
+    ) : (
+      <form onSubmit={event => {
+        event.preventDefault();
+        query(new FormData(event.currentTarget));
+      }} className="flex flex-col gap-2 sm:flex-row sm:items-end">
+        <label className="block w-full max-w-md text-sm font-medium">
+          UUID da geração
+          <Input name="category3GenerationId" className="mt-1 min-h-11" required />
+        </label>
+        <Button variant="secondary" className="min-h-11" disabled={pending}>Consultar</Button>
+      </form>
+    )}
     {pending ? <p role="status" className="text-sm text-muted-foreground">Consultando operações de todos os períodos…</p> : null}
     {result && !result.ok ? <p role="alert" className="text-sm">Consulta do custo da geração indisponível.</p> : null}
+    {detail && !identity ? (
+      <dl className="grid gap-3 break-all sm:grid-cols-3">
+        <Detail label="Geração" value={detail.identity.generationId} />
+        <Detail label="Conta" value={detail.identity.accountId} />
+        <Detail label="Ambiente" value={environmentLabel(detail.identity.environment)} />
+      </dl>
+    ) : null}
     {detail ? <Category3CostDetailView detail={detail} /> : null}
   </div>;
 }

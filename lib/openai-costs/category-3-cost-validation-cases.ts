@@ -128,6 +128,7 @@ export async function validateCategory3Costs() {
   let baseRow = { account_id: accountId, version: 5, created_at: priorDay, updated_at: priorDay,
     sections_json: { business_name: { value: "Negócio de teste", origin: "user_confirmed", format: "text" } } };
   let rejectSave = false;
+  let platformAdminAllowed = false;
   const client = { rpc(name: string, args: Record<string, unknown>) {
     if (name === "commit_generated_communication_intelligence_v1") return { async single() {
       assert.equal(args.p_account_id, accountId);
@@ -211,6 +212,7 @@ export async function validateCategory3Costs() {
     if (name === "server-only") return {};
     if (name.endsWith("supabase/service")) return { createServiceClient: () => client };
     if (name.endsWith("supabase/server")) return { createClient: async () => client };
+    if (name === "@/lib/access/guards") return { requirePlatformAdmin: async () => ({ allowed: platformAdminAllowed }) };
     if (name === "next/cache") return { revalidatePath() {} };
     if (name === "next/server") return { after: (task: () => Promise<unknown>) => afterSave.push(task) };
     if (name.endsWith("communication-base/access")) return { requireCommunicationBaseAccess: async () => ({
@@ -229,10 +231,11 @@ export async function validateCategory3Costs() {
     }
     return original.call(this, name, parent, isMain);
   };
-  const [adapter, { readOpenAiActiveCosts }, { activeCostTrackingAdapter }, { recordCategory3SavedEvidence }, actions] = await Promise.all([
+  const [adapter, { readOpenAiActiveCosts }, { activeCostTrackingAdapter }, { recordCategory3SavedEvidence }, actions, adminActions] = await Promise.all([
     import("./adapters/category3CostReadAdapter"), import("./adapters/activeCostReadModelAdapter"),
     import("./adapters/activeCostTrackingAdapter"), import("../communication-base/adapters/category3SavedEvidenceAdapter"),
     import("../../app/a/[account]/base-comunicacao/actions"),
+    import("../../app/admin/(protected)/custos-openai/actions"),
   ]).finally(() => { loader._load = original; });
   const read = await adapter.readCategory3Cost(first);
   assert.ok(read.ok);
@@ -261,6 +264,21 @@ export async function validateCategory3Costs() {
   assert.ok(auditOnlyResult.ok);
   assert.deepEqual([auditOnlyResult.value.outcome, auditOnlyResult.value.calculatedCostUsd, auditOnlyResult.value.matchesSavedOperations],
     ["saved", null, false]);
+  const initialAdminState = { status: "idle", code: null, message: "", dashboard: null } as const;
+  const lookup = new FormData();
+  lookup.set("category3GenerationId", " " + auditOnly.generationId.toUpperCase() + " ");
+  const denied = await adminActions.refreshOpenAiCostsAction(initialAdminState, lookup);
+  assert.deepEqual(denied.category3Cost, { ok: false });
+  platformAdminAllowed = true;
+  const found = await adminActions.refreshOpenAiCostsAction(initialAdminState, lookup);
+  assert.deepEqual(found.category3Cost, auditOnlyResult);
+  assert.deepEqual(auditOnlyResult.value.identity, auditOnly);
+  assert.deepEqual((await adminActions.refreshOpenAiCostsAction(initialAdminState, lookup)).category3Cost, found.category3Cost);
+  lookup.set("category3GenerationId", second.generationId);
+  assert.deepEqual((await adminActions.refreshOpenAiCostsAction(initialAdminState, lookup)).category3Cost, { ok: false });
+  lookup.set("category3GenerationId", auditOnly.generationId);
+  lookup.set("accountId", first.accountId);
+  assert.deepEqual((await adminActions.refreshOpenAiCostsAction(initialAdminState, lookup)).category3Cost, { ok: false });
   assert.deepEqual(await adapter.readCategory3Cost({ ...auditOnly, environment: "production" }), { ok: false });
   assert.deepEqual(await adapter.readCategory3Cost({ ...first, accountId: id(999) }), { ok: false });
   assert.deepEqual(await adapter.readCategory3Cost({ ...first, generationId: id(4) }), { ok: false });

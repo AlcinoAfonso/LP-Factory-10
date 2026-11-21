@@ -23,9 +23,12 @@ export async function refreshOpenAiCostsAction(
     const unavailable = { status: "error", code: "CATEGORY_3_COST_UNAVAILABLE", message: "Custo da geração indisponível.",
       dashboard: null, category3Cost: { ok: false } } as const;
     if (!(await requirePlatformAdmin()).allowed) return unavailable;
-    const identity = category3CostIdentitySchema.safeParse({
-      generationId: formData.get("category3GenerationId"), accountId: formData.get("accountId"), environment: formData.get("environment"),
-    });
+    const generationId = formData.get("category3GenerationId");
+    const accountId = formData.get("accountId");
+    const environment = formData.get("environment");
+    const identity = accountId === null && environment === null
+      ? category3CostIdentitySchema.shape.generationId.safeParse(typeof generationId === "string" ? generationId.trim().toLowerCase() : generationId)
+      : category3CostIdentitySchema.safeParse({ generationId, accountId, environment });
     if (!identity.success) return unavailable;
     const cost = await readCategory3Cost(identity.data);
     return cost.ok ? { status: "success", code: null, message: "Custos da geração consultados.",

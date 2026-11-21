@@ -6,6 +6,7 @@ import path from "node:path";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { buildCategory3CostDetail } from "@/openai-costs/category-3-costs";
+import { buildOpenAiEconomicHierarchy } from "@/openai-costs/economic-hierarchy";
 
 import { refreshOpenAiCostsActionCore } from "./action-core";
 import {
@@ -285,7 +286,7 @@ loader._load = function(name, parent, isMain) {
   };
   return originalLoader.call(this, name, parent, isMain);
 };
-const [{ DialogueCostDetailView, OpenAiDialogueCosts }, { OpenAiCostExecutionDetails, Category3CostDetailView }] = await Promise.all([
+const [{ DialogueCostDetailView, OpenAiDialogueCosts }, { OpenAiCostExecutionDetails, Category3CostDetailView, OpenAiEconomicHierarchyView }] = await Promise.all([
   import("./_components/OpenAiDialogueCosts"), import("./_components/OpenAiEconomicHierarchy"),
 ]).finally(() => { loader._load = originalLoader; });
 const executionMarkup = renderToStaticMarkup(<OpenAiCostExecutionDetails execution={activeModel.executions[0]} />);
@@ -311,7 +312,14 @@ const categorySaved = renderToStaticMarkup(<Category3CostDetailView detail={buil
 }, { environment: category.environment })} />);
 for (const text of ["Salva", "Subtotal parcial", "Cobertura financeira global não comprovada"])
   assert.ok(categorySaved.includes(text), text);
-const categoryEmpty = renderToStaticMarkup(<Category3CostDetailView detail={buildCategory3CostDetail(category, { ...activeModel, executions: [], pendingOperationCount: 0, unavailableOperationCount: 0 })} />);
+const categoryEmpty = renderToStaticMarkup(<Category3CostDetailView detail={buildCategory3CostDetail(
+  category, { ...activeModel, executions: [], pendingOperationCount: 0, unavailableOperationCount: 0 },
+  { environment: category.environment },
+)} />);
+assert.ok(categoryEmpty.includes("Salva"));
+const hierarchyMarkup = renderToStaticMarkup(<OpenAiEconomicHierarchyView hierarchy={buildOpenAiEconomicHierarchy(activeModel, null)} />);
+assert.ok(hierarchyMarkup.includes("Consultar geração da Categoria 3 por UUID"));
+assert.ok(hierarchyMarkup.includes('name="category3GenerationId"'));
 assert.ok(categoryEmpty.includes("Sem valor comprovado"));
 assert.equal(categoryEmpty.includes("US$ 0,00"), false);
 const dialogue = { dialogueId: "e2155000-0000-4000-8000-000000000040", accountId: activeModel.executions[0].accountId!,

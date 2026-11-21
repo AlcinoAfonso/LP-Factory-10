@@ -53,7 +53,7 @@ export function buildCategory3CostDetail(
     ? expected.count === operations.size && expected.digest === category3DispatchFingerprint(operations).digest
     : null;
   return {
-    outcome: saved ? "saved" : "unconfirmed", matchesSavedOperations,
+    identity, outcome: saved ? "saved" : "unconfirmed", matchesSavedOperations,
     executions: model.executions, calculatedCostUsd: hasCalculatedCost ? model.totalCalculatedUsd : null,
     attemptCount: operations.size, retryCount, searches, unknownSearchCount, pendingCount,
     unavailableCount: model.unavailableOperationCount, missingCount,
