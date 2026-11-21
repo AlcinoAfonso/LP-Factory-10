@@ -17,6 +17,7 @@ import {
   completePendingSetup,
   loadPendingSetupConversation,
   releasePendingNicheTurn,
+  savePendingSetupContact,
   setPendingSetupBusinessDisplayName,
 } from "../../../lib/onboarding/pending-setup/adapters/pendingSetupConversationAdapter";
 import { isE1011PassageEnabled, isE1012AttendanceEnabled } from "../../../lib/onboarding/pending-setup/config";
@@ -184,7 +185,13 @@ export async function conversePendingSetupAction(raw: unknown) {
       : null;
     const operationalProposal = saved?.kind === "operational_fallback" ? conversation.businessContextText : null;
     const synthesis = saved?.kind === "semantic" && !active ? null : currentSynthesis(state, conversation.messages);
-    const observed = conversation.accountContext;
+    let observed = conversation.accountContext;
+    const fieldPhone = submittedWhatsApp(conversation.messages.filter(message => message.id === requestId));
+    if (fieldPhone) {
+      const stored = await savePendingSetupContact({ ...fence, observed, phone: fieldPhone });
+      if (!stored) throw new Error("pending_setup_contact_conflict");
+      observed = stored;
+    }
     const summary = nicheSummaryContext(observed.summary);
     const result = await requestNicheAgent(actor.accountId, dialogueId, {
       message: { id: requestId, text: content, replyToProposalId: active?.id ?? null },
@@ -231,8 +238,11 @@ export async function conversePendingSetupAction(raw: unknown) {
       (outcome.publicName.reaction === "continue" && !outcome.publicName.proposal && state?.acceptedName));
     const ready = !next && acceptedSynthesis && nameReady && Boolean(understanding) &&
       (accept || niche?.confirmed || (state?.operationalAccepted && outcome.operational.reaction === "continue"));
+    const contactRef = state?.synthesis?.contact;
+    const sourceId = contactRef === "declined" ? state?.synthesis?.messageId ?? null
+      : contactRef && typeof contactRef !== "string" ? contactRef.messageId : null;
     const written = await commitPendingNicheTurn({ ...fence, reply: result.reply,
-      summary: mergeNicheMemory(observed.summary, result, synthesis, submittedWhatsApp(conversation.messages)),
+      summary: mergeNicheMemory(observed.summary, result, synthesis, submittedWhatsApp(conversation.messages, sourceId)),
       observed, understanding, preferredName: outcome.preferredName.value,
       preferredNameDeclined: outcome.preferredName.value ? false : outcome.preferredName.declined || Boolean(conversation.preferredNameDeclined),
       stage: next ? "niche_confirmation" : ready ? "ready_to_complete" : "business_understanding",
