@@ -141,7 +141,8 @@ export function nicheSummaryContext(raw: string | null) {
   };
 }
 
-export function mergeNicheMemory(raw: string | null, turn: NicheTurn, snapshot: ReturnType<typeof resolveSynthesis>) {
+export function mergeNicheMemory(raw: string | null, turn: NicheTurn,
+  snapshot: ReturnType<typeof resolveSynthesis>) {
   if (!snapshot || turn.synthesisWrite.accept !== snapshot.id) return null;
   const previous = readSummary(raw);
   if (!previous) return null;
@@ -167,9 +168,11 @@ export function mergeNicheMemory(raw: string | null, turn: NicheTurn, snapshot: 
   if (!summary.confirmedUnderstanding?.includes(snapshot.text)) {
     summary.confirmedUnderstanding = [summary.confirmedUnderstanding, snapshot.text].filter(Boolean).join("\n");
   }
-  if (snapshot.phone || snapshot.declined) {
-    summary.whatsapp = snapshot.phone;
-    summary.whatsappDeclined = snapshot.declined;
+  const phone = snapshot.declined ? null : snapshot.phone;
+  const declined = snapshot.declined;
+  if (phone || declined) {
+    summary.whatsapp = phone;
+    summary.whatsappDeclined = declined;
   }
   const joined = JSON.stringify(summary);
   if ((summary.confirmedUnderstanding?.length ?? 0) > 4000 || joined.length > 5800) throw new Error("summary_capacity");

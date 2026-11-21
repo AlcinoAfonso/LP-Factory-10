@@ -231,8 +231,15 @@ export async function conversePendingSetupAction(raw: unknown) {
       (outcome.publicName.reaction === "continue" && !outcome.publicName.proposal && state?.acceptedName));
     const ready = !next && acceptedSynthesis && nameReady && Boolean(understanding) &&
       (accept || niche?.confirmed || (state?.operationalAccepted && outcome.operational.reaction === "continue"));
+    const contactRef = state?.synthesis?.contact;
+    const contactMessageId = contactRef && typeof contactRef !== "string"
+      ? contactRef.messageId : state?.synthesis?.messageId;
+    const contactPosition = conversation.messages.findIndex(entry => entry.id === contactMessageId);
+    const newerField = contactPosition >= 0 && conversation.messages.slice(contactPosition + 1)
+      .some(entry => entry.role === "user" && /(?:^|\n)WhatsApp para contato: \(\d{2}\) 9\d{4}-\d{4}$/u.test(entry.content));
+    const memorySynthesis = newerField && synthesis ? { ...synthesis, phone: null, declined: false } : synthesis;
     const written = await commitPendingNicheTurn({ ...fence, reply: result.reply,
-      summary: mergeNicheMemory(observed.summary, result, synthesis),
+      summary: mergeNicheMemory(observed.summary, result, memorySynthesis),
       observed, understanding, preferredName: outcome.preferredName.value,
       preferredNameDeclined: outcome.preferredName.value ? false : outcome.preferredName.declined || Boolean(conversation.preferredNameDeclined),
       stage: next ? "niche_confirmation" : ready ? "ready_to_complete" : "business_understanding",

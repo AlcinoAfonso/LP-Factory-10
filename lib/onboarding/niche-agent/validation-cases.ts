@@ -137,7 +137,7 @@ test("síntese referencia o texto exibido e o WhatsApp sem ocultar ano, quantida
 });
 
 test("WhatsApp informado após a síntese só entra no Summary com aceite da síntese atualizada", () => {
-  assert.match(NICHE_AGENT_INSTRUCTIONS, /Se um WhatsApp chegar após uma síntese/u);
+  assert.match(NICHE_AGENT_INSTRUCTIONS, /corrigido espontaneamente no chat/u);
   const originalAssistant = "00000000-0000-4000-8000-000000000021";
   const userContact = "00000000-0000-4000-8000-000000000022";
   const updatedAssistant = "00000000-0000-4000-8000-000000000023";
@@ -178,6 +178,31 @@ test("WhatsApp informado após a síntese só entra no Summary com aceite da sí
   assert.equal(summary.confirmedUnderstanding, business);
   assert.equal(summary.whatsapp, "(21) 99999-1111");
   assert.equal(summary.whatsappDeclined, false);
+});
+
+test("campo opcional é persistido fora da IA sem apagar informações empresariais", () => {
+  assert.match(NICHE_AGENT_INSTRUCTIONS, /nicho breve e fiel/u);
+  assert.match(NICHE_AGENT_INSTRUCTIONS, /não solicite nem valide WhatsApp/u);
+  const phone = "WhatsApp para contato: (21) 99999-1111";
+  const id = "00000000-0000-4000-8000-000000000041";
+  const input = { ...context, pendingSetup: pendingContext,
+    message: { id, text: "Revendo carros seminovos para pessoas físicas.\n" + phone, replyToProposalId: null },
+    history: [{ id: "00000000-0000-4000-8000-000000000042", role: "user" as const, text: phone }],
+  };
+  const request = String(prepared(input).request.input);
+  assert.match(request, /Revendo carros seminovos para pessoas físicas/u);
+  assert.doesNotMatch(request, /WhatsApp para contato|99999-1111|contato_1/u);
+  const output = run(input, { ...clarification,
+    reply: "Você também oferece financiamento?",
+    proposal: "Revenda de carros seminovos para pessoas físicas",
+    synthesis: { proposal: "Revenda de seminovos para pessoas físicas. Ofertas: financiamento e troca.", reaction: "continue" },
+    pendingSetup: pendingOutcome,
+  });
+  assert.ok(output.ok, JSON.stringify(output));
+  const voluntary = prepared({ ...context, pendingSetup: pendingContext,
+    message: { id, text: "Corrigindo o meu WhatsApp: (21) 98888-2222.", replyToProposalId: null } });
+  assert.match(String(voluntary.request.input), /\[contato_1\]/u);
+  assert.doesNotMatch(String(voluntary.request.input), /98888-2222/u);
 });
 
 test("exibe a síntese ausente na resposta do Pending Setup e referencia o trecho exibido", () => {
