@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { prepareNicheTurn, type NicheTurn, type NicheTurnContext } from "./index";
 import { NICHE_AGENT_INSTRUCTIONS, NICHE_AGENT_PROMPT_VERSION } from "./prompt";
-import { mergeNicheMemory, publicResearchContext, relevantNicheHistory, resolveSynthesis } from "./dialogue";
+import { mergeNicheMemory, publicResearchContext, relevantNicheHistory, resolveSynthesis, submittedWhatsApp } from "./dialogue";
 
 type ModelTurn = Omit<NicheTurn, "confirmation" | "synthesisWrite" | "synthesis" | "searchTopic">;
 const proposed = "Catering vegano para eventos corporativos";
@@ -180,44 +180,52 @@ test("WhatsApp informado após a síntese só entra no Summary com aceite da sí
   assert.equal(summary.whatsappDeclined, false);
 });
 
-test("campo WhatsApp vincula contato à síntese sem depender do modelo", () => {
+test("campo WhatsApp persiste no Summary apenas após síntese aceita, sem depender do modelo", () => {
   assert.match(NICHE_AGENT_INSTRUCTIONS, /nicho breve e fiel/u);
   assert.match(NICHE_AGENT_INSTRUCTIONS, /não solicite WhatsApp no chat/u);
   const user = "00000000-0000-4000-8000-000000000041";
   const assistant = "00000000-0000-4000-8000-000000000042";
   const business = "Revenda de seminovos para pessoas físicas. Ofertas: financiamento e troca.";
   const content = "WhatsApp para contato: (21) 99999-1111";
-  const contextWithContact = { ...context, pendingSetup: pendingContext,
+  const contactMessage = { id: user, role: "user" as const, content };
+  const input = { ...context, pendingSetup: pendingContext,
     message: { id: user, text: content, replyToProposalId: null } };
-  const request = String(prepared(contextWithContact).request.input);
+  const request = String(prepared(input).request.input);
   assert.match(request, /WhatsApp para contato: \[contato_1\]/u);
   assert.doesNotMatch(request, /99999-1111/u);
-  const output = run(contextWithContact, { ...clarification,
-    reply: "Confirma o entendimento do negócio?", 
+  const offer = run(input, { ...clarification, reply: "Confirma o negócio?",
     proposal: "Revenda de seminovos para pessoas físicas",
     synthesis: { proposal: business, reaction: "continue" },
     pendingSetup: { ...pendingOutcome, whatsapp: { reference: null, declined: true } },
   });
-  assert.ok(output.ok && output.value.synthesisWrite.offer, JSON.stringify(output));
-  assert.equal(output.value.pendingSetup?.whatsapp.value, "(21) 99999-1111");
-  assert.equal(output.value.pendingSetup?.whatsapp.declined, false);
-  assert.match(output.value.reply, /WhatsApp informado \(final 11\)/u);
-  const snapshot = resolveSynthesis({ ...output.value.synthesisWrite.offer, messageId: assistant }, [
-    { id: user, role: "user", content },
-    { id: assistant, role: "assistant", content: output.value.reply },
+  assert.ok(offer.ok && offer.value.synthesisWrite.offer, JSON.stringify(offer));
+  const snapshot = resolveSynthesis({ ...offer.value.synthesisWrite.offer, messageId: assistant }, [
+    contactMessage, { id: assistant, role: "assistant", content: offer.value.reply },
   ]);
-  assert.equal(snapshot?.phone, "(21) 99999-1111");
+  assert.equal(snapshot?.phone, null);
   const prior = JSON.stringify({ confirmedUnderstanding: null });
-  assert.equal(mergeNicheMemory(prior, output.value, snapshot), null);
-  const accepted = run({ ...contextWithContact, activeSynthesis: {
-    id: assistant, text: business, accepted: false },
+  assert.equal(submittedWhatsApp([contactMessage]), "(21) 99999-1111");
+  assert.equal(mergeNicheMemory(prior, offer.value, snapshot, submittedWhatsApp([contactMessage])), null);
+  const accepted = run({ ...input, activeSynthesis: { id: assistant, text: business, accepted: false },
     message: { id: "00000000-0000-4000-8000-000000000043", text: "Sim", replyToProposalId: null },
   }, { ...clarification, reply: "Obrigado!", synthesis: { proposal: null, reaction: "accept" },
     pendingSetup: pendingOutcome });
   assert.ok(accepted.ok, JSON.stringify(accepted));
-  const summary = JSON.parse(mergeNicheMemory(prior, accepted.value, snapshot)!);
+  const summary = JSON.parse(mergeNicheMemory(prior, accepted.value, snapshot,
+    submittedWhatsApp([contactMessage, { id: "confirm", role: "user", content: "Sim" }]))!);
   assert.equal(summary.whatsapp, "(21) 99999-1111");
+  assert.equal(summary.whatsappDeclined, false);
   assert.equal(summary.confirmedUnderstanding, business);
+  const simultaneous = run({ ...input, activeSynthesis: { id: assistant, text: business, accepted: false },
+    message: { id: "00000000-0000-4000-8000-000000000044",
+      text: "Sim\n" + content, replyToProposalId: null },
+  }, { ...clarification, reply: "Tudo confirmado.",
+    synthesis: { proposal: null, reaction: "accept" }, pendingSetup: pendingOutcome });
+  assert.ok(simultaneous.ok, JSON.stringify(simultaneous));
+  assert.equal(JSON.parse(mergeNicheMemory(prior, simultaneous.value,
+    { id: assistant, text: business, phone: null, declined: false },
+    submittedWhatsApp([{ id: "combined", role: "user", content: "Sim\n" + content }]))!).whatsapp,
+    "(21) 99999-1111");
 });
 
 test("exibe a síntese ausente na resposta do Pending Setup e referencia o trecho exibido", () => {
