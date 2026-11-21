@@ -54,6 +54,7 @@ export function PendingSetupConversation({
             <h1 className="text-xl font-semibold text-foreground">Conte sobre seu negócio</h1>
             <NicheConversation account={accountSubdomain} dialogueId={conversation.id} version={conversation.version}
               messages={conversation.messages} retry={retry} ended={ready}
+              showWhatsApp={conversation.stage === "niche_confirmation"}
               introductoryMessage="Olá! Sou o agente da LP Factory responsável por validar o nicho do seu negócio. Como posso chamar você?" label="Sua mensagem" submit={conversePendingSetupAction} />
           </div>
         ) : null}
