@@ -47,12 +47,12 @@ export async function requestNicheAgent(accountId: string, dialogueId: string, c
     return null;
   }
   const search = configuration.value.webSearch;
-  const topic = turn.value.searchTopic && !context.displayed && publicResearchTopic(turn.value.searchTopic, context);
+  const topic = turn.value.searchTopic && publicResearchTopic(turn.value.searchTopic, context);
   if (!search || !topic) return turn.value;
   const research = await requestOpenAiResponses({
     ...transport, promptVersion: prepared.promptVersion, contractVersion: prepared.contractVersion,
     request: {
-      ...limits, instructions: "Esclareça somente o assunto público recebido, em português e com brevidade. Use a pesquisa para fatos verificáveis. Não faça proposta de nicho, peça confirmação ou inclua URLs no texto.",
+      ...limits, instructions: "Esclareça somente o assunto público recebido, em português e com brevidade. Use a pesquisa para fatos verificáveis. Não proponha nicho, peça confirmação, anuncie gravações ou inclua URLs no texto.",
       input: topic, store: false, background: false,
       tools: [{ type: "web_search", external_web_access: search.externalWebAccess, search_context_size: search.searchContextSize }],
       tool_choice: "auto", max_tool_calls: search.maxToolCalls, include: ["web_search_call.action.sources"],

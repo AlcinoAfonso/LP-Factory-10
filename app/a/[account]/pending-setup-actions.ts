@@ -208,13 +208,15 @@ export async function conversePendingSetupAction(raw: unknown) {
     const accept = Boolean(accepted && saved);
     const ready = Boolean(accepted && (accept || niche?.confirmed) &&
       (!publicNameRequired || accepted.publicName || publicName));
+    const keepName = !result.offer?.publicName && (keep || state?.acceptedName);
     const written = await commitPendingNicheTurn({ ...fence, reply: result.reply, summary: result.summary, observed,
       understanding: result.offer?.summary ?? accepted?.summary ?? conversation.businessContextText ?? "",
       preferredName: typeof result.preferredName === "string" ? result.preferredName : null,
       preferredNameDeclined: result.preferredName === false || (result.preferredName === null && Boolean(conversation.preferredNameDeclined)),
       stage: next ? "niche_confirmation" : ready ? "ready_to_complete" : "business_understanding",
       proposal: next, accept, observedTaxon: taxonomy.taxon?.taxonId ?? null, observedRevision: revision,
-      nameProposal: result.offer?.publicName ?? null, nameReaction: accepted?.publicName ? "accept" : keep ? "keep" : "clear",
+      nameProposal: result.offer?.publicName ?? null,
+      nameReaction: accepted?.publicName ? "accept" : keepName ? "keep" : "clear",
       clearOperational: result.synthesis.clear, synthesis: result.synthesis,
     });
     if (!written) throw new Error("turn_not_committed");

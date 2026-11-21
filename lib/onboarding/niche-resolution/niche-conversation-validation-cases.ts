@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import nodeModule from "node:module";
 import { z } from "zod";
 import type { CommunicationBase } from "../../communication-base/contracts";
-import { fixedNicheTurn, type NicheContext } from "../niche-agent";
+import { fixedNicheTurn, prepareNicheTurn, type NicheContext } from "../niche-agent";
 import type { OfficialAccountNiche } from "./official-niche-policy";
 
 export async function validateNicheConversationActions() {
@@ -32,7 +32,7 @@ export async function validateNicheConversationActions() {
     if (name.includes("accountTaxonomyAdapter")) return { isAccountNicheEditingEnabled: () => enabled, readAccountNicheProductGuard: async () => products };
     if (name.includes("accountNicheDialogueAdapter")) return {
       readNicheConversation: async () => ({ ok: true, dialogue: null }),
-      claimNicheConversation: async () => { claims++; return { replay, version: 1,
+      claimNicheConversation: async () => { claims++; return products && niche.confirmed && !replay ? null : { replay, version: 1,
         state: { official: { description: stale ? "Outro nicho" : niche.name, legacyTaxonId: taxonId, legacyUpdatedAt: revision } },
         summary: null, summaryUpdatedAt: revision }; },
       readNicheDialogueMessages: async () => [],
@@ -80,6 +80,9 @@ export async function validateNicheConversationActions() {
   replay = false;
   products = true;
   assert.equal((await actions.converseHomeNicheAction(turn)).ok, false);
+  replay = true;
+  assert.equal((await actions.converseHomeNicheAction(turn)).ok, true, "product guard allows an exact replay of a committed turn");
+  replay = false;
   niche = { ...niche, confirmed: false };
   assert.equal((await actions.converseBaseNicheAction(turn)).ok, false);
   const home = await actions.loadHomeNicheConversationAction(turn.account);
@@ -89,6 +92,55 @@ export async function validateNicheConversationActions() {
   stale = true;
   assert.equal((await actions.converseHomeNicheAction(turn)).ok, false);
   assert.equal(releases, 2);
+}
+
+export async function validatePendingConfirmedName() {
+  const accountId = crypto.randomUUID(), dialogueId = crypto.randomUUID(), assistantId = crypto.randomUUID();
+  const version = 3;
+  const acceptedName = "Jardins do Vale";
+  const proposed = { summary: "Cuida de jardins de condomínios.", niche: "Jardinagem para condomínios", publicName: null };
+  let state: Record<string, unknown> = { acceptedName };
+  let proposal: unknown = null;
+  let messages: { id: string; role: "assistant"; content: string }[] = [];
+  const commits: { nameReaction: string; reply: string; proposal: unknown; synthesis: { offer: object | null }; stage: string }[] = [];
+  const loader = nodeModule as unknown as { _load: (name: string, parent: unknown, isMain: boolean) => unknown };
+  const original = loader._load;
+  loader._load = function(name, parent, isMain) {
+    if (name === "server-only" || name.includes("accountNicheResolutionUserAdapter")) return {};
+    if (name === "next/cache") return { revalidatePath: () => {} };
+    if (name.includes("getAccessContext")) return { getAccessContext: async () =>
+      ({ account: { id: accountId, status: "pending_setup" }, member: { role: "owner", status: "active", userId: accountId } }) };
+    if (name.includes("accountOfficialNicheAdapter")) return { readAccountOfficialNiche: async () => ({ ok: true, niche: null }) };
+    if (name.includes("accountTaxonomyAdapter")) return { readActivePrimaryAccountTaxon: async () => ({ ok: true, taxon: null }) };
+    if (name.includes("pending-setup/config")) return { isE1011PassageEnabled: () => true, isE1012AttendanceEnabled: () => true };
+    if (name.includes("pendingSetupConversationAdapter")) return {
+      claimPendingNicheTurn: async () => ({ version, replay: false }),
+      loadPendingSetupConversation: async () => ({ id: dialogueId, version, accountContext: { summary: null, updatedAt: "1" },
+        dialogueState: state, attendanceProposal: proposal, messages }),
+      commitPendingNicheTurn: async (input: typeof commits[number]) => { commits.push(input); return true; },
+    };
+    if (name.includes("niche-agent/runtime")) return {
+      conversationalMessage: z.object({ account: z.string(), dialogueId: z.uuid(), version: z.number(), requestId: z.uuid(), content: z.string() }),
+      requestNicheAgent: async (_account: string, _dialogue: string, context: NicheContext) => {
+        const text = JSON.stringify(context.message === "Sim." ? { reply: "Entendido." } : { offer: proposed });
+        const result = prepareNicheTurn(context, null).parseResponse({ status: "completed", output: [
+          { role: "assistant", type: "message", content: [{ type: "output_text", text }] },
+        ] });
+        return result.ok ? result.value : null;
+      },
+    };
+    return original.call(this, name, parent, isMain);
+  };
+  const action = await import("../../../app/a/[account]/pending-setup-actions").finally(() => { loader._load = original; });
+  const turn = { account: "qa-niche", dialogueId, requestId: crypto.randomUUID(), version, content: "Cuido de jardins, principalmente de condomínios." };
+  assert.equal((await action.conversePendingSetupAction(turn)).ok, true);
+  assert.equal(commits[0].nameReaction, "keep");
+  proposal = commits[0].proposal;
+  state = { acceptedName, synthesis: { ...commits[0].synthesis.offer, messageId: assistantId } };
+  messages = [{ id: assistantId, role: "assistant", content: commits[0].reply }];
+  assert.equal((await action.conversePendingSetupAction({ ...turn, requestId: crypto.randomUUID(), content: "Sim." })).ok, true);
+  assert.equal(commits[1].stage, "ready_to_complete");
+  assert.equal(commits[1].nameReaction, "keep");
 }
 
 async function validateNicheProjectionAdapter(base: CommunicationBase, accountId: string, anotherUser: string) {

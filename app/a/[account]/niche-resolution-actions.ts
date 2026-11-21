@@ -84,13 +84,14 @@ async function converseNiche(raw: unknown, home: boolean) {
     if (!current.ok || !business.ok || products === null) return failure;
     const niche = current.niche;
     const fixedNiche = home && products && niche && !niche.confirmed ? niche.name : null;
-    if (products && niche && !fixedNiche)
-      return { ok: false as const, message: "A redefinição está indisponível porque a conta tem um produto cadastrado." };
+    const blocked = Boolean(products && niche && !fixedNiche);
+    const productMessage = "A redefinição está indisponível porque a conta tem um produto cadastrado.";
+    if (blocked && !niche?.confirmed) return { ok: false as const, message: productMessage };
     const expectedRevision = niche?.revision ?? null;
     const turnToken = crypto.randomUUID();
     const claim = await claimNicheConversation({ ...identity, turnToken, expectedRevision,
       expectedVersion: input.version, requestId: input.requestId, content: input.content });
-    if (!claim) return { ok: false as const, message: "A conversa ou o nicho mudou. Atualize a página para continuar." };
+    if (!claim) return { ok: false as const, message: blocked ? productMessage : "A conversa ou o nicho mudou. Atualize a página para continuar." };
     if (claim.replay) return { ok: true as const };
     fence = { ...identity, expectedVersion: claim.version, turnToken };
     const messages = await readNicheDialogueMessages(identity.dialogueId);
@@ -109,11 +110,13 @@ async function converseNiche(raw: unknown, home: boolean) {
       officialNiche: niche?.confirmed ? niche.name : null, fixedNiche,
     }, prior);
     if (!turn) throw new Error("provider_unavailable");
+    const acceptedProposal = turn.synthesis.accept ? shown?.niche ?? null : null;
     const written = await commitNicheConversation({ ...fence, reply: turn.reply, proposal: turn.offer?.niche ?? null,
       summary: turn.summary, observedSummary: prior, observedSummaryUpdatedAt: claim.summaryUpdatedAt,
-      acceptedProposal: turn.synthesis.accept ? shown?.niche ?? null : null, synthesis: turn.synthesis,
+      acceptedProposal, synthesis: turn.synthesis,
     });
     if (!written) throw new Error("turn_not_committed");
+    if (acceptedProposal) revalidatePath("/a/" + input.account, "layout");
     return { ok: true as const };
   } catch {
     if (fence) await releaseAccountNicheTurn(fence).catch(() => false);

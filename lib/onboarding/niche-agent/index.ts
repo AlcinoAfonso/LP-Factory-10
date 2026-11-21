@@ -62,6 +62,7 @@ export const contactTurn: NicheTurn = {
 
 const project = (value: string | null | undefined) => value ? redactNicheText(value) : null;
 const safeName = (value: unknown) => validNicheDescription(value) && project(value) === value ? value : null;
+const claimsWrite = /\b(?:registrei|gravei|salvei|atualizei|já consta|foi feita a (?:gravação|atualização)|(?:ficou|foi|está) (?:salv[oa]|registrad[oa]|atualizad[oa]|confirmad[oa])|nicho atualizad[oa])\b/iu;
 
 function safeReply(value: unknown) {
   if (typeof value !== "string") return null;
@@ -78,14 +79,15 @@ function readOutput(payload: unknown) {
   return content.filter(item => item.type === "output_text").map(item => item.text).join("").trim() || null;
 }
 
-function acceptance(message: string, echo: unknown, offer: DisplayedOffer) {
+function acceptance(message: string, echo: unknown, offer: DisplayedOffer, fixed: boolean) {
   const words = message.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
   if (/[?]/u.test(words) ||
-    /(?:^nao\b|\b(?:mas|porem|contudo|exceto|ainda|se|somente|apenas|discordo|corrijo|corrija|troque|altere|errad[oa]|incorret[oa]|faltou|so que|na verdade)\b)/u.test(words)) return false;
+    /(?:^nao\b|\bnao\s+(?:confirm|aceit|aprov|concord|pode|represent|esta )|\b(?:mas|porem|contudo|exceto|ainda|se|somente|apenas|discordo|recuso|nunca|jamais|corrijo|corrija|troque|altere|errad[oa]|incorret[oa]|faltou|so que|na verdade)\b)/u.test(words)) return false;
   if (offer.publicName && /\b(?:nome|nicho)\b/u.test(words) &&
     !/\b(?:sintese|tudo|ambos|nome.+nicho|nicho.+nome)\b/u.test(words)) return false;
-  if (/^(?:sim|isso mesmo|correto|exato|de acordo|perfeito|confirmo)[.! ]*$/u.test(words)) return true;
-  return echo === message && /\b(?:confirmo|aceito|aprovo|concordo|isso mesmo|de acordo|pode (?:registrar|salvar|confirmar|seguir)|(?:esta|ta) (?:tudo )?(?:correto|certo))\b/u.test(words);
+  if (/^(?:sim(?:[, ]+(?:confirmo|correto|perfeito|isso mesmo))?|isso mesmo|correto|exato|de acordo|perfeito)[.! ]*$/u.test(words)) return true;
+  if (fixed) return /^(?:(?:eu )?(?:confirmo|aceito|aprovo)|pode (?:registrar|salvar|confirmar))(?: (?:o nicho|a descricao|a sintese)(?: (?:atual|cadastrad[oa]|exibid[oa]))?)?[.! ]*$/u.test(words);
+  return echo === message && /\b(?:confirmo|aceito|aprovo|concordo|isso mesmo|de acordo|pode (?:registrar|salvar|confirmar|seguir)|(?:esta|ta) (?:tudo )?(?:correto|certo)|representa (?:isso|exatamente))\b/u.test(words);
 }
 
 function interpret(raw: RawTurn, context: NicheContext, observedSummary: string | null, message: string): NicheTurn | null {
@@ -99,7 +101,7 @@ function interpret(raw: RawTurn, context: NicheContext, observedSummary: string 
     (!context.pendingSetup?.publicNameRequired || context.pendingSetup.publicName || name)
     ? { summary: understanding.data, niche, publicName: name } : null;
   const shown = offer && presentOffer(offer);
-  const candidate = context.displayed && raw.offer == null && acceptance(message, raw.accept, context.displayed)
+  const candidate = context.displayed && !shown && acceptance(message, raw.accept, context.displayed, Boolean(context.fixedNiche))
     ? context.displayed : null;
   const corrections = Array.isArray(raw.corrections) ? raw.corrections.slice(0, 6).flatMap(value => {
     const parsed = correction.safeParse(value);
@@ -113,15 +115,16 @@ function interpret(raw: RawTurn, context: NicheContext, observedSummary: string 
     : candidate ? "O contexto não pôde ser atualizado. Podemos conferir a síntese novamente."
       : shown?.reply ?? safeReply(raw.reply);
   if (!reply) return null;
-  const claimsWrite = !accepted && !shown &&
-    /\b(?:registrei|gravei|salvei|atualizei|(?:ficou|foi|está) (?:salv[oa]|registrad[oa]|atualizad[oa]|confirmad[oa])|nicho atualizad[oa])\b/iu.test(reply);
+  const rejectedAcceptance = !context.fixedNiche && raw.accept != null && !candidate;
+  const clarification = /^(?:vamos (?:esclarecer|conferir|ajustar)\b|(?:qual|que|como|o que|quem|você|pode)\b)[^.!?\n]{0,280}[.?]?$/iu;
+  const unsafeReply = !accepted && !shown && (claimsWrite.test(reply) || (rejectedAcceptance && !clarification.test(reply)));
   const personal = context.pendingSetup ? safeName(raw.preferredName) : null;
   const preferredName = personal && message.toLocaleLowerCase("pt-BR").includes(personal.toLocaleLowerCase("pt-BR"))
     ? personal : context.pendingSetup && raw.preferredName === false ? false : null;
   return {
-    reply: claimsWrite ? "Vamos conferir o entendimento. O que você gostaria de confirmar ou ajustar?" : reply,
+    reply: unsafeReply ? "Vamos conferir o entendimento. O que você gostaria de confirmar ou ajustar?" : reply,
     offer: shown ? offer : null, summary: summary ?? null, preferredName,
-    searchTopic: !accepted && !shown && raw.accept == null && typeof raw.searchTopic === "string" ? raw.searchTopic.trim() : null,
+    searchTopic: !candidate && !shown && raw.accept == null && typeof raw.searchTopic === "string" ? raw.searchTopic.trim() : null,
     synthesis: { offer: shown?.range ?? null, accept: accepted?.id ?? null, clear: !shown && !accepted,
       nicheReaction: accepted?.niche ? "accept" : "clear" },
   };
@@ -169,7 +172,7 @@ export function fixedNicheTurn(context: NicheContext, prior: string | null) {
 export function readNicheResearch(payload: unknown, limit: number) {
   const web = webSearchMetadata(payload);
   const reply = safeReply(readOutput(payload));
-  if (!reply || !web?.calls || web.calls > limit) return null;
+  if (!reply || claimsWrite.test(reply) || !web?.calls || web.calls > limit) return null;
   return reply + "\n\nFontes consultadas em " + new Date().toISOString().slice(0, 10) + ":\n" +
     web.sources.slice(0, 3).map(source => source.url).join("\n");
 }

@@ -4,7 +4,7 @@ import { contactTurn, fixedNicheTurn, prepareNicheTurn, publicResearchTopic, rea
 import {
   CONTACT_RECEIPT, displayedOffer, nicheHistory, nicheSummaryContext, presentOffer, type DialogueText,
 } from "./dialogue";
-import { validateNicheConversationActions } from "../niche-resolution/niche-conversation-validation-cases";
+import { validateNicheConversationActions, validatePendingConfirmedName } from "../niche-resolution/niche-conversation-validation-cases";
 
 const proposal = {
   summary: "A clínica atende adultos com clareamento e implantes, inclusive em horários estendidos.",
@@ -85,7 +85,7 @@ test("aceites naturais completos avançam, ressalvas, dúvidas e aceites parciai
     assert.equal(turn({ ...opening, message, displayed: anchor }, { accept: message }).synthesis.accept, anchor.id);
   }
   for (const message of ["Sim, mas atendemos crianças também.", "Está correto?", "Confirmo o nome.",
-    "Confirmo o nicho.", "Eu não confirmo. O nome está errado.", "Ela confirmou.", "Certo sobre o nome, mas nada além disso."]) {
+    "Confirmo o nicho.", "Eu não confirmo a síntese.", "Não, eu confirmo a síntese.", "Ela confirmou.", "Certo sobre o nome, mas nada além disso."]) {
     const result = turn({ ...opening, message, displayed: anchor }, { reply: "Vamos esclarecer o público.", accept: message });
     assert.equal(result.synthesis.accept, null, message);
     assert.equal(result.summary, null);
@@ -130,8 +130,26 @@ test("metadados inválidos não derrubam a resposta nem são promovidos a efeito
   assert.equal(result.summary, null);
   assert.equal(result.synthesis.accept, null);
   assert.doesNotMatch(turn(context, { reply: "Salvei seu nicho.", accept: "forjado" }).reply, /salvei/i);
+  assert.doesNotMatch(turn(context, { reply: "O novo nicho já consta no cadastro.", accept: "Sim" }).reply, /já consta/iu);
+  const anchor = shown().anchor;
+  assert.equal(turn({ ...opening, message: "Sim.", displayed: anchor },
+    { reply: "Entendi.", offer: { niche: 19 } }).synthesis.accept, anchor.id);
   assert.match(turn({ ...opening, displayed: shown().anchor, message: "Sim" },
     { reply: "Salvei seu nicho." }, JSON.stringify({ contextualUnderstanding: "A".repeat(5700) })).reply, /não pôde/);
+});
+
+test("uma correção negativa remove o fato superado mesmo quando cita a oferta antiga", () => {
+  const previous = "Fazemos tratamento de canal.";
+  const replacement = "Não fazemos mais tratamento de canal.";
+  const displayed = { ...proposal, id: assistantId, summary: replacement + "\nAtendemos adultos." };
+  const prior = JSON.stringify({ confirmedUnderstanding: previous + "\nAtendemos adultos." });
+  const accepted = turn({ ...opening, message: "Sim.", displayed }, { corrections: [
+    { previous: "tratamento de canal", replacement },
+  ] }, prior);
+  const saved = JSON.parse(accepted.summary ?? "{}").confirmedUnderstanding;
+  assert.doesNotMatch(saved, /Fazemos tratamento de canal/u);
+  assert.match(saved, /Não fazemos mais tratamento de canal/u);
+  assert.match(saved, /Atendemos adultos/u);
 });
 
 test("nome pessoal é opcional e entendimento suficiente pode seguir com nicho em aberto", () => {
@@ -156,8 +174,10 @@ test("D14D com produto apresenta apenas a descrição legada e exige um aceite p
   assert.equal(first?.synthesis.accept, null);
   const displayed = displayedOffer({ ...first!.synthesis.offer!, messageId: assistantId },
     [{ id: assistantId, role: "assistant", content: first!.reply }], { niche: fixedNiche, publicName: null });
-  const different = fixedNicheTurn({ ...context, message: "Mude para construção.", fixedNiche, displayed }, null);
-  assert.equal(different?.synthesis.accept, null);
+  for (const message of ["Mude para construção.", "Eu não confirmo o nicho.", "Seria mentira dizer que confirmo.",
+    "Preciso que você confirme.", "Pode confirmar se eu quiser depois?", "Pode confirmar, mas quero outra descrição."]) {
+    assert.equal(fixedNicheTurn({ ...context, message, fixedNiche, displayed }, null)?.synthesis.accept, null, message);
+  }
   const accepted = fixedNicheTurn({ ...context, message: "Pode confirmar.", fixedNiche, displayed }, null);
   assert.equal(accepted?.synthesis.accept, assistantId);
   assert.equal(accepted?.summary, null);
@@ -192,6 +212,8 @@ test("Web Search envia assunto público e agrega somente fontes válidas em amba
     }
     assert.equal(turn({ ...journey, message: "Sim.", displayed: shown().anchor },
       { searchTopic: topic }).searchTopic, null);
+    assert.equal(turn({ ...journey, message: "Pode pesquisar a diferença entre prótese e implante?", displayed: shown().anchor },
+      { reply: "A diferença pode ajudar a escolher a descrição.", searchTopic: topic }).searchTopic, topic);
   }
   const envelope = output("irrelevante");
   const search = { ...envelope, output: [{ type: "web_search_call", status: "completed", action: {
@@ -200,6 +222,9 @@ test("Web Search envia assunto público e agrega somente fontes válidas em amba
   assert.match(readNicheResearch(search, 1) ?? "", /São procedimentos distintos\.\n\nFontes consultadas.*\nhttps:\/\/example.org\/fonte/u);
   assert.equal(readNicheResearch(search, 0), null);
   assert.equal(readNicheResearch(envelope, 1), null);
+  const falselySaved = { ...search, output: [search.output[0], { type: "message", role: "assistant",
+    content: [{ type: "output_text", text: "O novo nicho já consta no cadastro." }] }] };
+  assert.equal(readNicheResearch(falselySaved, 1), null);
 });
 
 test("falha, recusa e ausência de resposta útil não produzem efeito", () => {
@@ -210,3 +235,4 @@ test("falha, recusa e ausência de resposta útil não produzem efeito", () => {
 });
 
 test("ações preservam a autorização D14D e a retomada após falha", validateNicheConversationActions);
+test("Pending Setup preserva nome público aceito ao confirmar o nicho e avançar", validatePendingConfirmedName);

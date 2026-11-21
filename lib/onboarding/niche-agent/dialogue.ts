@@ -99,7 +99,7 @@ export function mergeNicheMemory(raw: string | null, confirmed: DisplayedOffer,
   const text = confirmed.publicName
     ? confirmed.summary + "\nNome público: " + confirmed.publicName : confirmed.summary;
   for (const { previous, replacement } of corrections) {
-    if (!text.includes(replacement) || text.includes(previous)) continue;
+    if (previous === replacement || !text.includes(replacement) || text.replace(replacement, "").includes(previous)) continue;
     for (const key of ["confirmedUnderstanding", "contextualUnderstanding"] as const) {
       const value = summary[key];
       const at = value?.indexOf(previous) ?? -1;
