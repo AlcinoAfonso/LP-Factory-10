@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition, type FormEvent } from "reac
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
-import { FormField, FormFieldLabel } from "@/components/ui/form-field";
+import { FormField, FormFieldHint, FormFieldLabel } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -54,6 +54,7 @@ export function NicheConversation({
     if (follow.current && log.current) log.current.scrollTop = log.current.scrollHeight;
   }, [messages]);
 
+  const whatsAppComplete = /^\(\d{2}\) 9\d{4}-\d{4}$/u.test(whatsApp);
   const pendingMessage = retry ? { requestId: retry.id, content: retry.content } : failed;
   const composing = !pendingMessage && !ended;
   useEffect(() => {
@@ -65,10 +66,10 @@ export function NicheConversation({
 
   function send(event: FormEvent) {
     event.preventDefault();
-    if (pending || ended || (!pendingMessage && !draft.trim() && !whatsApp)) return;
-    const content = [draft.trim(), whatsApp && "WhatsApp para contato: " + whatsApp].filter(Boolean).join("\n");
-    if (!pendingMessage && ((whatsApp && !/^\(\d{2}\) 9\d{4}-\d{4}$/u.test(whatsApp)) || content.length > 4000)) {
-      setError("Confira o WhatsApp: use (99) 99999-9999, ou deixe o campo vazio.");
+    if (pending || ended || (!pendingMessage && !draft.trim() && !whatsAppComplete)) return;
+    const content = [draft.trim(), whatsAppComplete && "WhatsApp para contato: " + whatsApp].filter(Boolean).join("\n");
+    if (!pendingMessage && content.length > 4000) {
+      setError("Reduza a mensagem para continuar.");
       return;
     }
     const submission = pendingMessage ?? { requestId: crypto.randomUUID(), content };
@@ -79,7 +80,7 @@ export function NicheConversation({
         if (result.ok) {
           restoreFocus.current = input.current === null;
           setDraft("");
-          setWhatsApp("");
+          setWhatsApp(whatsAppComplete ? "" : whatsApp);
           setFailed(null);
           input.current?.focus();
         } else {
@@ -128,9 +129,13 @@ export function NicheConversation({
             <FormFieldLabel htmlFor="niche-whatsapp">WhatsApp para contato com a LP Factory (opcional)</FormFieldLabel>
             <Input id="niche-whatsapp" type="tel" inputMode="numeric" autoComplete="tel"
               placeholder="(99) 99999-9999" maxLength={15} value={whatsApp}
+              aria-describedby={whatsApp && !whatsAppComplete ? "niche-whatsapp-hint" : undefined}
               onChange={event => setWhatsApp(formatWhatsApp(event.target.value))} disabled={pending} />
+            {whatsApp && !whatsAppComplete ? <FormFieldHint id="niche-whatsapp-hint">
+              Número incompleto. A conversa pode continuar sem ele.
+            </FormFieldHint> : null}
           </FormField> : null}
-          <Button className="min-h-11" type="submit" disabled={pending || (!pendingMessage && !draft.trim() && !whatsApp)}>
+          <Button className="min-h-11" type="submit" disabled={pending || (!pendingMessage && !draft.trim() && !whatsAppComplete)}>
             {pendingMessage ? "Tentar novamente" : "Enviar mensagem"}
           </Button>
         </form>
