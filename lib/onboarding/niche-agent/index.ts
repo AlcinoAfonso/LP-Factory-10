@@ -140,7 +140,10 @@ export function prepareNicheTurn(raw: NicheTurnContext, searchLimit = 0):
       return `[${id}]`;
     }, true);
   }
-  const current = message ? pendingSetup ? project(message.text, message.id) : redact(message.text) : null;
+  // The optional field is stored by the message claim, not sent to the model.
+  const withoutField = (text: string) => text.replace(
+    /(?:^|\n)WhatsApp para contato: \(\d{2}\) 9\d{4}-\d{4}(?=\n|$)/gu, "").trim();
+  const current = message ? pendingSetup ? project(withoutField(message.text), message.id) : redact(message.text) : null;
   const currentProposal = activeProposal?.expectedOfficialRevision === (officialNiche?.revision ?? null)
     ? activeProposal : null;
   const confirmationTarget = currentProposal && message?.replyToProposalId === currentProposal.id
@@ -161,7 +164,7 @@ export function prepareNicheTurn(raw: NicheTurnContext, searchLimit = 0):
         input: JSON.stringify({
           message: current,
           history: history.map(({ role, text, id }) => ({ role, text: pendingSetup && role === "user"
-            ? project(text, id) : redact(text) })),
+            ? project(withoutField(text), id) : redact(text) })).filter(entry => entry.text),
           summary: summary === null ? null : redact(summary),
           businessContext: businessContext === null ? null : redact(businessContext),
           activeSynthesis: activeSynthesis ? { text: redact(activeSynthesis.text), accepted: activeSynthesis.accepted,
