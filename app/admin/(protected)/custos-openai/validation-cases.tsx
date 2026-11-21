@@ -320,6 +320,7 @@ assert.ok(categoryEmpty.includes("Salva"));
 const hierarchyMarkup = renderToStaticMarkup(<OpenAiEconomicHierarchyView hierarchy={buildOpenAiEconomicHierarchy(activeModel, null)} />);
 assert.ok(hierarchyMarkup.includes("Consultar geração da Categoria 3 por UUID"));
 assert.ok(hierarchyMarkup.includes('name="category3GenerationId"'));
+assert.match(hierarchyMarkup, /<button type="submit"[^>]*>Consultar<\/button>/);
 assert.ok(categoryEmpty.includes("Sem valor comprovado"));
 assert.equal(categoryEmpty.includes("US$ 0,00"), false);
 const dialogue = { dialogueId: "e2155000-0000-4000-8000-000000000040", accountId: activeModel.executions[0].accountId!,

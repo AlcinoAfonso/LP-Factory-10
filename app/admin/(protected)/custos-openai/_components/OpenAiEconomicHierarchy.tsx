@@ -186,7 +186,7 @@ function Category3Detail({ identity }: Readonly<{ identity?: Category3CostIdenti
           UUID da geração
           <Input name="category3GenerationId" className="mt-1 min-h-11" required />
         </label>
-        <Button variant="secondary" className="min-h-11" disabled={pending}>Consultar</Button>
+        <Button type="submit" variant="secondary" className="min-h-11" disabled={pending}>Consultar</Button>
       </form>
     )}
     {pending ? <p role="status" className="text-sm text-muted-foreground">Consultando operações de todos os períodos…</p> : null}
