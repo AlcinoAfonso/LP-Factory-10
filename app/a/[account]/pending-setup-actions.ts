@@ -8,7 +8,7 @@ import { getAccessContext } from "@/lib/access/getAccessContext";
 import { getConfirmedOperationalNicheResolutionLabel } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
 import { validateBusinessDisplayName } from "../../../lib/onboarding/pending-setup";
 import { conversationalMessage, currentSynthesis, mergeNicheMemory, nicheSummaryContext, requestNicheAgent } from "../../../lib/onboarding/niche-agent/runtime";
-import { relevantNicheHistory } from "../../../lib/onboarding/niche-agent/dialogue";
+import { relevantNicheHistory, submittedWhatsApp } from "../../../lib/onboarding/niche-agent/dialogue";
 import { readAccountOfficialNiche } from "../../../lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter";
 import { readActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import {
@@ -232,7 +232,7 @@ export async function conversePendingSetupAction(raw: unknown) {
     const ready = !next && acceptedSynthesis && nameReady && Boolean(understanding) &&
       (accept || niche?.confirmed || (state?.operationalAccepted && outcome.operational.reaction === "continue"));
     const written = await commitPendingNicheTurn({ ...fence, reply: result.reply,
-      summary: mergeNicheMemory(observed.summary, result, synthesis),
+      summary: mergeNicheMemory(observed.summary, result, synthesis, submittedWhatsApp(conversation.messages)),
       observed, understanding, preferredName: outcome.preferredName.value,
       preferredNameDeclined: outcome.preferredName.value ? false : outcome.preferredName.declined || Boolean(conversation.preferredNameDeclined),
       stage: next ? "niche_confirmation" : ready ? "ready_to_complete" : "business_understanding",
