@@ -82,8 +82,11 @@ test("Pending Setup preserva contato antecipado por referência e nunca envia os
   assert.equal(result.value.pendingSetup?.preferredName.value, "Ana");
   assert.equal(result.value.pendingSetup?.whatsapp.value, "(21) 99999-1111");
   assert.equal(run(context, output).ok, false);
-  assert.equal(run(input, { ...output, pendingSetup: { ...output.pendingSetup,
-    whatsapp: { reference: "contato_3", declined: false } } }).ok, false);
+  const unknown = run(input, { ...output, pendingSetup: { ...output.pendingSetup,
+    whatsapp: { reference: "contato_3", declined: false } } });
+  assert.ok(unknown.ok, JSON.stringify(unknown));
+  assert.equal(unknown.value.pendingSetup?.whatsapp.value, null);
+  assert.equal(unknown.value.pendingSetup?.whatsapp.declined, false);
 });
 
 test("Pending Setup distingue o aceite do nome e do nicho de recusas opcionais", () => {
@@ -198,6 +201,81 @@ test("exibe a síntese ausente na resposta do Pending Setup e referencia o trech
     { ok: false, kind: "invalid_response", reason: "niche_turn_contact_in_text" });
   assert.deepEqual(run(input, { ...output, reply: business + "\n" + business }),
     { ok: false, kind: "invalid_response", reason: "niche_turn_synthesis_repeated_in_reply" });
+});
+
+test("exibe proposta estruturada omitida na fala e preserva vínculo da síntese sem aceitar", () => {
+  const description = "Revenda de carros seminovos para pessoas físicas";
+  const reply = "Entendi. O nome público é Car Mais?";
+  const assistant = "00000000-0000-4000-8000-000000000031";
+  const result = run({ ...context, pendingSetup: pendingContext }, {
+    ...clarification, reply, proposal: description,
+    synthesis: { proposal: description, reaction: "continue" }, pendingSetup: pendingOutcome,
+  });
+  assert.ok(result.ok, JSON.stringify(result));
+  assert.equal(result.value.reply, reply + "\n\nProposta de nicho: " + description);
+  assert.equal(result.value.proposal, description);
+  assert.equal(result.value.confirmation, null);
+  assert.equal(result.value.synthesisWrite.accept, null);
+  const offer = result.value.synthesisWrite.offer;
+  assert.ok(offer);
+  const shown = resolveSynthesis({ ...offer, messageId: assistant }, [
+    { id: assistant, role: "assistant", content: result.value.reply },
+  ]);
+  assert.equal(shown?.text, description);
+  assert.equal(mergeNicheMemory(null, result.value, shown), null);
+});
+
+test("WhatsApp parcial não bloqueia diálogo e só é salvo se referência e aceite forem válidos", () => {
+  const user = "00000000-0000-4000-8000-000000000032";
+  const assistant = "00000000-0000-4000-8000-000000000033";
+  const confirmation = "00000000-0000-4000-8000-000000000034";
+  const business = "Revenda de carros seminovos para pessoas físicas.";
+  const input = { ...context, message: { id: user, text: "219967", replyToProposalId: null },
+    pendingSetup: pendingContext };
+  const contextForModel = String(prepared(input).request.input);
+  assert.match(contextForModel, /contato_1/);
+  assert.doesNotMatch(contextForModel, /219967/);
+  const output = { ...clarification, reply: "Confirma esse entendimento?",
+    synthesis: { proposal: business, reaction: "continue" },
+    pendingSetup: { ...pendingOutcome, whatsapp: { reference: "contato_99", declined: false } } };
+  const unknown = run(input, output);
+  assert.ok(unknown.ok, JSON.stringify(unknown));
+  assert.equal(unknown.value.pendingSetup?.whatsapp.value, null);
+  assert.equal(unknown.value.synthesisWrite.offer?.contact, null);
+  assert.doesNotMatch(unknown.value.reply, /219967|contato_99/);
+  const contradictory = run(input, { ...output, pendingSetup: {
+    ...pendingOutcome, whatsapp: { reference: "contato_1", declined: true } } });
+  assert.ok(contradictory.ok, JSON.stringify(contradictory));
+  assert.equal(contradictory.value.pendingSetup?.whatsapp.value, null);
+  assert.equal(contradictory.value.pendingSetup?.whatsapp.declined, false);
+  assert.equal(contradictory.value.synthesisWrite.offer?.contact, null);
+  const unmasked = run(input, { ...output, reply: "Seu WhatsApp: 219967." });
+  assert.deepEqual(unmasked, { ok: false, kind: "invalid_response", reason: "niche_turn_contact_in_text" });
+  const valid = run(input, { ...output, pendingSetup: {
+    ...pendingOutcome, whatsapp: { reference: "contato_1", declined: false } } });
+  assert.ok(valid.ok && valid.value.synthesisWrite.offer, JSON.stringify(valid));
+  assert.match(valid.value.reply, /WhatsApp informado \(final 67\)/);
+  const snapshot = resolveSynthesis({ ...valid.value.synthesisWrite.offer, messageId: assistant }, [
+    { id: user, role: "user", content: "219967" },
+    { id: assistant, role: "assistant", content: valid.value.reply },
+  ]);
+  assert.equal(snapshot?.phone, "219967");
+  const prior = JSON.stringify({ confirmedUnderstanding: null });
+  assert.equal(mergeNicheMemory(prior, valid.value, snapshot), null);
+  const accepted = run({ ...input, message: { id: confirmation, text: "Sim, confirmo.", replyToProposalId: null },
+    activeSynthesis: { id: assistant, text: business, accepted: false } },
+  { ...clarification, synthesis: { proposal: null, reaction: "accept" }, pendingSetup: pendingOutcome });
+  assert.ok(accepted.ok, JSON.stringify(accepted));
+  const recorded = JSON.parse(mergeNicheMemory(prior, accepted.value, snapshot)!);
+  assert.equal(recorded.whatsapp, "219967");
+  assert.equal(recorded.confirmedUnderstanding, business);
+  const noContact = resolveSynthesis({ ...unknown.value.synthesisWrite.offer!, messageId: assistant }, [
+    { id: user, role: "user", content: "219967" },
+    { id: assistant, role: "assistant", content: unknown.value.reply },
+  ]);
+  assert.equal(noContact?.phone, null);
+  const withoutProof = JSON.parse(mergeNicheMemory(prior, accepted.value, noContact)!);
+  assert.equal(withoutProof.whatsapp ?? null, null);
 });
 
 test("usa mensagens relevantes antigas e permite pesquisa condicional nas duas jornadas", () => {
@@ -472,7 +550,6 @@ test("resposta inválida, falha e recusa do provider não devolvem efeitos nem a
     [{ ...response(proposalAnswer), status: "incomplete" }, "provider_error"],
     [message([{ type: "refusal", refusal: "Refusal" }]), "refusal"],
     [message([{ type: "output_text", text: "invalid JSON" }]), "invalid_response"],
-    [response({ ...proposalAnswer, reply: "Sua proposta está pronta." }), "invalid_response"],
     [response({ ...proposalAnswer, reply: "<nicho>", proposal: "<nicho>" }), "invalid_response"],
     [response({ ...proposalAnswer, confirmation: { proposalId: proposal.id } }), "invalid_response"],
   ] as const;
