@@ -48,8 +48,7 @@ begin
   update public.account_dialogues set niche_state=niche_state||jsonb_build_object(
     'requestId',p_request_id,'requestOrdinal',v_ordinal) where id=c.id;
   -- The contact field is part of the submitted message, never an AI confirmation.
-  v_phone:=substring(p_content from 'WhatsApp para contato: ([(][0-9]{2}[)] 9[0-9]{4}-[0-9]{4})
-end $$;);
+  v_phone:=substring(p_content from 'WhatsApp para contato: ([(][0-9]{2}[)] 9[0-9]{4}-[0-9]{4})$');
   if v_phone is not null then
     select * into strict s from public.account_context_summaries where account_id=p_account_id for update;
     v_summary:=coalesce(s.summary,'{}')::jsonb;
