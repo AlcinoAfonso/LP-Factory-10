@@ -141,14 +141,26 @@ export function nicheSummaryContext(raw: string | null) {
   };
 }
 
-export function submittedWhatsApp(messages: readonly DialogueText[]): string | null {
-  for (let i = messages.length - 1; i >= 0; i--) {
+export function submittedWhatsApp(messages: readonly DialogueText[], afterMessageId: string | null = null): string | null {
+  const after = afterMessageId ? messages.findIndex(entry => entry.id === afterMessageId) : -1;
+  if (afterMessageId && after < 0) return null;
+  for (let i = messages.length - 1; i > after; i--) {
     const entry = messages[i];
     if (entry.role !== "user") continue;
     const phone = entry.content.match(/(?:^|\n)WhatsApp para contato: (\(\d{2}\) 9\d{4}-\d{4})(?:\n|$)/u)?.[1];
     if (phone) return phone;
   }
   return null;
+}
+
+export function mergeSubmittedWhatsApp(raw: string | null, phone: string): string | null {
+  const previous = readSummary(raw);
+  if (!previous) throw new Error("summary_invalid");
+  const next = { ...previous, whatsapp: phone, whatsappDeclined: false };
+  delete next.w; delete next.d;
+  const written = JSON.stringify(next);
+  if (written.length > 5800) throw new Error("summary_capacity");
+  return written === raw ? null : written;
 }
 
 export function mergeNicheMemory(raw: string | null, turn: NicheTurn,
