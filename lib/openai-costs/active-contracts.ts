@@ -144,6 +144,7 @@ export type OpenAiActiveCostOperation = Readonly<{
   requestedServiceTier?: string | null;
   appliedServiceTier?: string | null;
   appliedModel?: string | null;
+  pricingModel?: string | null;
   modality?: string | null;
   contextBand?: string | null;
   cacheWriteTokens30m?: number | null;
@@ -196,6 +197,14 @@ export type OpenAiActiveCostCoverage = Readonly<{
   contractVersion: string;
 }>;
 
+export type OpenAiActiveCostModelGroup = Readonly<{
+  model: string | null;
+  calculatedCostUsd: string | null;
+  operationCount: number;
+  pendingOperationCount: number;
+  unavailableOperationCount: number;
+}>;
+
 export type OpenAiActiveCostReadModel = Readonly<{
   economicDimensionStatus: OpenAiEconomicDimensionStatus;
   totalCalculatedUsd: string;
@@ -207,6 +216,7 @@ export type OpenAiActiveCostReadModel = Readonly<{
   internalUpdatedAt: string | null;
   coverage: readonly OpenAiActiveCostCoverage[];
   groups: readonly OpenAiActiveCostGroup[];
+  modelGroups: readonly OpenAiActiveCostModelGroup[];
   executions: readonly OpenAiActiveCostExecution[];
 }>;
 

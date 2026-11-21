@@ -223,6 +223,11 @@ async function main() {
   assert.ok(!JSON.stringify(translated.value).includes("DO_NOT_EXPOSE"));
   assert.equal(translated.value.executions[0]?.operations[1]?.appliedServiceTier, null, "old absent evidence stays absent");
   assert.equal(translated.value.executions[0]?.operations[1]?.retryOfOperationId, "40000000-0000-4000-8000-000000000001");
+  assert.deepEqual(translated.value.modelGroups, [
+    { model: "gpt-6.1-terra", calculatedCostUsd: "0.000000000001", operationCount: 1, pendingOperationCount: 0, unavailableOperationCount: 0 },
+    { model: null, calculatedCostUsd: null, operationCount: 1, pendingOperationCount: 0, unavailableOperationCount: 1 },
+  ]);
+  validateModelTotals();
 
   const factualHistory = translateOpenAiActiveCostRows({
     period,
@@ -524,6 +529,65 @@ function activeRow(overrides: Record<string, unknown>) {
     provider_error_type: null,
     ...overrides,
   };
+}
+
+function validateModelTotals() {
+  const accountId = "40000000-0000-4000-8000-000000000099";
+  const workload = "niche_resolution";
+  const firstId = "40000000-0000-4000-8000-000000000001";
+  const clientOperations = [
+    activeRow({ cost_usd: "0.03", pricing_snapshot: { model: "gpt-5.6-luna", appliedModel: "gpt-6.1-terra" } }),
+    activeRow({
+      operation_sequence: 2,
+      operation_id: "40000000-0000-4000-8000-000000000002",
+      retry_of_operation_id: firstId,
+      operation_started_at: "2026-09-12T00:00:00.000Z",
+      operation_finished_at: "2026-09-12T00:00:01.000Z",
+      operation_result: "failure",
+      operation_failure_category: "provider_error",
+      cost_usd: "0.05",
+      pricing_snapshot: { model: "gpt-6.2-sol" },
+    }),
+    activeRow({
+      operation_sequence: 3,
+      operation_id: "40000000-0000-4000-8000-000000000003",
+      operation_finished_at: null,
+      operation_result: null,
+      cost_status: "unavailable",
+      cost_unavailable_reason: "operation_pending",
+      cost_usd: null,
+      pricing_version: null,
+      pricing_effective_at: null,
+      pricing_snapshot: null,
+    }),
+  ].map(row => ({
+    ...row, universe: "client", account_id: accountId, account_name: "Conta sintética", workload,
+    execution_finished_at: "2026-09-12T00:00:02.000Z",
+  }));
+  const read = translateOpenAiActiveCostRows({
+    period: { ...period, endTime: period.endTime + 86_400 },
+    coverageRows: [],
+    rows: [
+      ...clientOperations,
+      activeRow({ execution_id: "40000000-0000-4000-8000-000000000010",
+        operation_id: "40000000-0000-4000-8000-000000000011", cost_usd: "0.02", pricing_snapshot: {} }),
+      activeRow({ execution_id: "40000000-0000-4000-8000-000000000012",
+        operation_id: "40000000-0000-4000-8000-000000000013", cost_usd: "0" }),
+    ],
+  });
+  assert.ok(read.ok);
+  assert.deepEqual(read.value.modelGroups.map(group => [group.model, group.calculatedCostUsd, group.operationCount]), [
+    ["gpt-5.6-luna", "0", 1], ["gpt-6.1-terra", "0.03", 1], ["gpt-6.2-sol", "0.05", 1], [null, "0.02", 2],
+  ]);
+  assert.equal(read.value.totalCalculatedUsd, "0.1");
+  assert.equal(read.value.groups.find(group => group.accountId === accountId)?.calculatedCostUsd, "0.08");
+  const filtered = filterOpenAiActiveCosts(read.value, { accountId, universe: "client", workload });
+  assert.equal(filtered.totalCalculatedUsd, "0.08");
+  assert.deepEqual(filtered.modelGroups.map(group => [group.model, group.calculatedCostUsd]), [
+    ["gpt-6.1-terra", "0.03"], ["gpt-6.2-sol", "0.05"], [null, null],
+  ]);
+  assert.equal(filtered.modelGroups.at(-1)?.pendingOperationCount, 1);
+  console.log("PASS D10D model totals match the active ledger, with exact decimals, filters, billed retries and unavailable evidence");
 }
 
 void main();

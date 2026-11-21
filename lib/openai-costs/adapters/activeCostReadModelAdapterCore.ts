@@ -169,6 +169,7 @@ function aggregateExecutions(
   let unassignedExecutionCount = 0;
   let internalUpdatedAt: string | null = null;
   const groups = new Map<string, MutableGroup>();
+  const modelGroups = new Map<string | null, MutableModelGroup>();
   const executions = input.map((raw) => {
     let executionTotal = decimalZero();
     let pending = 0;
@@ -176,12 +177,26 @@ function aggregateExecutions(
     const operations = [...raw.operations].sort((left, right) => left.sequence - right.sequence);
     for (const operation of operations) {
       operationCount += 1;
-      if (!operation.finishedAt) pending += 1;
-      else if (operation.costStatus === "unavailable") unavailable += 1;
-      if (operation.costUsd !== null) {
-        const cost = decimalFromNonNegativeString(operation.costUsd);
-        if (cost) executionTotal = addDecimal(executionTotal, cost);
+      const isPending = !operation.finishedAt;
+      const isUnavailable = !isPending && operation.costStatus === "unavailable";
+      if (isPending) pending += 1;
+      if (isUnavailable) unavailable += 1;
+      const cost = decimalFromNonNegativeString(operation.costUsd);
+      const model = operation.appliedModel ?? operation.pricingModel ?? null;
+      const modelGroup = modelGroups.get(model) ?? {
+        total: null,
+        operationCount: 0,
+        pendingOperationCount: 0,
+        unavailableOperationCount: 0,
+      };
+      modelGroup.operationCount += 1;
+      if (isPending) modelGroup.pendingOperationCount += 1;
+      if (isUnavailable) modelGroup.unavailableOperationCount += 1;
+      if (cost) {
+        executionTotal = addDecimal(executionTotal, cost);
+        modelGroup.total = modelGroup.total ? addDecimal(modelGroup.total, cost) : cost;
       }
+      modelGroups.set(model, modelGroup);
       internalUpdatedAt = latest(internalUpdatedAt, operation.finishedAt ?? operation.startedAt);
     }
     if (raw.attributionStatus === "unassigned") unassignedExecutionCount += 1;
@@ -226,6 +241,11 @@ function aggregateExecutions(
     internalUpdatedAt,
     coverage: Object.freeze([...coverage]),
     groups: Object.freeze([...groups.values()].map(finalizeGroup).sort(groupOrder)),
+    modelGroups: Object.freeze([...modelGroups].map(([model, { total, ...counts }]) => Object.freeze({
+      model,
+      calculatedCostUsd: total ? formatDecimal(total) : null,
+      ...counts,
+    })).sort((left, right) => left.model === null ? 1 : right.model === null ? -1 : left.model.localeCompare(right.model))),
     executions: Object.freeze(executions),
   });
 }
@@ -237,6 +257,13 @@ type MutableGroup = {
   workload: OpenAiCostReadWorkloadId;
   total: DecimalValue;
   executionCount: number;
+  operationCount: number;
+  pendingOperationCount: number;
+  unavailableOperationCount: number;
+};
+
+type MutableModelGroup = {
+  total: DecimalValue | null;
   operationCount: number;
   pendingOperationCount: number;
   unavailableOperationCount: number;
@@ -453,6 +480,7 @@ function parseOperation(row: Record<string, unknown>, sequence: number): OpenAiA
     requestedServiceTier: financialTier(snapshot?.requestedServiceTier),
     appliedServiceTier: financialTier(snapshot?.appliedServiceTier),
     appliedModel: technicalText(snapshot?.appliedModel),
+    pricingModel: costStatus === "calculated" ? technicalText(snapshot?.model) : null,
     modality: snapshot?.modality === "responses_text" ? "responses_text" : null,
     contextBand: snapshot?.contextBand === "long" || snapshot?.contextBand === "short" ? snapshot.contextBand : null,
     cacheWriteTokens30m: nonNegativeInteger(snapshot?.cacheWriteTokens30m),

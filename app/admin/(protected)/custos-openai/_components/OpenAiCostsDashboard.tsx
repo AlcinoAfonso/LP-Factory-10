@@ -124,7 +124,7 @@ function DashboardResult({ dashboard }: Readonly<{ dashboard: OpenAiCostsFinanci
           <AdminStatusBadge tone={dashboard.selection.provisional ? "warning" : "success"}>{dashboard.selection.provisional ? "Provisório" : "Período encerrado"}</AdminStatusBadge>
           {dashboard.globalReconciliationAnomalous ? <AdminStatusBadge tone="danger">Reconciliação anômala</AdminStatusBadge> : null}
         </div>
-        <p className="text-sm text-muted-foreground">{formatDate(dashboard.selection.startDate)} a {formatDate(dashboard.selection.endDate)}. As fronteiras do período usam UTC.</p>
+        <p className="text-sm text-muted-foreground">{formatDate(dashboard.selection.startDate)} a {formatDate(dashboard.selection.endDate)}. O controle ativo usa o início da execução. As fronteiras do período usam UTC.</p>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <MetricCard label="Gasto oficial OpenAI" value={dashboard.officialTotalUsd === null ? "Indisponível" : formatUsd(dashboard.officialTotalUsd)} detail="Fonte oficial · Costs API" />
           <MetricCard label="Clientes" value={dashboard.economicHierarchy?.activeAvailable && dashboard.economicHierarchy.legacyAvailable ? formatUsd(dashboard.economicHierarchy.clients.calculatedCostUsd) : "Indisponível"} detail="Controle ativo de clientes + histórico E21.4 calculáveis" />
@@ -145,10 +145,43 @@ function DashboardResult({ dashboard }: Readonly<{ dashboard: OpenAiCostsFinanci
       {!dashboard.active ? <StatusPanel tone="danger" title="Controle ativo indisponível" role="alert">Não foi possível ler as execuções do período. Motivo ({dashboard.activeErrorCode ?? "READ_FAILED"}).</StatusPanel> : null}
       {!dashboard.legacy ? <StatusPanel tone="warning" title="Histórico congelado indisponível">Não foi possível ler o histórico do período. Motivo ({dashboard.legacyErrorCode ?? "READ_FAILED"}).</StatusPanel> : null}
       {dashboard.economicHierarchy ? <OpenAiEconomicHierarchyView hierarchy={dashboard.economicHierarchy} /> : null}
+      {dashboard.filteredActive ? <OpenAiCostModelTotals groups={dashboard.filteredActive.modelGroups} /> : null}
       {dashboard.filteredActive && (dashboard.activeFilters.universe || dashboard.activeFilters.accountId || dashboard.activeFilters.workload)
         ? <ActiveCostSection active={dashboard.filteredActive} filters={dashboard.activeFilters} />
         : null}
     </div>
+  );
+}
+
+export function OpenAiCostModelTotals({ groups }: Readonly<{ groups: OpenAiActiveCostReadModel["modelGroups"] }>) {
+  return (
+    <section className="space-y-3" aria-labelledby="cost-model-totals-title">
+      <div>
+        <h2 id="cost-model-totals-title" className="text-lg font-semibold text-foreground">Custos do controle ativo por modelo</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Segue os filtros do controle ativo. Usa o modelo aplicado quando registrado e o modelo do cálculo nos snapshots antigos. O histórico congelado é exibido separadamente.</p>
+      </div>
+      {groups.length === 0 ? <p className="text-sm text-muted-foreground">Nenhuma operação encontrada para esta seleção.</p> :
+        <div className="overflow-x-auto rounded-md border border-border bg-card">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-muted text-foreground">
+              <tr><TableHeader>Modelo</TableHeader><TableHeader>Operações</TableHeader><TableHeader>Subtotal USD</TableHeader></tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {groups.map(group => (
+                <tr key={group.model ?? ""}>
+                  <th scope="row" className="px-3 py-3 text-sm font-medium [overflow-wrap:anywhere]">{group.model ?? "Sem modelo comprovado"}</th>
+                  <TableCell>
+                    {group.operationCount}
+                    {group.pendingOperationCount > 0 ? <span className="block text-xs text-muted-foreground">Pendentes {group.pendingOperationCount}</span> : null}
+                    {group.unavailableOperationCount > 0 ? <span className="block text-xs text-muted-foreground">Indisponíveis {group.unavailableOperationCount}</span> : null}
+                  </TableCell>
+                  <TableCell>{group.calculatedCostUsd === null ? "Indisponível" : <strong className="whitespace-nowrap">{formatUsd(group.calculatedCostUsd)}</strong>}</TableCell>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>}
+    </section>
   );
 }
 

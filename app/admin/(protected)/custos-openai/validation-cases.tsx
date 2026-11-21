@@ -151,6 +151,7 @@ assert.equal(parseOpenAiActiveCostFilters({ universe: "", accountId: "", workloa
 
 const activeModel = {
   economicDimensionStatus: "v2_active" as const,
+  modelGroups: [],
   totalCalculatedUsd: "0.05",
   executionCount: 1,
   operationCount: 2,
@@ -290,9 +291,16 @@ loader._load = function(name, parent, isMain) {
   };
   return originalLoader.call(this, name, parent, isMain);
 };
-const [{ DialogueCostDetailView, OpenAiDialogueCosts }, { OccurrenceCostDetailView, OpenAiOccurrenceCosts }] = await Promise.all([
+const [{ DialogueCostDetailView, OpenAiDialogueCosts }, { OccurrenceCostDetailView, OpenAiOccurrenceCosts }, { OpenAiCostModelTotals }] = await Promise.all([
   import("./_components/OpenAiDialogueCosts"), import("./_components/OpenAiOccurrenceCosts"),
+  import("./_components/OpenAiCostsDashboard"),
 ]).finally(() => { loader._load = originalLoader; });
+const modelMarkup = renderToStaticMarkup(<OpenAiCostModelTotals groups={composition.filteredActive!.modelGroups} />);
+assert.match(modelMarkup, /<th scope="row"[^>]*>gpt-6\.1-terra<\/th>/);
+assert.match(modelMarkup, /US\$ 0,05/);
+assert.match(modelMarkup, /Sem modelo comprovado/);
+assert.match(modelMarkup, /Indisponível/);
+assert.doesNotMatch(modelMarkup, /US\$ 0,00/);
 const occurrenceId = "6bd4bfe0-b9d1-4bc6-b1e7-a192c3cc1379";
 const closedAt = "2026-08-28T14:30:00.000Z";
 const occurrenceExecution = activeModel.executions[0];
