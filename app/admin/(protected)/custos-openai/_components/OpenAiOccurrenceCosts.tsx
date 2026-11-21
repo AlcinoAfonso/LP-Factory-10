@@ -96,7 +96,7 @@ export function OccurrenceCostDetailView({ detail }: Readonly<{ detail: Occurren
         <Datum label="UUID da ocorrência" value={detail.occurrenceId} />
         {scope.accountId ? <Datum label="UUID da conta" value={scope.accountId} /> : null}
       </dl>
-      <p className="text-sm text-muted-foreground">{detail.executions.length} execuções · {detail.operationCount} operações · {retryCount} retries</p>
+      <p className="text-sm text-muted-foreground">Execuções {detail.executions.length} · Operações {detail.operationCount} · Retries {retryCount}</p>
       {detail.executions.map(execution => <OpenAiCostExecutionDetails key={execution.executionId} execution={execution} hideUnprovenAmount />)}
     </div>
   );

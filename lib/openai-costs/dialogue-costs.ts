@@ -14,6 +14,7 @@ export type OpenAiCostDialogue = Readonly<{ dialogueId: string; accountId: strin
   startedAt: string; endedAt: string | null; accountName?: string | null; workloads?: readonly OpenAiCostReadWorkloadId[] }>;
 export type DialogueListResult = Readonly<{ ok: true; dialogues: readonly OpenAiCostDialogue[] }> | Readonly<{ ok: false; code: string }>;
 export type DialogueCostDetail = Readonly<{ dialogue: OpenAiCostDialogue; executions: readonly OpenAiActiveCostExecution[];
+  occurrenceIds: readonly string[];
   calculatedCostUsd: string | null; status: "accumulated" | "final" | "partial" | "unrecorded";
   callCount: number; attemptCount: number; retryCount: number; webSearchCallCount: number; unknownSearchCount: number;
   pendingCount: number; unavailableCount: number; missingOperationCount: number }>;
@@ -26,8 +27,13 @@ export function parseCostDialogue(raw: unknown): OpenAiCostDialogue | null {
   return { dialogueId: row.id, accountId: row.account_id, origin: row.origin, startedAt: row.started_at, endedAt: row.ended_at };
 }
 
-export function buildDialogueCostDetail(dialogue: OpenAiCostDialogue, model: OpenAiActiveCostReadModel): DialogueCostDetail {
+export function buildDialogueCostDetail(
+  dialogue: OpenAiCostDialogue,
+  model: OpenAiActiveCostReadModel,
+  occurrenceIds: readonly string[] = [],
+): DialogueCostDetail {
   let total = decimalZero();
+  let priced = false;
   let attemptCount = 0, retryCount = 0, webSearchCallCount = 0, unknownSearchCount = 0;
   let pendingCount = 0, unavailableCount = 0, missingOperationCount = 0;
   const operationIds = new Set<string>();
@@ -55,12 +61,13 @@ export function buildDialogueCostDetail(dialogue: OpenAiCostDialogue, model: Ope
         const cost = decimalFromNonNegativeString(operation.costUsd);
         if (!cost) throw Error("dialogue_cost_invalid");
         total = addDecimal(total, cost);
+        priced = true;
       }
     }
   }
   const status = attemptCount === 0 ? "unrecorded" : pendingCount || unavailableCount || missingOperationCount ? "partial"
     : dialogue.endedAt ? "final" : "accumulated";
-  return { dialogue, executions: model.executions, calculatedCostUsd: attemptCount ? formatDecimal(total) : null, status,
+  return { dialogue, executions: model.executions, occurrenceIds, calculatedCostUsd: priced ? formatDecimal(total) : null, status,
     callCount: attemptCount - retryCount, attemptCount, retryCount, webSearchCallCount, unknownSearchCount,
     pendingCount, unavailableCount, missingOperationCount };
 }

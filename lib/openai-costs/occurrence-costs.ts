@@ -2,10 +2,10 @@ import { z } from "zod";
 import type { OpenAiActiveCostExecution } from "./active-contracts";
 import { addDecimal, decimalFromNonNegativeString, decimalZero, formatDecimal } from "./decimal";
 
-export const occurrenceCostQuerySchema = z.discriminatedUnion("by", [
-  z.object({ by: z.literal("occurrence"), id: z.uuid().transform(id => id.toLowerCase()) }).strict(),
-  z.object({ by: z.literal("execution"), id: z.uuid().transform(id => id.toLowerCase()) }).strict(),
-]);
+export const occurrenceCostQuerySchema = z.object({
+  by: z.enum(["occurrence", "execution"]),
+  id: z.uuid().transform(id => id.toLowerCase()),
+}).strict();
 export type OccurrenceCostQuery = z.output<typeof occurrenceCostQuerySchema>;
 
 export type OccurrenceCostDetail = Readonly<{

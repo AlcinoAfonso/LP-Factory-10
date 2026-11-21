@@ -256,7 +256,7 @@
 - Reconciliação global = oficial - ativo calculável - histórico congelado. Filtros de universo/conta/workload só alteram projeção ativa; total oficial e reconciliação permanecem globais.
 - DTO financeiro somente sanitizado do contrato público; sem prompt, resposta integral, negócio, URL de fonte, PII, secret ou detalhe financeiro interno indevido. Histórico pagina integralmente; diagnóstico expõe só HTTP/código/tipo sanitizados.
 - Oficial, controle ativo e histórico são fontes independentes. A reconciliação exige as três leituras. Gasto oficial sem evento histórico permanece na diferença, sem rateio.
-- A consulta exata por ocorrência D10D independe do período e das três leituras agregadas. O detalhe soma os snapshots das operações admitidas uma vez e só apresenta total quando houver encerramento financeiro comprovado e todas as operações forem calculáveis.
+- A consulta exata por ocorrência D10D independe do período e das três leituras agregadas. O detalhe soma os snapshots das operações admitidas uma vez e só apresenta total quando houver encerramento financeiro comprovado e todas as operações forem calculáveis. Diálogos com vínculo D10D mantêm a consulta por diálogo e informam os UUIDs das ocorrências para apuração individual.
 
 4. DB Contract
 - Objetos/estado exatos: `docs/schema.md`; dependências e migrations seguem 3.8/3.4.4, sem inventário duplicado.

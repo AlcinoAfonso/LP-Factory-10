@@ -328,6 +328,13 @@ const emptyDialogueMarkup = renderToStaticMarkup(<DialogueCostDetailView detail=
 assert.ok(emptyDialogueMarkup.includes("Sem custo registrado"));
 assert.ok(emptyDialogueMarkup.includes("Sem valor comprovado"));
 assert.equal(emptyDialogueMarkup.includes("US$ 0,00"), false);
+const linkedDialogue = buildDialogueCostDetail(dialogue, {
+  ...activeModel, executions: [{ ...dialogueExecution, operations: [priced] }],
+}, [occurrenceId]);
+const linkedDialogueMarkup = renderToStaticMarkup(<DialogueCostDetailView detail={linkedDialogue} />);
+assert.ok(linkedDialogueMarkup.includes("Subtotal registrado no diálogo"));
+assert.ok(linkedDialogueMarkup.includes(occurrenceId));
+assert.ok(!linkedDialogueMarkup.includes("Custo final"));
 
 const dialogueList = [
   { ...dialogue, accountName: "Conta Atendimento", workloads: ["pending_setup_conversation" as const] },

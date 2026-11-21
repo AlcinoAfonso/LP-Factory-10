@@ -11,6 +11,7 @@ function metadata(value = 1, origin = "pending_setup") { return { id: id(value),
   started_at: "2026-10-31T23:58:00.000Z", ended_at: stamp, user_id: "PRIVATE_USER", niche_state: { reply: "PRIVATE_REPLY" } }; }
 function execution(value: number, dialogue = 1, started = stamp) { return { id: id(value), workload: "pending_setup_conversation", environment: "preview",
   execution_origin: "runtime", universe: "client", attribution_status: "attributed", account_id: account,
+  occurrence_id: null,
   economic_event_kind: "niche_resolution", economic_event_id: id(dialogue), landing_page_id: null, taxon_id: null,
   baseline_reference: "e10_12_attendance", baseline_version: null, started_at: started, finished_at: stamp,
   result: "success", failure_category: null }; }
@@ -149,7 +150,9 @@ async function validateAdapter(execs: Record<string,unknown>[],ops: Record<strin
   });
   for (const row of execs) row.occurrence_id = nicheOccurrence;
   tables.openai_cost_operations.push(
-    ...generationSections.map((_, index) => ({ ...operation(500 + index, 300 + index, "0.1"), model: "gpt-6.2-sol" })),
+    ...generationSections.map((section, index) => ({
+      ...operation(500 + index, 300 + index, "0.1"), model: "gpt-6.2-sol", started_at: section.started_at,
+    })),
     { ...operation(507, 300, "0.02"), sequence: 2, retry_of_operation_id: id(500), result: "failure", failure_category: "provider_error" },
     operation(508, 307, "0.11"),
   );
@@ -165,8 +168,8 @@ async function validateAdapter(execs: Record<string,unknown>[],ops: Record<strin
   assert.equal(completed.value.executions[0].operations[1].result, "failure");
   assert.equal(completed.value.executions[0].operations[1].retryOfOperationId, id(500));
   assert.equal(completed.value.executions[0].operations[1].model, "gpt-6.1-terra");
-  assert.equal(completed.value.executions[0].startedAt.slice(0, 7), "2026-10");
-  assert.equal(completed.value.executions.at(-1)?.startedAt.slice(0, 7), "2026-11");
+  assert.equal(completed.value.executions[0].operations[0].startedAt.slice(0, 7), "2026-10");
+  assert.equal(completed.value.executions.at(-1)?.operations[0].startedAt.slice(0, 7), "2026-11");
   assert.deepEqual([completed.value.status, completed.value.operationCount, completed.value.calculatedCostUsd], ["complete", 8, "0.72"]);
   assert.equal(JSON.stringify(completed).includes("PRIVATE"), false);
   assert.deepEqual(await ledger.readOpenAiCostOccurrence({ by: "execution", id: id(300) }), completed);
@@ -194,6 +197,9 @@ async function validateAdapter(execs: Record<string,unknown>[],ops: Record<strin
   assert.ok(niche.ok);
   assert.deepEqual([niche.value.occurrenceId, niche.value.status, niche.value.calculatedCostUsd], [nicheOccurrence, "complete", "0.33"]);
   assert.equal(new Set(niche.value.executions.map(row => row.workload)).size, 2);
+  const dialogueWithOccurrence = await adapter.readOpenAiDialogueCost({ dialogueId: id(1), accountId: account });
+  assert.ok(dialogueWithOccurrence.ok);
+  assert.deepEqual(dialogueWithOccurrence.value.occurrenceIds, [nicheOccurrence]);
 
   const billed = tables.openai_cost_operations.find(row => row.id === id(506))!;
   Object.assign(billed, { cost_status: "unavailable", cost_usd: null, cost_unavailable_reason: "usage_missing" });

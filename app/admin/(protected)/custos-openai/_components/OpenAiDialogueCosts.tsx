@@ -25,7 +25,7 @@ export function OpenAiDialogueCosts({ result, active, filters }: Readonly<{
       : dialogues.length === 0 ? <p className="text-sm text-muted-foreground">Nenhum diálogo encontrado para esta seleção.</p>
       : <div className="overflow-x-auto rounded-md border border-border"><table className="w-full text-left text-sm">
         <caption className="sr-only">Diálogos individuais do Agente Nicho</caption>
-        <thead className="bg-muted"><tr>{["Diálogo", "Conta", "Ambiente", "Estado", "Custo completo", "Detalhe"].map(label => <th key={label} scope="col" className="px-3 py-2 font-medium">{label}</th>)}</tr></thead>
+        <thead className="bg-muted"><tr>{["Diálogo", "Conta", "Ambiente", "Estado", "Custo do diálogo", "Detalhe"].map(label => <th key={label} scope="col" className="px-3 py-2 font-medium">{label}</th>)}</tr></thead>
         <tbody className="divide-y divide-border">{dialogues.map(dialogue => <DialogueRow key={dialogue.dialogueId} dialogue={dialogue} active={active} />)}</tbody>
       </table></div>}
   </section>;
@@ -80,14 +80,25 @@ export function DialogueCostDetailView({ detail }: Readonly<{ detail: DialogueCo
       <p className="mt-2 text-sm">{detail.callCount} chamadas · {detail.attemptCount} tentativas · {detail.retryCount} retries · {detail.webSearchCallCount} pesquisas Web{detail.unknownSearchCount ? " · " + detail.unknownSearchCount + " operações com pesquisas indisponíveis" : ""}</p>
       <p className="mt-1 text-xs text-muted-foreground">Chamadas são operações iniciais; tentativas incluem retries. Cada operação entra uma única vez no custo, incluindo cache e ferramentas.</p>
       {detail.status === "partial" || detail.status === "unrecorded" ? <p className="mt-2 text-sm">{detail.pendingCount} pendências · {detail.unavailableCount} custos indisponíveis · {detail.missingOperationCount} execuções sem operação. Este valor não é um custo final completo.</p> : null}
-      <p className="mt-2 text-xs text-muted-foreground">Total das operações registradas no ledger. Ausência de registro não comprova custo zero; registros antigos sem vínculo explícito não são associados retroativamente.</p>
+      <p className="mt-2 text-xs text-muted-foreground">Soma dos valores calculáveis registrados no ledger. Registros antigos continuam vinculados apenas aos identificadores de origem.</p>
     </div>
-    {detail.executions.map(execution => <OpenAiCostExecutionDetails key={execution.executionId} execution={execution} />)}
+    {detail.occurrenceIds.length ? <div className="space-y-1 text-sm">
+      <h3 className="font-medium">Ocorrências financeiras vinculadas</h3>
+      <p className="text-muted-foreground">Use o UUID em Custo por ocorrência para conferir o encerramento financeiro e a apuração individual.</p>
+      <ul>{detail.occurrenceIds.map(id => <li key={id} className="break-all font-mono text-xs">{id}</li>)}</ul>
+    </div> : null}
+    {detail.executions.map(execution => <OpenAiCostExecutionDetails key={execution.executionId} execution={execution} hideUnprovenAmount />)}
   </div>;
 }
 function Datum({ label, value }: Readonly<{ label: string; value: string }>) { return <div><dt className="text-xs text-muted-foreground">{label}</dt><dd className="break-all">{value}</dd></div>; }
 function originLabel(origin: OpenAiCostDialogue["origin"]) { return origin === "pending_setup" ? "Atendimento inicial" : "Redefinir nicho"; }
 function environmentLabel(value: string) { return value === "production" ? "Produção" : value === "preview" ? "Preview" : "Desenvolvimento"; }
 function timestamp(value: string) { return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "medium", timeZone: "America/Sao_Paulo" }).format(new Date(value)); }
-function costLabel(detail: DialogueCostDetail) { return detail.status === "final" ? "Custo final" : detail.status === "accumulated" ? "Custo acumulado" : detail.status === "partial" ? "Subtotal calculável — parcial" : "Sem custo registrado"; }
+function costLabel(detail: DialogueCostDetail) {
+  if (detail.status === "unrecorded") return "Sem custo registrado";
+  if (detail.calculatedCostUsd === null) return "Custo indisponível";
+  if (detail.status === "partial") return "Subtotal calculável — parcial";
+  if (detail.occurrenceIds.length) return "Subtotal registrado no diálogo";
+  return detail.status === "final" ? "Custo final" : "Custo acumulado";
+}
 function usd(value: string) { const [integer, fraction = "00"] = value.split("."); return "US$ " + integer.replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "," + fraction; }

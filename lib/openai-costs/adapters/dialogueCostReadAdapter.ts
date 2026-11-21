@@ -93,7 +93,7 @@ export async function readOpenAiDialogueCost(raw: unknown): Promise<DialogueCost
     if (!dialogue || dialogue.dialogueId !== dialogueId || dialogue.accountId !== accountId) throw Error("dialogue_link_invalid");
     // No period restriction: these are the full lifetime facts of this exact canonical dialogue and account.
     const executions = await readDialoguePages(async after => {
-      let query = client.from("openai_cost_executions").select(executionColumns)
+      let query = client.from("openai_cost_executions").select(`${executionColumns},occurrence_id`)
         .eq("economic_event_kind", "niche_resolution").eq("economic_event_id", dialogueId).eq("account_id", accountId)
         .in("workload", ["pending_setup_conversation", "niche_resolution"]).order("id").limit(DIALOGUE_PAGE_SIZE);
       if (after) query = query.gt("id", after);
@@ -104,6 +104,10 @@ export async function readOpenAiDialogueCost(raw: unknown): Promise<DialogueCost
     const after = await readMetadata();
     if (after.error || !Array.isArray(after.data) || after.data.length !== 1 || JSON.stringify(parseCostDialogue(after.data[0])) !== JSON.stringify(dialogue))
       throw Error("dialogue_changed_during_read");
-    return { ok: true, value: buildDialogueCostDetail(dialogue, model) };
+    const occurrenceIds = new Set<string>();
+    for (const execution of executions) {
+      if (execution.occurrence_id !== null) occurrenceIds.add(z.uuid().parse(execution.occurrence_id));
+    }
+    return { ok: true, value: buildDialogueCostDetail(dialogue, model, [...occurrenceIds]) };
   } catch { return { ok: false, code: "DIALOGUE_COST_UNAVAILABLE" }; }
 }
