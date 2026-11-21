@@ -1,5 +1,6 @@
 import type { DialogueCostResult, DialogueListResult } from "@/openai-costs/dialogue-costs";
 import { dialogueIdentitySchema } from "@/openai-costs/dialogue-costs";
+import { occurrenceCostQuerySchema, type OccurrenceCostQuery, type OccurrenceCostResult } from "@/openai-costs/occurrence-costs";
 import type { OpenAiActiveCostReadResult } from "@/openai-costs/active-contracts";
 import type {
   OpenAiCostsPeriod,
@@ -56,17 +57,17 @@ export async function refreshOpenAiCostsActionCore(
     return failure("INVALID_FILTERS", "Revise os filtros de universo, conta e workload.");
   }
 
-  const [official, active, legacy] = await Promise.all([
+  const [officialRead, activeRead, legacyRead] = await Promise.allSettled([
     dependencies.readOfficial(selection.period),
     dependencies.readActive(selection.period),
     dependencies.readLegacy(selection.period),
   ]);
-  if (!official.ok) {
-    return failure(
-      official.error.code,
-      "O total oficial da OpenAI está indisponível para este período.",
-    );
-  }
+  const official: OpenAiOfficialCostsReadResult = officialRead.status === "fulfilled" ? officialRead.value
+    : { ok: false, error: { code: "REQUEST_FAILED", message: "Official costs read failed", httpStatus: null } };
+  const active: OpenAiActiveCostReadResult = activeRead.status === "fulfilled" ? activeRead.value
+    : { ok: false, error: { code: "READ_FAILED", message: "Active costs read failed" } };
+  const legacy: OpenAiLpCostReadResult = legacyRead.status === "fulfilled" ? legacyRead.value
+    : { ok: false, error: { code: "READ_FAILED", message: "Frozen costs read failed" } };
 
   const dashboard = buildOpenAiCostsFinancialComposition({
     selection,
@@ -74,15 +75,16 @@ export async function refreshOpenAiCostsActionCore(
     active,
     legacy,
     activeFilters,
-    dialogues: dependencies.readDialogues ? await dependencies.readDialogues(selection.period, active) : null,
+    dialogues: dependencies.readDialogues
+      ? await dependencies.readDialogues(selection.period, active).catch((): DialogueListResult => ({ ok: false, code: "DIALOGUE_LIST_UNAVAILABLE" }))
+      : null,
   });
-  if (!dashboard) return failure("INVALID_RESPONSE", "A resposta de custos não pôde ser validada.");
   return {
     status: "success",
-    code: dashboard.activeErrorCode ?? dashboard.legacyErrorCode,
-    message: dashboard.active && dashboard.legacy
+    code: dashboard.officialErrorCode ?? dashboard.activeErrorCode ?? dashboard.legacyErrorCode,
+    message: !dashboard.officialErrorCode && dashboard.active && dashboard.legacy
       ? "Custos atualizados sob demanda."
-      : "Total oficial atualizado; uma das fontes internas está indisponível.",
+      : "Confira abaixo a disponibilidade de cada fonte.",
     dashboard,
   };
 }
@@ -98,5 +100,15 @@ export async function readDialogueCostActionCore(raw: unknown, dependencies: Rea
   if (!(await dependencies.authorize()).allowed) return { ok: false, code: "UNAUTHORIZED" };
   const parsed = dialogueIdentitySchema.safeParse(raw);
   if (!parsed.success) return { ok: false, code: "INVALID_DIALOGUE" };
+  return await dependencies.read(parsed.data);
+}
+
+export async function readOccurrenceCostActionCore(raw: unknown, dependencies: Readonly<{
+  authorize: () => Promise<Readonly<{ allowed: boolean }>>;
+  read: (query: OccurrenceCostQuery) => Promise<OccurrenceCostResult>;
+}>): Promise<OccurrenceCostResult> {
+  if (!(await dependencies.authorize()).allowed) return { ok: false, code: "UNAUTHORIZED" };
+  const parsed = occurrenceCostQuerySchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, code: "INVALID_ID" };
   return await dependencies.read(parsed.data);
 }

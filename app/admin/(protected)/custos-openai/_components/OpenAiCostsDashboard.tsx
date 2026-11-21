@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { OpenAiDialogueCosts } from "./OpenAiDialogueCosts";
+import { OpenAiOccurrenceCosts } from "./OpenAiOccurrenceCosts";
 import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 import type { OpenAiActiveCostReadModel, OpenAiCostReadWorkloadId } from "@/openai-costs/active-contracts";
 import type { OpenAiCostsFinancialComposition } from "@/openai-costs/dashboard";
@@ -41,6 +42,7 @@ export function OpenAiCostsDashboard({ startDate, endDate }: Props) {
   const [state, formAction, pending] = useActionState(refreshOpenAiCostsAction, INITIAL_STATE);
   const resultRef = useRef<HTMLDivElement>(null);
   const dashboard = state.dashboard;
+  const allSourcesAvailable = dashboard && !dashboard.officialErrorCode && dashboard.active && dashboard.legacy;
 
   useEffect(() => {
     if (!pending && state.status !== "idle") resultRef.current?.focus();
@@ -90,6 +92,8 @@ export function OpenAiCostsDashboard({ startDate, endDate }: Props) {
         </fieldset>
       </form>
 
+      <OpenAiOccurrenceCosts />
+
       <section className="rounded-lg border border-border bg-card p-4 shadow-card sm:p-6" aria-labelledby="openai-external-links-title">
         <h2 id="openai-external-links-title" className="text-base font-semibold text-foreground">Visão global na OpenAI</h2>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">Usage, faturamento e créditos permanecem na plataforma OpenAI. Os acessos abaixo saem da LP Factory e abrem em nova aba conforme as permissões da sua organização.</p>
@@ -103,7 +107,7 @@ export function OpenAiCostsDashboard({ startDate, endDate }: Props) {
         {pending ? <StatusPanel tone="neutral" title="Consultando custos">Buscando o total oficial, o controle ativo e o histórico congelado do mesmo período.</StatusPanel>
           : state.status === "error" ? <StatusPanel tone="danger" title="Consulta indisponível" role="alert">{state.message} {state.code ? `Código: ${state.code}.` : ""}</StatusPanel>
             : state.status === "idle" ? <StatusPanel tone="neutral" title="Nenhuma consulta executada">{state.message}</StatusPanel>
-              : <StatusPanel tone={dashboard?.active && dashboard.legacy ? "success" : "warning"} title={dashboard?.active && dashboard.legacy ? "Consulta atualizada" : "Consulta parcialmente disponível"}>{state.message} {state.code ? `Código: ${state.code}.` : ""}</StatusPanel>}
+              : <StatusPanel tone={allSourcesAvailable ? "success" : "warning"} title={allSourcesAvailable ? "Consulta atualizada" : "Consulta com fontes indisponíveis"}>{state.message}</StatusPanel>}
       </div>
 
       {dashboard && !pending ? <DashboardResult dashboard={dashboard} /> : null}
@@ -122,7 +126,7 @@ function DashboardResult({ dashboard }: Readonly<{ dashboard: OpenAiCostsFinanci
         </div>
         <p className="text-sm text-muted-foreground">{formatDate(dashboard.selection.startDate)} a {formatDate(dashboard.selection.endDate)}. As fronteiras do período usam UTC.</p>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="Gasto oficial OpenAI" value={formatUsd(dashboard.officialTotalUsd)} detail="Fonte oficial · Costs API" />
+          <MetricCard label="Gasto oficial OpenAI" value={dashboard.officialTotalUsd === null ? "Indisponível" : formatUsd(dashboard.officialTotalUsd)} detail="Fonte oficial · Costs API" />
           <MetricCard label="Clientes" value={dashboard.economicHierarchy?.activeAvailable && dashboard.economicHierarchy.legacyAvailable ? formatUsd(dashboard.economicHierarchy.clients.calculatedCostUsd) : "Indisponível"} detail="Controle ativo de clientes + histórico E21.4 calculáveis" />
           <MetricCard label="LP Factory" value={dashboard.economicHierarchy?.activeAvailable ? formatUsd(dashboard.economicHierarchy.lpFactory.calculatedCostUsd) : "Indisponível"} detail="Controle ativo interno calculável" />
           <MetricCard label="Outros gastos / reconciliação" value={dashboard.globalReconciliationUsd === null ? "Indisponível" : formatUsd(dashboard.globalReconciliationUsd)} detail="Oficial menos controle ativo e histórico, sem ajuste" />
@@ -137,8 +141,9 @@ function DashboardResult({ dashboard }: Readonly<{ dashboard: OpenAiCostsFinanci
           O período contém {dashboard.legacy.providerCreditFailureCount} ocorrência de provider associada a crédito ou limite insuficiente. Consulte a administração da OpenAI; nenhum detalhe financeiro interno é exibido ao cliente.
         </StatusPanel>
       ) : null}
-      {!dashboard.active ? <StatusPanel tone="danger" title="Controle ativo indisponível" role="alert">O total oficial e o histórico disponíveis foram preservados. Código: {dashboard.activeErrorCode ?? "READ_FAILED"}.</StatusPanel> : null}
-      {!dashboard.legacy ? <StatusPanel tone="warning" title="Histórico congelado indisponível">O total oficial e o controle ativo disponíveis foram preservados. Código: {dashboard.legacyErrorCode ?? "READ_FAILED"}.</StatusPanel> : null}
+      {dashboard.officialErrorCode ? <StatusPanel tone="warning" title="Costs API indisponível">Os valores internos disponíveis continuam consultáveis. Motivo ({dashboard.officialErrorCode}).</StatusPanel> : null}
+      {!dashboard.active ? <StatusPanel tone="danger" title="Controle ativo indisponível" role="alert">Não foi possível ler as execuções do período. Motivo ({dashboard.activeErrorCode ?? "READ_FAILED"}).</StatusPanel> : null}
+      {!dashboard.legacy ? <StatusPanel tone="warning" title="Histórico congelado indisponível">Não foi possível ler o histórico do período. Motivo ({dashboard.legacyErrorCode ?? "READ_FAILED"}).</StatusPanel> : null}
       {dashboard.economicHierarchy ? <OpenAiEconomicHierarchyView hierarchy={dashboard.economicHierarchy} /> : null}
       {dashboard.filteredActive && (dashboard.activeFilters.universe || dashboard.activeFilters.accountId || dashboard.activeFilters.workload)
         ? <ActiveCostSection active={dashboard.filteredActive} filters={dashboard.activeFilters} />

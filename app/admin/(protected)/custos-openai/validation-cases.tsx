@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import nodeModule from "node:module";
 import { buildDialogueCostDetail } from "../../../../lib/openai-costs/dialogue-costs";
+import { buildOccurrenceCostDetail } from "../../../../lib/openai-costs/occurrence-costs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import React from "react";
@@ -283,10 +284,34 @@ for (const text of ["Serviço solicitado", "Fast", "Serviço aplicado", "Standar
 const loader = nodeModule as unknown as { _load: (name: string, parent: unknown, isMain: boolean) => unknown };
 const originalLoader = loader._load;
 loader._load = function(name, parent, isMain) {
-  if (name === "../actions") return { readDialogueCostAction: async () => ({ ok: false, code: "NOT_CALLED_IN_RENDER" }) };
+  if (name === "../actions") return {
+    readDialogueCostAction: async () => ({ ok: false, code: "NOT_CALLED_IN_RENDER" }),
+    readOccurrenceCostAction: async () => ({ ok: false, code: "NOT_CALLED_IN_RENDER" }),
+  };
   return originalLoader.call(this, name, parent, isMain);
 };
-const { DialogueCostDetailView, OpenAiDialogueCosts } = await import("./_components/OpenAiDialogueCosts").finally(() => { loader._load = originalLoader; });
+const [{ DialogueCostDetailView, OpenAiDialogueCosts }, { OccurrenceCostDetailView, OpenAiOccurrenceCosts }] = await Promise.all([
+  import("./_components/OpenAiDialogueCosts"), import("./_components/OpenAiOccurrenceCosts"),
+]).finally(() => { loader._load = originalLoader; });
+const occurrenceId = "6bd4bfe0-b9d1-4bc6-b1e7-a192c3cc1379";
+const closedAt = "2026-08-28T14:30:00.000Z";
+const occurrenceExecution = activeModel.executions[0];
+const [priced, unknown] = occurrenceExecution.operations;
+for (const [status, closure, operations, label] of [
+  ["complete", closedAt, [priced], "Custo total calculado"],
+  ["accumulated", null, [priced], "Custo acumulado"],
+  ["partial", closedAt, [priced, unknown], "Custo parcial"],
+  ["unavailable", closedAt, [{ ...unknown, retryOfOperationId: null }], "Custo indisponível"],
+] as const) {
+  const detail = buildOccurrenceCostDetail(occurrenceId, closure, [{ ...occurrenceExecution, operations }]);
+  assert.equal(detail.status, status);
+  const markup = renderToStaticMarkup(<OccurrenceCostDetailView detail={detail} />);
+  assert.ok(markup.includes(label));
+  assert.ok(markup.includes(occurrenceId));
+  assert.ok(!markup.includes("US$ 0,00"));
+  if (status !== "complete") assert.ok(!markup.includes("Custo total calculado"));
+}
+assert.match(renderToStaticMarkup(<OpenAiOccurrenceCosts />), /<label[^>]*>UUID/);
 const dialogue = { dialogueId: "e2155000-0000-4000-8000-000000000040", accountId: activeModel.executions[0].accountId!,
   origin: "account_niche" as const, startedAt: "2026-08-28T14:00:00.000Z", endedAt: "2026-08-28T14:30:00.000Z" };
 const dialogueExecution = { ...activeModel.executions[0], workload: "pending_setup_conversation" as const,
@@ -358,6 +383,35 @@ assert.equal(allowed.dashboard?.activeFilters.universe, "lp_factory");
 assert.equal(allowed.dashboard?.activeFilters.accountId, null);
 assert.equal(allowed.dashboard?.globalReconciliationUsd, "0.7");
 assert.deepEqual(allowedCalls.sort(), ["active", "legacy", "official"]);
+
+const originalSources = {
+  authorize: async () => ({ allowed: true }),
+  readOfficial: async () => ({ ok: true as const, value: { currency: "usd" as const, totalUsd: "1",
+    startTime: current.period.startTime, endTime: current.period.endTime, bucketCount: 1, pageCount: 1, fetchedAt: closedAt } }),
+  readActive: async () => ({ ok: true as const, value: activeModel }),
+  readLegacy: async () => internal,
+};
+for (const [source, errorKey, dataKey] of [
+  ["readOfficial", "officialErrorCode", "officialTotalUsd"],
+  ["readActive", "activeErrorCode", "active"],
+  ["readLegacy", "legacyErrorCode", "legacy"],
+] as const) {
+  const response = await refreshOpenAiCostsActionCore(lpFactoryBrowserForm, {
+    ...originalSources,
+    [source]: async () => { throw Error("internal error with credentials"); },
+  });
+  assert.ok(response.dashboard);
+  assert.equal(response.status, "success");
+  assert.equal(response.dashboard[dataKey], null);
+  assert.equal(response.dashboard.globalReconciliationUsd, null);
+  assert.ok(response.dashboard[errorKey]);
+  assert.equal(response.dashboard.officialTotalUsd, source === "readOfficial" ? null : "1");
+  assert.equal(response.dashboard.active?.totalCalculatedUsd, source === "readActive" ? undefined : activeModel.totalCalculatedUsd);
+  assert.equal(response.dashboard.legacy?.totalUsd, source === "readLegacy" ? undefined : internal.value.totalUsd);
+  assert.ok(!JSON.stringify(response).includes("credentials"));
+}
+assert.equal((await refreshOpenAiCostsActionCore(lpFactoryBrowserForm, originalSources)).dashboard?.globalReconciliationUsd,
+  "0.7", "consulting all financial statuses does not add any occurrence subtotals to period reconciliation");
 
 for (const workload of ["taxon_input_catalog_sufficiency_evaluation", "landing_page_dynamic_market_research"] as const) {
   const historicalForm = new FormData();

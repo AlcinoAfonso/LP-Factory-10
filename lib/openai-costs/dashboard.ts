@@ -53,8 +53,9 @@ export type OpenAiCostsDashboard = Readonly<{
 
 export type OpenAiCostsFinancialComposition = Readonly<{
   selection: OpenAiCostsPeriodSelection;
-  officialTotalUsd: string;
-  officialUpdatedAt: string;
+  officialTotalUsd: string | null;
+  officialUpdatedAt: string | null;
+  officialErrorCode: string | null;
   active: OpenAiActiveCostReadModel | null;
   activeErrorCode: string | null;
   filteredActive: OpenAiActiveCostReadModel | null;
@@ -152,39 +153,34 @@ export function buildOpenAiCostsFinancialComposition(input: Readonly<{
   legacy: OpenAiLpCostReadResult;
   activeFilters?: OpenAiActiveCostFilters;
   dialogues?: DialogueListResult | null;
-}>): OpenAiCostsFinancialComposition | null {
-  if (!input.official.ok) return null;
-  const official = decimalFromNonNegativeString(input.official.value.totalUsd);
-  if (!official) return null;
+}>): OpenAiCostsFinancialComposition {
+  const official = input.official.ok ? input.official.value : null;
+  const officialTotal = decimalFromNonNegativeString(official?.totalUsd);
+  const activeTotal = decimalFromNonNegativeString(input.active.ok ? input.active.value.totalCalculatedUsd : null);
+  const legacyTotal = decimalFromNonNegativeString(input.legacy.ok ? input.legacy.value.totalUsd : null);
   const activeFilters = Object.freeze({ ...(input.activeFilters ?? {}) });
-  const active = input.active.ok ? input.active.value : null;
-  const legacy = input.legacy.ok ? input.legacy.value : null;
-  let reconciliationUsd: string | null = null;
-  let anomalous = false;
-  if (active && legacy) {
-    const activeTotal = decimalFromNonNegativeString(active.totalCalculatedUsd);
-    const legacyTotal = decimalFromNonNegativeString(legacy.totalUsd);
-    if (!activeTotal || !legacyTotal) return null;
-    const reconciliation = subtractDecimal(subtractDecimal(official, activeTotal), legacyTotal);
-    reconciliationUsd = formatDecimal(reconciliation);
-    anomalous = reconciliation.coefficient < 0n;
-  }
+  const active = input.active.ok && activeTotal ? input.active.value : null;
+  const legacy = input.legacy.ok && legacyTotal ? input.legacy.value : null;
+  const reconciliation = officialTotal && activeTotal && legacyTotal
+    ? subtractDecimal(subtractDecimal(officialTotal, activeTotal), legacyTotal)
+    : null;
   return Object.freeze({
     selection: input.selection,
-    officialTotalUsd: input.official.value.totalUsd,
-    officialUpdatedAt: input.official.value.fetchedAt,
+    officialTotalUsd: officialTotal && official ? official.totalUsd : null,
+    officialUpdatedAt: officialTotal && official ? official.fetchedAt : null,
+    officialErrorCode: input.official.ok ? officialTotal ? null : "INVALID_RESPONSE" : input.official.error.code,
     active,
-    activeErrorCode: input.active.ok ? null : input.active.error.code,
+    activeErrorCode: input.active.ok ? active ? null : "INVALID_RESPONSE" : input.active.error.code,
     filteredActive: active ? filterOpenAiActiveCosts(active, activeFilters) : null,
     activeFilters,
     dialogues: input.dialogues ?? null,
     legacy,
-    legacyErrorCode: input.legacy.ok ? null : input.legacy.error.code,
+    legacyErrorCode: input.legacy.ok ? legacy ? null : "INVALID_RESPONSE" : input.legacy.error.code,
     economicHierarchy: active || legacy
       ? buildOpenAiEconomicHierarchy(active, legacy)
       : null,
-    globalReconciliationUsd: reconciliationUsd,
-    globalReconciliationAnomalous: anomalous,
+    globalReconciliationUsd: reconciliation ? formatDecimal(reconciliation) : null,
+    globalReconciliationAnomalous: reconciliation !== null && reconciliation.coefficient < 0n,
   });
 }
 
