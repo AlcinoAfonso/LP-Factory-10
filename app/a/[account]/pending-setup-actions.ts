@@ -239,8 +239,7 @@ export async function conversePendingSetupAction(raw: unknown) {
     const ready = !next && acceptedSynthesis && nameReady && Boolean(understanding) &&
       (accept || niche?.confirmed || (state?.operationalAccepted && outcome.operational.reaction === "continue"));
     const contactRef = state?.synthesis?.contact;
-    const sourceId = contactRef === "declined" ? state?.synthesis?.messageId ?? null
-      : contactRef && typeof contactRef !== "string" ? contactRef.messageId : null;
+    const sourceId = contactRef && typeof contactRef !== "string" ? contactRef.messageId : null;
     const written = await commitPendingNicheTurn({ ...fence, reply: result.reply,
       summary: mergeNicheMemory(observed.summary, result, synthesis, submittedWhatsApp(conversation.messages, sourceId)),
       observed, understanding, preferredName: outcome.preferredName.value,
