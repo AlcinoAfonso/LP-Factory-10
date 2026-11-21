@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { clientOpenAiCostContext, closeOpenAiCostOccurrence } from "../../../../lib/openai-costs";
 import { pilotProof, resolveAgentBaseGenerationId, verifiedPilotProof } from "../../../../lib/communication-base/agent-base/generation-proof";
 import { createClient } from "../../../../lib/supabase/server";
 import { generateAgentBasePilotSection } from "../../../../lib/communication-base/adapters/agentBasePilotAdapter";
@@ -18,7 +19,7 @@ import {
 } from "../../../../lib/communication-base/adapters/communicationBaseAdapter";
 import { parseCommunicationFacts, parseSectionValue, withSection, withGeneratedIntelligence } from "../../../../lib/communication-base/policy";
 import { parseEditorDraft } from "../../../../lib/communication-base/manual-editor-value";
-import { isCommunicationResourcesEnabled, resolveAgentBaseEnvironment } from "../../../../lib/communication-base/config";
+import { isCommunicationResourcesEnabled, resolveAgentBaseEnvironment, type AgentBaseEnvironment } from "../../../../lib/communication-base/config";
 import { readCommunicationDefinitions } from "../../../../lib/communication-base/adapters/communicationCatalogAdapter";
 import { getCommunicationSection } from "../../../../lib/communication-base/registry";
 import { selectStageTwoInput, type StageTwoDraft, type StageTwoTarget } from "../../../../lib/communication-base/ai-core";
@@ -189,6 +190,33 @@ export type AgentBasePilotActionResult =
   | Readonly<{ ok: true; section: AgentBasePilotSection; catalogState: string; nicheRevision: string }>
   | Readonly<{ ok: false; message: string; invalidated?: boolean }>;
 
+function closeAgentBaseGenerationCost(occurrenceId: string, accountId: string, environment: AgentBaseEnvironment) {
+  return closeOpenAiCostOccurrence({
+    occurrenceId, environment, executionOrigin: "runtime", economicContext: clientOpenAiCostContext(accountId),
+  });
+}
+
+async function closeSupersededAgentBaseGeneration(input: {
+  sections: readonly AgentBasePilotSection[];
+  accountId: string;
+  environment: AgentBaseEnvironment;
+  version: number;
+  catalogState?: string;
+  nicheRevision?: string;
+}) {
+  const { sections, accountId, environment, version, catalogState, nicheRevision } = input;
+  if (!sections.length || typeof catalogState !== "string" || typeof nicheRevision !== "string") return;
+  try {
+    const occurrenceId = resolveAgentBaseGenerationId(sections);
+    if (occurrenceId && sections.every(section => verifiedPilotProof(process.env.OPENAI_API_KEY,
+      environment, accountId, version, catalogState, nicheRevision, section))) {
+      await closeAgentBaseGenerationCost(occurrenceId, accountId, environment);
+    }
+  } catch {
+    // Unverifiable evidence preserves the existing functional response.
+  }
+}
+
 async function logAgentBasePilotAccessDenial(phase: "initial" | "revalidation", reason: string): Promise<void> {
   let authState: "authenticated" | "session_missing" | "session_not_found" | "auth_error" = "auth_error";
   try {
@@ -231,7 +259,12 @@ export async function runAgentBasePilotAction(input: Readonly<{
     readCommunicationBase(access.value.accountId, definitions.value),
     readOfficialNicheContext({ accountId: access.value.accountId }),
   ]);
-  if (!base.ok || !base.value || base.value.version !== input.version) return fail("A Base mudou. Atualize a página antes de gerar a Categoria 3.", true);
+  if (!base.ok || !base.value || base.value.version !== input.version) {
+    if (base.ok && base.value && base.value.version > input.version) {
+      await closeSupersededAgentBaseGeneration({ ...input, sections: previous, accountId: access.value.accountId, environment });
+    }
+    return fail("A Base mudou. Atualize a página antes de gerar a Categoria 3.", true);
+  }
   if (!taxonomy.ok || !taxonomy.niche?.confirmed) return fail("Defina e confirme um nicho oficial antes de gerar a Categoria 3.", true);
   const selected = selectAgentBasePilotInput(base.value, definitions.value);
   if (!selected || !Object.keys(selected.confirmed).length) return fail([selected?.notice, "Não há dados confirmados compatíveis para a geração."].filter(Boolean).join(" "));
@@ -260,6 +293,10 @@ export async function runAgentBasePilotAction(input: Readonly<{
       !isCurrentGenerationVersion(input.version, latestBase.value.version) || !latestNiche.ok ||
       !isCurrentGenerationNiche(taxonomy.niche, latestNiche.niche) || !latestDefinitions.ok ||
       agentBasePilotCatalogState(latestDefinitions.value) !== catalogState) {
+    if (latestAccess.ok && latestAccess.value.accountId === access.value.accountId &&
+        latestBase.ok && latestBase.value && latestBase.value.version > input.version) {
+      await closeAgentBaseGenerationCost(generationId, access.value.accountId, environment);
+    }
     return fail("A Base, o nicho ou o catálogo mudou durante a geração. Nada foi salvo.", true);
   }
   const section = { ...result.value, generationId };
@@ -298,6 +335,9 @@ export async function saveAgentBasePilotAction(input: Readonly<{
   ]);
   if (!base.ok || !base.value || base.value.version !== input.version ||
       !niche.ok || !niche.niche?.confirmed || input.nicheRevision !== niche.niche.revision) {
+    if (base.ok && base.value && base.value.version > input.version) {
+      await closeSupersededAgentBaseGeneration({ ...input, accountId: access.value.accountId, environment });
+    }
     return fail("A Base ou o nicho mudou durante a geração. Nada foi salvo.");
   }
   if (input.sections.some(section => section.generationId !== input.sections[0].generationId || !verifiedPilotProof(process.env.OPENAI_API_KEY, environment, access.value.accountId, input.version,
@@ -309,6 +349,10 @@ export async function saveAgentBasePilotAction(input: Readonly<{
     definitions: definitions.value, sections: generated,
     catalogState: input.catalogState, niche: niche.niche,
   });
+  const occurrenceId = input.sections[0].generationId;
+  if (occurrenceId && (saved.ok || saved.terminalGenerationFailure)) {
+    await closeAgentBaseGenerationCost(occurrenceId, access.value.accountId, environment);
+  }
   if (!saved.ok) return fail(saved.error === "conflict" ? "A Base foi editada durante a geração. Nada foi salvo." :
     "Não foi possível salvar a Categoria 3. O conteúdo anterior foi preservado.");
   revalidatePath(`/a/${access.value.accountSubdomain}/base-comunicacao`);

@@ -53,6 +53,7 @@ export async function generateCommunicationIntelligence(input: Readonly<{
     contractVersion: COMMUNICATION_AI_CONTRACT_VERSION,
     financialContext: input.financialContext ?? clientOpenAiCostContext(input.accountId),
     executionOrigin: input.executionOrigin ?? "runtime",
+    closeOccurrenceOnCompletion: true,
     baselineReference: input.target.kind === "general"
       ? "e25_1_stage2_general"
       : `e25_1_stage2_local_${input.target.key}`,

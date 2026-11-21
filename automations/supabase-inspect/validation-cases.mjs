@@ -1,5 +1,6 @@
 import { createCostRecorder } from "./costRecorder.mjs";
 import assert from "node:assert/strict";
+import { createHmac } from "node:crypto";
 import { callResponsesApi } from "./responsesClient.mjs";
 
 function recorder(events) {
@@ -125,3 +126,36 @@ assert.equal(terminalSignal?.aborted, true);
 assert.equal(providerSends, 1);
 assert.equal(new Set(executions.map(item => item.occurrenceId)).size, executions.length);
 assert.equal(new Set(operations.map(item => item.operationId)).size, operations.length);
+
+for (const result of ["success", "failure"]) {
+  let occurrence;
+  let closed = false;
+  const sent = [];
+  const costs = createCostRecorder(env, async (_url, request) => {
+    const { action, payload } = JSON.parse(request.body);
+    sent.push(action);
+    assert.equal(request.headers["x-openai-cost-signature"], createHmac("sha256", env.OPENAI_COST_INGESTION_HMAC_SECRET)
+      .update(`${request.headers["x-openai-cost-timestamp"]}.${request.body}`).digest("hex"));
+    if (action === "startExecution") {
+      occurrence = payload.occurrenceId;
+      return Response.json({ ok: true, recorded: true, executionId: payload.executionId });
+    }
+    if (action === "startOperation") return Response.json({ ok: true, admitted: !closed, operationId: payload.operationId });
+    if (action === "closeOccurrence") {
+      assert.deepEqual(payload, { executionId: costs.executionId, occurrenceId: occurrence });
+      closed = true;
+      return Response.json({ ok: true, closed, occurrenceId: occurrence });
+    }
+    if (action === "finishExecution") {
+      assert.equal(payload.result, result);
+      return Response.json({ ok: true });
+    }
+    throw new Error("unexpected ingress action");
+  });
+  assert.equal(await costs.start(), true);
+  assert.ok(await costs.startOperation("gpt-4.1-mini"));
+  assert.ok(await costs.startOperation("gpt-4.1-mini"));
+  assert.equal(await costs.finish(result, result === "failure" ? "provider_error" : null), true);
+  assert.deepEqual(sent, ["startExecution", "startOperation", "startOperation", "finishExecution", "closeOccurrence"]);
+  assert.equal(await costs.startOperation("gpt-4.1-mini"), null);
+}

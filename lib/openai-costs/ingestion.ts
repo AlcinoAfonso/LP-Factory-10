@@ -4,7 +4,7 @@ import type { OpenAiWorkloadInventoryItem } from "../openai-workloads";
 export const OPENAI_COST_INGESTION_PROTOCOL_VERSION = "e21.5.3-v1";
 export const OPENAI_COST_INGESTION_MAX_CLOCK_SKEW_MS = 5 * 60_000;
 
-type Action = "startExecution" | "startOperation" | "finishOperation" | "finishExecution";
+type Action = "startExecution" | "startOperation" | "finishOperation" | "finishExecution" | "closeOccurrence";
 
 export function validateOpenAiCostIngestion(input: Readonly<{
   body: string;
@@ -50,7 +50,7 @@ function validateEnvelope(value: unknown, expectedEnvironment: string, inventory
   const payload = record(root?.payload);
   const action = root?.action;
   if (root?.version !== OPENAI_COST_INGESTION_PROTOCOL_VERSION || !payload ||
-      !["startExecution", "startOperation", "finishOperation", "finishExecution"].includes(String(action))) {
+      !["startExecution", "startOperation", "finishOperation", "finishExecution", "closeOccurrence"].includes(String(action))) {
     return { ok: false, code: "envelope_invalid" };
   }
   const needsExecutionId = action !== "finishOperation";
@@ -99,6 +99,10 @@ function validateEnvelope(value: unknown, expectedEnvironment: string, inventory
     if (!exactKeys(payload, ["executionId", "result", "failureCategory", "finishedAt"]) || !terminal(payload) || !iso(payload.finishedAt)) {
       return { ok: false, code: "execution_terminal_invalid" };
     }
+  }
+  if (action === "closeOccurrence" &&
+      (!exactKeys(payload, ["executionId", "occurrenceId"]) || !uuid(payload.occurrenceId))) {
+    return { ok: false, code: "occurrence_context_invalid" };
   }
   return { ok: true, value: { action: action as Action, payload } };
 }

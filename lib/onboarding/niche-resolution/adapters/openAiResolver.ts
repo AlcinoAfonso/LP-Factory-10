@@ -25,6 +25,7 @@ import {
   openAiCostRecorder,
   openAiCostResponseEvidence,
   confirmOpenAiCostAdmission,
+  closeOpenAiCostOccurrence,
   resolveOpenAiOccurrenceId,
   type OpenAiCostEconomicContext,
   type OpenAiCostExecutionOrigin,
@@ -240,13 +241,16 @@ export async function resolveNicheWithOpenAi(input: {
   const executionId = createId();
   const operationId = createId();
   const financialStartedAt = nowIso();
-  if (!financialContext || environment === "unknown" || !await confirmOpenAiCostAdmission(recorder, {
-    executionId,
+  const occurrence = !financialContext || environment === "unknown" ? null : {
     occurrenceId: resolveOpenAiOccurrenceId(financialContext, environment),
-    workload: workload.id,
     environment,
-    executionOrigin: input.executionOrigin ?? "runtime",
+    executionOrigin: input.executionOrigin ?? "runtime" as const,
     economicContext: financialContext,
+  };
+  if (!occurrence || !await confirmOpenAiCostAdmission(recorder, {
+    ...occurrence,
+    executionId,
+    workload: workload.id,
     startedAt: financialStartedAt,
   }, {
     operationId,
@@ -259,6 +263,7 @@ export async function resolveNicheWithOpenAi(input: {
     contractVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION.toString(),
     startedAt: financialStartedAt,
   })) {
+    if (occurrence?.executionOrigin === "administrative_proof") await closeOpenAiCostOccurrence(occurrence, recorder);
     emitEvent(createOpenAiWorkloadFailureEvent(eventContext, "configuration_invalid"));
     return { ok: false, status: "failed", model: workload.model,
       schemaVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION, reason: "financial_admission_unconfirmed" };
@@ -487,6 +492,7 @@ export async function resolveNicheWithOpenAi(input: {
     };
   } finally {
     clearTimeout(deadline);
+    if (occurrence.executionOrigin === "administrative_proof") await closeOpenAiCostOccurrence(occurrence, recorder);
   }
 }
 

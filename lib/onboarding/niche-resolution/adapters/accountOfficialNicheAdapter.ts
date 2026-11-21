@@ -1,5 +1,6 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
+import { closeOpenAiNicheDialogueOccurrence } from "../../../openai-costs/recorder";
 import { readActivePrimaryAccountTaxon } from "./accountTaxonomyAdapter";
 import { allowsLegacyNicheDialogue } from "./accountNicheDialogueAdapter";
 import { validNicheDescription, type OfficialAccountNiche } from "../official-niche-policy";
@@ -64,5 +65,6 @@ export async function confirmAccountNicheDialogue(input: Readonly<{
   });
   if (error || !Number.isSafeInteger(Number(data)) || Number(data)<1) return { ok: false as const,
     reason: error?.message === "niche_product_exists" ? "product_exists" : error?.code === "40001" ? "conflict" : "unavailable" };
+  await closeOpenAiNicheDialogueOccurrence(input.accountId, input.dialogueId);
   return { ok: true as const };
 }

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createServiceClient } from "../../supabase/service";
-import type { OpenAiCostTrackingAdapter } from "../active-contracts";
+import { lpFactoryOpenAiCostContext, type OpenAiCostOccurrenceContext, type OpenAiCostTrackingAdapter } from "../active-contracts";
 import {
   executionFinishRpc,
   executionStartRpc,
@@ -14,6 +14,41 @@ import {
 } from "./activeCostTrackingAdapterCore";
 
 type ServiceClient = ReturnType<typeof createServiceClient>;
+
+async function closeOccurrence(client: ServiceClient, input: OpenAiCostOccurrenceContext) {
+  const { data, error } = await client.rpc("close_openai_cost_occurrence_v1", {
+    p_occurrence_id: input.occurrenceId,
+    p_environment: input.environment,
+    p_execution_origin: input.executionOrigin,
+    p_universe: input.economicContext.universe,
+    p_account_id: input.economicContext.accountId,
+  });
+  // An occurrence without a registered execution has no financial state to close.
+  if (error?.code === "23503") return false;
+  if (error || typeof data !== "string" || !Number.isFinite(Date.parse(data))) {
+    throw new OpenAiCostTrackingPersistenceError("unavailable");
+  }
+  return true;
+}
+
+export async function closeSupabaseInspectCostOccurrence(
+  executionId: string, occurrenceId: string, environment: OpenAiCostOccurrenceContext["environment"],
+) {
+  const client = createServiceClient();
+  const [execution, foreignWorkload] = await Promise.all([
+    client.from("openai_cost_executions").select("id")
+      .eq("id", executionId).eq("occurrence_id", occurrenceId).eq("environment", environment)
+      .eq("workload", "supabase_inspect").eq("execution_origin", "runtime")
+      .eq("universe", "lp_factory").eq("attribution_status", "attributed").is("account_id", null)
+      .maybeSingle(),
+    client.from("openai_cost_executions").select("id")
+      .eq("occurrence_id", occurrenceId).neq("workload", "supabase_inspect").limit(1).maybeSingle(),
+  ]);
+  if (execution.error || foreignWorkload.error) throw new OpenAiCostTrackingPersistenceError("unavailable");
+  return execution.data?.id === executionId && !foreignWorkload.data && closeOccurrence(client, {
+    occurrenceId, environment, executionOrigin: "runtime", economicContext: lpFactoryOpenAiCostContext,
+  });
+}
 
 async function invoke(client: ServiceClient, name: string, args: Record<string, unknown>) {
   const { error } = await client.rpc(name, args);
@@ -74,4 +109,5 @@ export const activeCostTrackingAdapter: OpenAiCostTrackingAdapter = Object.freez
     await invoke(client, "finish_openai_cost_operation_v2", operationFinishRpc(input, financial));
   },
   finishExecution: (input) => invoke(createServiceClient(), "finish_openai_cost_execution_v1", executionFinishRpc(input)),
+  closeOccurrence: (input) => closeOccurrence(createServiceClient(), input),
 });

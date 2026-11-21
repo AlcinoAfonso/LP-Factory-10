@@ -4,7 +4,9 @@ import { NextResponse } from "next/server";
 import { listOpenAiWorkloadInventory } from "@/openai-workloads";
 import {
   activeCostTrackingAdapter,
+  closeSupabaseInspectCostOccurrence,
 } from "@/openai-costs/adapters/activeCostTrackingAdapter";
+import type { OpenAiCostEnvironment } from "@/openai-costs/active-contracts";
 import { openAiCostPersistenceFailure } from "@/openai-costs/adapters/activeCostTrackingAdapterCore";
 import { validateOpenAiCostIngestion } from "@/openai-costs/ingestion";
 
@@ -50,6 +52,11 @@ export async function POST(request: Request) {
 
   const { action, payload } = validated.value;
   try {
+    if (action === "closeOccurrence") {
+      const { executionId, occurrenceId } = payload as { executionId: string; occurrenceId: string };
+      const closed = await closeSupabaseInspectCostOccurrence(executionId, occurrenceId, expectedEnvironment as OpenAiCostEnvironment);
+      return NextResponse.json({ ok: true, closed, occurrenceId });
+    }
     if (action === "startOperation" && payload.requireAdmission === true) {
       const receipt = await activeCostTrackingAdapter.startOperation({
         ...payload, admissionScope: { environment: expectedEnvironment, workload: "supabase_inspect" },

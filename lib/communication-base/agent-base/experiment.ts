@@ -95,6 +95,7 @@ async function runExperiment<T>(
     environment,
     expectedWorkload: "communication_base_stage2_intelligence",
     financialContext: clientOpenAiCostContext(input.accountId),
+    closeOccurrenceOnCompletion: true,
     executionOrigin: "administrative_proof",
     requestId: randomUUID(),
     promptVersion,

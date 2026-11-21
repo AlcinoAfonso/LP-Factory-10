@@ -17,6 +17,7 @@ import {
 } from "./ingestion";
 import { requestCommercialActivationOpenAi } from "../conversion-content/adapters/commercialActivationOpenAiAdapter";
 import { listOpenAiWorkloadInventory } from "../openai-workloads";
+import { validateOccurrenceIntegrations } from "./occurrence-integration-validation-cases";
 
 const execution = {
   executionId: "10000000-0000-4000-8000-000000000001",
@@ -185,19 +186,20 @@ async function main() {
   let sends = 0;
   const calls: string[] = [];
   const admittedOccurrences: string[] = [];
-  const send = (costRecorder: OpenAiCostTrackingAdapter, eventId?: string) => requestCommercialActivationOpenAi({
+  const send = (costRecorder: OpenAiCostTrackingAdapter, eventId?: string, closeOccurrenceOnCompletion?: true, status = 200) => requestCommercialActivationOpenAi({
     apiKey: "test-key",
     configuration: commercialConfiguration,
     environment: "development",
     request: { input: "test" },
     parseResponse: () => ({ ok: true, value: "functional-result" }),
+    closeOccurrenceOnCompletion,
     ...(eventId ? { economicEvent: { eventId, taxonId: null } } : {}),
   }, {
     fetchImpl: async (_url, init) => {
       assert.equal(init?.redirect, "error");
       calls.push("provider");
       sends++;
-      return new Response(JSON.stringify({ id: "resp_test", usage: { input_tokens: 1, output_tokens: 1 } }));
+      return new Response(JSON.stringify({ id: "resp_test", usage: { input_tokens: 1, output_tokens: 1 } }), { status });
     },
     costRecorder,
     emitEvent: () => undefined,
@@ -262,6 +264,29 @@ async function main() {
   assert.equal(sends, 5);
   assert.deepEqual(terminalFailures, ["finishOperation:timeout", "finishExecution:adapter_error"]);
 
+  const closed = new Set<string>();
+  const closureAdapter: OpenAiCostTrackingAdapter = {
+    ...admitted,
+    startOperation: async (operation) => !closed.has(admittedOccurrences.at(-1)!) && admitted.startOperation(operation),
+    finishOperation: async () => { calls.push("operation_terminal"); },
+    finishExecution: async () => { calls.push("execution_terminal"); },
+    closeOccurrence: async ({ occurrenceId }) => { calls.push("closed"); closed.add(occurrenceId); return true; },
+  };
+  calls.length = 0;
+  assert.deepEqual(await send(closureAdapter, shared, true), { ok: true, value: "functional-result", responseId: "resp_test" });
+  assert.deepEqual(calls, ["execution", "operation", "provider", "operation_terminal", "execution_terminal", "closed"]);
+  const beforeBlocked = sends;
+  assert.equal((await send(closureAdapter, shared)).ok, false);
+  assert.equal(sends, beforeBlocked);
+  assert.equal((await send(closureAdapter, undefined, true, 503)).ok, false);
+  assert.ok(closed.has(admittedOccurrences.at(-1)!));
+  const unavailableClosure = createOpenAiCostRecorder({
+    adapter: { ...admitted, closeOccurrence: () => new Promise(() => undefined) },
+    enabled: () => true, timeoutMs: 25, emitFailure: ({ phase, code }) => terminalFailures.push(`${phase}:${code}`),
+  });
+  assert.equal((await send(unavailableClosure, undefined, true)).ok, true);
+  assert.equal(terminalFailures.at(-1), "closeOccurrence:timeout");
+
   const secret = "test-ingestion-secret";
   const now = Date.parse("2026-09-11T12:00:00.000Z");
   const timestamp = now.toString();
@@ -305,6 +330,16 @@ async function main() {
   assert.deepEqual(validate({ now: now - 1 }), { ok: false, code: "request_expired" });
   assert.deepEqual(validate({ now: now + 300_001 }), { ok: false, code: "request_expired" });
   assert.deepEqual(validate({ body: `${body} ` }), { ok: false, code: "signature_invalid" });
+  for (const [payload, expected] of [
+    [{ executionId: envelope.payload.executionId, occurrenceId: shared }, true],
+    [{ executionId: envelope.payload.executionId, occurrenceId: "invalid" }, false],
+    [{ executionId: envelope.payload.executionId, occurrenceId: shared, environment: "preview" }, false],
+    [{ occurrenceId: shared }, false],
+  ] as const) {
+    const body = JSON.stringify({ version: OPENAI_COST_INGESTION_PROTOCOL_VERSION, action: "closeOccurrence", payload });
+    const signature = createHmac("sha256", secret).update(`${timestamp}.${body}`).digest("hex");
+    assert.equal(validate({ body, signature }).ok, expected);
+  }
   const wrongModelBody = JSON.stringify({ ...envelope, payload: { ...envelope.payload, model: "arbitrary" } });
   assert.deepEqual(validate({
     body: wrongModelBody,
@@ -375,6 +410,7 @@ async function main() {
   const route = readFileSync("app/api/internal/openai-costs/route.ts", "utf8");
   assert.ok(route.includes("activeCostTrackingAdapter[action]"));
   assert.equal(route.includes("openAiCostRecorder[action]"), false);
+  await validateOccurrenceIntegrations();
   console.log("PASS E21.5.3 active cost tracking contracts");
 }
 
