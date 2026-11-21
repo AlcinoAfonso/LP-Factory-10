@@ -8,7 +8,7 @@ import { getAccessContext } from "@/lib/access/getAccessContext";
 import { getConfirmedOperationalNicheResolutionLabel } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
 import { validateBusinessDisplayName } from "../../../lib/onboarding/pending-setup";
 import { conversationalMessage, currentSynthesis, mergeNicheMemory, nicheSummaryContext, requestNicheAgent } from "../../../lib/onboarding/niche-agent/runtime";
-import { relevantNicheHistory, submittedWhatsApp } from "../../../lib/onboarding/niche-agent/dialogue";
+import { relevantNicheHistory } from "../../../lib/onboarding/niche-agent/dialogue";
 import { readAccountOfficialNiche } from "../../../lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter";
 import { readActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import {
@@ -17,7 +17,6 @@ import {
   completePendingSetup,
   loadPendingSetupConversation,
   releasePendingNicheTurn,
-  savePendingSetupContact,
   setPendingSetupBusinessDisplayName,
 } from "../../../lib/onboarding/pending-setup/adapters/pendingSetupConversationAdapter";
 import { isE1011PassageEnabled, isE1012AttendanceEnabled } from "../../../lib/onboarding/pending-setup/config";
@@ -185,13 +184,7 @@ export async function conversePendingSetupAction(raw: unknown) {
       : null;
     const operationalProposal = saved?.kind === "operational_fallback" ? conversation.businessContextText : null;
     const synthesis = saved?.kind === "semantic" && !active ? null : currentSynthesis(state, conversation.messages);
-    let observed = conversation.accountContext;
-    const fieldPhone = submittedWhatsApp(conversation.messages.filter(message => message.id === requestId));
-    if (fieldPhone) {
-      const stored = await savePendingSetupContact({ ...fence, observed, phone: fieldPhone });
-      if (!stored) throw new Error("pending_setup_contact_conflict");
-      observed = stored;
-    }
+    const observed = conversation.accountContext;
     const summary = nicheSummaryContext(observed.summary);
     const result = await requestNicheAgent(actor.accountId, dialogueId, {
       message: { id: requestId, text: content, replyToProposalId: active?.id ?? null },
@@ -239,9 +232,14 @@ export async function conversePendingSetupAction(raw: unknown) {
     const ready = !next && acceptedSynthesis && nameReady && Boolean(understanding) &&
       (accept || niche?.confirmed || (state?.operationalAccepted && outcome.operational.reaction === "continue"));
     const contactRef = state?.synthesis?.contact;
-    const sourceId = contactRef && typeof contactRef !== "string" ? contactRef.messageId : null;
+    const contactMessageId = contactRef && typeof contactRef !== "string"
+      ? contactRef.messageId : state?.synthesis?.messageId;
+    const contactPosition = conversation.messages.findIndex(entry => entry.id === contactMessageId);
+    const newerField = contactPosition >= 0 && conversation.messages.slice(contactPosition + 1)
+      .some(entry => entry.role === "user" && /(?:^|\n)WhatsApp para contato: \(\d{2}\) 9\d{4}-\d{4}$/u.test(entry.content));
+    const memorySynthesis = newerField && synthesis ? { ...synthesis, phone: null, declined: false } : synthesis;
     const written = await commitPendingNicheTurn({ ...fence, reply: result.reply,
-      summary: mergeNicheMemory(observed.summary, result, synthesis, submittedWhatsApp(conversation.messages, sourceId)),
+      summary: mergeNicheMemory(observed.summary, result, memorySynthesis),
       observed, understanding, preferredName: outcome.preferredName.value,
       preferredNameDeclined: outcome.preferredName.value ? false : outcome.preferredName.declined || Boolean(conversation.preferredNameDeclined),
       stage: next ? "niche_confirmation" : ready ? "ready_to_complete" : "business_understanding",
