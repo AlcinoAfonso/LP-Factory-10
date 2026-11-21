@@ -1,3 +1,4 @@
+import { pilotProof, resolveAgentBaseGenerationId, verifiedPilotProof } from "./generation-proof";
 import assert from "node:assert/strict";
 import { agentBasePilotOrder, agentBasePilotCatalogState, buildAgentBasePilotPrompt, parseAgentBasePilotResponse, sanitizeAgentBasePilotFailureReason, selectAgentBasePilotInput } from "./pilot";
 import { AGENT_BASE_PROMPT, AGENT_BASE_PROMPT_VERSION } from "./base-prompt";
@@ -417,3 +418,20 @@ assert.equal(Reflect.get(buildAgentBasePilotPrompt({ base, niche, definitions, k
   "FAQ output observes the 15-pair existing limit");
 
 console.log("D14F pilot: catalog identity/order, immutable prompts, provenance, progressive context and output boundaries passed (synthetic responses only).");
+
+const firstGeneration = resolveAgentBaseGenerationId([])!;
+const secondGeneration = resolveAgentBaseGenerationId([])!;
+assert.notEqual(firstGeneration, secondGeneration);
+const firstSection = { key: "about", value: "Fixture", basis: "confirmed_business_fact" as const,
+  sources: [], researched: false, generationId: firstGeneration };
+const scope = ["fixture-key", "preview", "account-a", 1, "catalog", "niche"] as const;
+const signedSection = { ...firstSection, proof: pilotProof(...scope, firstSection) ?? undefined };
+assert.equal(verifiedPilotProof(...scope, signedSection), true);
+assert.equal(verifiedPilotProof(...scope, { ...signedSection, generationId: secondGeneration }), false);
+assert.equal(verifiedPilotProof("fixture-key", "production", "account-a", 1, "catalog", "niche", signedSection), false);
+assert.equal(verifiedPilotProof("fixture-key", "preview", "account-b", 1, "catalog", "niche", signedSection), false);
+assert.equal(resolveAgentBaseGenerationId([signedSection]), firstGeneration);
+assert.equal(resolveAgentBaseGenerationId([signedSection, { ...signedSection, generationId: secondGeneration }]), null);
+const legacySection = { ...firstSection, generationId: undefined };
+assert.equal(verifiedPilotProof(...scope, { ...legacySection, proof: pilotProof(...scope, legacySection) ?? undefined }), true);
+assert.equal(resolveAgentBaseGenerationId([legacySection]), null);

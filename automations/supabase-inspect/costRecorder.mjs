@@ -1,7 +1,9 @@
 import { createHmac, randomUUID } from "node:crypto";
 
 const VERSION = "e21.5.3-v1";
-const TIMEOUT_MS = 1_500;
+// Covers the runner-to-ingress round trip, function startup and the Supabase RPC.
+const ADMISSION_TIMEOUT_MS = 5_000;
+const FINALIZATION_TIMEOUT_MS = 1_500;
 
 export function createCostRecorder(env = process.env, fetchImpl = fetch) {
   const enabled = env.OPENAI_COST_INGESTION_ENABLED?.trim().toLowerCase() === "true";
@@ -10,22 +12,27 @@ export function createCostRecorder(env = process.env, fetchImpl = fetch) {
   const environment = env.OPENAI_COST_INGESTION_ENVIRONMENT?.trim();
   const protocolVersion = env.OPENAI_COST_INGESTION_PROTOCOL_VERSION?.trim();
   const executionId = randomUUID();
+  const occurrenceId = randomUUID();
   let sequence = 0;
+  let executionRecorded = false;
 
   async function send(action, payload) {
-    if (!enabled) return;
+    if (!enabled) return false;
     if (!url || !secret || protocolVersion !== VERSION || !["production", "preview", "development"].includes(environment)) {
       console.warn(JSON.stringify({ event: "openai_cost_recording_failed", phase: action, code: "configuration_invalid", executionId }));
-      return;
+      return false;
     }
     const body = JSON.stringify({ version: VERSION, action, payload });
     const timestamp = Date.now().toString();
     const signature = createHmac("sha256", secret).update(`${timestamp}.${body}`).digest("hex");
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-    try {
+    const admission = action === "startExecution" || action === "startOperation";
+    const budget = admission ? ADMISSION_TIMEOUT_MS : FINALIZATION_TIMEOUT_MS;
+    const deadline = performance.now() + budget;
+    async function requestReceipt() {
       const response = await fetchImpl(url, {
         method: "POST",
+        redirect: "error",
         headers: {
           "content-type": "application/json",
           "x-openai-cost-protocol": VERSION,
@@ -36,6 +43,27 @@ export function createCostRecorder(env = process.env, fetchImpl = fetch) {
         signal: controller.signal,
       });
       if (!response.ok) throw new Error(`http_${response.status}`);
+      if (admission) {
+        const receipt = await response.json();
+        return !controller.signal.aborted && receipt?.ok === true && (action === "startExecution"
+          ? receipt.recorded === true && receipt.executionId === executionId
+          : receipt.admitted === true && receipt.operationId === payload.operationId);
+      }
+      return true;
+    }
+    let timer;
+    try {
+      const confirmed = await Promise.race([
+        requestReceipt(),
+        new Promise((_, reject) => {
+          timer = setTimeout(() => {
+            controller.abort();
+            reject(new DOMException("Financial ingress timed out", "AbortError"));
+          }, budget);
+        }),
+      ]);
+      if (performance.now() >= deadline) throw new DOMException("Financial ingress timed out", "AbortError");
+      return confirmed;
     } catch (error) {
       console.warn(JSON.stringify({
         event: "openai_cost_recording_failed",
@@ -44,6 +72,7 @@ export function createCostRecorder(env = process.env, fetchImpl = fetch) {
         executionId,
         operationId: payload.operationId ?? null,
       }));
+      return false;
     } finally {
       clearTimeout(timer);
     }
@@ -51,9 +80,10 @@ export function createCostRecorder(env = process.env, fetchImpl = fetch) {
 
   return Object.freeze({
     executionId,
-    async start(model) {
+    async start() {
       const startedAt = new Date().toISOString();
-      await send("startExecution", {
+      executionRecorded = await send("startExecution", {
+        occurrenceId,
         executionId,
         workload: "supabase_inspect",
         environment,
@@ -61,12 +91,14 @@ export function createCostRecorder(env = process.env, fetchImpl = fetch) {
         economicContext: { universe: "lp_factory", attributionStatus: "attributed", accountId: null },
         startedAt,
       });
-      return model;
+      return executionRecorded;
     },
     async startOperation(model) {
+      if (!executionRecorded) return null;
       sequence += 1;
       const operationId = randomUUID();
-      await send("startOperation", {
+      const admitted = await send("startOperation", {
+        requireAdmission: true,
         operationId,
         executionId,
         sequence,
@@ -76,7 +108,7 @@ export function createCostRecorder(env = process.env, fetchImpl = fetch) {
         configurationRevision: "v2",
         startedAt: new Date().toISOString(),
       });
-      return operationId;
+      return admitted ? operationId : null;
     },
     finishOperation(operationId, result, details = {}) {
       return send("finishOperation", {

@@ -385,7 +385,7 @@ async function main() {
     }
 
     costRecorder = createCostRecorder();
-    await costRecorder.start(model);
+    if (!await costRecorder.start()) throw new Error("financial_admission_unconfirmed");
 
     let queryCount = 0;
     const executed = [];

@@ -29,17 +29,36 @@ async function startExecutionWithRollout(
   input: Parameters<OpenAiCostTrackingAdapter["startExecution"]>[0],
 ) {
   const { error } = await client.rpc("start_openai_cost_execution_v2", executionStartRpc(input));
-  if (!error) return;
+  if (!error) return true;
   if (isExpectedMissingRpcError(error, "start_openai_cost_execution_v2")) {
     await invoke(client, "start_openai_cost_execution_v1", legacyExecutionStartRpc(input));
-    return;
+    return true;
   }
   throw new OpenAiCostTrackingPersistenceError(error.code === "23505" ? "conflict" : "unavailable");
 }
 
 export const activeCostTrackingAdapter: OpenAiCostTrackingAdapter = Object.freeze({
-  startExecution: (input) => startExecutionWithRollout(createServiceClient(), input),
-  startOperation: (input) => invoke(createServiceClient(), "start_openai_cost_operation_v1", operationStartRpc(input)),
+  startExecution: async (input) => {
+    const client = createServiceClient();
+    if (!input.occurrenceId) return startExecutionWithRollout(client, input);
+    const { data, error } = await client.rpc("start_openai_cost_execution_v3", {
+      ...executionStartRpc(input), p_occurrence_id: input.occurrenceId,
+    });
+    if (error) throw new OpenAiCostTrackingPersistenceError(error.code === "23505" ? "conflict" : "unavailable");
+    return data === input.executionId;
+  },
+  startOperation: async (input) => {
+    const client = createServiceClient();
+    if (!input.admissionScope) {
+      await invoke(client, "start_openai_cost_operation_v1", operationStartRpc(input));
+      return true;
+    }
+    const { data, error } = await client.rpc("admit_openai_cost_operation_v2", {
+      ...operationStartRpc(input), p_environment: input.admissionScope.environment, p_workload: input.admissionScope.workload,
+    });
+    if (error) throw new OpenAiCostTrackingPersistenceError(error.code === "23505" ? "conflict" : "unavailable");
+    return data === true;
+  },
   finishOperation: async (input) => {
     const client = createServiceClient();
     const { data, error } = await client
