@@ -123,6 +123,8 @@ try{
   await db.query('alter table account_pending_setup_conversations add created_at timestamptz not null default clock_timestamp()');
   await db.query('alter table account_pending_setup_conversations add unique(account_id,user_id)');
   await db.query(read('../migrations/' + migration));
+  await db.query(read('../migrations/20261121123500_d15e_pending_setup_contact_in_claim.sql'));
+
   await test('versioned RPCs are restricted to the server role',async()=>{
     const {rows}=await db.query(`select proname,
       has_function_privilege('service_role',p.oid,'execute') as service,
@@ -292,6 +294,34 @@ try{
         next,accept,null,revision,name,nameReaction,true,false,synthesis]);
     return Number(rows[0].result);
   }
+  await test('WhatsApp do campo grava no claim autorizado, sem síntese nem IA, com retry e correção',async()=>{
+    const f = await pending();
+    const content = 'Revenda de carros seminovos.\nWhatsApp para contato: (21) 99999-1111';
+    const first = await reservePending(f,{content});
+    const saved = await memory(f.a);
+    assert.equal(JSON.parse(saved.summary).whatsapp,'(21) 99999-1111');
+    assert.equal(JSON.parse(saved.summary).whatsappDeclined,false);
+    assert.equal(saved.source_dialogue_id,f.d);
+    assert.equal(saved.source_user_id,f.u);
+    await db.query('select release_account_pending_setup_turn_v2($1,$2,$3,$4,$5)',
+      [f.d,f.a,f.u,first.version,first.token]);
+    const retry = await reservePending(f,{request:first.request,content});
+    assert.equal((await memory(f.a)).updated_at,saved.updated_at);
+    const version = await writePending(f,retry,{summary:null});
+    assert.equal(JSON.parse((await memory(f.a)).summary).whatsapp,'(21) 99999-1111');
+    const correction = await reservePending(f,{
+      version,content:'Número corrigido.\nWhatsApp para contato: (21) 98888-2222',
+    });
+    assert.equal(JSON.parse((await memory(f.a)).summary).whatsapp,'(21) 98888-2222');
+    const unchanged = (await memory(f.a)).summary;
+    await db.query("update account_users set status='inactive' where account_id=$1 and user_id=$2",[f.a,f.u]);
+    await assert.rejects(reservePending(f,{request:id(),version:correction.version,
+      content:'WhatsApp para contato: (21) 97777-3333'}),/pending_setup_actor_not_allowed/);
+    assert.equal((await memory(f.a)).summary,unchanged);
+    const other = await pending();
+    await reservePending(other,{content:'Número incompleto: WhatsApp para contato: (21) 99999'});
+    assert.equal((await memory(other.a)).summary,null);
+  });
   await test('Pending Setup reserves once, decides acceptance after the turn and reuses the public name RPC',async()=>{
     const f = await pending();
     const c = await reservePending(f,{content:'Oferecemos jardinagem. WhatsApp (21) 99999-1111.'});
