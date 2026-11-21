@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { recordCategory3SavedEvidence } from "@/communication-base/adapters/category3SavedEvidenceAdapter";
 import { category3GenerationId, category3Uuid, signCategory3Section, verifyCategory3Section } from "@/communication-base/agent-base/generation-identity";
 import { createClient } from "../../../../lib/supabase/server";
 import { generateAgentBasePilotSection } from "../../../../lib/communication-base/adapters/agentBasePilotAdapter";
@@ -327,6 +329,16 @@ export async function saveAgentBasePilotAction(input: Readonly<{
   });
   if (!saved.ok) return fail(saved.error === "conflict" ? "A Base foi editada durante a geração. Nada foi salvo." :
     "Não foi possível salvar a Categoria 3. O conteúdo anterior foi preservado.");
+  if (proofs.generationId) {
+    const evidenceIdentity = { generationId: proofs.generationId, accountId: access.value.accountId, environment };
+    const operationIds = input.sections.flatMap(section => section.dispatchedOperationId ? [section.dispatchedOperationId] : []);
+    const completeSelection = operationIds.length === input.sections.length && new Set(operationIds).size === operationIds.length;
+    try {
+      after(() => recordCategory3SavedEvidence(evidenceIdentity, completeSelection ? operationIds : []));
+    } catch {
+      // Failure to schedule the evidence cannot change the confirmed save.
+    }
+  }
   revalidatePath(`/a/${access.value.accountSubdomain}/base-comunicacao`);
   return { ok: true as const };
 }

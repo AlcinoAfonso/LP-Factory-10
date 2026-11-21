@@ -23,16 +23,20 @@ type ProofContext = Readonly<{
 
 export function signCategory3Section(secret: string, context: ProofContext, section: AgentBasePilotSection) {
   const { environment, accountId, version, catalogState, nicheRevision, generationId } = context;
-  const { key, value, basis, sources, researched } = section;
+  const { key, value, basis, sources, researched, dispatchedOperationId } = section;
   const scope = [environment, accountId, version, catalogState, nicheRevision];
-  // Preserve the previous proof format for a sequence already in flight during deployment.
-  const proof = createHmac("sha256", secret).update(generationId ? "d14f-agent-base-proof-v3" : "d14f-agent-base-proof-v2");
+  // Preserve previous proofs for sections already in flight during deployment.
+  const versionTag = generationId ? (dispatchedOperationId === undefined ? "v3" : "v4") : "v2";
+  const proof = createHmac("sha256", secret).update("d14f-agent-base-proof-" + versionTag);
   const identity = generationId ? [generationId] : [];
-  return proof.update(JSON.stringify([...scope, ...identity, { key, value, basis, sources, researched }])).digest("hex");
+  const operation = versionTag === "v4" ? { dispatchedOperationId } : {};
+  return proof.update(JSON.stringify([...scope, ...identity, { key, value, basis, sources, researched, ...operation }])).digest("hex");
 }
 
 export function verifyCategory3Section(secret: string, context: ProofContext, section: AgentBasePilotSection) {
   if (!section || typeof section.proof !== "string" || !/^[0-9a-f]{64}$/.test(section.proof)) return false;
+  if (section.dispatchedOperationId !== undefined &&
+      (!context.generationId || !category3Uuid.safeParse(section.dispatchedOperationId).success)) return false;
   const expected = signCategory3Section(secret, context, section);
   return timingSafeEqual(Buffer.from(section.proof, "hex"), Buffer.from(expected, "hex"));
 }

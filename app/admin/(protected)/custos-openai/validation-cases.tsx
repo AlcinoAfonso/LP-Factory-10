@@ -306,6 +306,11 @@ const categoryMarkup = renderToStaticMarkup(<Category3CostDetailView detail={bui
 for (const text of ["Conclusão não comprovada", "Subtotal parcial", "execuções sem operação", "pricing_not_found"])
   assert.ok(categoryMarkup.includes(text), text);
 assert.equal(categoryMarkup.includes("Custo integral"), false);
+const categorySaved = renderToStaticMarkup(<Category3CostDetailView detail={buildCategory3CostDetail(category, {
+  ...activeModel, executions: [categoryExecution], totalCalculatedUsd: categoryExecution.calculatedCostUsd,
+}, { environment: category.environment })} />);
+for (const text of ["Salva", "Subtotal parcial", "Cobertura financeira global não comprovada"])
+  assert.ok(categorySaved.includes(text), text);
 const categoryEmpty = renderToStaticMarkup(<Category3CostDetailView detail={buildCategory3CostDetail(category, { ...activeModel, executions: [], pendingOperationCount: 0, unavailableOperationCount: 0 })} />);
 assert.ok(categoryEmpty.includes("Sem valor comprovado"));
 assert.equal(categoryEmpty.includes("US$ 0,00"), false);

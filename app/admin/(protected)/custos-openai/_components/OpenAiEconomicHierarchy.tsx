@@ -175,14 +175,17 @@ function Category3Detail({ identity }: Readonly<{ identity: Category3CostIdentit
 }
 
 export function Category3CostDetailView({ detail }: Readonly<{ detail: Extract<Category3CostResult, { ok: true }>["value"] }>) {
-  const costLabel = detail.calculatedCostUsd === null ? "Custo indisponível"
-    : detail.pendingCount || detail.unavailableCount || detail.missingCount ? "Subtotal parcial" : "Subtotal registrado";
+  const costLabel = detail.calculatedCostUsd === null ? "Custo indisponível" : "Subtotal parcial";
   return <div className="space-y-3 rounded-md border border-border bg-background p-3">
       <dl className="grid gap-3 sm:grid-cols-2">
-        <Detail label="Resultado da geração" value="Conclusão não comprovada" />
+        <Detail label="Resultado da geração" value={detail.outcome === "saved" ? "Salva" : "Conclusão não comprovada"} />
         <Detail label={costLabel}
           value={detail.calculatedCostUsd === null ? "Sem valor comprovado" : formatUsd(detail.calculatedCostUsd)} />
       </dl>
+      <p className="text-sm text-muted-foreground">
+        Cobertura financeira global não comprovada.
+        {detail.matchesSavedOperations === false ? " Os registros divergem das operações vinculadas ao salvamento." : ""}
+      </p>
       <p className="text-sm text-muted-foreground">
         {detail.attemptCount} tentativas · {detail.retryCount} retries · {detail.searches} pesquisas Web
         {detail.unknownSearchCount ? ` · ${detail.unknownSearchCount} operações sem contagem de pesquisas` : ""}

@@ -10,7 +10,8 @@ export async function generateAgentBasePilotSection(input: Parameters<typeof bui
   environment: AgentBaseEnvironment; timeoutMs: number;
   generationId?: string | null;
 }>) {
-  const prompt = buildAgentBasePilotPrompt(input);
+  const previous = input.previous.map(({ dispatchedOperationId: _operationId, ...section }) => section);
+  const prompt = buildAgentBasePilotPrompt({ ...input, previous });
   if (!prompt) return { ok: false as const };
   const active = await resolveOpenAiProductWorkload("communication_base_stage2_intelligence", input.environment);
   if (!active.ok || !active.value.webSearch) return { ok: false as const };
@@ -18,6 +19,8 @@ export async function generateAgentBasePilotSection(input: Parameters<typeof bui
   const configuration = { ...active.value, model: "gpt-6.2-sol", reasoningEffort: "medium", serviceTier: null } as const;
   const web = active.value.webSearch;
   const requestId = randomUUID();
+  const costIds: string[] = [];
+  const dispatchedIds: (string | undefined)[] = [];
   const result = await requestOpenAiResponses<AgentBasePilotSection>({
     apiKey: process.env.OPENAI_API_KEY,
     configuration, environment: input.environment, expectedWorkload: "communication_base_stage2_intelligence",
@@ -34,9 +37,22 @@ export async function generateAgentBasePilotSection(input: Parameters<typeof bui
       text: { format: { type: "json_schema", name: "agent_base_pilot_section", strict: true, schema: prompt.schema } },
     },
     parseResponse: payload => parseAgentBasePilotResponse(payload, input.key, input.definitions),
-  });
+  }, input.generationId ? {
+    createId() {
+      const id = randomUUID();
+      costIds.push(id);
+      return id;
+    },
+    fetchImpl(url, init) {
+      // The shared adapter allocates the execution ID and then the operation ID before dispatch.
+      dispatchedIds.push(costIds.length === 2 ? costIds[1] : undefined);
+      return fetch(url, init);
+    },
+  } : undefined);
   if (!result.ok) console.warn("agent_base_pilot_failure", {
     requestId, section: input.key, kind: result.kind, reason: sanitizeAgentBasePilotFailureReason(result.reason),
   });
-  return result.ok ? { ok: true as const, value: result.value } : { ok: false as const };
+  if (!result.ok) return { ok: false as const };
+  const dispatchedOperationId = costIds.length === 2 && dispatchedIds.length === 1 ? dispatchedIds[0] : undefined;
+  return { ok: true as const, value: dispatchedOperationId ? { ...result.value, dispatchedOperationId } : result.value };
 }

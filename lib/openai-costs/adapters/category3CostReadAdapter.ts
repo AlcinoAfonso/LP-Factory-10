@@ -1,7 +1,8 @@
 import "server-only";
 
 import { createServiceClient } from "../../supabase/service";
-import { buildCategory3CostDetail, type Category3CostIdentity, type Category3CostResult } from "../category-3-costs";
+import { buildCategory3CostDetail, category3SavedEvent, category3SavedEvidenceSchema, category3SavedTable,
+  type Category3CostIdentity, type Category3CostResult } from "../category-3-costs";
 import { DIALOGUE_PAGE_SIZE, readDialoguePages, translateDialogueLedger } from "../dialogue-costs";
 import { executionColumns, operationColumns } from "./dialogueCostReadAdapter";
 
@@ -16,7 +17,8 @@ export async function readCategory3Cost(identity: Category3CostIdentity): Promis
         .eq("workload", "communication_base_stage2_intelligence").order("id").limit(DIALOGUE_PAGE_SIZE);
       return await (after ? page.gt("id", after) : page);
     });
-    if (!executions.length) return { ok: false };
+    const evidence = await readSavedEvidence(client, identity);
+    if (!executions.length && !evidence) return { ok: false };
     const operations: Record<string, unknown>[] = [];
     for (let offset = 0; offset < executions.length; offset += 100) {
       const ids = executions.slice(offset, offset + 100).map(row => row.id as string);
@@ -25,8 +27,21 @@ export async function readCategory3Cost(identity: Category3CostIdentity): Promis
         return await (after ? page.gt("id", after) : page);
       }));
     }
-    return { ok: true, value: buildCategory3CostDetail(identity, translateDialogueLedger(executions, operations)) };
+    return { ok: true, value: buildCategory3CostDetail(identity, translateDialogueLedger(executions, operations), evidence) };
   } catch {
     return { ok: false };
+  }
+}
+
+async function readSavedEvidence(client: ReturnType<typeof createServiceClient>, identity: Category3CostIdentity) {
+  try {
+    const { data, error } = await client.from("audit_logs").select("changes_json")
+      .eq("id", identity.generationId).eq("account_id", identity.accountId).eq("record_id", identity.accountId)
+      .eq("table_name", category3SavedTable).eq("action", "update").eq("event", category3SavedEvent).limit(1);
+    if (error) return null;
+    const result = category3SavedEvidenceSchema.safeParse(data?.[0]?.changes_json);
+    return result.success && result.data.environment === identity.environment ? result.data : null;
+  } catch {
+    return null;
   }
 }

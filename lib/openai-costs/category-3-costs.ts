@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { OpenAiActiveCostReadModel } from "./active-contracts";
 
@@ -6,7 +7,21 @@ export const category3CostIdentitySchema = z.object({
 }).strict();
 export type Category3CostIdentity = z.infer<typeof category3CostIdentitySchema>;
 
-export function buildCategory3CostDetail(identity: Category3CostIdentity, model: OpenAiActiveCostReadModel) {
+export const category3SavedEvent = "category_3_generation_saved";
+export const category3SavedTable = "account_communication_bases";
+export const category3SavedEvidenceSchema = z.object({
+  environment: category3CostIdentitySchema.shape.environment,
+  dispatch: z.object({ count: z.number().int().positive(), digest: z.string().regex(/^[a-f0-9]{64}$/) }).strict().optional(),
+}).strict();
+type Category3SavedEvidence = z.infer<typeof category3SavedEvidenceSchema>;
+
+export function category3DispatchFingerprint(operationIds: ReadonlySet<string>) {
+  return { count: operationIds.size, digest: createHash("sha256").update([...operationIds].sort().join("\n")).digest("hex") };
+}
+
+export function buildCategory3CostDetail(
+  identity: Category3CostIdentity, model: OpenAiActiveCostReadModel, evidence?: Category3SavedEvidence | null,
+) {
   const executions = new Set<string>();
   const operations = new Set<string>();
   let hasCalculatedCost = false;
@@ -32,8 +47,14 @@ export function buildCategory3CostDetail(identity: Category3CostIdentity, model:
       if (operation.costStatus === "calculated" && operation.costUsd !== null) hasCalculatedCost = true;
     }
   }
+  const saved = evidence?.environment === identity.environment;
+  const expected = saved ? evidence?.dispatch : undefined;
+  const matchesSavedOperations = expected
+    ? expected.count === operations.size && expected.digest === category3DispatchFingerprint(operations).digest
+    : null;
   return {
-    outcome: "unconfirmed", executions: model.executions, calculatedCostUsd: hasCalculatedCost ? model.totalCalculatedUsd : null,
+    outcome: saved ? "saved" : "unconfirmed", matchesSavedOperations,
+    executions: model.executions, calculatedCostUsd: hasCalculatedCost ? model.totalCalculatedUsd : null,
     attemptCount: operations.size, retryCount, searches, unknownSearchCount, pendingCount,
     unavailableCount: model.unavailableOperationCount, missingCount,
   } as const;
