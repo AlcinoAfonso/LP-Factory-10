@@ -15,7 +15,7 @@ import { readPendingSetupDialogueContext } from "./pendingSetupAccountContextAda
 import { resolvePreferredNameFromAuth } from "../policy";
 import { isE1011PassageEnabled, isE1012AttendanceEnabled } from "../config";
 import { z } from "zod";
-import type { SynthesisWrite } from "../../niche-agent/dialogue";
+import { mergeSubmittedWhatsApp, type SynthesisWrite } from "../../niche-agent/dialogue";
 
 type ConversationRow = {
   id: string;
@@ -189,6 +189,20 @@ export async function claimPendingNicheTurn(input: PendingTurnFence & { requestI
   });
   const parsed = z.object({ version: z.number().int().positive(), replay: z.boolean() }).safeParse(data);
   return !error && parsed.success ? parsed.data : null;
+}
+
+export async function savePendingSetupContact(input: PendingTurnFence & {
+  phone: string; observed: NonNullable<PendingSetupConversation["accountContext"]>;
+}) {
+  const next = mergeSubmittedWhatsApp(input.observed.summary, input.phone);
+  if (!next) return input.observed;
+  const { data, error } = await createServiceClient().from("account_context_summaries")
+    .update({ summary: next, updated_at: new Date().toISOString(),
+      source_dialogue_id: input.conversationId, source_user_id: input.userId })
+    .eq("account_id", input.accountId).eq("updated_at", input.observed.updatedAt)
+    .select("summary,updated_at").maybeSingle();
+  return !error && data?.summary === next && data.updated_at
+    ? { summary: data.summary as string, updatedAt: data.updated_at as string } : null;
 }
 
 export async function commitPendingNicheTurn(input: PendingTurnFence & {
