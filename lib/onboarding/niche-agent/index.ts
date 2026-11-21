@@ -96,11 +96,12 @@ function interpret(raw: RawTurn, context: NicheContext, observedSummary: string 
   const niche = safeName(proposed?.niche);
   const name = context.pendingSetup ? safeName(proposed?.publicName) : null;
   const understanding = fragment.safeParse(proposed?.summary);
-  const offer = proposed && understanding.success && project(understanding.data) === understanding.data && !claimsWrite.test(understanding.data) &&
+  const offer = proposed && understanding.success && project(understanding.data) === understanding.data &&
     (proposed.niche === null || niche) && (!context.pendingSetup || proposed.publicName === null || name) &&
     (!context.pendingSetup?.publicNameRequired || context.pendingSetup.publicName || name)
     ? { summary: understanding.data, niche, publicName: name } : null;
-  const shown = offer && presentOffer(offer);
+  const presentation = offer && presentOffer(offer);
+  const shown = presentation && !claimsWrite.test(presentation.reply) ? presentation : null;
   const candidate = context.displayed && !shown && acceptance(message, raw.accept, context.displayed, Boolean(context.fixedNiche))
     ? context.displayed : null;
   const corrections = Array.isArray(raw.corrections) ? raw.corrections.slice(0, 6).flatMap(value => {

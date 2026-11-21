@@ -132,7 +132,11 @@ test("metadados inválidos não derrubam a resposta nem são promovidos a efeito
   assert.doesNotMatch(turn(context, { reply: "Salvei seu nicho.", accept: "forjado" }).reply, /salvei/i);
   assert.doesNotMatch(turn(context, { reply: "O novo nicho já consta no cadastro.", accept: "Sim" }).reply, /já consta/iu);
   assert.doesNotMatch(turn(context, { reply: "Pode considerar o nicho oficializado.", accept: "Sim" }).reply, /oficializado/iu);
-  assert.equal(turn(opening, { reply: safe, offer: { ...proposal, summary: "O nicho está confirmado." } }).offer, null);
+  for (const field of ["summary", "niche", "publicName"]) {
+    const invalid = turn(opening, { reply: safe, offer: { ...proposal, [field]: "O nicho está confirmado." } });
+    assert.equal(invalid.offer, null, field);
+    assert.equal(invalid.reply, safe, field);
+  }
   const anchor = shown().anchor;
   assert.equal(turn({ ...opening, message: "Sim.", displayed: anchor },
     { reply: "Entendi.", offer: { niche: 19 } }).synthesis.accept, anchor.id);
