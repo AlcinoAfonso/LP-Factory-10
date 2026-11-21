@@ -1,3 +1,4 @@
+import { confirmedCostRecorder } from "../../openai-costs/fixtures/confirmed-recorder";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 
@@ -173,6 +174,7 @@ const deterministicAi = await resolveNicheWithOpenAi({
   },
 }, {
   environment: "development",
+  costRecorder: confirmedCostRecorder,
   fetchImpl: async () => {
     deterministicTransportCalls += 1;
     return new Response();
@@ -205,6 +207,7 @@ const ambiguousAi = await resolveNicheWithOpenAi({
 }, {
   environment: "development",
   emitEvent: () => undefined,
+  costRecorder: confirmedCostRecorder,
   fetchImpl: async (_url, init) => {
     ambiguousTransportCalls += 1;
     capturedRequest = JSON.parse(String(init?.body));
@@ -232,6 +235,17 @@ const ambiguousAi = await resolveNicheWithOpenAi({
 });
 assert.equal(ambiguousTransportCalls, 1);
 assert.equal(ambiguousAi.ok, true);
+const blockedAi = await resolveNicheWithOpenAi({
+  rawInput: "contexto ambíguo", decision: ambiguousDecision, candidates: [candidate], apiKey: "test-key",
+  financialContext: { universe: "client", attributionStatus: "attributed", accountId: "20000000-0000-4000-8000-000000000001" },
+}, {
+  environment: "development", emitEvent: () => {},
+  costRecorder: { ...confirmedCostRecorder, startOperation: async () => false },
+  fetchImpl: async () => { ambiguousTransportCalls++; throw Error("unexpected paid transport"); },
+});
+assert.equal(blockedAi.ok, false);
+if (!blockedAi.ok) assert.equal(blockedAi.reason, "financial_admission_unconfirmed");
+assert.equal(ambiguousTransportCalls, 1);
 const request = capturedRequest as unknown as {
   store?: boolean;
   background?: boolean;
@@ -258,6 +272,7 @@ const timedOutAi = await resolveNicheWithOpenAi({
   environment: "development",
   timeoutMs: 1,
   emitEvent: () => undefined,
+  costRecorder: confirmedCostRecorder,
   fetchImpl: async (_url, init) => new Promise<Response>((_resolve, reject) => {
     const rejectAsAborted = () => reject(new DOMException("Aborted", "AbortError"));
     if (init?.signal?.aborted) rejectAsAborted();

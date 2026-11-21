@@ -45,6 +45,7 @@ export type OpenAiCostEconomicContext = Readonly<{
 
 export type OpenAiCostExecutionContext = Readonly<{
   executionId: string;
+  occurrenceId?: string;
   workload: OpenAiWorkloadId;
   environment: OpenAiCostEnvironment;
   executionOrigin: OpenAiCostExecutionOrigin;
@@ -56,6 +57,7 @@ export type OpenAiCostExecutionContext = Readonly<{
 
 export type OpenAiCostOperationContext = Readonly<{
   operationId: string;
+  admissionScope?: Readonly<{ environment: OpenAiCostEnvironment; workload: OpenAiWorkloadId }>;
   executionId: string;
   sequence: number;
   retryOfOperationId?: string | null;
@@ -98,8 +100,8 @@ export type OpenAiCostExecutionTerminal = Readonly<{
 }>;
 
 export type OpenAiCostTrackingAdapter = Readonly<{
-  startExecution(input: OpenAiCostExecutionContext): Promise<void>;
-  startOperation(input: OpenAiCostOperationContext): Promise<void>;
+  startExecution(input: OpenAiCostExecutionContext): Promise<boolean>;
+  startOperation(input: OpenAiCostOperationContext): Promise<boolean>;
   finishOperation(input: OpenAiCostOperationTerminal): Promise<void>;
   finishExecution(input: OpenAiCostExecutionTerminal): Promise<void>;
 }>;

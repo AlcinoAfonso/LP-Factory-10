@@ -573,8 +573,8 @@ async function runProviderFailureAccountingCase() {
   const executionEnvironments: string[] = [];
   const eventEnvironments: string[] = [];
   const recorder: OpenAiCostRecorder = {
-    startExecution: async (execution) => { executionEnvironments.push(execution.environment); },
-    startOperation: async () => {},
+    startExecution: async (execution) => { executionEnvironments.push(execution.environment); return true; },
+    startOperation: async () => true,
     finishOperation: async (terminal) => { terminals.push(terminal); },
     finishExecution: async () => {},
   };

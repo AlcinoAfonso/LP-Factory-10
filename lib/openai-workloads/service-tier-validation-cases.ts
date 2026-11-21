@@ -1,3 +1,4 @@
+import { confirmedCostRecorder } from "../openai-costs/fixtures/confirmed-recorder";
 import assert from "node:assert/strict";
 import { requestOpenAiResponses, type OpenAiResponsesResult } from "../openai-responses/openAiResponsesAdapter";
 import { readWithOpenAiTierCompatibility } from "./adapters/operationalConfigurationAdapterCore";
@@ -37,6 +38,7 @@ export async function validateOpenAiServiceTiers() {
       parseResponse: () => ({ ok: true, value: true }),
     }, {
       emitEvent: event => events.push(event),
+      costRecorder: confirmedCostRecorder,
       fetchImpl: async (_url, init) => {
         sent = JSON.parse(String(init?.body));
         return new Response(JSON.stringify({ id: "resp_tier", status: "completed", service_tier: tier ?? "default" }));
@@ -61,7 +63,7 @@ export async function validateOpenAiServiceTiers() {
       environment: "production", executionOrigin: "runtime", request: {},
       financialContext: { universe: "lp_factory", attributionStatus: "attributed", accountId: null },
       parseResponse: () => { parsed = true; return { ok: true, value: true }; },
-    }, { emitEvent: event => events.push(event), fetchImpl: async () => new Response(JSON.stringify({
+    }, { emitEvent: event => events.push(event), costRecorder: confirmedCostRecorder, fetchImpl: async () => new Response(JSON.stringify({
       id: "resp_mismatch", status: "completed", ...mismatch,
     })) });
     assert.equal(result.ok, false);
@@ -76,7 +78,7 @@ export async function validateOpenAiServiceTiers() {
     environment: "development", executionOrigin: "administrative_proof", request: {},
     financialContext: { universe: "lp_factory", attributionStatus: "attributed", accountId: null },
     parseResponse: () => ({ ok: true, value: true }),
-  }, { emitEvent: () => undefined, fetchImpl: async () => { called = true; return new Response(); } });
+  }, { emitEvent: () => undefined, costRecorder: confirmedCostRecorder, fetchImpl: async () => { called = true; return new Response(); } });
   assert.equal(invalid.ok, false);
   assert.equal(called, false);
 

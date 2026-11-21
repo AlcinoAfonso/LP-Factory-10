@@ -1,3 +1,4 @@
+import { confirmedCostRecorder } from "@/openai-costs/fixtures/confirmed-recorder";
 import { applyOpenAiConfigurationCore } from "./applyCore";
 import { runOpenAiTechnicalConfigurationProof } from "./serviceTierProof";
 import assert from "node:assert/strict";
@@ -80,7 +81,7 @@ const cases: readonly Case[] = [
       ] as const) {
         const proof = await runOpenAiTechnicalConfigurationProof(
           { ...resolved.value, model, reasoningEffort: "medium", serviceTier: requested }, "preview", "fixture-key", "tier-request-1",
-          { emitEvent: () => undefined, fetchImpl: async (_url, init) => {
+          { emitEvent: () => undefined, costRecorder: confirmedCostRecorder, fetchImpl: async (_url, init) => {
             const body = JSON.parse(String(init?.body));
             assert.equal(body.model, model);
             assert.equal(body.reasoning?.effort, "medium");

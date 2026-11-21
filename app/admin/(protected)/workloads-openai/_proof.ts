@@ -207,6 +207,7 @@ async function proveAttendance(
   ];
   // Disposable conversations exercise the useful completion, without any business writes.
   const runConversation = async (identified: boolean): Promise<ProofAttempt> => {
+    const occurrenceId = crypto.randomUUID();
     let context: AttendanceContext = {
       preferredName: "Ana", summary: null, catalog, currentPrimaryTaxonId: null,
       recent: [{ role: "user", content: identified
@@ -219,7 +220,7 @@ async function proveAttendance(
     let providerRequestId: string | null = null;
     for (let turn = 0; turn < 3; turn++) {
       const result = await requestAttendance({ accountId, context, configurationOverride: workload, environment, apiKey,
-        financialContext: lpFactoryOpenAiCostContext, executionOrigin: "administrative_proof" });
+        occurrenceId, financialContext: lpFactoryOpenAiCostContext, executionOrigin: "administrative_proof" });
       if (!result.ok) return { ok: false, code: "provider" };
       const output = result.output;
       latencyMs += result.latencyMs ?? 0;
@@ -255,6 +256,7 @@ async function proveAttendance(
   };
   const runSemanticClosure = async (): Promise<ProofAttempt> => {
     const understanding = "Manutenção de jardins para condomínios; quer comunicar o diferencial do serviço.";
+    const occurrenceId = crypto.randomUUID();
     let context: AttendanceContext = { preferredName: "Ana", catalog, currentPrimaryTaxonId: nicheId,
       officialNiche:{name:"Manutenção de jardins",revision:"legacy:"+nicheId+":1",confirmed:true},
       displayedUnderstanding: understanding,
@@ -267,7 +269,7 @@ async function proveAttendance(
     const turn = async (content: string, closed: boolean) => {
       context = { ...context, recent: [...context.recent, { role: "user", content }] };
       const result = await requestAttendance({ accountId, context, configurationOverride: workload, environment, apiKey,
-        financialContext: lpFactoryOpenAiCostContext, executionOrigin: "administrative_proof" });
+        occurrenceId, financialContext: lpFactoryOpenAiCostContext, executionOrigin: "administrative_proof" });
       if (!result.ok) return false;
       const output = result.output;
       latencyMs += result.latencyMs ?? 0; providerRequestId = result.responseId;
@@ -298,6 +300,7 @@ async function proveAttendance(
     const dentalCatalog: AttendanceContext["catalog"] = [catalog[0], {
       id: dentistryId, name: "Odontologia", level: "niche", parentId: segmentId, active: true, aliases: [],
     }];
+    const occurrenceId = crypto.randomUUID();
     let context: AttendanceContext = { preferredName: null, summary: null, catalog: dentalCatalog,
       recent: [{ role: "assistant", content: "Olá! Como prefere ser chamado?" },
         { role: "user", content: "João. Tenho a Clínica Sorriso e fazemos clareamento, tratamento de canal e implantes. Sou flamenguista, mas futebol não tem relação com o negócio." }] };
@@ -310,7 +313,7 @@ async function proveAttendance(
     const greeting = await requestAttendance({ accountId, context: { ...context,
       recent: [{ role: "user", content: "Olá, quero conhecer a LP Factory." }] },
       configurationOverride: workload, environment, apiKey,
-      financialContext: lpFactoryOpenAiCostContext, executionOrigin: "administrative_proof" });
+      occurrenceId, financialContext: lpFactoryOpenAiCostContext, executionOrigin: "administrative_proof" });
     if (!greeting.ok) return { ok: false, code: "provider" };
     if (greeting.output.reply !== "Olá! Como prefere ser chamado?" || greeting.output.preferredName !== null
       || greeting.output.action !== "ask" || greeting.output.closureReason) return contractFailure("personal_question");
@@ -318,7 +321,7 @@ async function proveAttendance(
     context = { ...context, recent: [{ role: "assistant", content: greeting.output.reply }, context.recent[1]] };
     for (let turn = 0; turn < 4; turn++) {
       const result = await requestAttendance({ accountId, context, configurationOverride: workload, environment, apiKey,
-        financialContext: lpFactoryOpenAiCostContext, executionOrigin: "administrative_proof" });
+        occurrenceId, financialContext: lpFactoryOpenAiCostContext, executionOrigin: "administrative_proof" });
       if (!result.ok) return { ok: false, code: "provider" };
       const output = result.output;
       latencyMs += result.latencyMs ?? 0; providerRequestId = result.responseId;
@@ -399,6 +402,7 @@ async function proveAttendance(
       const commercialCatalog: AttendanceContext["catalog"] = [catalog[0], {
         id: test.id, name: test.name, level: "niche", parentId: segmentId, active: true, aliases: [],
       }];
+      const occurrenceId = crypto.randomUUID();
       let context: AttendanceContext = { preferredName: "Ana", catalog: commercialCatalog,
         currentPrimaryTaxonId: test.id, officialNiche:{name:test.name,revision:"legacy:"+test.id+":1",confirmed:true}, displayedUnderstanding: test.understanding,
         summary: JSON.stringify({ contextualUnderstanding: test.understanding, confirmedUnderstanding: test.understanding,
@@ -408,7 +412,7 @@ async function proveAttendance(
         recent: [{ role: "user", content: test.need }] };
       for (let turn = 0; turn < 2; turn++) {
         const result = await requestAttendance({ accountId, context, configurationOverride: workload, environment, apiKey,
-          financialContext: lpFactoryOpenAiCostContext, executionOrigin: "administrative_proof" });
+          occurrenceId, financialContext: lpFactoryOpenAiCostContext, executionOrigin: "administrative_proof" });
         if (!result.ok) return { ok: false, code: "provider" };
         const output = result.output;
         if (output.action !== "ask" || output.closureReason || !output.sufficientUnderstanding

@@ -1,3 +1,4 @@
+import { confirmedCostRecorder } from "../openai-costs/fixtures/confirmed-recorder";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
@@ -73,6 +74,7 @@ const cases = [
         financialContext: lpfCostContext,
       }, {
         environment: "development",
+        costRecorder: confirmedCostRecorder,
         fetchImpl: async (_url, init) => {
           requestBody = JSON.parse(String(init?.body));
           return new Response(JSON.stringify({
@@ -156,6 +158,7 @@ const cases = [
         financialContext: lpfCostContext,
       }, {
         environment: "development",
+        costRecorder: confirmedCostRecorder,
         fetchImpl: async () => new Response("{", {
           status: 200,
           headers: { "Content-Type": "application/json" },
@@ -175,6 +178,7 @@ const cases = [
         financialContext: lpfCostContext,
       }, {
         environment: "development",
+        costRecorder: confirmedCostRecorder,
         fetchImpl: async () => {
           transportCalls += 1;
           return new Response();
@@ -981,6 +985,7 @@ const cases = [
               error: { code: "READ_FAILED", message: "read failed" },
             }),
           },
+          costRecorder: confirmedCostRecorder,
           fetchImpl: async () => {
             transportCalls += 1;
             return new Response();
@@ -1016,6 +1021,7 @@ const cases = [
               },
             }),
           },
+          costRecorder: confirmedCostRecorder,
           fetchImpl: async (_url, init) => {
             requestBody = JSON.parse(String(init?.body));
             return new Response(JSON.stringify({
@@ -1089,6 +1095,7 @@ const cases = [
           parseResponse: () => ({ ok: true, value: "parsed" }),
         },
         {
+          costRecorder: confirmedCostRecorder,
           fetchImpl: async (_url, init) => {
             requestBody = JSON.parse(String(init?.body));
             return new Response(JSON.stringify({ id: "resp_commercial_6" }), {
@@ -1132,6 +1139,7 @@ const cases = [
           parseResponse: () => ({ ok: true, value: "must-not-run" }),
         },
         {
+          costRecorder: confirmedCostRecorder,
           fetchImpl: async () => {
             calls += 1;
             return new Response();
