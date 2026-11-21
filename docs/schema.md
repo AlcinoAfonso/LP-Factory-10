@@ -688,7 +688,7 @@
 - summary: text nullable; CHECK permite NULL ou 1–6.000 caracteres após trim, conforme a migration aplicada `20261011121811_e10_12_summary_capacity.sql`.
 - source_dialogue_id e source_user_id: uuid nullable; CHECK exige ambos nulos ou ambos preenchidos.
 - FK composta (source_dialogue_id, account_id, source_user_id) → account_dialogues(id, account_id, user_id) ON UPDATE CASCADE ON DELETE RESTRICT.
-- updated_at: timestamptz NOT NULL DEFAULT now(), atualizado explicitamente pela RPC; sem trigger próprio.
+- updated_at: timestamptz NOT NULL DEFAULT now(), atualizado pelas RPCs, sem trigger. O WhatsApp opcional do Pending Setup é incorporado ao Summary na própria transação de `claim_account_pending_setup_turn_v3` (migration `20261121123500`), após validação da conta/ator e reserva da mensagem, independentemente da síntese.
 - Para escritas autorizadas em `account_niche`, ver §1.13.7.
 
 1.19D.2 Segurança
