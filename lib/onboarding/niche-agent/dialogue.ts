@@ -178,10 +178,11 @@ export function mergeNicheMemory(raw: string | null, turn: NicheTurn,
   if (!summary.confirmedUnderstanding?.includes(snapshot.text)) {
     summary.confirmedUnderstanding = [summary.confirmedUnderstanding, snapshot.text].filter(Boolean).join("\n");
   }
-  const phone = snapshot.declined ? null : submittedPhone ?? snapshot.phone;
-  if (phone || snapshot.declined) {
+  const phone = submittedPhone ?? (snapshot.declined ? null : snapshot.phone);
+  const declined = !submittedPhone && snapshot.declined;
+  if (phone || declined) {
     summary.whatsapp = phone;
-    summary.whatsappDeclined = snapshot.declined;
+    summary.whatsappDeclined = declined;
   }
   const joined = JSON.stringify(summary);
   if ((summary.confirmedUnderstanding?.length ?? 0) > 4000 || joined.length > 5800) throw new Error("summary_capacity");
