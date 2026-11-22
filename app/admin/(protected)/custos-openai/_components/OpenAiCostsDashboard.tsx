@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState, type ReactNode } from "rea
 
 import { OpenAiDialogueCosts } from "./OpenAiDialogueCosts";
 import { OpenAiOccurrenceCosts } from "./OpenAiOccurrenceCosts";
+import { OpenAiOccurrencePeriod } from "./OpenAiOccurrencePeriod";
 import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 import type { OpenAiActiveCostReadModel, OpenAiCostReadWorkloadId } from "@/openai-costs/active-contracts";
 import type { OpenAiCostsFinancialComposition } from "@/openai-costs/dashboard";
@@ -39,10 +40,32 @@ export function OpenAiCostsDashboard({ startDate, endDate }: Props) {
   const [periodMode, setPeriodMode] = useState<"current_month" | "custom">("current_month");
   const [universe, setUniverse] = useState<"" | "lp_factory" | "client">("");
   const [accountId, setAccountId] = useState("");
+  const [product, setProduct] = useState("");
+  const [workload, setWorkload] = useState("");
+  const [start, setStart] = useState(startDate);
+  const [end, setEnd] = useState(endDate);
   const [state, formAction, pending] = useActionState(refreshOpenAiCostsAction, INITIAL_STATE);
   const resultRef = useRef<HTMLDivElement>(null);
   const dashboard = state.dashboard;
+  const showOccurrenceFilters = dashboard?.active?.economicDimensionStatus === "v3_operation_period";
   const allSourcesAvailable = dashboard && !dashboard.officialErrorCode && dashboard.active && dashboard.legacy;
+  const accountFilter = (
+    <FormLabel label="Conta (UUID)">
+      <input type="text" value={accountId} onChange={(event) => setAccountId(event.target.value.trim())} disabled={universe === "lp_factory" || pending} autoComplete="off" placeholder="Todas as contas" className={controlClassName} />
+    </FormLabel>
+  );
+  const productFilter = (
+    <FormLabel label="Produto/serviço">
+      <select value={product} onChange={event => setProduct(event.target.value)} className={controlClassName} disabled={universe === "lp_factory" || pending}>
+        <option value="">Todos</option><option value="communication_base">Base de Comunicação</option><option value="unlinked">Sem produto identificado</option>
+      </select>
+    </FormLabel>
+  );
+  const submit = (
+    <button type="submit" form="openai-cost-query" disabled={pending} className="inline-flex min-h-11 items-center justify-center rounded-md bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:cursor-not-allowed disabled:opacity-60">
+      {pending ? "Atualizando…" : "Atualizar custos"}
+    </button>
+  );
 
   useEffect(() => {
     if (!pending && state.status !== "idle") resultRef.current?.focus();
@@ -50,7 +73,9 @@ export function OpenAiCostsDashboard({ startDate, endDate }: Props) {
 
   return (
     <div className="space-y-6">
-      <form action={formAction} className="rounded-lg border border-border bg-card p-4 shadow-card sm:p-6">
+      <form id="openai-cost-query" action={formAction} className="rounded-lg border border-border bg-card p-4 shadow-card sm:p-6">
+        <input type="hidden" name="accountId" value={accountId} />
+        <input type="hidden" name="product" value={product} />
         <fieldset disabled={pending} className="space-y-5">
           <legend className="text-base font-semibold text-foreground">Período e filtros da consulta</legend>
           <p id="cost-query-help" className="text-sm leading-6 text-muted-foreground">
@@ -63,35 +88,34 @@ export function OpenAiCostsDashboard({ startDate, endDate }: Props) {
               </select>
             </FormLabel>
             <FormLabel label="Data inicial">
-              <input type="date" name="startDate" defaultValue={startDate} disabled={periodMode === "current_month" || pending} required={periodMode === "custom"} className={controlClassName} />
+              <input type="date" name="startDate" value={start} onChange={event => setStart(event.target.value)} disabled={periodMode === "current_month" || pending} required={periodMode === "custom"} className={controlClassName} />
             </FormLabel>
             <FormLabel label="Data final">
-              <input type="date" name="endDate" defaultValue={endDate} max={endDate} disabled={periodMode === "current_month" || pending} required={periodMode === "custom"} className={controlClassName} />
+              <input type="date" name="endDate" value={end} onChange={event => setEnd(event.target.value)} max={endDate} disabled={periodMode === "current_month" || pending} required={periodMode === "custom"} className={controlClassName} />
             </FormLabel>
           </div>
-          <div className="grid gap-4 sm:grid-cols-3 sm:items-end">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {!showOccurrenceFilters ? <>{accountFilter}{productFilter}</> : null}
             <FormLabel label="Universo">
-              <select name="universe" value={universe} onChange={(event) => { const next = event.target.value as typeof universe; setUniverse(next); if (next === "lp_factory") setAccountId(""); }} className={controlClassName}>
+              <select name="universe" value={universe} onChange={(event) => { const next = event.target.value as typeof universe; setUniverse(next); if (next === "lp_factory") { setAccountId(""); setProduct(""); } }} className={controlClassName}>
                 <option value="">Todos os universos</option><option value="client">Cliente</option><option value="lp_factory">LP Factory</option>
               </select>
             </FormLabel>
-            <FormLabel label="Conta (UUID)">
-              <input type="text" name="accountId" value={accountId} onChange={(event) => setAccountId(event.target.value.trim())} disabled={universe === "lp_factory" || pending} autoComplete="off" placeholder="Todas as contas" aria-describedby="account-filter-help" className={controlClassName} />
-              <span id="account-filter-help" className="text-xs font-normal text-muted-foreground">Opcional; disponível para execuções de Cliente.</span>
-            </FormLabel>
             <FormLabel label="Workload">
-              <select name="workload" defaultValue="" className={controlClassName}>
+              <select name="workload" value={workload} onChange={event => setWorkload(event.target.value)} className={controlClassName}>
                 <option value="">Todos os workloads</option>
                 {WORKLOAD_OPTIONS.map((workload) => <option key={workload} value={workload}>{workloadLabel(workload)}</option>)}
               </select>
             </FormLabel>
           </div>
-          <button type="submit" className="inline-flex min-h-11 items-center justify-center rounded-md bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:cursor-not-allowed disabled:opacity-60">
-            {pending ? "Atualizando…" : "Atualizar custos"}
-          </button>
+          {!showOccurrenceFilters ? submit : null}
         </fieldset>
       </form>
 
+      {pending ? <p role="status" className="text-sm text-muted-foreground">Atualizando a seleção. Os resultados anteriores permanecem visíveis.</p> : null}
+      {dashboard ? <OpenAiOccurrencePeriod dashboard={dashboard} filters={showOccurrenceFilters
+        ? { account: accountFilter, product: productFilter, submit }
+        : undefined} /> : null}
       <OpenAiOccurrenceCosts />
 
       <section className="rounded-lg border border-border bg-card p-4 shadow-card sm:p-6" aria-labelledby="openai-external-links-title">
@@ -110,7 +134,7 @@ export function OpenAiCostsDashboard({ startDate, endDate }: Props) {
               : <StatusPanel tone={allSourcesAvailable ? "success" : "warning"} title={allSourcesAvailable ? "Consulta atualizada" : "Consulta com fontes indisponíveis"}>{state.message}</StatusPanel>}
       </div>
 
-      {dashboard && !pending ? <DashboardResult dashboard={dashboard} /> : null}
+      {dashboard ? <DashboardResult dashboard={dashboard} /> : null}
     </div>
   );
 }
@@ -124,7 +148,7 @@ function DashboardResult({ dashboard }: Readonly<{ dashboard: OpenAiCostsFinanci
           <AdminStatusBadge tone={dashboard.selection.provisional ? "warning" : "success"}>{dashboard.selection.provisional ? "Provisório" : "Período encerrado"}</AdminStatusBadge>
           {dashboard.globalReconciliationAnomalous ? <AdminStatusBadge tone="danger">Reconciliação anômala</AdminStatusBadge> : null}
         </div>
-        <p className="text-sm text-muted-foreground">{formatDate(dashboard.selection.startDate)} a {formatDate(dashboard.selection.endDate)}. O controle ativo usa o início da execução. As fronteiras do período usam UTC.</p>
+        <p className="text-sm text-muted-foreground">{formatDate(dashboard.selection.startDate)} a {formatDate(dashboard.selection.endDate)}. O controle ativo usa {dashboard.active?.economicDimensionStatus === "v3_operation_period" ? "o início da operação" : "o início da execução na leitura disponível"}. As fronteiras do período usam UTC.</p>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <MetricCard label="Gasto oficial OpenAI" value={dashboard.officialTotalUsd === null ? "Indisponível" : formatUsd(dashboard.officialTotalUsd)} detail="Fonte oficial · Costs API" />
           <MetricCard label="Clientes" value={dashboard.economicHierarchy?.activeAvailable && dashboard.economicHierarchy.legacyAvailable ? formatUsd(dashboard.economicHierarchy.clients.calculatedCostUsd) : "Indisponível"} detail="Controle ativo de clientes + histórico E21.4 calculáveis" />
@@ -146,7 +170,7 @@ function DashboardResult({ dashboard }: Readonly<{ dashboard: OpenAiCostsFinanci
       {!dashboard.legacy ? <StatusPanel tone="warning" title="Histórico congelado indisponível">Não foi possível ler o histórico do período. Motivo ({dashboard.legacyErrorCode ?? "READ_FAILED"}).</StatusPanel> : null}
       {dashboard.economicHierarchy ? <OpenAiEconomicHierarchyView hierarchy={dashboard.economicHierarchy} /> : null}
       {dashboard.filteredActive ? <OpenAiCostModelTotals groups={dashboard.filteredActive.modelGroups} /> : null}
-      {dashboard.filteredActive && (dashboard.activeFilters.universe || dashboard.activeFilters.accountId || dashboard.activeFilters.workload)
+      {dashboard.filteredActive && (dashboard.activeFilters.universe || dashboard.activeFilters.accountId || dashboard.activeFilters.workload || dashboard.activeFilters.product)
         ? <ActiveCostSection active={dashboard.filteredActive} filters={dashboard.activeFilters} />
         : null}
     </div>
@@ -217,10 +241,10 @@ function CoverageSection({ dashboard }: Readonly<{ dashboard: OpenAiCostsFinanci
 }
 
 function ActiveCostSection({ active, filters }: Readonly<{ active: OpenAiActiveCostReadModel; filters: OpenAiCostsFinancialComposition["activeFilters"] }>) {
-  const filtered = Boolean(filters.universe || filters.accountId || filters.workload);
+  const filtered = Boolean(filters.universe || filters.accountId || filters.workload || filters.product);
   return (
     <section className="space-y-4" aria-labelledby="active-costs-title">
-      <div className="flex flex-wrap items-end justify-between gap-3"><div><h2 id="active-costs-title" className="text-lg font-semibold text-foreground">Controle ativo</h2><p className="mt-1 text-sm text-muted-foreground">{filtered ? "Subtotal e detalhes com os filtros informados." : "Subtotal e detalhes de todas as execuções ativas do período."}</p></div><strong className="text-xl text-foreground">{formatUsd(active.totalCalculatedUsd)}</strong></div>
+      <div className="flex flex-wrap items-end justify-between gap-3"><div><h2 id="active-costs-title" className="text-lg font-semibold text-foreground">Controle ativo</h2><p className="mt-1 text-sm text-muted-foreground">{filtered ? "Subtotal e detalhes com os filtros disponíveis." : "Subtotal e detalhes de todas as execuções ativas do período."}</p></div><strong className="text-xl text-foreground">{formatUsd(active.totalCalculatedUsd)}</strong></div>
       <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <CountCard label="Execuções" value={active.executionCount} /><CountCard label="Operações" value={active.operationCount} /><CountCard label="Retries" value={countRetries(active)} /><CountCard label="Custos indisponíveis" value={active.unavailableOperationCount} warning /><CountCard label="Não atribuídas" value={active.unassignedExecutionCount} warning />
       </dl>

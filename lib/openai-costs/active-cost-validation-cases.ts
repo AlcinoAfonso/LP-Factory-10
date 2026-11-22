@@ -7,6 +7,8 @@ import {
 } from "./adapters/activeCostReadModelAdapterCore";
 import { buildOpenAiCostsFinancialComposition } from "./dashboard";
 import { buildOpenAiEconomicHierarchy } from "./economic-hierarchy";
+import { buildOccurrenceCostDetail } from "./occurrence-costs";
+import { summarizeOccurrencePeriod } from "./occurrence-period";
 import {
   calculateOpenAiOperationCost as calculateCost,
   OPENAI_COST_PRICING_CATALOGS,
@@ -228,6 +230,7 @@ async function main() {
     { model: null, calculatedCostUsd: null, operationCount: 1, pendingOperationCount: 0, unavailableOperationCount: 1 },
   ]);
   validateModelTotals();
+  await validateOccurrencePeriods();
 
   const factualHistory = translateOpenAiActiveCostRows({
     period,
@@ -529,6 +532,81 @@ function activeRow(overrides: Record<string, unknown>) {
     provider_error_type: null,
     ...overrides,
   };
+}
+
+async function validateOccurrencePeriods() {
+  const account = "40000000-0000-4000-8000-000000000099";
+  const occurrence = "40000000-0000-4000-8000-000000000098";
+  const operation = "40000000-0000-4000-8000-000000000001";
+  const october = "2026-10-01T00:00:00Z";
+  const november = "2026-11-01T00:00:00Z";
+  const december = "2026-12-01T00:00:00Z";
+  const time = (value: string) => Date.parse(value) / 1000;
+  const example = (start: string, overrides: Record<string, unknown>) => activeRow({
+    cursor_started_at: start,
+    execution_started_at: "2026-10-31T23:59:58Z",
+    execution_finished_at: "2026-11-01T00:00:03Z",
+    operation_started_at: start,
+    operation_finished_at: "2026-11-01T00:00:03Z",
+    occurrence_id: occurrence,
+    occurrence_closed_at: "2026-11-01T00:00:04Z",
+    workload: "communication_base_stage2_intelligence",
+    universe: "client", account_id: account, account_name: "Conta de teste",
+    product_type: "communication_base", product_instance_id: account, action_kind: "category_3_generate",
+    ...overrides,
+  });
+  const first = example("2026-10-31T23:59:59.999999Z", { cost_usd: "0.03" });
+  const retry = example("2026-11-01T00:00:00.000001Z", {
+    operation_id: "40000000-0000-4000-8000-000000000002", operation_sequence: 2, retry_of_operation_id: operation,
+    operation_result: "failure", operation_failure_category: "provider_error", cost_usd: "0.05",
+  });
+  const unavailable = example("2026-11-01T00:00:00.000002Z", {
+    operation_id: "40000000-0000-4000-8000-000000000003", operation_sequence: 3,
+    cost_status: "unavailable", cost_usd: null, cost_unavailable_reason: "usage_missing",
+  });
+  const read = (start: string, end: string, rows: readonly unknown[]) => {
+    const result = translateOpenAiActiveCostRows({
+      period: { startTime: time(start), endTime: time(end) }, rows, coverageRows: [],
+      economicDimensionStatus: "v3_operation_period",
+    });
+    assert(result.ok);
+    return result.value;
+  };
+  const oct = read(october, november, [first]);
+  const nov = read(november, december, [retry]);
+  for (const [model, amount] of [[oct, "0.03"], [nov, "0.05"]] as const) {
+    const filtered = filterOpenAiActiveCosts(model, { accountId: account, product: "communication_base" });
+    assert.equal(model.totalCalculatedUsd, amount);
+    assert.equal(model.groups[0].calculatedCostUsd, amount);
+    assert.equal(model.modelGroups[0].calculatedCostUsd, amount);
+    assert.equal(buildOpenAiEconomicHierarchy(model, null).clients.calculatedCostUsd, amount);
+    assert.equal(buildOpenAiEconomicHierarchy(model, null).clients.accounts[0].calculatedCostUsd, amount);
+    const summary = summarizeOccurrencePeriod(filtered);
+    assert.equal(summary.rows[0].id, occurrence);
+    assert.equal(summary.rows[0].cost, amount);
+    assert.deepEqual(summary.byAction, [{ action: "category_3_generate", cost: amount, incomplete: false }]);
+  }
+  const combined = read(october, december, [first, retry]);
+  const detail = buildOccurrenceCostDetail(occurrence, "2026-11-01T00:00:04Z", combined.executions);
+  assert.equal(detail.calculatedCostUsd, "0.08");
+  assert.equal(detail.operationCount, 2);
+  const partial = summarizeOccurrencePeriod(read(november, december, [retry, unavailable]));
+  assert.equal(partial.rows[0].status, "partial");
+  assert.equal(partial.rows[0].cost, "0.05");
+  const cursors: (string | null)[] = [];
+  const pages = [[retry], [unavailable], []];
+  const result = await readOpenAiActiveCostPages({
+    period: { startTime: time(november), endTime: time(december) },
+    economicDimensionStatus: "v3_operation_period",
+    readCoverage: async () => ({ data: [], error: null }),
+    readPage: async cursor => {
+      cursors.push(cursor?.startedAt ?? null);
+      return { data: pages.shift(), error: null };
+    },
+  }, 1);
+  assert(result.ok);
+  assert.deepEqual(cursors, [null, "2026-11-01T00:00:00.000001Z", "2026-11-01T00:00:00.000002Z"]);
+  assert.equal(result.value.operationCount, 2);
 }
 
 function validateModelTotals() {

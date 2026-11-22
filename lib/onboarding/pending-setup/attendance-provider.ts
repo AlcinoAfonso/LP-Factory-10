@@ -28,7 +28,10 @@ export async function requestAttendance(input: Readonly<{
     requestId: randomUUID(), promptVersion: input.context.purpose === "account_niche" ? NICHE_ATTENDANCE_PROMPT_VERSION : ATTENDANCE_PROMPT_VERSION, contractVersion: input.context.purpose === "account_niche" ? NICHE_ATTENDANCE_CONTRACT_VERSION : ATTENDANCE_CONTRACT_VERSION,
     occurrenceId: input.occurrenceId,
     closeOccurrenceOnCompletion: input.executionOrigin === "administrative_proof" && !input.occurrenceId ? true : undefined,
-    financialContext: input.financialContext ?? clientOpenAiCostContext(input.accountId),
+    financialContext: input.financialContext ?? {
+      ...clientOpenAiCostContext(input.accountId),
+      occurrenceDimensions: { action: "initial_attendance", product: null },
+    },
     executionOrigin: input.executionOrigin ?? "runtime", baselineReference: "e10_12_attendance",
     timeoutMs: 120_000,
     request: {

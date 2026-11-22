@@ -27,6 +27,7 @@ export function buildOccurrenceCostDetail(
   occurrenceId: string,
   closedAt: string | null,
   executions: readonly OpenAiActiveCostExecution[],
+  operationScope: "integral" | "period" = "integral",
 ): OccurrenceCostDetail {
   const scope = executions[0];
   if (!scope) throw Error("occurrence_execution_missing");
@@ -44,7 +45,7 @@ export function buildOccurrenceCostDetail(
     const previousAttempts = new Set<string>();
     for (const operation of execution.operations) {
       if (operationIds.has(operation.operationId) ||
-          (operation.retryOfOperationId && !previousAttempts.has(operation.retryOfOperationId))) {
+          (operationScope === "integral" && operation.retryOfOperationId && !previousAttempts.has(operation.retryOfOperationId))) {
         throw Error("occurrence_operation_link_invalid");
       }
       operationIds.add(operation.operationId);

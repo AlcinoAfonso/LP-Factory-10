@@ -28,7 +28,7 @@ import {
   openAiProductWorkloadIds,
   openAiReasoningEfforts,
 } from "../../openai-workloads";
-import { OPENAI_RETIRED_COST_WORKLOAD_IDS } from "../active-contracts";
+import { OPENAI_RETIRED_COST_WORKLOAD_IDS, openAiCostActionKinds } from "../active-contracts";
 
 const openAiWorkloadIds = [
   ...openAiProductWorkloadIds,
@@ -110,7 +110,10 @@ export function filterOpenAiActiveCosts(
   const executions = model.executions.filter((execution) =>
     (!filters.universe || execution.universe === filters.universe) &&
     (!filters.accountId || execution.accountId === filters.accountId) &&
-    (!filters.workload || execution.workload === filters.workload));
+    (!filters.workload || execution.workload === filters.workload) &&
+    (model.economicDimensionStatus !== "v3_operation_period" || !filters.product || (filters.product === "unlinked"
+      ? !execution.occurrence?.dimensions?.product
+      : execution.occurrence?.dimensions?.product?.type === filters.product)));
   return aggregateExecutions(executions, model.coverage, model.economicDimensionStatus);
 }
 
@@ -302,7 +305,9 @@ function parseRow(
 ): ParsedRow | null {
   const row = record(raw);
   if (!row) return null;
-  const startedAt = timestamp(row?.cursor_started_at);
+  const byOperation = economicDimensionStatus === "v3_operation_period";
+  const cursorAt = byOperation ? preciseTimestamp(row.cursor_started_at) : timestamp(row.cursor_started_at);
+  const startedAt = byOperation ? timestamp(row.execution_started_at) : cursorAt;
   const executionId = uuid(row?.execution_id);
   const sequence = nonNegativeInteger(row?.operation_sequence);
   const workload = workloadId(row?.workload);
@@ -328,11 +333,11 @@ function parseRow(
   const executionFailure = nullableText(row?.execution_failure_category, 64);
   const baselineReference = nullableText(row?.baseline_reference, 128);
   const baselineVersion = nullableText(row?.baseline_version, 128);
-  if (!startedAt || !executionId || sequence === null || !workload || !environment || !executionOrigin ||
+  if (!cursorAt || !startedAt || !executionId || sequence === null || !workload || !environment || !executionOrigin ||
       !universe || !attributionStatus || accountId === undefined || executionFinishedAt === undefined ||
       executionResult === undefined || executionFailure === undefined || baselineReference === undefined || baselineVersion === undefined ||
       accountName === undefined || landingPageName === undefined || taxonName === undefined || economicEvent === undefined ||
-      Math.floor(Date.parse(startedAt) / 1000) < period.startTime || Math.floor(Date.parse(startedAt) / 1000) >= period.endTime ||
+      Math.floor(Date.parse(cursorAt) / 1000) < period.startTime || Math.floor(Date.parse(cursorAt) / 1000) >= period.endTime ||
       (universe === "lp_factory" && (attributionStatus !== "attributed" || accountId !== null)) ||
       (universe === "client" && attributionStatus === "attributed" && accountId === null) ||
       (universe === "client" && attributionStatus === "unassigned" && accountId !== null) ||
@@ -351,10 +356,14 @@ function parseRow(
 
   const operation = row?.operation_id === null ? null : parseOperation(row, sequence);
   if ((sequence === 0) !== (operation === null)) return null;
+  const occurrence = byOperation ? parseOccurrence(row, accountId) : null;
+  if (byOperation && (occurrence === undefined ||
+      cursorAt !== preciseTimestamp(operation ? row.operation_started_at : row.execution_started_at))) return null;
   return {
-    cursor: { startedAt, executionId, operationSequence: sequence },
+    cursor: { startedAt: cursorAt, executionId, operationSequence: sequence },
     execution: {
       executionId,
+      ...(byOperation && { occurrence }),
       workload,
       environment,
       executionOrigin,
@@ -375,6 +384,29 @@ function parseRow(
     },
     operation,
   };
+}
+
+function parseOccurrence(
+  row: Record<string, unknown>,
+  accountId: string | null,
+): OpenAiActiveCostExecution["occurrence"] {
+  if (row.occurrence_id === null && row.occurrence_closed_at === null && row.action_kind === null &&
+      row.product_type === null && row.product_instance_id === null) return null;
+  const id = uuid(row.occurrence_id);
+  const closedAt = row.occurrence_closed_at === null ? null : timestamp(row.occurrence_closed_at);
+  const action = oneOf(row.action_kind, openAiCostActionKinds);
+  if (!id || id === row.execution_id || closedAt === undefined) return undefined;
+  if (row.product_type === null && row.product_instance_id === null) {
+    if (row.action_kind === null) return { id, closedAt, dimensions: null };
+    if (action === "niche_resolution" || action === "initial_attendance") {
+      return { id, closedAt, dimensions: { action, product: null } };
+    }
+  }
+  if (row.product_type === "communication_base" && accountId !== null && row.product_instance_id === accountId &&
+      (action === "category_3_generate" || action === "communication_base_generate" || action === "communication_base_adjust")) {
+    return { id, closedAt, dimensions: { action, product: { type: "communication_base", instanceId: accountId } } };
+  }
+  return undefined;
 }
 
 function validEconomicEventContext(input: Readonly<{
@@ -543,6 +575,15 @@ function timestamp(value: unknown): string | null | undefined {
   if (typeof value !== "string") return undefined;
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
+}
+
+// PostgreSQL keysets retain microseconds, including when two rows share a JS millisecond.
+function preciseTimestamp(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const iso = timestamp(value);
+  if (!iso) return undefined;
+  const fraction = /\.(\d{1,6})(?=Z|[+-]\d{2}:\d{2}$)/i.exec(value)?.[1] ?? "";
+  return iso.slice(0, -5) + "." + fraction.padEnd(6, "0") + "Z";
 }
 function technicalText(value: unknown) {
   return typeof value === "string" && value.length > 0 && value.length <= 128 && /^[A-Za-z0-9][A-Za-z0-9._:-]*$/.test(value) ? value : null;

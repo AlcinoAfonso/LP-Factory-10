@@ -291,9 +291,9 @@ loader._load = function(name, parent, isMain) {
   };
   return originalLoader.call(this, name, parent, isMain);
 };
-const [{ DialogueCostDetailView, OpenAiDialogueCosts }, { OccurrenceCostDetailView, OpenAiOccurrenceCosts }, { OpenAiCostModelTotals }] = await Promise.all([
+const [{ DialogueCostDetailView, OpenAiDialogueCosts }, { OccurrenceCostDetailView, OpenAiOccurrenceCosts }, { OpenAiCostModelTotals }, { OpenAiOccurrencePeriod }] = await Promise.all([
   import("./_components/OpenAiDialogueCosts"), import("./_components/OpenAiOccurrenceCosts"),
-  import("./_components/OpenAiCostsDashboard"),
+  import("./_components/OpenAiCostsDashboard"), import("./_components/OpenAiOccurrencePeriod"),
 ]).finally(() => { loader._load = originalLoader; });
 const modelMarkup = renderToStaticMarkup(<OpenAiCostModelTotals groups={composition.filteredActive!.modelGroups} />);
 assert.match(modelMarkup, /<th scope="row"[^>]*>gpt-6\.1-terra<\/th>/);
@@ -427,6 +427,54 @@ for (const [source, errorKey, dataKey] of [
 }
 assert.equal((await refreshOpenAiCostsActionCore(lpFactoryBrowserForm, originalSources)).dashboard?.globalReconciliationUsd,
   "0.7", "consulting all financial statuses does not add any occurrence subtotals to period reconciliation");
+
+const productForm = new FormData();
+productForm.set("periodMode", "custom");
+productForm.set("startDate", "2026-08-01");
+productForm.set("endDate", "2026-08-28");
+const productAccount = activeModel.executions[0].accountId!;
+productForm.set("accountId", productAccount);
+productForm.set("product", "communication_base");
+const productModel = {
+  ...activeModel,
+  economicDimensionStatus: "v3_operation_period" as const,
+  executions: activeModel.executions.map(execution => ({
+    ...execution,
+    occurrence: {
+      id: "e2155000-0000-4000-8000-000000000112",
+      closedAt: "2026-08-24T12:00:00Z",
+      dimensions: { product: { type: "communication_base" as const, instanceId: productAccount }, action: "category_3_generate" as const },
+    },
+  })),
+};
+const productLifetime = { calculatedUsd: "0.08", pendingCount: 0, unavailableCount: 0, openOccurrenceCount: 0 };
+const productSelection = await refreshOpenAiCostsActionCore(productForm, {
+  ...originalSources,
+  readActive: async () => ({ ok: true, value: productModel }),
+  readProductLifetime: async accountId => {
+    assert.equal(accountId, productAccount);
+    return productLifetime;
+  },
+});
+assert.equal(productSelection.dashboard?.filteredActive?.totalCalculatedUsd, "0.05");
+assert.deepEqual(productSelection.dashboard?.productLifetime, productLifetime);
+assert.equal(productSelection.dashboard?.globalReconciliationUsd, "0.7");
+assert.ok(productSelection.dashboard);
+const productMarkup = renderToStaticMarkup(<OpenAiOccurrencePeriod dashboard={productSelection.dashboard} filters={{
+  account: <label>Conta<input /></label>, product: <label>Produto/serviço<select /></label>, submit: <button>Atualizar custos</button>,
+}} />);
+assert.match(productMarkup, /<th scope="col"[^>]*><label>Conta<input\/><\/label><\/th>/);
+assert.match(productMarkup, /<th scope="col"[^>]*><label>Produto\/serviço<select><\/select><\/label><\/th>/);
+assert.match(productMarkup, /Subtotal calculável do período.*US\$ 0,05/);
+assert.match(productMarkup, /Acumulado da Base no histórico vinculado.*US\$ 0,08/);
+let lifetimeCallsBeforeMigration = 0;
+const productBeforeMigration = await refreshOpenAiCostsActionCore(productForm, {
+  ...originalSources,
+  readProductLifetime: async () => { lifetimeCallsBeforeMigration++; return null; },
+});
+assert.equal(lifetimeCallsBeforeMigration, 0);
+assert.equal(productBeforeMigration.dashboard?.productLifetime, null);
+assert.equal(productBeforeMigration.dashboard?.filteredActive?.totalCalculatedUsd, "0.05");
 
 for (const workload of ["taxon_input_catalog_sufficiency_evaluation", "landing_page_dynamic_market_research"] as const) {
   const historicalForm = new FormData();

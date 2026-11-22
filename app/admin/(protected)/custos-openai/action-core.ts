@@ -2,6 +2,7 @@ import type { DialogueCostResult, DialogueListResult } from "@/openai-costs/dial
 import { dialogueIdentitySchema } from "@/openai-costs/dialogue-costs";
 import { occurrenceCostQuerySchema, type OccurrenceCostQuery, type OccurrenceCostResult } from "@/openai-costs/occurrence-costs";
 import type { OpenAiActiveCostReadResult } from "@/openai-costs/active-contracts";
+import type { ProductLifetimeCost } from "@/openai-costs/occurrence-period";
 import type {
   OpenAiCostsPeriod,
   OpenAiLpCostReadResult,
@@ -27,6 +28,7 @@ export type OpenAiCostsActionDependencies = Readonly<{
   readActive: (period: OpenAiCostsPeriod) => Promise<OpenAiActiveCostReadResult>;
   readLegacy: (period: OpenAiCostsPeriod) => Promise<OpenAiLpCostReadResult>;
   readDialogues?: (period: OpenAiCostsPeriod, active: OpenAiActiveCostReadResult) => Promise<DialogueListResult>;
+  readProductLifetime?: (accountId: string) => Promise<ProductLifetimeCost | null>;
 }>;
 
 export async function refreshOpenAiCostsActionCore(
@@ -52,9 +54,10 @@ export async function refreshOpenAiCostsActionCore(
     universe: formData.get("universe"),
     accountId: formData.get("accountId"),
     workload: formData.get("workload"),
+    product: formData.get("product"),
   });
   if (!activeFilters) {
-    return failure("INVALID_FILTERS", "Revise os filtros de universo, conta e workload.");
+    return failure("INVALID_FILTERS", "Revise os filtros de conta, produto, universo e workload.");
   }
 
   const [officialRead, activeRead, legacyRead] = await Promise.allSettled([
@@ -69,15 +72,22 @@ export async function refreshOpenAiCostsActionCore(
   const legacy: OpenAiLpCostReadResult = legacyRead.status === "fulfilled" ? legacyRead.value
     : { ok: false, error: { code: "READ_FAILED", message: "Frozen costs read failed" } };
 
+  const [dialogues, productLifetime] = await Promise.all([
+    dependencies.readDialogues?.(selection.period, active)
+      .catch((): DialogueListResult => ({ ok: false, code: "DIALOGUE_LIST_UNAVAILABLE" })),
+    active.ok && active.value.economicDimensionStatus === "v3_operation_period" &&
+      activeFilters.product === "communication_base" && activeFilters.accountId
+      ? dependencies.readProductLifetime?.(activeFilters.accountId).catch(() => null)
+      : null,
+  ]);
   const dashboard = buildOpenAiCostsFinancialComposition({
     selection,
     official,
     active,
     legacy,
     activeFilters,
-    dialogues: dependencies.readDialogues
-      ? await dependencies.readDialogues(selection.period, active).catch((): DialogueListResult => ({ ok: false, code: "DIALOGUE_LIST_UNAVAILABLE" }))
-      : null,
+    dialogues,
+    productLifetime,
   });
   return {
     status: "success",

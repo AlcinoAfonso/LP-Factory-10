@@ -258,6 +258,8 @@
 - DTO financeiro somente sanitizado do contrato público; sem prompt, resposta integral, negócio, URL de fonte, PII, secret ou detalhe financeiro interno indevido. Histórico pagina integralmente; diagnóstico expõe só HTTP/código/tipo sanitizados.
 - Oficial, controle ativo e histórico são fontes independentes. A reconciliação exige as três leituras. Gasto oficial sem evento histórico permanece na diferença, sem rateio.
 - A consulta exata por ocorrência D10D independe do período e das três leituras agregadas. O detalhe soma os snapshots das operações admitidas uma vez e só apresenta total quando houver encerramento financeiro comprovado e todas as operações forem calculáveis. Diálogos com vínculo D10D mantêm a consulta por diálogo e informam os UUIDs das ocorrências para apuração individual.
+- D10D Etapa 5 vincula a ação funcional e a instância do produto no lifecycle antes da admissão cobrável. Na Base de Comunicação, o UUID da conta identifica a instância. As sete seções da geração integral compartilham o UUID da geração. Ajuste localizado tem outro UUID. Ocorrências anteriores conservam a identificação comprovada na origem.
+- Após aplicar e validar os contratos versionados da Etapa 5, a competência do ledger ativo usa o início da operação em UTC. O Admin combina período, conta e produto, apresenta a parcela mensal da ocorrência e consulta o acumulado da Base a partir do histórico com vínculo explícito. O detalhe por UUID preserva o custo integral e a reconciliação continua global.
 
 4. DB Contract
 - Objetos/estado exatos: `docs/schema.md`; dependências e migrations seguem 3.8/3.4.4, sem inventário duplicado.

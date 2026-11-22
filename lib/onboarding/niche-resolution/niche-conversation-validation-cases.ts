@@ -56,7 +56,11 @@ export async function validateNicheConversationActions() {
   const actions=await import("../../../app/a/[account]/niche-resolution-actions").finally(()=>{loader._load=original;});
   const turn={account:"qa-niche",dialogueId,requestId,expectedVersion:0,expectedRevision:"legacy:"+currentId+":1",content:"Agora ofereço jardinagem."};
   assert.equal((await actions.converseAccountNicheAction(turn)).ok,true);
-  assert.deepEqual(financialContexts[0],{universe:"client",attributionStatus:"attributed",accountId,event:{kind:"niche_resolution",eventId:dialogueId}});
+  assert.deepEqual(financialContexts[0], {
+    universe: "client", attributionStatus: "attributed", accountId,
+    event: { kind: "niche_resolution", eventId: dialogueId },
+    occurrenceDimensions: { action: "niche_resolution", product: null },
+  });
   assert.equal((await actions.converseAccountNicheAction({...turn,dialogueId:requestId})).ok,true);
   assert.deepEqual(financialContexts[1]?.event,{kind:"niche_resolution",eventId:requestId},"another dialogue in the same account has its own financial identity");
   commits.pop(); calls.pop();

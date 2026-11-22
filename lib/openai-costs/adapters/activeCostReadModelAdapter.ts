@@ -5,6 +5,22 @@ import type { OpenAiActiveCostReadResult } from "../active-contracts";
 import type { OpenAiCostsPeriod } from "../contracts";
 import { OPENAI_ACTIVE_COST_COVERAGE_MAX_ROWS, readOpenAiActiveCostPages } from "./activeCostReadModelAdapterCore";
 import { isExpectedMissingRpcError } from "./activeCostTrackingAdapterCore";
+import { decimalFromNonNegativeString } from "../decimal";
+import type { ProductLifetimeCost } from "../occurrence-period";
+
+export async function readOpenAiProductLifetimeCost(accountId: string): Promise<ProductLifetimeCost | null> {
+  const { data, error } = await createServiceClient().rpc("read_openai_product_cost_v1", {
+    p_account_id: accountId,
+  }).single();
+  if (error || !data || typeof data !== "object") return null;
+  const row = data as Record<string, unknown>;
+  const { calculated_usd: calculatedUsd, pending_count: pendingCount,
+    unavailable_count: unavailableCount, open_occurrence_count: openOccurrenceCount } = row;
+  if (calculatedUsd !== null && (typeof calculatedUsd !== "string" || !decimalFromNonNegativeString(calculatedUsd))) return null;
+  const isCount = (value: unknown): value is number => typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+  if (!isCount(pendingCount) || !isCount(unavailableCount) || !isCount(openOccurrenceCount)) return null;
+  return { calculatedUsd, pendingCount, unavailableCount, openOccurrenceCount };
+}
 
 export async function readOpenAiActiveCosts(
   period: OpenAiCostsPeriod,
@@ -19,33 +35,29 @@ export async function readOpenAiActiveCosts(
       p_after_operation_sequence: cursor?.operationSequence ?? null,
       p_limit: limit,
     });
-    const initialV2 = await client.rpc(
-      "read_openai_active_cost_rows_v2",
-      args(null, 500),
-    );
-    const useV1 = isExpectedMissingRpcError(
-      initialV2.error,
-      "read_openai_active_cost_rows_v2",
-    );
-    if (initialV2.error && !useV1) {
+    let rpcName = "read_openai_active_cost_rows_v3";
+    let firstPage = await client.rpc(rpcName, args(null, 500));
+    if (isExpectedMissingRpcError(firstPage.error, rpcName)) {
+      rpcName = "read_openai_active_cost_rows_v2";
+      firstPage = await client.rpc(rpcName, args(null, 500));
+      if (isExpectedMissingRpcError(firstPage.error, rpcName)) {
+        rpcName = "read_openai_active_cost_rows_v1";
+        firstPage = await client.rpc(rpcName, args(null, 500));
+      }
+    }
+    if (firstPage.error) {
       return {
         ok: false,
         error: { code: "READ_FAILED", message: "OpenAI active costs could not be read" },
       };
     }
-    let firstPage = useV1 ? null : initialV2;
-    const rpcName = useV1
-      ? "read_openai_active_cost_rows_v1"
-      : "read_openai_active_cost_rows_v2";
+    const economicDimensionStatus = rpcName === "read_openai_active_cost_rows_v3" ? "v3_operation_period"
+      : rpcName === "read_openai_active_cost_rows_v2" ? "v2_active" : "v1_fallback";
     return await readOpenAiActiveCostPages({
       period,
-      economicDimensionStatus: useV1 ? "v1_fallback" : "v2_active",
+      economicDimensionStatus,
       readPage: async (cursor, limit) => {
-        if (firstPage && cursor === null) {
-          const page = firstPage;
-          firstPage = null;
-          return page;
-        }
+        if (cursor === null) return firstPage;
         return await client.rpc(rpcName, args(cursor, limit));
       },
       readCoverage: async () => await client

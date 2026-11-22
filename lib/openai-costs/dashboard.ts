@@ -16,6 +16,7 @@ import type {
   OpenAiOfficialCostsReadResult,
 } from "./contracts";
 import { filterOpenAiActiveCosts } from "./adapters/activeCostReadModelAdapterCore";
+import type { ProductLifetimeCost } from "./occurrence-period";
 import {
   decimalFromNonNegativeString,
   formatDecimal,
@@ -59,6 +60,7 @@ export type OpenAiCostsFinancialComposition = Readonly<{
   active: OpenAiActiveCostReadModel | null;
   activeErrorCode: string | null;
   filteredActive: OpenAiActiveCostReadModel | null;
+  productLifetime?: ProductLifetimeCost | null;
   activeFilters: OpenAiActiveCostFilters;
   dialogues: DialogueListResult | null;
   legacy: OpenAiLpCostReadModel | null;
@@ -153,6 +155,7 @@ export function buildOpenAiCostsFinancialComposition(input: Readonly<{
   legacy: OpenAiLpCostReadResult;
   activeFilters?: OpenAiActiveCostFilters;
   dialogues?: DialogueListResult | null;
+  productLifetime?: ProductLifetimeCost | null;
 }>): OpenAiCostsFinancialComposition {
   const official = input.official.ok ? input.official.value : null;
   const officialTotal = decimalFromNonNegativeString(official?.totalUsd);
@@ -172,6 +175,7 @@ export function buildOpenAiCostsFinancialComposition(input: Readonly<{
     active,
     activeErrorCode: input.active.ok ? active ? null : "INVALID_RESPONSE" : input.active.error.code,
     filteredActive: active ? filterOpenAiActiveCosts(active, activeFilters) : null,
+    productLifetime: input.productLifetime ?? null,
     activeFilters,
     dialogues: input.dialogues ?? null,
     legacy,
@@ -188,6 +192,7 @@ export function parseOpenAiActiveCostFilters(input: Readonly<{
   universe: unknown;
   accountId: unknown;
   workload: unknown;
+  product?: unknown;
 }>): OpenAiActiveCostFilters | null {
   const universe = input.universe === "" || input.universe === null
     ? null
@@ -205,9 +210,11 @@ export function parseOpenAiActiveCostFilters(input: Readonly<{
         (OPENAI_COST_WORKLOAD_IDS as readonly string[]).includes(input.workload)
       ? input.workload as OpenAiActiveCostFilters["workload"]
       : undefined;
+  const product = input.product === "" || input.product == null ? null : input.product;
+  if (product !== null && product !== "communication_base" && product !== "unlinked") return null;
   if (universe === undefined || accountId === undefined || workload === undefined) return null;
   if (universe === "lp_factory" && accountId !== null) return null;
-  return Object.freeze({ universe, accountId, workload });
+  return Object.freeze({ universe, accountId, workload, ...(product !== null && { product }) });
 }
 
 export function defaultOpenAiCostsDates(now = new Date()) {
