@@ -6,9 +6,11 @@ import {
   translateOpenAiActiveCostRows,
 } from "./adapters/activeCostReadModelAdapterCore";
 import { buildOpenAiCostsFinancialComposition } from "./dashboard";
+import { clientOpenAiCostContext } from "./active-contracts";
 import { buildOpenAiEconomicHierarchy } from "./economic-hierarchy";
 import { buildOccurrenceCostDetail } from "./occurrence-costs";
 import { summarizeOccurrencePeriod } from "./occurrence-period";
+import { resolveOpenAiOccurrenceId } from "./recorder";
 import {
   calculateOpenAiOperationCost as calculateCost,
   OPENAI_COST_PRICING_CATALOGS,
@@ -607,6 +609,49 @@ async function validateOccurrencePeriods() {
   assert(result.ok);
   assert.deepEqual(cursors, [null, "2026-11-01T00:00:00.000001Z", "2026-11-01T00:00:00.000002Z"]);
   assert.equal(result.value.operationCount, 2);
+
+  const nicheAccount = "40000000-0000-4000-8000-000000000091";
+  const dialogueId = "40000000-0000-4000-8000-000000000092";
+  const nicheOccurrence = resolveOpenAiOccurrenceId(
+    clientOpenAiCostContext(nicheAccount, { kind: "niche_resolution", eventId: dialogueId }),
+    "preview",
+  );
+  assert.match(nicheOccurrence, /^[0-9a-f]{8}-[0-9a-f]{4}-8/);
+  const niche = example("2026-11-01T00:00:01Z", {
+    environment: "preview", workload: "niche_resolution",
+    execution_id: "40000000-0000-4000-8000-000000000093",
+    operation_id: "40000000-0000-4000-8000-000000000094",
+    account_id: nicheAccount, account_name: "Conta de nicho",
+    economic_event_kind: "niche_resolution", economic_event_id: dialogueId,
+    occurrence_id: nicheOccurrence, action_kind: "niche_resolution",
+    product_type: null, product_instance_id: null, cost_usd: "0.02",
+  });
+  const withNiche = read(november, december, [retry, niche]);
+  assert.equal(withNiche.totalCalculatedUsd, "0.07");
+  assert.equal(withNiche.executions[1].occurrence?.id, nicheOccurrence);
+  for (const filters of [
+    { accountId: account },
+    { product: "communication_base" },
+    { accountId: account, product: "communication_base" },
+  ] as const) {
+    const filtered = filterOpenAiActiveCosts(withNiche, filters);
+    assert.equal(filtered.totalCalculatedUsd, "0.05");
+    assert.equal(filtered.executions.length, 1);
+    assert.equal(filtered.executions[0].occurrence?.id, occurrence);
+  }
+  for (const invalid of [
+    { ...niche, occurrence_id: "not-a-uuid" },
+    { ...niche, occurrence_id: "40000000-0000-9000-8000-000000000095" },
+    { ...niche, occurrence_id: "40000000-0000-8000-0000-000000000095" },
+    { ...niche, execution_id: nicheOccurrence, occurrence_id: "40000000-0000-4000-8000-000000000095" },
+  ]) {
+    const invalidResult = translateOpenAiActiveCostRows({
+      period: { startTime: time(november), endTime: time(december) },
+      economicDimensionStatus: "v3_operation_period", coverageRows: [], rows: [retry, invalid],
+    });
+    assert.equal(invalidResult.ok ? "ok" : invalidResult.error.code, "INVALID_RESPONSE");
+  }
+  console.log("PASS D10D UUIDv8 dialogue identity and unaffected account/product filters");
 }
 
 function validateModelTotals() {

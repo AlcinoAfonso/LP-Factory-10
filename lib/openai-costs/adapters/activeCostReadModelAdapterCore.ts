@@ -392,7 +392,7 @@ function parseOccurrence(
 ): OpenAiActiveCostExecution["occurrence"] {
   if (row.occurrence_id === null && row.occurrence_closed_at === null && row.action_kind === null &&
       row.product_type === null && row.product_instance_id === null) return null;
-  const id = uuid(row.occurrence_id);
+  const id = uuid(row.occurrence_id, { allowV8: true });
   const closedAt = row.occurrence_closed_at === null ? null : timestamp(row.occurrence_closed_at);
   const action = oneOf(row.action_kind, openAiCostActionKinds);
   if (!id || id === row.execution_id || closedAt === undefined) return undefined;
@@ -568,8 +568,10 @@ function latest(left: string | null, right: string) {
 function record(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
 }
-function uuid(value: unknown): string | null | undefined {
-  return typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value) ? value : undefined;
+function uuid(value: unknown, { allowV8 = false } = {}): string | null | undefined {
+  if (typeof value !== "string") return undefined;
+  const match = /^[0-9a-f]{8}-[0-9a-f]{4}-([1-58])[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.exec(value);
+  return match && (allowV8 || match[1] !== "8") ? value : undefined;
 }
 function timestamp(value: unknown): string | null | undefined {
   if (typeof value !== "string") return undefined;
