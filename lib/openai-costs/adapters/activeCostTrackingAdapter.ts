@@ -74,24 +74,18 @@ async function startExecutionWithRollout(
 
 export const activeCostTrackingAdapter: OpenAiCostTrackingAdapter = Object.freeze({
   startExecution: async (input) => {
-    const client = createServiceClient();
-    if (!input.occurrenceId) return startExecutionWithRollout(client, input);
-    const args = { ...executionStartRpc(input), p_occurrence_id: input.occurrenceId };
     const dimensions = input.economicContext.occurrenceDimensions;
-    if (dimensions) {
-      const name = "start_openai_cost_execution_v4";
-      const { data, error } = await client.rpc(name, {
+    if (!input.occurrenceId) return dimensions ? false : startExecutionWithRollout(createServiceClient(), input);
+    const client = createServiceClient();
+    const args = { ...executionStartRpc(input), p_occurrence_id: input.occurrenceId };
+    const { data, error } = dimensions
+      ? await client.rpc("start_openai_cost_execution_v4", {
         ...args,
         p_product_type: dimensions.product?.type ?? null,
         p_product_instance_id: dimensions.product?.instanceId ?? null,
         p_action_kind: dimensions.action,
-      });
-      if (!error) return data === input.executionId;
-      if (!isExpectedMissingRpcError(error, name)) {
-        throw new OpenAiCostTrackingPersistenceError(error.code === "23505" ? "conflict" : "unavailable");
-      }
-    }
-    const { data, error } = await client.rpc("start_openai_cost_execution_v3", args);
+      })
+      : await client.rpc("start_openai_cost_execution_v3", args);
     if (error) throw new OpenAiCostTrackingPersistenceError(error.code === "23505" ? "conflict" : "unavailable");
     return data === input.executionId;
   },

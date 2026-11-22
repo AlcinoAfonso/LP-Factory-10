@@ -34,6 +34,7 @@ declare
   regenerated constant uuid := gen_random_uuid();
   adjusted constant uuid := gen_random_uuid();
   old_occurrence constant uuid := gen_random_uuid();
+  old_execution constant uuid := gen_random_uuid();
   unlinked constant uuid := gen_random_uuid();
   execution uuid;
   first_execution uuid;
@@ -113,11 +114,27 @@ begin
     raise exception 'activity with declared action and no product was lost';
   end if;
 
-  perform public.start_openai_cost_execution_v3(gen_random_uuid(), 'niche_resolution',
+  perform public.start_openai_cost_execution_v3(old_execution, 'communication_base_stage2_intelligence',
     'preview', 'runtime', 'client', 'attributed', account, null, null, null, null, null, null, start_at, old_occurrence);
-  perform public.start_openai_cost_execution_v4(gen_random_uuid(), 'niche_resolution',
-    'preview', 'runtime', 'client', 'attributed', account, null, null, null, null, null, null, start_at, old_occurrence,
-    null, null, 'niche_resolution');
+  begin
+    perform public.start_openai_cost_execution_v4(gen_random_uuid(), 'niche_resolution',
+      'preview', 'runtime', 'client', 'attributed', account, null, null, null, null, null, null, start_at, old_occurrence,
+      null, null, 'niche_resolution');
+    raise exception 'v4 confirmed an occurrence without a persisted lifecycle';
+  exception when unique_violation then null;
+  end;
+  insert into public.openai_cost_occurrence_lifecycle (occurrence_id) values (old_occurrence);
+  begin
+    perform public.start_openai_cost_execution_v4(gen_random_uuid(), 'communication_base_stage2_intelligence',
+      'preview', 'runtime', 'client', 'attributed', account, null, null, null, null, null, null, start_at, old_occurrence,
+      'communication_base', account, 'category_3_generate');
+    raise exception 'v4 confirmed an occurrence without persisted dimensions';
+  exception when unique_violation then null;
+  end;
+  if (select count(*) from public.openai_cost_executions where occurrence_id = old_occurrence) <> 1 then
+    raise exception 'v4 admitted another execution for an unclassified occurrence';
+  end if;
+  perform pg_temp.d10d_operation(gen_random_uuid(), old_execution, 1, null, start_at, 0.07);
   if exists (select from public.read_openai_active_cost_rows_v3(october, november)
     where occurrence_id = old_occurrence and (action_kind is not null or product_type is not null)) then
     raise exception 'legacy occurrence was reclassified';

@@ -44,7 +44,7 @@ begin
     raise exception using errcode = '22023', message = 'openai_cost_occurrence_dimensions_invalid';
   end if;
 
-  -- Serialize with v3 and preserve identities of already registered occurrences during rollout.
+  -- Serialize with v3. Write dimensions only before the first execution of an occurrence.
   perform pg_advisory_xact_lock(hashtextextended(p_occurrence_id::text, 102110));
   if not exists (select 1 from public.openai_cost_executions where occurrence_id = p_occurrence_id) then
     insert into public.openai_cost_occurrence_lifecycle (
@@ -54,11 +54,10 @@ begin
 
   select * into v_scope from public.openai_cost_occurrence_lifecycle
   where occurrence_id = p_occurrence_id for no key update;
-  if v_scope.action_kind is not null and (
-    v_scope.product_type is distinct from p_product_type
+  if not found
+    or v_scope.product_type is distinct from p_product_type
     or v_scope.product_instance_id is distinct from p_product_instance_id
-    or v_scope.action_kind is distinct from p_action_kind
-  ) then
+    or v_scope.action_kind is distinct from p_action_kind then
     raise exception using errcode = '23505', message = 'openai_cost_occurrence_dimensions_conflict';
   end if;
 
