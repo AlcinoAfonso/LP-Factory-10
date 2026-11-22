@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import nodeModule from "node:module";
 import { buildDialogueCostDetail } from "../../../../lib/openai-costs/dialogue-costs";
+import { buildOccurrenceCostDetail } from "../../../../lib/openai-costs/occurrence-costs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import React from "react";
@@ -150,6 +151,7 @@ assert.equal(parseOpenAiActiveCostFilters({ universe: "", accountId: "", workloa
 
 const activeModel = {
   economicDimensionStatus: "v2_active" as const,
+  modelGroups: [],
   totalCalculatedUsd: "0.05",
   executionCount: 1,
   operationCount: 2,
@@ -283,10 +285,41 @@ for (const text of ["Serviço solicitado", "Fast", "Serviço aplicado", "Standar
 const loader = nodeModule as unknown as { _load: (name: string, parent: unknown, isMain: boolean) => unknown };
 const originalLoader = loader._load;
 loader._load = function(name, parent, isMain) {
-  if (name === "../actions") return { readDialogueCostAction: async () => ({ ok: false, code: "NOT_CALLED_IN_RENDER" }) };
+  if (name === "../actions") return {
+    readDialogueCostAction: async () => ({ ok: false, code: "NOT_CALLED_IN_RENDER" }),
+    readOccurrenceCostAction: async () => ({ ok: false, code: "NOT_CALLED_IN_RENDER" }),
+  };
   return originalLoader.call(this, name, parent, isMain);
 };
-const { DialogueCostDetailView, OpenAiDialogueCosts } = await import("./_components/OpenAiDialogueCosts").finally(() => { loader._load = originalLoader; });
+const [{ DialogueCostDetailView, OpenAiDialogueCosts }, { OccurrenceCostDetailView, OpenAiOccurrenceCosts }, { OpenAiCostModelTotals }, { OpenAiOccurrencePeriod }] = await Promise.all([
+  import("./_components/OpenAiDialogueCosts"), import("./_components/OpenAiOccurrenceCosts"),
+  import("./_components/OpenAiCostsDashboard"), import("./_components/OpenAiOccurrencePeriod"),
+]).finally(() => { loader._load = originalLoader; });
+const modelMarkup = renderToStaticMarkup(<OpenAiCostModelTotals groups={composition.filteredActive!.modelGroups} />);
+assert.match(modelMarkup, /<th scope="row"[^>]*>gpt-6\.1-terra<\/th>/);
+assert.match(modelMarkup, /US\$ 0,05/);
+assert.match(modelMarkup, /Sem modelo comprovado/);
+assert.match(modelMarkup, /Indisponível/);
+assert.doesNotMatch(modelMarkup, /US\$ 0,00/);
+const occurrenceId = "6bd4bfe0-b9d1-4bc6-b1e7-a192c3cc1379";
+const closedAt = "2026-08-28T14:30:00.000Z";
+const occurrenceExecution = activeModel.executions[0];
+const [priced, unknown] = occurrenceExecution.operations;
+for (const [status, closure, operations, label] of [
+  ["complete", closedAt, [priced], "Custo total calculado"],
+  ["accumulated", null, [priced], "Custo acumulado"],
+  ["partial", closedAt, [priced, unknown], "Custo parcial"],
+  ["unavailable", closedAt, [{ ...unknown, retryOfOperationId: null }], "Custo indisponível"],
+] as const) {
+  const detail = buildOccurrenceCostDetail(occurrenceId, closure, [{ ...occurrenceExecution, operations }]);
+  assert.equal(detail.status, status);
+  const markup = renderToStaticMarkup(<OccurrenceCostDetailView detail={detail} />);
+  assert.ok(markup.includes(label));
+  assert.ok(markup.includes(occurrenceId));
+  assert.ok(!markup.includes("US$ 0,00"));
+  if (status !== "complete") assert.ok(!markup.includes("Custo total calculado"));
+}
+assert.match(renderToStaticMarkup(<OpenAiOccurrenceCosts />), /<label[^>]*>UUID/);
 const dialogue = { dialogueId: "e2155000-0000-4000-8000-000000000040", accountId: activeModel.executions[0].accountId!,
   origin: "account_niche" as const, startedAt: "2026-08-28T14:00:00.000Z", endedAt: "2026-08-28T14:30:00.000Z" };
 const dialogueExecution = { ...activeModel.executions[0], workload: "pending_setup_conversation" as const,
@@ -303,6 +336,13 @@ const emptyDialogueMarkup = renderToStaticMarkup(<DialogueCostDetailView detail=
 assert.ok(emptyDialogueMarkup.includes("Sem custo registrado"));
 assert.ok(emptyDialogueMarkup.includes("Sem valor comprovado"));
 assert.equal(emptyDialogueMarkup.includes("US$ 0,00"), false);
+const linkedDialogue = buildDialogueCostDetail(dialogue, {
+  ...activeModel, executions: [{ ...dialogueExecution, operations: [priced] }],
+}, [occurrenceId]);
+const linkedDialogueMarkup = renderToStaticMarkup(<DialogueCostDetailView detail={linkedDialogue} />);
+assert.ok(linkedDialogueMarkup.includes("Subtotal registrado no diálogo"));
+assert.ok(linkedDialogueMarkup.includes(occurrenceId));
+assert.ok(!linkedDialogueMarkup.includes("Custo final"));
 
 const dialogueList = [
   { ...dialogue, accountName: "Conta Atendimento", workloads: ["pending_setup_conversation" as const] },
@@ -358,6 +398,83 @@ assert.equal(allowed.dashboard?.activeFilters.universe, "lp_factory");
 assert.equal(allowed.dashboard?.activeFilters.accountId, null);
 assert.equal(allowed.dashboard?.globalReconciliationUsd, "0.7");
 assert.deepEqual(allowedCalls.sort(), ["active", "legacy", "official"]);
+
+const originalSources = {
+  authorize: async () => ({ allowed: true }),
+  readOfficial: async () => ({ ok: true as const, value: { currency: "usd" as const, totalUsd: "1",
+    startTime: current.period.startTime, endTime: current.period.endTime, bucketCount: 1, pageCount: 1, fetchedAt: closedAt } }),
+  readActive: async () => ({ ok: true as const, value: activeModel }),
+  readLegacy: async () => internal,
+};
+for (const [source, errorKey, dataKey] of [
+  ["readOfficial", "officialErrorCode", "officialTotalUsd"],
+  ["readActive", "activeErrorCode", "active"],
+  ["readLegacy", "legacyErrorCode", "legacy"],
+] as const) {
+  const response = await refreshOpenAiCostsActionCore(lpFactoryBrowserForm, {
+    ...originalSources,
+    [source]: async () => { throw Error("internal error with credentials"); },
+  });
+  assert.ok(response.dashboard);
+  assert.equal(response.status, "success");
+  assert.equal(response.dashboard[dataKey], null);
+  assert.equal(response.dashboard.globalReconciliationUsd, null);
+  assert.ok(response.dashboard[errorKey]);
+  assert.equal(response.dashboard.officialTotalUsd, source === "readOfficial" ? null : "1");
+  assert.equal(response.dashboard.active?.totalCalculatedUsd, source === "readActive" ? undefined : activeModel.totalCalculatedUsd);
+  assert.equal(response.dashboard.legacy?.totalUsd, source === "readLegacy" ? undefined : internal.value.totalUsd);
+  assert.ok(!JSON.stringify(response).includes("credentials"));
+}
+assert.equal((await refreshOpenAiCostsActionCore(lpFactoryBrowserForm, originalSources)).dashboard?.globalReconciliationUsd,
+  "0.7", "consulting all financial statuses does not add any occurrence subtotals to period reconciliation");
+
+const productForm = new FormData();
+productForm.set("periodMode", "custom");
+productForm.set("startDate", "2026-08-01");
+productForm.set("endDate", "2026-08-28");
+const productAccount = activeModel.executions[0].accountId!;
+productForm.set("accountId", productAccount);
+productForm.set("product", "communication_base");
+const productModel = {
+  ...activeModel,
+  economicDimensionStatus: "v3_operation_period" as const,
+  executions: activeModel.executions.map(execution => ({
+    ...execution,
+    occurrence: {
+      id: "e2155000-0000-4000-8000-000000000112",
+      closedAt: "2026-08-24T12:00:00Z",
+      dimensions: { product: { type: "communication_base" as const, instanceId: productAccount }, action: "category_3_generate" as const },
+    },
+  })),
+};
+const productLifetime = { calculatedUsd: "0.08", pendingCount: 0, unavailableCount: 0, openOccurrenceCount: 0 };
+const productSelection = await refreshOpenAiCostsActionCore(productForm, {
+  ...originalSources,
+  readActive: async () => ({ ok: true, value: productModel }),
+  readProductLifetime: async accountId => {
+    assert.equal(accountId, productAccount);
+    return productLifetime;
+  },
+});
+assert.equal(productSelection.dashboard?.filteredActive?.totalCalculatedUsd, "0.05");
+assert.deepEqual(productSelection.dashboard?.productLifetime, productLifetime);
+assert.equal(productSelection.dashboard?.globalReconciliationUsd, "0.7");
+assert.ok(productSelection.dashboard);
+const productMarkup = renderToStaticMarkup(<OpenAiOccurrencePeriod dashboard={productSelection.dashboard} filters={{
+  account: <label>Conta<input /></label>, product: <label>Produto/serviço<select /></label>, submit: <button>Atualizar custos</button>,
+}} />);
+assert.match(productMarkup, /<th scope="col"[^>]*><label>Conta<input\/><\/label><\/th>/);
+assert.match(productMarkup, /<th scope="col"[^>]*><label>Produto\/serviço<select><\/select><\/label><\/th>/);
+assert.match(productMarkup, /Subtotal calculável do período.*US\$ 0,05/);
+assert.match(productMarkup, /Acumulado da Base no histórico vinculado.*US\$ 0,08/);
+let lifetimeCallsBeforeMigration = 0;
+const productBeforeMigration = await refreshOpenAiCostsActionCore(productForm, {
+  ...originalSources,
+  readProductLifetime: async () => { lifetimeCallsBeforeMigration++; return null; },
+});
+assert.equal(lifetimeCallsBeforeMigration, 0);
+assert.equal(productBeforeMigration.dashboard?.productLifetime, null);
+assert.equal(productBeforeMigration.dashboard?.filteredActive?.totalCalculatedUsd, "0.05");
 
 for (const workload of ["taxon_input_catalog_sufficiency_evaluation", "landing_page_dynamic_market_research"] as const) {
   const historicalForm = new FormData();

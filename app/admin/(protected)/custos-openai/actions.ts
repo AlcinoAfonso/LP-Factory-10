@@ -1,9 +1,10 @@
 "use server";
 
 import { listOpenAiCostDialogues, readOpenAiDialogueCost } from "@/openai-costs/adapters/dialogueCostReadAdapter";
-import { readDialogueCostActionCore } from "./action-core";
+import { readOpenAiCostOccurrence } from "@/openai-costs/adapters/costLedgerReadAdapter";
+import { readDialogueCostActionCore, readOccurrenceCostActionCore } from "./action-core";
 import { requirePlatformAdmin } from "@/lib/access/guards";
-import { readOpenAiActiveCosts } from "@/openai-costs/adapters/activeCostReadModelAdapter";
+import { readOpenAiActiveCosts, readOpenAiProductLifetimeCost } from "@/openai-costs/adapters/activeCostReadModelAdapter";
 import { readOpenAiLpCosts } from "@/openai-costs/adapters/lpCostReadModelAdapter";
 import { readOfficialOpenAiCosts } from "@/openai-costs/providers/openAiCostsProvider";
 import {
@@ -22,10 +23,15 @@ export async function refreshOpenAiCostsAction(
     readOfficial: readOfficialOpenAiCosts,
     readActive: readOpenAiActiveCosts,
     readLegacy: readOpenAiLpCosts,
+    readProductLifetime: readOpenAiProductLifetimeCost,
     readDialogues: (period, active) => listOpenAiCostDialogues(period, active.ok ? active.value : null),
   });
 }
 
 export async function readDialogueCostAction(raw: unknown) {
   return await readDialogueCostActionCore(raw, { authorize: requirePlatformAdmin, read: readOpenAiDialogueCost });
+}
+
+export async function readOccurrenceCostAction(raw: unknown) {
+  return await readOccurrenceCostActionCore(raw, { authorize: requirePlatformAdmin, read: readOpenAiCostOccurrence });
 }

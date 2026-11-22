@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import nodeModule from "node:module";
 import { buildDialogueCostDetail, parseCostDialogue, readDialoguePages, translateDialogueLedger } from "./dialogue-costs";
-import { readDialogueCostActionCore } from "../../app/admin/(protected)/custos-openai/action-core";
+import { readDialogueCostActionCore, readOccurrenceCostActionCore } from "../../app/admin/(protected)/custos-openai/action-core";
 
 const account = "10000000-0000-4000-8000-000000000001";
 const otherAccount = "10000000-0000-4000-8000-000000000002";
@@ -11,6 +11,7 @@ function metadata(value = 1, origin = "pending_setup") { return { id: id(value),
   started_at: "2026-10-31T23:58:00.000Z", ended_at: stamp, user_id: "PRIVATE_USER", niche_state: { reply: "PRIVATE_REPLY" } }; }
 function execution(value: number, dialogue = 1, started = stamp) { return { id: id(value), workload: "pending_setup_conversation", environment: "preview",
   execution_origin: "runtime", universe: "client", attribution_status: "attributed", account_id: account,
+  occurrence_id: null,
   economic_event_kind: "niche_resolution", economic_event_id: id(dialogue), landing_page_id: null, taxon_id: null,
   baseline_reference: "e10_12_attendance", baseline_version: null, started_at: started, finished_at: stamp,
   result: "success", failure_category: null }; }
@@ -54,8 +55,8 @@ export async function validateDialogueCosts() {
   for(const wrong of [{...execs[0],account_id:otherAccount},{...execs[0],economic_event_id:id(2)}])
     assert.throws(()=>buildDialogueCostDetail(dialogue,translateDialogueLedger([wrong],[ops[0]])),/dialogue_link_invalid/);
   assert.throws(()=>buildDialogueCostDetail(dialogue,{...model,executions:[...model.executions,model.executions[0]]}),/dialogue_link_invalid/);
-  assert.throws(()=>translateDialogueLedger(execs,[...ops,ops[0]]),/dialogue_ledger_invalid/);
-  assert.throws(()=>translateDialogueLedger(execs,[...ops,operation(103,999)]),/dialogue_operation_unlinked/);
+  assert.throws(()=>translateDialogueLedger(execs,[...ops,ops[0]]),/cost_ledger_invalid/);
+  assert.throws(()=>translateDialogueLedger(execs,[...ops,operation(103,999)]),/cost_operation_unlinked/);
   const pages = [Array.from({length:500},(_,i)=>({id:id(1000+i)})),[{id:id(1500)}],[]]; let page=0;
   assert.equal((await readDialoguePages(async()=>({data:pages[page++],error:null}))).length,501);
   await assert.rejects(()=>readDialoguePages(async()=>({data:[{id:id(1)}],error:null})),/pagination_incomplete/);
@@ -85,7 +86,12 @@ async function validateAdapter(execs: Record<string,unknown>[],ops: Record<strin
       gt(key:string,value:string){predicates.push(row=>String(row[key])>value);return chain;},
       gte(key:string,value:string){predicates.push(row=>String(row[key])>=value);return chain;},
       lt(key:string,value:string){predicates.push(row=>String(row[key])<value);return chain;},order(){return chain;},limit(value:number){limit=value;return chain;},
-      then(resolve:(value:{data:unknown;error:unknown})=>unknown){
+      async maybeSingle() {
+        const { data, error } = await chain;
+        assert.ok(data.length <= 1);
+        return { data: data[0] ?? null, error };
+      },
+      then<T>(resolve:(value:{data:Record<string,unknown>[];error:unknown})=>T){
         const data=tables[table].filter(row=>predicates.every(test=>test(row))).sort((a,b)=>String(a.id).localeCompare(String(b.id))).slice(0,limit)
           .map(row=>Object.fromEntries(selected.split(",").map(key=>[key.replace("::text",""),row[key.replace("::text","")]])));
         return Promise.resolve(resolve({data,error:failOperations&&table==="openai_cost_operations"?"failed":null}));
@@ -94,7 +100,9 @@ async function validateAdapter(execs: Record<string,unknown>[],ops: Record<strin
   }};
   const loader=nodeModule as unknown as {_load:(name:string,parent:unknown,isMain:boolean)=>unknown}; const original=loader._load;
   loader._load=function(name,parent,isMain){if(name==="server-only")return {};if(name.endsWith("supabase/service"))return {createServiceClient:()=>client};return original.call(this,name,parent,isMain);};
-  const adapter=await import("./adapters/dialogueCostReadAdapter").finally(()=>{loader._load=original;});
+  const [adapter, ledger] = await Promise.all([
+    import("./adapters/dialogueCostReadAdapter"), import("./adapters/costLedgerReadAdapter"),
+  ]).finally(()=>{loader._load=original;});
   const read=await adapter.readOpenAiDialogueCost({dialogueId:id(1),accountId:account});
   assert.ok(read.ok); if(read.ok)assert.equal(read.value.calculatedCostUsd,"0.13");
   const other=await adapter.readOpenAiDialogueCost({dialogueId:id(2),accountId:account});
@@ -123,4 +131,103 @@ async function validateAdapter(execs: Record<string,unknown>[],ops: Record<strin
   if(withoutPeriodicActivity.ok)assert.equal(withoutPeriodicActivity.dialogues.find(row=>row.dialogueId===id(3))?.accountName,"Conta QA Sem Operações");
   assert.ok(selections.includes("accounts:id,name"));
   assert.equal(JSON.stringify(list).includes("PRIVATE"),false);
+
+  const firstGeneration = id(3000);
+  const nextGeneration = id(3001);
+  const nicheOccurrence = "dedf7e3f-de9a-865a-9c31-041e011e0932";
+  const generationSections = Array.from({ length: 7 }, (_, index) => ({
+    ...execution(300 + index, 1, index === 0 ? "2026-10-31T23:59:00.000Z" : stamp),
+    occurrence_id: firstGeneration, workload: "communication_base_stage2_intelligence",
+    economic_event_kind: null, economic_event_id: null,
+  }));
+  tables.openai_cost_occurrence_lifecycle = [
+    { occurrence_id: firstGeneration, closed_at: stamp },
+    { occurrence_id: nextGeneration, closed_at: null },
+    { occurrence_id: nicheOccurrence, closed_at: stamp },
+  ];
+  tables.openai_cost_executions.push(...generationSections, {
+    ...generationSections[0], id: id(307), occurrence_id: nextGeneration,
+  });
+  for (const row of execs) row.occurrence_id = nicheOccurrence;
+  tables.openai_cost_operations.push(
+    ...generationSections.map((section, index) => ({
+      ...operation(500 + index, 300 + index, "0.1"), model: "gpt-6.2-sol", started_at: section.started_at,
+    })),
+    { ...operation(507, 300, "0.02"), sequence: 2, retry_of_operation_id: id(500), result: "failure", failure_category: "provider_error" },
+    operation(508, 307, "0.11"),
+  );
+  const readOccurrence = (id: string) => ledger.readOpenAiCostOccurrence({ by: "occurrence", id });
+  const from = selections.length;
+  const completed = await readOccurrence(firstGeneration);
+  assert.ok(completed.ok);
+  assert.ok(selections[from].startsWith("openai_cost_occurrence_lifecycle:"), "read durable closure before operations");
+  assert.equal(completed.value.occurrenceId, firstGeneration);
+  assert.equal(completed.value.executions[0].accountName, "Conta QA Principal");
+  assert.equal(completed.value.executions[0].operations[0].cacheWriteTokens30m, 40);
+  assert.equal(completed.value.executions[0].operations[0].webSearchCallCount, 1);
+  assert.equal(completed.value.executions[0].operations[1].result, "failure");
+  assert.equal(completed.value.executions[0].operations[1].retryOfOperationId, id(500));
+  assert.equal(completed.value.executions[0].operations[1].model, "gpt-6.1-terra");
+  assert.equal(completed.value.executions[0].operations[0].startedAt.slice(0, 7), "2026-10");
+  assert.equal(completed.value.executions.at(-1)?.operations[0].startedAt.slice(0, 7), "2026-11");
+  assert.deepEqual([completed.value.status, completed.value.operationCount, completed.value.calculatedCostUsd], ["complete", 8, "0.72"]);
+  assert.equal(JSON.stringify(completed).includes("PRIVATE"), false);
+  assert.deepEqual(await ledger.readOpenAiCostOccurrence({ by: "execution", id: id(300) }), completed);
+  assert.deepEqual(await ledger.readOpenAiCostOccurrence({ by: "execution", id: id(9999) }), { ok: false, code: "NOT_FOUND" });
+  assert.deepEqual(await readOccurrence(id(9999)), { ok: false, code: "NOT_FOUND" });
+  const next = await readOccurrence(nextGeneration);
+  assert.ok(next.ok);
+  assert.deepEqual([next.value.status, next.value.operationCount, next.value.calculatedCostUsd], ["accumulated", 1, "0.11"]);
+
+  const anotherTurn = { ...execution(309), occurrence_id: nicheOccurrence, workload: "niche_resolution" };
+  tables.openai_cost_executions.push(anotherTurn);
+  tables.openai_cost_operations.push(operation(509, 309, "0.2"));
+  let occurrenceReads = 0;
+  const lookup = { by: "occurrence", id: nicheOccurrence.toUpperCase() };
+  assert.deepEqual(await readOccurrenceCostActionCore(lookup, {
+    authorize: async () => ({ allowed: false }),
+    read: async () => { occurrenceReads++; return completed; },
+  }), { ok: false, code: "UNAUTHORIZED" });
+  assert.equal(occurrenceReads, 0);
+  const authorize = async () => ({ allowed: true });
+  assert.deepEqual(await readOccurrenceCostActionCore({ ...lookup, id: "invalid" }, {
+    authorize, read: async () => { throw Error("invalid input must not read"); },
+  }), { ok: false, code: "INVALID_ID" });
+  const niche = await readOccurrenceCostActionCore(lookup, { authorize, read: ledger.readOpenAiCostOccurrence });
+  assert.ok(niche.ok);
+  assert.deepEqual([niche.value.occurrenceId, niche.value.status, niche.value.calculatedCostUsd], [nicheOccurrence, "complete", "0.33"]);
+  assert.equal(new Set(niche.value.executions.map(row => row.workload)).size, 2);
+  const dialogueWithOccurrence = await adapter.readOpenAiDialogueCost({ dialogueId: id(1), accountId: account });
+  assert.ok(dialogueWithOccurrence.ok);
+  assert.deepEqual(dialogueWithOccurrence.value.occurrenceIds, [nicheOccurrence]);
+
+  const billed = tables.openai_cost_operations.find(row => row.id === id(506))!;
+  Object.assign(billed, { cost_status: "unavailable", cost_usd: null, cost_unavailable_reason: "usage_missing" });
+  const partial = await readOccurrence(firstGeneration);
+  assert.ok(partial.ok);
+  assert.deepEqual([partial.value.status, partial.value.calculatedCostUsd, partial.value.unavailableCount], ["partial", "0.62", 1]);
+  Object.assign(billed, { finished_at: null, result: null, cost_unavailable_reason: "operation_pending" });
+  const pending = await readOccurrence(firstGeneration);
+  assert.ok(pending.ok);
+  assert.deepEqual([pending.value.status, pending.value.pendingCount], ["partial", 1]);
+
+  const nextOperation = tables.openai_cost_operations.find(row => row.id === id(508))!;
+  Object.assign(nextOperation, { finished_at: null, result: null, cost_status: "unavailable", cost_usd: null, cost_unavailable_reason: "operation_pending" });
+  const noAmount = await readOccurrence(nextGeneration);
+  assert.ok(noAmount.ok);
+  assert.deepEqual([noAmount.value.status, noAmount.value.calculatedCostUsd, noAmount.value.pendingCount], ["unavailable", null, 1]);
+  tables.openai_cost_operations = tables.openai_cost_operations.filter(row => row !== nextOperation);
+  const noAdmission = await readOccurrence(nextGeneration);
+  assert.ok(noAdmission.ok);
+  assert.deepEqual([noAdmission.value.status, noAdmission.value.calculatedCostUsd, noAdmission.value.operationCount], ["unavailable", null, 0]);
+
+  for (const incompatible of [{ account_id: otherAccount }, { environment: "production" }, { execution_origin: "administrative_proof" }]) {
+    const wrong = { ...generationSections[0], id: id(310), ...incompatible };
+    tables.openai_cost_executions.push(wrong);
+    assert.deepEqual(await readOccurrence(firstGeneration), { ok: false, code: "READ_FAILED" });
+    tables.openai_cost_executions.pop();
+  }
+  failOperations = true;
+  assert.deepEqual(await readOccurrence(firstGeneration), { ok: false, code: "READ_FAILED" });
+  console.log("PASS D10D lifetime exact occurrence, scopes, Category 3, billed retries, multiple workloads and pending or unavailable costs");
 }

@@ -18,7 +18,17 @@ export type OpenAiCostExecutionOrigin = "runtime" | "administrative_proof";
 export type OpenAiCostUniverse = "lp_factory" | "client";
 export type OpenAiCostAttributionStatus = "attributed" | "unassigned";
 export type OpenAiCostResult = "success" | "failure";
-export type OpenAiEconomicDimensionStatus = "v2_active" | "v1_fallback";
+export type OpenAiEconomicDimensionStatus = "v3_operation_period" | "v2_active" | "v1_fallback";
+
+export const openAiCostActionKinds = [
+  "category_3_generate", "communication_base_generate", "communication_base_adjust",
+  "niche_resolution", "initial_attendance",
+] as const;
+export type OpenAiCostActionKind = (typeof openAiCostActionKinds)[number];
+export type OpenAiCostOccurrenceDimensions = Readonly<{
+  action: OpenAiCostActionKind;
+  product: Readonly<{ type: "communication_base"; instanceId: string }> | null;
+}>;
 
 export type OpenAiCostEconomicEvent =
   | Readonly<{
@@ -41,6 +51,7 @@ export type OpenAiCostEconomicContext = Readonly<{
   attributionStatus: OpenAiCostAttributionStatus;
   accountId: string | null;
   event?: OpenAiCostEconomicEvent | null;
+  occurrenceDimensions?: OpenAiCostOccurrenceDimensions;
 }>;
 
 export type OpenAiCostExecutionContext = Readonly<{
@@ -144,6 +155,7 @@ export type OpenAiActiveCostOperation = Readonly<{
   requestedServiceTier?: string | null;
   appliedServiceTier?: string | null;
   appliedModel?: string | null;
+  pricingModel?: string | null;
   modality?: string | null;
   contextBand?: string | null;
   cacheWriteTokens30m?: number | null;
@@ -155,6 +167,11 @@ export type OpenAiActiveCostOperation = Readonly<{
 
 export type OpenAiActiveCostExecution = Readonly<{
   executionId: string;
+  occurrence?: Readonly<{
+    id: string;
+    closedAt: string | null;
+    dimensions: OpenAiCostOccurrenceDimensions | null;
+  }> | null;
   workload: OpenAiCostReadWorkloadId;
   environment: OpenAiCostEnvironment;
   executionOrigin: OpenAiCostExecutionOrigin;
@@ -196,6 +213,14 @@ export type OpenAiActiveCostCoverage = Readonly<{
   contractVersion: string;
 }>;
 
+export type OpenAiActiveCostModelGroup = Readonly<{
+  model: string | null;
+  calculatedCostUsd: string | null;
+  operationCount: number;
+  pendingOperationCount: number;
+  unavailableOperationCount: number;
+}>;
+
 export type OpenAiActiveCostReadModel = Readonly<{
   economicDimensionStatus: OpenAiEconomicDimensionStatus;
   totalCalculatedUsd: string;
@@ -207,6 +232,7 @@ export type OpenAiActiveCostReadModel = Readonly<{
   internalUpdatedAt: string | null;
   coverage: readonly OpenAiActiveCostCoverage[];
   groups: readonly OpenAiActiveCostGroup[];
+  modelGroups: readonly OpenAiActiveCostModelGroup[];
   executions: readonly OpenAiActiveCostExecution[];
 }>;
 
@@ -224,13 +250,29 @@ export type OpenAiActiveCostFilters = Readonly<{
   universe?: OpenAiCostUniverse | null;
   accountId?: string | null;
   workload?: OpenAiCostReadWorkloadId | null;
+  product?: "communication_base" | "unlinked" | null;
 }>;
+
+export function communicationBaseCostContext(
+  accountId: string,
+  action: Extract<OpenAiCostActionKind, "category_3_generate" | "communication_base_generate" | "communication_base_adjust">,
+): OpenAiCostEconomicContext {
+  return {
+    ...clientOpenAiCostContext(accountId),
+    occurrenceDimensions: { action, product: { type: "communication_base", instanceId: accountId } },
+  };
+}
 
 export function clientOpenAiCostContext(
   accountId: string,
   event: Extract<OpenAiCostEconomicEvent, { kind: "landing_page" | "niche_resolution" }> | null = null,
 ): OpenAiCostEconomicContext {
-  return { universe: "client", attributionStatus: "attributed", accountId, event };
+  return {
+    universe: "client", attributionStatus: "attributed", accountId, event,
+    ...(event?.kind === "niche_resolution" && {
+      occurrenceDimensions: { action: "niche_resolution", product: null },
+    }),
+  };
 }
 
 export const lpFactoryOpenAiCostContext: OpenAiCostEconomicContext = Object.freeze({

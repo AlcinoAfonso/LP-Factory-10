@@ -161,10 +161,14 @@ function ExecutionCollection({ title, executions }: Readonly<{
   );
 }
 
-export function OpenAiCostExecutionDetails({ execution }: Readonly<{ execution: OpenAiActiveCostExecution }>) {
+export function OpenAiCostExecutionDetails({ execution, hideUnprovenAmount = false }: Readonly<{
+  execution: OpenAiActiveCostExecution;
+  hideUnprovenAmount?: boolean;
+}>) {
+  const hasAmount = !hideUnprovenAmount || execution.operations.some(operation => operation.finishedAt && operation.costUsd !== null);
   return (
     <details className="rounded-md border border-border bg-card">
-      <Summary label={workloadLabel(execution.workload)} detail={`Execução ${execution.executionId}`} total={execution.calculatedCostUsd} pending={execution.pendingOperationCount} unavailable={execution.unavailableOperationCount} />
+      <Summary label={workloadLabel(execution.workload)} detail={`Execução ${execution.executionId}`} total={hasAmount ? execution.calculatedCostUsd : null} pending={execution.pendingOperationCount} unavailable={execution.unavailableOperationCount} />
       <div className="space-y-4 border-t border-border p-4">
         <dl className="grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
           <Detail label="Universo" value={universeLabel(execution.universe)} />
@@ -232,7 +236,7 @@ function OperationDetails({ operation }: Readonly<{ operation: OpenAiActiveCostO
 function Summary({ label, detail, total, pending, unavailable }: Readonly<{
   label: string;
   detail: string;
-  total: string;
+  total: string | null;
   pending: number;
   unavailable: number;
 }>) {
@@ -241,12 +245,12 @@ function Summary({ label, detail, total, pending, unavailable }: Readonly<{
       <span className="flex flex-wrap items-center justify-between gap-3">
         <span className="min-w-0">
           <span className="block text-sm font-semibold text-foreground">{label}</span>
-          <span className="block text-xs text-muted-foreground">{detail}</span>
+          <span className="block break-words text-xs text-muted-foreground">{detail}</span>
           <span className="mt-1 block text-xs font-medium text-brand-700">Abrir detalhes</span>
         </span>
         <span className="flex flex-wrap items-center gap-2">
-          {pending > 0 || unavailable > 0 ? <AdminStatusBadge tone="warning">Subtotal calculável{pending > 0 ? ` · ${pending} pendentes` : ""}{unavailable > 0 ? ` · ${unavailable} indisponíveis` : ""}</AdminStatusBadge> : null}
-          <strong className="text-sm text-foreground">{formatUsd(total)}</strong>
+          {pending > 0 || unavailable > 0 ? <AdminStatusBadge tone="warning">{total === null ? "Custo indisponível" : "Subtotal calculável"}{pending > 0 ? ` · ${pending} pendentes` : ""}{unavailable > 0 ? ` · ${unavailable} indisponíveis` : ""}</AdminStatusBadge> : null}
+          <strong className="text-sm text-foreground">{total === null ? "Sem valor calculado" : formatUsd(total)}</strong>
         </span>
       </span>
     </summary>
@@ -266,7 +270,7 @@ function Detail({ label, value, code = false }: Readonly<{ label: string; value:
   return <div><dt className="text-xs font-medium text-muted-foreground">{label}</dt><dd className="mt-1 break-all text-sm text-foreground">{code ? <code className="text-xs">{value}</code> : value}</dd></div>;
 }
 
-function workloadLabel(workload: OpenAiActiveCostExecution["workload"]) {
+export function workloadLabel(workload: OpenAiActiveCostExecution["workload"]) {
   const labels: Record<OpenAiActiveCostExecution["workload"], string> = {
     niche_resolution: "Resolução de nicho",
     pending_setup_conversation: "Atendimento inicial por IA",
@@ -292,11 +296,11 @@ function resultLabel(result: "success" | "failure") {
   return result === "success" ? "Sucesso" : "Falha";
 }
 
-function environmentLabel(environment: OpenAiActiveCostExecution["environment"]) {
+export function environmentLabel(environment: OpenAiActiveCostExecution["environment"]) {
   return environment === "production" ? "Produção" : environment === "preview" ? "Preview" : "Desenvolvimento";
 }
 
-function universeLabel(universe: OpenAiActiveCostExecution["universe"]) {
+export function universeLabel(universe: OpenAiActiveCostExecution["universe"]) {
   return universe === "client" ? "Cliente" : "LP Factory";
 }
 
@@ -309,7 +313,7 @@ function serviceTierLabel(value: string | null | undefined) {
     value === "ultrafast" ? "Ultrafast" : value ?? "Não registrado";
 }
 
-function formatTimestamp(value: string) {
+export function formatTimestamp(value: string) {
   return new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
     timeStyle: "medium",
@@ -317,7 +321,7 @@ function formatTimestamp(value: string) {
   }).format(new Date(value));
 }
 
-function formatUsd(value: string) {
+export function formatUsd(value: string) {
   const negative = value.startsWith("-");
   const unsigned = negative ? value.slice(1) : value;
   const [integer, fraction = ""] = unsigned.split(".");

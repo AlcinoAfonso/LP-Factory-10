@@ -3,7 +3,7 @@ import "server-only";
 import { createHash, randomUUID } from "node:crypto";
 
 import { requestOpenAiResponses } from "../../openai-responses/openAiResponsesAdapter";
-import { clientOpenAiCostContext, type OpenAiCostEconomicContext } from "../../openai-costs";
+import { communicationBaseCostContext, type OpenAiCostEconomicContext } from "../../openai-costs";
 import {
   resolveOpenAiProductWorkload,
   resolveOpenAiWorkloadEnvironment,
@@ -51,7 +51,10 @@ export async function generateCommunicationIntelligence(input: Readonly<{
     requestId: randomUUID(),
     promptVersion: input.niche.taxonId === null ? COMMUNICATION_AI_PROMPT_VERSION + "_d15e_text_niche_v1" : COMMUNICATION_AI_PROMPT_VERSION,
     contractVersion: COMMUNICATION_AI_CONTRACT_VERSION,
-    financialContext: input.financialContext ?? clientOpenAiCostContext(input.accountId),
+    financialContext: input.financialContext ?? communicationBaseCostContext(
+      input.accountId,
+      input.target.kind === "general" ? "communication_base_generate" : "communication_base_adjust",
+    ),
     executionOrigin: input.executionOrigin ?? "runtime",
     closeOccurrenceOnCompletion: true,
     baselineReference: input.target.kind === "general"

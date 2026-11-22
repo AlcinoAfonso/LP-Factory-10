@@ -5,8 +5,8 @@ import { communicationSections } from "../communication-base/registry";
 import type { AgentBasePilotSection } from "../communication-base/agent-base/pilot";
 import type { AttendanceContext } from "../onboarding/pending-setup/attendance-core";
 import { COMMERCIAL_ACTIVATION_RESEARCH_BLOCKS } from "../conversion-content/contracts";
-import { listOpenAiWorkloadInventory } from "../openai-workloads";
-import { clientOpenAiCostContext } from "./active-contracts";
+import { listOpenAiWorkloadInventory, resolveOpenAiProductWorkload } from "../openai-workloads";
+import { clientOpenAiCostContext, communicationBaseCostContext } from "./active-contracts";
 import { resolveOpenAiOccurrenceId } from "./recorder";
 import { OPENAI_COST_INGESTION_PROTOCOL_VERSION } from "./ingestion";
 
@@ -41,6 +41,9 @@ export async function validateOccurrenceIntegrations() {
   const proofTurns = new Map<string, number>();
   const draftEvents: string[] = [];
   const draftIds: string[] = [];
+  const financialRpcs: string[] = [];
+  let financialAdmissionError: { code: string; message?: string } | null = null;
+  let testFinancialAdmission = false;
   let artifactAttempt = 0;
   let draftProviderFails = false;
   const research = ["business_buyer", "end_customer"].flatMap(audience_scope =>
@@ -55,6 +58,18 @@ export async function validateOccurrenceIntegrations() {
   });
   const db = {
     async rpc(name: string, input: Record<string, unknown>) {
+      if (testFinancialAdmission) {
+        financialRpcs.push(name);
+        if (name === "start_openai_cost_execution_v4") {
+          assert.equal(input.p_product_type, "communication_base");
+          assert.equal(input.p_product_instance_id, accountId);
+          assert.equal(input.p_action_kind, "category_3_generate");
+          assert.equal(input.p_occurrence_id, dialogueId);
+          if (financialAdmissionError) return { data: null, error: financialAdmissionError };
+        }
+        if (name.startsWith("start_openai_cost_execution_")) return { data: input.p_id, error: null };
+        if (name === "admit_openai_cost_operation_v2") return { data: true, error: null };
+      }
       if (name !== "close_openai_cost_occurrence_v1") return commit;
       closeCalls.push(input);
       if (draftIds.includes(String(input.p_occurrence_id))) draftEvents.push("close");
@@ -176,6 +191,45 @@ export async function validateOccurrenceIntegrations() {
     return original.call(this, name, parent, isMain);
   };
   try {
+    const { activeCostTrackingAdapter } = await import("./adapters/activeCostTrackingAdapter");
+    const { requestOpenAiResponses } = await import("../openai-responses/openAiResponsesAdapter");
+    const productConfiguration = await resolveOpenAiProductWorkload("communication_base_stage2_intelligence", "development");
+    assert.ok(productConfiguration.ok);
+    const productContext = communicationBaseCostContext(accountId, "category_3_generate");
+    const send = (financialContext: typeof productContext) => requestOpenAiResponses({
+      apiKey: secret, configuration: productConfiguration.value, environment: "development",
+      financialContext, occurrenceId: dialogueId, executionOrigin: "runtime",
+      request: {}, parseResponse: () => ({ ok: true, value: "test" }),
+    }, {
+      costRecorder: { ...activeCostTrackingAdapter, finishOperation: async () => {}, finishExecution: async () => {} },
+      emitEvent: () => {},
+      fetchImpl: async () => {
+        financialRpcs.push("provider");
+        return Response.json({ model: productConfiguration.value.model, status: "completed", output: [],
+          usage: { input_tokens: 1, output_tokens: 1, total_tokens: 2 } });
+      },
+    });
+    testFinancialAdmission = true;
+    for (const error of [
+      { code: "PGRST202", message: "Could not find the public.start_openai_cost_execution_v4(p_id) function in the schema cache" },
+      { code: "23505", message: "openai_cost_occurrence_dimensions_conflict" },
+    ]) {
+      financialAdmissionError = error;
+      financialRpcs.length = 0;
+      assert.deepEqual(await send(productContext), { ok: false, kind: "configuration_invalid", reason: "financial_admission_unconfirmed" });
+      assert.deepEqual(financialRpcs, ["start_openai_cost_execution_v4"]);
+    }
+    financialAdmissionError = null;
+    for (const [context, rpc] of [
+      [productContext, "start_openai_cost_execution_v4"],
+      [clientOpenAiCostContext(accountId), "start_openai_cost_execution_v3"],
+    ] as const) {
+      financialRpcs.length = 0;
+      assert.equal((await send(context)).ok, true);
+      assert.deepEqual(financialRpcs, [rpc, "admit_openai_cost_operation_v2", "provider"]);
+    }
+    testFinancialAdmission = false;
+
     const { completePendingSetup } = await import("../onboarding/pending-setup/adapters/pendingSetupConversationAdapter");
     const { commitNicheConversation } = await import("../onboarding/niche-resolution/adapters/accountNicheDialogueAdapter");
     const { confirmAccountNicheDialogue } = await import("../onboarding/niche-resolution/adapters/accountOfficialNicheAdapter");

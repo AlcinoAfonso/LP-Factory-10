@@ -74,11 +74,18 @@ async function startExecutionWithRollout(
 
 export const activeCostTrackingAdapter: OpenAiCostTrackingAdapter = Object.freeze({
   startExecution: async (input) => {
+    const dimensions = input.economicContext.occurrenceDimensions;
+    if (!input.occurrenceId) return dimensions ? false : startExecutionWithRollout(createServiceClient(), input);
     const client = createServiceClient();
-    if (!input.occurrenceId) return startExecutionWithRollout(client, input);
-    const { data, error } = await client.rpc("start_openai_cost_execution_v3", {
-      ...executionStartRpc(input), p_occurrence_id: input.occurrenceId,
-    });
+    const args = { ...executionStartRpc(input), p_occurrence_id: input.occurrenceId };
+    const { data, error } = dimensions
+      ? await client.rpc("start_openai_cost_execution_v4", {
+        ...args,
+        p_product_type: dimensions.product?.type ?? null,
+        p_product_instance_id: dimensions.product?.instanceId ?? null,
+        p_action_kind: dimensions.action,
+      })
+      : await client.rpc("start_openai_cost_execution_v3", args);
     if (error) throw new OpenAiCostTrackingPersistenceError(error.code === "23505" ? "conflict" : "unavailable");
     return data === input.executionId;
   },

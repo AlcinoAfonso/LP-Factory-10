@@ -5,10 +5,9 @@ import type { OpenAiActiveCostReadModel } from "../active-contracts";
 import type { OpenAiCostsPeriod } from "../contracts";
 import { buildDialogueCostDetail, dialogueIdentitySchema, DIALOGUE_PAGE_SIZE, parseCostDialogue, readDialoguePages,
   translateDialogueLedger, type DialogueCostResult, type DialogueListResult, type OpenAiCostDialogue } from "../dialogue-costs";
+import { executionColumns, readCostLedgerOperations } from "./costLedgerReadAdapter";
 
 const metadataColumns = "id,account_id,origin,started_at,ended_at";
-const executionColumns = "id,workload,environment,execution_origin,universe,attribution_status,account_id,economic_event_kind,economic_event_id,landing_page_id,taxon_id,baseline_reference,baseline_version,started_at,finished_at,result,failure_category";
-const operationColumns = "id,execution_id,sequence,retry_of_operation_id,model,reasoning_effort,configuration_source,configuration_revision,prompt_version,contract_version,started_at,finished_at,result,failure_category,input_tokens,cached_input_tokens,cache_write_tokens,output_tokens,reasoning_tokens,total_tokens,web_search_call_count,web_search_tool_version,web_search_price_per_call_usd::text,pricing_version,pricing_effective_at,pricing_snapshot,cost_status,cost_unavailable_reason,cost_usd::text";
 
 export async function listOpenAiCostDialogues(period: OpenAiCostsPeriod, active: OpenAiActiveCostReadModel | null): Promise<DialogueListResult> {
   try {
@@ -94,25 +93,21 @@ export async function readOpenAiDialogueCost(raw: unknown): Promise<DialogueCost
     if (!dialogue || dialogue.dialogueId !== dialogueId || dialogue.accountId !== accountId) throw Error("dialogue_link_invalid");
     // No period restriction: these are the full lifetime facts of this exact canonical dialogue and account.
     const executions = await readDialoguePages(async after => {
-      let query = client.from("openai_cost_executions").select(executionColumns)
+      let query = client.from("openai_cost_executions").select(`${executionColumns},occurrence_id`)
         .eq("economic_event_kind", "niche_resolution").eq("economic_event_id", dialogueId).eq("account_id", accountId)
         .in("workload", ["pending_setup_conversation", "niche_resolution"]).order("id").limit(DIALOGUE_PAGE_SIZE);
       if (after) query = query.gt("id", after);
       return await query;
     });
-    const operations: Record<string, unknown>[] = [];
-    for (let offset = 0; offset < executions.length; offset += 100) {
-      const batch = executions.slice(offset, offset + 100).map(e => e.id as string);
-      operations.push(...await readDialoguePages(async after => {
-        let query = client.from("openai_cost_operations").select(operationColumns).in("execution_id", batch).order("id").limit(DIALOGUE_PAGE_SIZE);
-        if (after) query = query.gt("id", after);
-        return await query;
-      }));
-    }
+    const operations = await readCostLedgerOperations(client, executions);
     const model = translateDialogueLedger(executions, operations);
     const after = await readMetadata();
     if (after.error || !Array.isArray(after.data) || after.data.length !== 1 || JSON.stringify(parseCostDialogue(after.data[0])) !== JSON.stringify(dialogue))
       throw Error("dialogue_changed_during_read");
-    return { ok: true, value: buildDialogueCostDetail(dialogue, model) };
+    const occurrenceIds = new Set<string>();
+    for (const execution of executions) {
+      if (execution.occurrence_id !== null) occurrenceIds.add(z.uuid().parse(execution.occurrence_id));
+    }
+    return { ok: true, value: buildDialogueCostDetail(dialogue, model, [...occurrenceIds]) };
   } catch { return { ok: false, code: "DIALOGUE_COST_UNAVAILABLE" }; }
 }

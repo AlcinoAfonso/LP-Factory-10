@@ -1,7 +1,7 @@
 import "server-only";
 import { createHash, randomUUID } from "node:crypto";
 import { requestOpenAiResponses } from "../../openai-responses/openAiResponsesAdapter";
-import { clientOpenAiCostContext } from "../../openai-costs";
+import { communicationBaseCostContext } from "../../openai-costs";
 import { resolveOpenAiProductWorkload } from "../../openai-workloads";
 import type { AgentBaseEnvironment } from "../config";
 import { buildAgentBasePilotPrompt, parseAgentBasePilotResponse, sanitizeAgentBasePilotFailureReason, type AgentBasePilotSection } from "../agent-base/pilot";
@@ -21,7 +21,7 @@ export async function generateAgentBasePilotSection(input: Parameters<typeof bui
     apiKey: process.env.OPENAI_API_KEY,
     configuration, environment: input.environment, expectedWorkload: "communication_base_stage2_intelligence",
     requestId, promptVersion: prompt.promptVersion, contractVersion: 1, timeoutMs: input.timeoutMs,
-    financialContext: clientOpenAiCostContext(input.base.accountId), executionOrigin: "runtime",
+    financialContext: communicationBaseCostContext(input.base.accountId, "category_3_generate"), executionOrigin: "runtime",
     occurrenceId: input.generationId,
     baselineReference: "d14f_agent_base_pilot_" + input.key,
     request: {
