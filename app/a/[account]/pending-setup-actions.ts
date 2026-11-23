@@ -93,12 +93,14 @@ export async function completePendingSetupAction(
       : null;
   if (!resolutionOutcome) return { ok: false, formError: GENERIC_ERROR };
 
+  const phone = String(formData.get("whatsapp_contact") ?? "").trim();
   const completed = await completePendingSetup({
     conversationId,
     accountId: actor.accountId,
     userId: actor.userId,
     expectedVersion,
     resolutionOutcome,
+    whatsapp: /^\(\d{2}\) 9\d{4}-\d{4}$/u.test(phone) ? phone : null,
   });
   if (!completed.ok) {
     return {
