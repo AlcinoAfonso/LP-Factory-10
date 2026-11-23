@@ -88,27 +88,22 @@ test("WhatsApp é independente, invisível no input e sem efeito sobre o alvo de
     { reply: "Entendido.", accept: anchor.id }).synthesis.accept, anchor.id);
 });
 
-test("WhatsApp aparece uma vez na primeira síntese e só reabre por ação de correção", () => {
-  const { assistant, ref } = shown();
+test("WhatsApp só é exibido após confirmação; mantém correção de contato legado na conversa", () => {
+  const { assistant } = shown();
   const collection: DialogueText = { id: "question", role: "assistant", content: "Quem são seus clientes?" };
-  const continued: DialogueText = { id: "next", role: "user", content: "Atendo crianças, não adultos." };
-  const corrected: DialogueText = { ...assistant, id: "revised", content: assistant.content.replaceAll("adultos", "crianças") };
   const history = [collection, assistant];
-  assert.equal(pendingSetupWhatsApp([], null), undefined);
-  assert.equal(pendingSetupWhatsApp([collection], null), undefined);
-  assert.equal(pendingSetupWhatsApp(history, null), undefined);
-  assert.equal(pendingSetupWhatsApp(history, ref), "first-synthesis");
-  assert.equal(pendingSetupWhatsApp([...history, continued], ref), undefined);
-  assert.equal(pendingSetupWhatsApp([...history, continued, corrected], { ...ref, messageId: corrected.id }), undefined);
-  const contact: DialogueText = { ...continued, content: "WhatsApp para contato: (21) 99999-9876" };
+  assert.equal(pendingSetupWhatsApp([]), undefined);
+  assert.equal(pendingSetupWhatsApp(history), undefined, "a primeira síntese não solicita contato");
+  assert.equal(pendingSetupWhatsApp([...history, { role: "user", id: "next", content: "Sim." }]), undefined);
+  const contact: DialogueText = { role: "user", id: "contact", content: "WhatsApp para contato: (21) 99999-9876" };
   const receipt: DialogueText = { ...assistant, id: "receipt", content: CONTACT_RECEIPT };
-  assert.equal(pendingSetupWhatsApp([...history, contact, receipt], ref), "correction");
-  assert.equal(pendingSetupWhatsApp([contact, receipt, ...history], ref), "correction");
+  assert.equal(pendingSetupWhatsApp([...history, contact, receipt]), "correction");
+  assert.equal(pendingSetupWhatsApp([contact, receipt, ...history]), "correction");
 
   const freeReply = turn(opening, { reply: "Já entendi a atividade.\n\nEssa síntese está correta?" });
   assert.equal(freeReply.reply, "Já entendi a atividade.");
   assert.equal(freeReply.synthesis.offer, null);
-  assert.equal(pendingSetupWhatsApp([{ ...collection, content: freeReply.reply }, ...history], ref), "first-synthesis");
+  assert.equal(pendingSetupWhatsApp([{ ...collection, content: freeReply.reply }, ...history]), undefined);
 });
 
 test("sim confirma apenas a proposta ancorada ao texto exibido", () => {
