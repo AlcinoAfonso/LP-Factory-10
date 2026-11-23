@@ -11,12 +11,12 @@ import type {
   PendingSetupStage,
   PendingSetupWriteResult,
 } from "../contracts";
-import { readAttendanceBusinessNameCandidate, validateStoredAttendanceProposal } from "../attendance-core";
+import { pendingSetupProposal } from "../contracts";
 import { readPendingSetupDialogueContext } from "./pendingSetupAccountContextAdapter";
 import { resolvePreferredNameFromAuth } from "../policy";
 import { isE1011PassageEnabled, isE1012AttendanceEnabled } from "../config";
 import { z } from "zod";
-import type { SynthesisWrite } from "../../niche-agent/dialogue";
+import { readNicheBusinessNameCandidate, type SynthesisWrite } from "../../niche-agent/dialogue";
 
 type ConversationRow = {
   id: string;
@@ -167,7 +167,7 @@ export async function loadPendingSetupConversation(input: {
   }
 
   if (isE1012AttendanceEnabled() && (conversation as unknown as ConversationRow).attendance_proposal &&
-    !validateStoredAttendanceProposal((conversation as unknown as ConversationRow).attendance_proposal)) {
+    !pendingSetupProposal.safeParse((conversation as unknown as ConversationRow).attendance_proposal).success) {
     console.error("pendingSetupConversation read failed", { conversation_code: "proposal_invalid" });
     return null;
   }
@@ -175,7 +175,7 @@ export async function loadPendingSetupConversation(input: {
   if (!isE1012AttendanceEnabled()) return mapped;
   const dialogue = await readPendingSetupDialogueContext({ ...input, conversationId });
   return dialogue ? { ...mapped, messages: dialogue.messages, accountContext: dialogue.context,
-    dialogueState: dialogue.state, businessNameCandidate: readAttendanceBusinessNameCandidate(dialogue.context.summary) } : null;
+    dialogueState: dialogue.state, businessNameCandidate: readNicheBusinessNameCandidate(dialogue.context.summary) } : null;
 }
 
 type PendingTurnFence = { conversationId: string; accountId: string; userId: string; version: number; token: string };

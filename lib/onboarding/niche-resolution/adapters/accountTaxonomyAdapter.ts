@@ -117,24 +117,6 @@ export async function readAccountNicheProductGuard(accountId: string): Promise<b
   } catch { return null; }
 }
 
-export async function confirmAccountNiche(input: Readonly<{
-  accountId: string; actorUserId: string; taxonId: string; expectedTaxonId: string | null;
-}>) {
-  if (!isAccountNicheEditingEnabled()) return { ok: false as const, reason: "unavailable" };
-  try {
-    const { error, data } = await createServiceClient().rpc("confirm_account_niche_v1", {
-      p_account_id: input.accountId, p_actor_user_id: input.actorUserId,
-      p_taxon_id: input.taxonId, p_expected_taxon_id: input.expectedTaxonId, p_confirmed: true,
-    });
-    if (error || data !== input.taxonId) {
-      const reason = error?.message === "niche_changed" ? "conflict"
-        : error?.message === "niche_product_exists" ? "product_exists" : "unavailable";
-      console.error("confirmAccountNiche failed", { code: error?.code ?? "invalid_result" });
-      return { ok: false as const, reason };
-    }
-    return { ok: true as const };
-  } catch { return { ok: false as const, reason: "unavailable" }; }
-}
 
 export type AccountTaxonomyLinkResult =
   | { status: "saved"; taxonId: string }

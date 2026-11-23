@@ -1,5 +1,10 @@
-import type { AttendanceProposal } from "./attendance-core";
+import { z } from "zod";
 import type { SynthesisReference } from "../niche-agent/dialogue";
+export const pendingSetupProposal = z.discriminatedUnion("kind", [
+  z.strictObject({ kind: z.literal("semantic"), taxonId: z.null(), taxonName: z.null(), nicheDescription: z.string().trim().min(1).max(120), expectedNicheRevision: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER) }),
+  z.strictObject({ kind: z.literal("existing"), taxonId: z.uuid(), taxonName: z.string().trim().min(1).max(120) }),
+  z.strictObject({ kind: z.literal("operational_fallback"), taxonId: z.null(), taxonName: z.null() }),
+]);
 export const PENDING_SETUP_STAGES = [
   "identity",
   "business_understanding",
@@ -38,18 +43,14 @@ export type PendingSetupConversation = Readonly<{
   resolutionOutcome: PendingSetupResolutionOutcome | null;
   attendanceEnabled?: boolean;
   preferredNameDeclined?: boolean;
-  attendanceProposal?: AttendanceProposal | null;
+  attendanceProposal?: z.output<typeof pendingSetupProposal> | null;
   accountContext?: PendingSetupAccountContext;
   dialogueState?: Readonly<{
     requestId?: string | null;
     lastRequestId?: string | null;
     nameProposal?: string | null;
     acceptedName?: string | null;
-    operationalAccepted?: boolean;
     synthesis?: SynthesisReference | null;
-    synthesisAccepted?: boolean;
-    synthesisPartialId?: string | null;
-    nicheAccepted?: boolean;
   }>;
   attendanceTurnIntent?: "initialize" | "message" | "confirm" | "clarify" | null;
   version: number;

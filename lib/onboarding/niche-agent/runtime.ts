@@ -1,11 +1,11 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { clientOpenAiCostContext } from "../../openai-costs";
+import { readNicheDialogueCostContext } from "../../openai-costs/adapters/costLedgerReadAdapter";
 import { requestOpenAiResponses } from "../../openai-responses/openAiResponsesAdapter";
 import { resolveOpenAiProductWorkload, resolveOpenAiWorkloadEnvironment } from "../../openai-workloads";
-import { prepareNicheTurn, type NicheTurnContext } from "./index";
-import { publicResearchContext, resolveSynthesis, synthesisReference, type DialogueText } from "./dialogue";
+import { contactTurn, fixedNicheTurn, prepareNicheTurn, publicResearchTopic, readNicheResearch, type NicheContext } from "./index";
+import { synthesisReference, withoutWhatsAppField } from "./dialogue";
 
 export const conversationalMessage = z.object({
   account: z.string().regex(/^[a-z0-9][a-z0-9-]{0,62}$/),
@@ -19,63 +19,54 @@ export const turnText = z.object({ role: z.enum(["user", "assistant"]), content:
 export const dialogueState = z.object({
   requestId: z.uuid().nullish(),
   lastRequestId: z.uuid().nullish(),
-  proposal: z.string().nullable().optional(),
-  nameProposal: z.string().nullable().optional(),
-  acceptedName: z.string().nullable().optional(),
-  operationalAccepted: z.boolean().optional(),
-  reply: z.string().optional(),
-  understanding: z.string().optional(),
+  proposal: z.string().nullish(),
+  nameProposal: z.string().nullish(),
+  acceptedName: z.string().nullish(),
+  official: z.object({ description: z.string().nullish(), legacyTaxonId: z.string().nullish(),
+    legacyUpdatedAt: z.string().nullish() }).optional(),
   synthesis: synthesisReference.nullish(),
-  synthesisAccepted: z.boolean().optional(),
-  synthesisPartialId: z.uuid().nullish(),
-  nicheAccepted: z.boolean().optional(),
 });
 
-export async function requestNicheAgent(accountId: string, dialogueId: string, context: NicheTurnContext, privateBusinessName?: string | null) {
+export async function requestNicheAgent(accountId: string, dialogueId: string, context: NicheContext, prior: string | null) {
+  if (context.fixedNiche) return fixedNicheTurn(context, prior);
+  if (context.pendingSetup && !withoutWhatsAppField(context.message)) return contactTurn;
   const environment = resolveOpenAiWorkloadEnvironment();
   const configuration = await resolveOpenAiProductWorkload("pending_setup_conversation", environment);
-  if (!configuration.ok) return null;
-  const run = async (context: NicheTurnContext, search?: NonNullable<typeof configuration.value.webSearch>) => {
-    const turn = prepareNicheTurn(context, search?.maxToolCalls ?? 0);
-    if (!turn.ok) return null;
-    const result = await requestOpenAiResponses({
-      ...turn.value,
-      environment,
-      configuration: configuration.value,
-      apiKey: process.env.OPENAI_API_KEY,
-      financialContext: clientOpenAiCostContext(accountId, { kind: "niche_resolution", eventId: dialogueId }),
-      executionOrigin: "runtime",
-      baselineReference: "d15e_conversational_niche",
-      timeoutMs: 120_000,
-      request: {
-        ...turn.value.request,
-        max_output_tokens: 12_000,
-        safety_identifier: createHash("sha256").update(accountId).digest("hex"),
-        ...(search ? {
-          tools: [{ type: "web_search", external_web_access: search.externalWebAccess, search_context_size: search.searchContextSize }],
-          tool_choice: "auto", max_tool_calls: search.maxToolCalls, include: ["web_search_call.action.sources"],
-        } : {}),
-      },
-    });
-    if (!result.ok && context.pendingSetup && result.kind === "invalid_response") {
-      console.warn("d15e_pending_setup_response_rejected", result.reason);
-    }
-    return result.ok ? result.value : null;
+  if (!configuration.ok || environment === "unknown") return null;
+  const financialContext = await readNicheDialogueCostContext(accountId, dialogueId, environment).catch(() => null);
+  if (!financialContext) {
+    console.warn("d15e_niche_cost_context_unavailable", { journey: context.pendingSetup ? "pending_setup" : "account_niche" });
+    return null;
+  }
+  const transport = {
+    environment, configuration: configuration.value, apiKey: process.env.OPENAI_API_KEY,
+    financialContext,
+    executionOrigin: "runtime" as const, baselineReference: "d15e_conversational_niche", timeoutMs: 120_000,
+    expectedWorkload: "pending_setup_conversation" as const,
   };
-  const turn = await run(context);
+  const limits = { max_output_tokens: 12_000, safety_identifier: createHash("sha256").update(accountId).digest("hex") };
+  const prepared = prepareNicheTurn(context, prior);
+  const turn = await requestOpenAiResponses({ ...transport, ...prepared, request: { ...prepared.request, ...limits } });
+  if (!turn.ok) {
+    console.warn("d15e_niche_turn_unavailable", { journey: context.pendingSetup ? "pending_setup" : "account_niche", kind: turn.kind });
+    return null;
+  }
   const search = configuration.value.webSearch;
-  if (!turn?.searchTopic || !search) return turn;
-  const publicContext = publicResearchContext(turn.searchTopic, context, privateBusinessName, turn.pendingSetup?.publicName.proposal);
-  if (!publicContext) return turn;
-  const research = await run(publicContext, search);
-  const reply = research && turn.reply + "\n\n" + research.reply;
-  return reply && reply.length <= 4000 ? { ...turn, reply } : turn;
+  const topic = turn.value.searchTopic && publicResearchTopic(turn.value.searchTopic, context);
+  if (!search || !topic) return turn.value;
+  const research = await requestOpenAiResponses({
+    ...transport, promptVersion: prepared.promptVersion, contractVersion: prepared.contractVersion,
+    request: {
+      ...limits, instructions: "Esclareça somente o assunto público recebido, em português e com brevidade. Use a pesquisa para fatos verificáveis. Não proponha nicho, peça confirmação, anuncie gravações ou inclua URLs no texto.",
+      input: topic, store: false, background: false,
+      tools: [{ type: "web_search", external_web_access: search.externalWebAccess, search_context_size: search.searchContextSize }],
+      tool_choice: "auto", max_tool_calls: search.maxToolCalls, include: ["web_search_call.action.sources"],
+    },
+    parseResponse(payload) {
+      const reply = readNicheResearch(payload, search.maxToolCalls);
+      return reply ? { ok: true, value: reply } : { ok: false, kind: "invalid_response", reason: "niche_research_unavailable" };
+    },
+  });
+  const reply = research.ok ? turn.value.reply + "\n\n" + research.value : turn.value.reply;
+  return reply.length <= 4000 ? { ...turn.value, reply } : turn.value;
 }
-
-export function currentSynthesis(state: z.output<typeof dialogueState> | undefined, messages: readonly DialogueText[]) {
-  const snapshot = resolveSynthesis(state?.synthesis, messages);
-  const partialReply = messages.find(entry => entry.id === state?.synthesisPartialId && entry.role === "user")?.content;
-  return snapshot ? { ...snapshot, accepted: state?.synthesisAccepted === true, partialReply } : null;
-}
-
-export { mergeNicheMemory, nicheSummaryContext } from "./dialogue";

@@ -7,8 +7,8 @@ import { revalidatePath } from "next/cache";
 import { getAccessContext } from "@/lib/access/getAccessContext";
 import { getConfirmedOperationalNicheResolutionLabel } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
 import { validateBusinessDisplayName } from "../../../lib/onboarding/pending-setup";
-import { conversationalMessage, currentSynthesis, mergeNicheMemory, nicheSummaryContext, requestNicheAgent } from "../../../lib/onboarding/niche-agent/runtime";
-import { relevantNicheHistory } from "../../../lib/onboarding/niche-agent/dialogue";
+import { conversationalMessage, requestNicheAgent } from "../../../lib/onboarding/niche-agent/runtime";
+import { displayedOffer, nicheHistory, nicheSummaryContext } from "../../../lib/onboarding/niche-agent/dialogue";
 import { readAccountOfficialNiche } from "../../../lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter";
 import { readActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import {
@@ -175,79 +175,49 @@ export async function conversePendingSetupAction(raw: unknown) {
     ]);
     if (conversation?.id !== dialogueId || conversation.version !== claim.version ||
       !conversation.accountContext || !official.ok || !taxonomy.ok) throw new Error("context_unavailable");
-    const state = conversation.dialogueState;
+    const { dialogueState: state, accountContext: observed, attendanceProposal: saved } = conversation;
     const niche = official.niche;
-    const saved = conversation.attendanceProposal;
-    const officialRevision = niche?.confirmed ? niche.revision : null;
-    const active = saved?.kind === "semantic" && saved.expectedNicheRevision === (niche?.textRevision ?? 0)
-      ? { id: dialogueId + ":proposal", description: saved.nicheDescription!, expectedOfficialRevision: officialRevision }
-      : null;
-    const operationalProposal = saved?.kind === "operational_fallback" ? conversation.businessContextText : null;
-    const synthesis = saved?.kind === "semantic" && !active ? null : currentSynthesis(state, conversation.messages);
-    const observed = conversation.accountContext;
-    const summary = nicheSummaryContext(observed.summary);
+    const revision = niche?.textRevision ?? 0;
+    const savedNiche = saved?.kind === "semantic" && saved.expectedNicheRevision === revision
+      ? saved.nicheDescription ?? null : null;
+    const shown = saved?.kind === "semantic" && !savedNiche ? null : displayedOffer(state?.synthesis, conversation.messages, {
+      niche: savedNiche, publicName: state?.nameProposal ?? null,
+    });
+    const publicName = conversation.businessDisplayName ?? state?.acceptedName ?? null;
+    const publicNameRequired = isE1011PassageEnabled();
     const result = await requestNicheAgent(actor.accountId, dialogueId, {
-      message: { id: requestId, text: content, replyToProposalId: active?.id ?? null },
-      history: relevantNicheHistory(conversation.messages, requestId, content),
-      activeSynthesis: synthesis && { id: synthesis.id, text: synthesis.text, accepted: synthesis.accepted, partialReply: synthesis.partialReply },
-      nicheAccepted: state?.nicheAccepted,
-      summary: summary.text,
-      businessContext: (conversation.businessNameCandidate
-        ? [conversation.businessContextText, "Nome anteriormente informado: " + conversation.businessNameCandidate]
-          .filter(Boolean).join("\n").slice(0, 4000)
-        : conversation.businessContextText),
-      officialNiche: niche?.confirmed ? { description: niche.name, revision: niche.revision } : null,
-      activeProposal: active,
+      message: content, history: nicheHistory(conversation.messages, requestId),
+      displayed: shown, summary: nicheSummaryContext(observed.summary),
+      businessContext: [conversation.businessContextText,
+        conversation.businessNameCandidate && "Nome anteriormente informado: " + conversation.businessNameCandidate]
+        .filter(Boolean).join("\n").slice(0, 4000) || null,
+      officialNiche: niche?.confirmed ? niche.name : null,
       pendingSetup: {
-        nameProposal: state?.nameProposal ?? null,
-        acceptedName: state?.acceptedName ?? conversation.businessDisplayName,
-        preferredName: conversation.preferredName,
-        preferredNameDeclined: Boolean(conversation.preferredNameDeclined),
-        operationalProposal,
-        operationalAccepted: Boolean(state?.operationalAccepted),
-        whatsappKnown: summary.whatsappKnown || Boolean(synthesis?.phone || synthesis?.declined),
+        publicName, publicNameRequired,
+        preferredName: conversation.preferredName ?? (conversation.preferredNameDeclined ? false : null),
       },
-    }, conversation.businessNameCandidate);
-    const outcome = result?.pendingSetup;
-    if (!result || !outcome) throw new Error("provider_unavailable");
-    const acceptedSynthesis = !result.synthesisWrite.offer && !result.synthesisWrite.clear &&
-      Boolean(result.synthesisWrite.accept || synthesis?.accepted);
-    const keepNiche = active && !result.proposal && (result.reaction === "continue" || result.reaction === "accept");
-    const acceptOperational = acceptedSynthesis && Boolean(operationalProposal) &&
-      (outcome.operational.reaction === "accept" || Boolean(result.synthesisWrite.accept && synthesis?.text === operationalProposal));
-    const accept = Boolean(acceptedSynthesis && keepNiche && (result.confirmation || state?.nicheAccepted)) || acceptOperational;
-    const next = result.proposal
-      ? { kind: "semantic" as const, taxonId: null, taxonName: null, nicheDescription: result.proposal,
-          expectedNicheRevision: niche?.textRevision ?? 0 }
-      : outcome.operational.proposal
+    }, observed.summary);
+    if (!result) throw new Error("provider_unavailable");
+    const accepted = result.synthesis.accept ? shown : null;
+    const keep = !result.offer && !result.synthesis.clear && !accepted;
+    const next = result.offer?.niche
+      ? { kind: "semantic" as const, taxonId: null, taxonName: null, nicheDescription: result.offer.niche, expectedNicheRevision: revision }
+      : result.offer && !niche?.confirmed
         ? { kind: "operational_fallback" as const, taxonId: null, taxonName: null }
-        : !accept && (keepNiche ||
-            (operationalProposal && outcome.operational.reaction === "continue")) ? saved : null;
-    const understanding = outcome.operational.proposal ?? result.synthesis.proposal ?? synthesis?.text ??
-      result.proposal ?? conversation.businessContextText ??
-      result.memory.find(entry => entry.kind === "declaration")?.text ?? "";
-    const nameReady = !isE1011PassageEnabled() || Boolean(conversation.businessDisplayName ||
-      (outcome.publicName.reaction === "accept" && state?.nameProposal) ||
-      (outcome.publicName.reaction === "continue" && !outcome.publicName.proposal && state?.acceptedName));
-    const ready = !next && acceptedSynthesis && nameReady && Boolean(understanding) &&
-      (accept || niche?.confirmed || (state?.operationalAccepted && outcome.operational.reaction === "continue"));
-    const contactRef = state?.synthesis?.contact;
-    const contactMessageId = contactRef && typeof contactRef !== "string"
-      ? contactRef.messageId : state?.synthesis?.messageId;
-    const contactPosition = conversation.messages.findIndex(entry => entry.id === contactMessageId);
-    const newerField = contactPosition >= 0 && conversation.messages.slice(contactPosition + 1)
-      .some(entry => entry.role === "user" && /(?:^|\n)WhatsApp para contato: \(\d{2}\) 9\d{4}-\d{4}$/u.test(entry.content));
-    const memorySynthesis = newerField && synthesis ? { ...synthesis, phone: null, declined: false } : synthesis;
-    const written = await commitPendingNicheTurn({ ...fence, reply: result.reply,
-      summary: mergeNicheMemory(observed.summary, result, memorySynthesis),
-      observed, understanding, preferredName: outcome.preferredName.value,
-      preferredNameDeclined: outcome.preferredName.value ? false : outcome.preferredName.declined || Boolean(conversation.preferredNameDeclined),
+        : keep && shown ? saved : null;
+    const accept = Boolean(accepted && saved);
+    const ready = Boolean(accepted && (accept || niche?.confirmed) &&
+      (!publicNameRequired || accepted.publicName || publicName));
+    const keepName = !result.offer?.publicName && (keep || state?.acceptedName);
+    const written = await commitPendingNicheTurn({ ...fence, reply: result.reply, summary: result.summary, observed,
+      understanding: result.offer?.summary ?? accepted?.summary ?? conversation.businessContextText ?? "",
+      preferredName: typeof result.preferredName === "string" ? result.preferredName : null,
+      preferredNameDeclined: result.preferredName === false || (result.preferredName === null && Boolean(conversation.preferredNameDeclined)),
       stage: next ? "niche_confirmation" : ready ? "ready_to_complete" : "business_understanding",
-      proposal: next, accept, observedTaxon: taxonomy.taxon?.taxonId ?? null,
-      observedRevision: niche?.textRevision ?? 0, nameProposal: outcome.publicName.proposal,
-      nameReaction: outcome.publicName.reaction === "continue" ? "keep" : outcome.publicName.reaction,
-      clearOperational: outcome.operational.reaction === "clear" || result.synthesisWrite.clear,
-      synthesis: result.synthesisWrite,
+      proposal: next, accept, observedTaxon: taxonomy.taxon?.taxonId ?? null, observedRevision: revision,
+      nameProposal: result.offer?.publicName ?? null,
+      nameReaction: accepted?.publicName ? "accept" : keepName ? "keep" : "clear",
+      clearOperational: result.synthesis.clear, synthesis: result.synthesis,
     });
     if (!written) throw new Error("turn_not_committed");
     return { ok: true as const };

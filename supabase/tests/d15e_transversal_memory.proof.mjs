@@ -124,6 +124,7 @@ try{
   await db.query('alter table account_pending_setup_conversations add unique(account_id,user_id)');
   await db.query(read('../migrations/' + migration));
   await db.query(read('../migrations/20261121123500_d15e_pending_setup_contact_in_claim.sql'));
+  await db.query(read('../migrations/20261123124000_d15e_confirm_legacy_niche_in_dialogue.sql'));
 
   await test('versioned RPCs are restricted to the server role',async()=>{
     const {rows}=await db.query(`select proname,
@@ -157,6 +158,28 @@ try{
       [c.d,f.a,f.u,c.version,c.token,reply,'',next,summary,c.summary,c.summaryUpdatedAt,accept,keep,synthesis])).rows[0].result;
   };
   const messages = async (c) => (await db.query('select role,content from account_pending_setup_messages where dialogue_id=$1 order by ordinal',[c.d])).rows;
+  await test('D14D with product can confirm only its unconfirmed legacy description through chat', async () => {
+    const legacy = 'Manutenção de jardins';
+    const seed = async confirmed => {
+      const f = await fixture(null);
+      const taxon = id();
+      await db.query('insert into business_taxons(id,level,is_active,name,slug) values($1,\'niche\',true,$2,$2)', [taxon,legacy]);
+      await db.query("insert into account_taxonomy(account_id,taxon_id,is_primary,status,source_type,user_confirmed_at) values($1,$2,true,'active','taxonomy_match',case when $3 then clock_timestamp() end)", [f.a,taxon,confirmed]);
+      await db.query('insert into account_landing_pages values($1,$2)', [id(),f.a]);
+      return f;
+    };
+    await assert.rejects(reserve(await seed(true)), /niche_product_exists/);
+    const f = await seed(false);
+    const opened = await reserve(f, {content:'Quero conferir o nicho cadastrado.'});
+    await assert.rejects(write(f,opened,{next:'Construção residencial',synthesis:effect({offer:offer()})}),/niche_product_exists/);
+    const presented = await write(f,opened,{next:legacy,synthesis:effect({offer:offer()})});
+    const yes = await reserve(f, {dialogue:opened.d,version:presented.version,content:'Sim.'});
+    await assert.rejects(write(f,yes,{accept:'Construção residencial'}),/niche_changed/);
+    assert.equal((await write(f,yes,{accept:legacy})).confirmed,true);
+    assert.equal((await official(f.a)).description,legacy);
+    assert.equal(JSON.parse((await memory(f.a)).summary).classification,legacy);
+    assert.equal((await messages(yes)).filter(message=>message.role==='user'&&message.content==='Sim.').length,1);
+  });
   async function propose(f) {
     const opened = await reserve(f);
     const written = await write(f, opened, { next: proposal, synthesis:effect({offer:offer()}) });

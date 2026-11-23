@@ -14,7 +14,7 @@ import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CommunicationBaseTabs, CommunicationBaseIntroduction } from "./CommunicationBaseTabs";
 import styles from "./CommunicationBase.module.css";
-import { BaseNicheConversation } from "./_components/BaseNicheConversation";
+import { AccountNicheConversation } from "../_components/AccountNicheConversation";
 import { loadBaseNicheConversationAction } from "../niche-resolution-actions";
 import { CommunicationStageOne, CommunicationStageTwo, StartCommunicationBaseForm } from "./CommunicationSectionEditor";
 
@@ -80,8 +80,7 @@ export default async function CommunicationBasePage({ params }: PageProps) {
             {taxonomy.ok && taxonomy.niche ? `Nicho: ${nicheLabel}` : nicheLabel}
           </p>
         </header>
-        {nicheConversation ? <BaseNicheConversation account={access.value.accountSubdomain}
-          defined={Boolean(taxonomy.ok && taxonomy.niche?.confirmed)} state={nicheConversation} /> : access.value.canEdit ? (
+        {nicheConversation ? <AccountNicheConversation account={access.value.accountSubdomain} state={nicheConversation} /> : access.value.canEdit ? (
           <FeedbackMessage tone="error">Não foi possível carregar a conversa de nicho. Atualize a página para tentar novamente.</FeedbackMessage>
         ) : null}
         {!result.ok ? (

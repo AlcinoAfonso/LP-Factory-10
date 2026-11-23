@@ -78,14 +78,12 @@
 3.10 Avaliação assistida da suficiência factual por taxon
 - Retirada em 01/10/2026, sem consumidor operacional. Motivo/destino: retirada E20 pela E22.7 em `docs/roadmap.md` — 22.7.4; configuração em `docs/platform-config.md` — 2.3 e 3.5.
 
-3.11 Atendimento inicial por IA
-- Objetivo/status: atendimento implementado e ativo em Preview/Production, para compreender negócio/necessidades, orientar sobre serviços comprovados e definir próximo passo. Conversas legadas permanecem sem backfill/conversão.
-- Uso/consumidor: Pending Setup server-side, após autorização owner e reserva do turno. Lead confirma categoria existente ou entendimento operacional sem correspondência segura; classificação não conclui automaticamente o atendimento.
-- Resultado: histórico atribuível ao participante e Resumo contextual único por conta distinguem síntese proposta, entendimento aceito, classificação e sugestões; fontes oficiais prevalecem. Ausência de categoria não impede continuidade nem concede acesso/entitlement; falha de gravação não anuncia sucesso.
-- Dependências: Responses API/Structured Outputs, catálogo ativo e repertório E10.13; workload pending_setup_conversation sob E21. Bootstrap não substitui prova empírica nem autoriza ativação.
-- Limites: sem autoridade administrativa, Web classificatória ou manutenção de taxons/aliases. Atomicidade, deduplicação, hierarquia, categorias inativas e proteção do primário são determinísticas. Serviço, condição, prazo ou disponibilidade exigem fonte comercial competente; aprofundamento no D17. Sem relacionamento operacional com a Base, consumidor futuro, engine genérica, job, fila ou retorno assíncrono.
-- Aplicação funcional no roadmap: `docs/roadmap.md` — E10.12, com comportamento e critérios de conclusão.
-- Referências: `docs/base-tecnica.md` — 3.14.6; configuração `docs/platform-config.md` — 3.5.
+3.11 Agente Nicho
+- Uso: Pending Setup e definição ou redefinição de nicho na conta ativa, após autorização e reserva do turno. Recebe contexto autorizado e propõe nicho em conversa natural.
+- Resultado: proposta exibida no Diálogo, confirmação vinculada à mensagem e Summary escrito somente com aceite da síntese. No Pending Setup, o campo opcional de WhatsApp é gravado na reserva da mensagem.
+- Transporte: workload `pending_setup_conversation`, Responses API e Structured Outputs. Web Search pontual recebe tema público separado do contexto privado. Falha permite retomar a mesma mensagem.
+- Limites: sem classificação por catálogo, autoridade comercial, job ou retorno assíncrono.
+- Referências: `docs/roadmap.md` — 10.12.7, `docs/base-tecnica.md` — 3.14.6 e `docs/platform-config.md` — 3.5.
 
 4. Aprendizados operacionais
 - Deprecada em 04/08/2026: conteúdo histórico superado; aprendizados vigentes nos respectivos itens do catálogo e fontes canônicas.

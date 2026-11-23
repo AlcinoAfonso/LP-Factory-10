@@ -950,33 +950,29 @@
 10.12.3 Atendimento, Diálogo da conta e Resumo da conta
 - Status: operacional; refinamentos do Pending Setup básico validados em Preview.
 - Conteúdo: mensagem/nomes/Diálogo/Resumo, distinções de aceite/proposta, compactação/confirmação e falhas em docs/base-tecnica.md — 3.14.6; sem autoridade/versionamento funcional próprios. Resumo 6.000 caracteres sem meta, entendimento 4.000; demais limites mantidos. Sem teto de três chamadas, nova memória, parser por frase, formulário ou infraestrutura antecipada.
-- Definido: acolher, pedir nome e nome do negócio, colher só informações essenciais e apresentar brevemente o valor real da LP Factory, sem insistência. WhatsApp opcional disponível desde a abertura em campo com máscara; número incompleto recebe aviso discreto e não bloqueia o diálogo. O envio voluntário válido grava contato no Diálogo e Summary independentemente da síntese empresarial, permitindo correção posterior; o agente não solicita nem confirma esse contato. Omitir não impede avanço nem autoriza disparos automáticos ou campanhas posteriores.
+- Definido: acolher, aproveitar o contexto e consultar só o indispensável para entender o negócio. Nome pessoal opcional e nome público confirmado na conversa. WhatsApp opcional com máscara junto da primeira síntese para confirmação, sem reapresentação automática após prosseguir. Número incompleto recebe aviso discreto e não bloqueia o diálogo. O envio voluntário válido grava contato no Diálogo e Summary independentemente da síntese empresarial, permitindo correção posterior; o agente não solicita nem confirma esse contato. Omitir não impede avanço nem autoriza disparos automáticos ou campanhas posteriores.
 
 10.12.4 Identificação de nicho
 - Status: identificação semântica como fluxo único, migration aplicada e QA hospedado de conversa/confirmação/Web Search registrado por 10.12.7.
 - Conteúdo: propor descrição fiel pelas informações do negócio e conhecimento paramétrico, sem catálogo obrigatório; esclarecer ambiguidade material sem impor enquadramento aproximado. Web Search pontual e confirmação seguem Base Técnica 3.14.6. Catálogo/repertório D21 permanecem disponíveis, sem manutenção pelo atendimento.
-- Sem compreensão segura, preservar entendimento operacional, dados comerciais relevantes e pendência no Resumo, além do Diálogo integral, para uso futuro autorizado pelo D17. Persistência taxonômica e consumidores legados permanecem compatíveis, sem alternância para classificação por catálogo.
+- Sem nicho seguro, preservar a pendência no Diálogo. O Summary recebe o entendimento operacional após aceite da síntese. Persistência taxonômica e consumidores legados permanecem compatíveis.
 
 10.12.5 Repertório do nicho e apoio à venda
-- Status: operacional.
-- Conteúdo: Entender → Impressionar → Conectar → Avançar sem roteiro/turnos fixos. Após atividade/oferta/necessidade mínimas, insight ligado à proposta real antes de nova pergunta comercial. Informação acessória só se material; identidade/confirmações mantidas.
-- D21 contextualiza, não impõe fala ou promessa; serviço/condição/prazo/disponibilidade efetivos exigem fonte comercial vigente. Avançar por 10.12.6, sem esgotar venda/diagnóstico ou interromper avanço útil. D21 governa catálogo/pesquisa/aliases; aprofundamento D17.
-- Só leituras independentes paralelas; efeitos/provider/commit ordenados, sem duração ou ganho causal comprovados.
+- Status: substituído pelo Agente Nicho de 10.12.7. Repertório, diagnóstico e venda aprofundada seguem as autoridades D21 e D17.
 
 10.12.6 Conclusão e experiência
 - Status: operacional; refinamentos do Pending Setup básico validados em Preview.
 - Conteúdo: negócio/necessidades compreendidos, orientação/próximo passo claros, categoria confirmada ou ausência explícita; categoria sozinha não conclui. Identidade/E10.11 obrigatórios; WhatsApp opcional conforme 10.12.3. Sem taxon não bloqueia comercial/Base com entendimento suficiente, nem concede entitlement/trial/contratação.
-- Definido: conduzir à página comercial mesmo sem nicho identificado, preservando entendimento operacional confirmado e pendência de classificação no Resumo; encerrar sem prolongar a conversa. D15B preservado; sem consulta à Base de Comunicação, pesquisa de leads ou contato posterior, nem promessa de pesquisa/retorno sem capacidade e autorização do D17. Pesquisa pontual restrita à identificação de nicho segue 10.12.4.
-- Redirecionar desvio ocasional; persistência/repetição/circularidade/sem avanço → encerramento cordial com contexto/pendência no Resumo e retomada possível. Sem promessa de análise/prazo/retorno/contato, contador/tempo fixo/failsafe econômico.
+- Definido: conduzir à página comercial quando houver entendimento operacional confirmado, inclusive com nicho inconclusivo. O Pending Setup usa pesquisa pontual conforme 10.12.4. Pesquisa de leads, contato posterior e promessas de retorno dependem de autoridade do D17.
+- Responder a desvios sem insistir. Se a conversa for interrompida, preservar as mensagens para retomada. Summary e conclusão continuam vinculados ao aceite aplicável.
 - Conflitos/atomicidade/pós-conclusão/Base em Base Técnica 3.14.6; sem continuidade assíncrona. Objeções/comparação/recomendação/contratação aprofundadas no D17 até absorção aprovada.
 
-10.12.7 Evolução transversal do agente — D15E
-- Status: Recortes 1 e 2 operacionais; Recorte 3 publicado pelo PR #1135 e migration aplicada pelo run 43429444373. Correções das falhas do QA hospedado seguem no PR #1137; conclusão funcional condicionada à validação e publicação desse delta. Recorte 4 futuro, sem execução autorizada.
-- Sequência aprovada: 1. Inteligência comercial e naturalidade; 2. Identificação e confirmação de nichos AI-first; 3. Memória transversal — Diálogo e Summary; 4. Integração, compatibilidade e validação das jornadas afetadas.
-- Recorte 1: diálogo breve e específico ao negócio, apresentação institucional fundamentada no README e orientação ao próximo passo, sem inventar ofertas ou condições; identidade, confirmação, persistência, finalidade D14D e autoridade D17 preservadas.
-- Recorte 2: nicho oficial textual exibido e confirmado, único por conta com autoria/data/revisão; proposta paramétrica independente de taxon/alias e Web Search nativo pontual, sem pesquisa rotineira ou oficialização por inferência. Preserva fallback operacional, Pending Setup, finalidade restrita do D14D e autoridade da Base; memória autorizada no Recorte 3.
-- Recorte 3: Diálogo atribuível ao participante, data e jornada, preservando mensagens submetidas mesmo sem confirmação; rascunho não enviado não é mensagem. Summary empresarial compartilhado recebe novidade material, preserva conhecimento válido e distingue declarações, fatos aceitos, hipóteses e fontes externas. Na conta ativa, confirmação explícita da proposta persistida grava nicho oficial e a mesma classificação no Summary atomicamente, sem edição textual direta ou alteração da Base; permissões, revisão e guarda de produto preservadas.
-- Base e Header consomem a descrição confirmada com controle de revisão. E10.7 e vínculos legados permanecem sem sincronização; eventual divergência da copy taxonômica depende de D21/E10.7. Sem retirada física de taxons/aliases/pesquisas, backfill obrigatório de QA, contratação, trial, contato posterior ou nova infraestrutura.
+10.12.7 Agente Nicho independente — D15E
+- Status: Plano B em validação. Contrato aprovado e V2 em `docs/d15e-plano-b.md`. O PR #1168 e a migration `20261121123500` entregaram o WhatsApp independente.
+- Um agente para compreender e confirmar nicho no Pending Setup e conta ativa. A conta ativa usa o mesmo Diálogo na Base e no acionador D14D da home, conforme suas permissões. Nome pessoal opcional. Nicho textual vigente com autoria e revisão, sem catálogo obrigatório.
+- O Diálogo preserva histórico e retomada. Summary empresarial muda após aceite da síntese, com preservação de fatos válidos. O campo de WhatsApp do Pending Setup grava contato independentemente. Passagem operacional pode ocorrer com nicho inconclusivo quando o entendimento for suficiente.
+- O nicho oficial permanece sujeito a aceite, revisão e guarda de produto, inclusive rascunho. A home D14D pode confirmar a descrição legada ainda não confirmada com produto. Web Search pontual preserva privacidade e não oficializa fatos.
+- Base e Header leem a descrição confirmada. Histórico de E10.12 e vínculos taxonômicos preservados. E10.7, retirada física da taxonomia e encerramento administrativo de E10.13 seguem contratos próprios.
 
 10.13 Cadastro inicial de taxonomia e inteligência de mercado
 
