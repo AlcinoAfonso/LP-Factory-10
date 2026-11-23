@@ -34,6 +34,8 @@ export default async function Page({ params }: PageProps) {
         conversation={{
           id: conversation.id,
           version: conversation.version,
+          preferredName: conversation.preferredName,
+          preferredNameDeclined: conversation.preferredNameDeclined,
           businessDisplayName: conversation.businessDisplayName,
           businessNameCandidate: conversation.businessNameCandidate,
           attendanceEnabled: conversation.attendanceEnabled,
