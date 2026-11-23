@@ -206,6 +206,21 @@ try{
     assert.equal((await reserve(f,{...offered,request:c.request,content:c.content})).replay,true);
     await assert.rejects(reserve(f,{...offered,request:c.request,content:'Resposta diferente'}),/niche_request_conflict/);
   });
+  await test('clarification keeps the displayed proposal until the next confirmed assent',async()=>{
+    const f = await fixture();
+    const offered = await propose(f);
+    const question = await reserve(f,{...offered,content:'O que significa atender condomínios?'});
+    const displayedId = question.state.synthesis.messageId;
+    const clarified = await write(f,question,{keep:true});
+    const followUp = await reserve(f,{dialogue:question.d,version:clarified.version,content:'Maneiro, é isso aí.'});
+    assert.equal(followUp.state.proposal,proposal);
+    assert.equal(followUp.state.synthesis.messageId,displayedId);
+    const summary = JSON.stringify({...JSON.parse(followUp.summary),confirmedUnderstanding:synthesisText});
+    const result = await write(f,followUp,{accept:proposal,summary,
+      synthesis:effect({accept:displayedId,nicheReaction:'accept'})});
+    assert.equal(result.confirmed,true);
+    assert.equal((await official(f.a)).description,proposal);
+  });
   await test('doubt can preserve a proposal; correction replaces it without an official write',async()=>{
     const f = await fixture();
     const offered = await propose(f);
