@@ -21,7 +21,10 @@ export async function validateNicheConversationActions() {
   let role = "owner", products = false, enabled = true, provider = true, stale = false, replay = false;
   let claims = 0, releases = 0;
   const contexts: NicheContext[] = [];
-  const commits: { proposal: string | null; summary: string | null }[] = [];
+  const commits: { proposal: string | null; summary: string | null; acceptedProposal?: string | null; keepProposal?: boolean }[] = [];
+  let liveProposal: string | null = null;
+  let liveSynthesis: { start: number; length: number; messageId: string } | null = null;
+  let liveMessages: { id: string; role: "user" | "assistant"; content: string }[] = [];
   const loader = nodeModule as unknown as { _load: (name: string, parent: unknown, isMain: boolean) => unknown };
   const original = loader._load;
   loader._load = function(name, parent, isMain) {
@@ -34,9 +37,10 @@ export async function validateNicheConversationActions() {
     if (name.includes("accountNicheDialogueAdapter")) return {
       readNicheConversation: async () => ({ ok: true, dialogue: null }),
       claimNicheConversation: async () => { claims++; return products && niche.confirmed && !replay ? null : { replay, version: 1,
-        state: { official: { description: stale ? "Outro nicho" : niche.name, legacyTaxonId: taxonId, legacyUpdatedAt: revision } },
+        state: { official: { description: stale ? "Outro nicho" : niche.name, legacyTaxonId: taxonId, legacyUpdatedAt: revision },
+          proposal: liveProposal, synthesis: liveSynthesis },
         summary: null, summaryUpdatedAt: revision }; },
-      readNicheDialogueMessages: async () => [],
+      readNicheDialogueMessages: async () => liveMessages,
       commitNicheConversation: async (input: typeof commits[number]) => { commits.push(input); return true; },
       releaseAccountNicheTurn: async () => { releases++; return true; },
     };
@@ -49,6 +53,12 @@ export async function validateNicheConversationActions() {
       requestNicheAgent: async (_account: string, _dialogue: string, context: NicheContext) => {
         contexts.push(context);
         if (!provider) return null;
+        if (context.message === "Maneiro, é isso aí.") return { reply: "Entendi.", offer: null, summary: null,
+          preferredName: null, searchTopic: null, synthesis: {
+            offer: null, accept: context.displayed?.id ?? null, clear: false, nicheReaction: "accept" as const } };
+        if (context.message === "Quero abandonar essa proposta.") return { reply: "Vamos reconsiderar.", offer: null, summary: null,
+          preferredName: null, searchTopic: null, synthesis: {
+            offer: null, accept: null, clear: true, nicheReaction: "clear" as const } };
         if (context.fixedNiche) {
           const offer = { summary: "A descrição vigente é " + context.fixedNiche + ".", niche: context.fixedNiche, publicName: null };
           const shown = presentOffer(offer);
@@ -99,6 +109,27 @@ export async function validateNicheConversationActions() {
   stale = true;
   assert.equal((await actions.converseHomeNicheAction(turn)).ok, false);
   assert.equal(releases, 2);
+
+  // Follow the same displayed offer through clarification, assent and explicit withdrawal.
+  stale = false; products = false; niche = { ...niche, confirmed: true };
+  const offer = { summary: "Cuidamos de jardins para condomínios.", niche: "Jardinagem para condomínios", publicName: null };
+  const rendered = presentOffer(offer);
+  assert.ok(rendered);
+  const displayedId = crypto.randomUUID();
+  liveProposal = offer.niche;
+  liveSynthesis = { ...rendered.range, messageId: displayedId };
+  liveMessages = [{ id: displayedId, role: "assistant", content: rendered.reply }];
+  assert.equal((await actions.converseBaseNicheAction({ ...turn, requestId: crypto.randomUUID(), content: "Pode explicar o público?" })).ok, true);
+  assert.equal(contexts.at(-1)?.displayed?.id, displayedId);
+  assert.equal(commits.at(-1)?.keepProposal, true);
+  liveMessages.push({ id: crypto.randomUUID(), role: "assistant", content: commits.at(-1)?.summary ?? "Os condomínios são o público principal." });
+  assert.equal((await actions.converseBaseNicheAction({ ...turn, requestId: crypto.randomUUID(), content: "Maneiro, é isso aí." })).ok, true);
+  assert.equal(contexts.at(-1)?.displayed?.id, displayedId);
+  assert.equal(commits.at(-1)?.acceptedProposal, offer.niche);
+  assert.equal(commits.at(-1)?.keepProposal, false);
+  assert.equal((await actions.converseBaseNicheAction({ ...turn, requestId: crypto.randomUUID(), content: "Quero abandonar essa proposta." })).ok, true);
+  assert.equal(commits.at(-1)?.keepProposal, false);
+  assert.equal(commits.at(-1)?.proposal, null);
 }
 
 export async function validatePendingConfirmedName() {
@@ -129,6 +160,9 @@ export async function validatePendingConfirmedName() {
     if (name.includes("niche-agent/runtime")) return {
       conversationalMessage: z.object({ account: z.string(), dialogueId: z.uuid(), version: z.number(), requestId: z.uuid(), content: z.string() }),
       requestNicheAgent: async (_account: string, _dialogue: string, context: NicheContext) => {
+        if (context.message === "Pode explicar o nicho?") return { reply: "É a atividade principal e o público atendido.", offer: null,
+          summary: null, preferredName: null, searchTopic: null,
+          synthesis: { offer: null, accept: null, clear: false, nicheReaction: "continue" as const } };
         if (context.message === "Sim.") {
           return { reply: "Recebi sua confirmação.", offer: null,
             summary: JSON.stringify({ confirmedUnderstanding: proposed.summary }), preferredName: null, searchTopic: null,
@@ -148,9 +182,13 @@ export async function validatePendingConfirmedName() {
   proposal = commits[0].proposal;
   state = { acceptedName, synthesis: { ...commits[0].synthesis.offer, messageId: assistantId } };
   messages = [{ id: assistantId, role: "assistant", content: commits[0].reply }];
+  assert.equal((await action.conversePendingSetupAction({ ...turn, requestId: crypto.randomUUID(), content: "Pode explicar o nicho?" })).ok, true);
+  assert.equal(commits[1].stage, "niche_confirmation");
+  assert.deepEqual(commits[1].proposal, proposal);
+  messages.push({ id: crypto.randomUUID(), role: "assistant", content: commits[1].reply });
   assert.equal((await action.conversePendingSetupAction({ ...turn, requestId: crypto.randomUUID(), content: "Sim." })).ok, true);
-  assert.equal(commits[1].stage, "ready_to_complete");
-  assert.equal(commits[1].nameReaction, "keep");
+  assert.equal(commits[2].stage, "ready_to_complete");
+  assert.equal(commits[2].nameReaction, "keep");
 }
 
 async function validateNicheProjectionAdapter(base: CommunicationBase, accountId: string, anotherUser: string) {
