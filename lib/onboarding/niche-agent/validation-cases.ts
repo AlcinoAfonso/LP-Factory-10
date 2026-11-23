@@ -176,7 +176,7 @@ test("metadados inválidos não derrubam a resposta nem são promovidos a efeito
   assert.equal(unsupported.synthesis.accept, null);
   assert.equal(unsupported.summary, null);
   for (const field of ["summary", "niche", "publicName"]) {
-    const invalid = turn(opening, { reply: safe, offer: { ...proposal, [field]: "O nicho está confirmado." } });
+    const invalid = turn(opening, { reply: safe, offer: { ...proposal, [field]: "" } });
     assert.equal(invalid.offer, null, field);
     assert.equal(invalid.reply, safe, field);
   }
@@ -296,9 +296,9 @@ test("Web Search envia assunto público e agrega somente fontes válidas em amba
   assert.match(readNicheResearch(search, 1) ?? "", /São procedimentos distintos\.\n\nFontes consultadas.*\nhttps:\/\/example.org\/fonte/u);
   assert.equal(readNicheResearch(search, 0), null);
   assert.equal(readNicheResearch(envelope, 1), null);
-  const falselySaved = { ...search, output: [search.output[0], { type: "message", role: "assistant",
-    content: [{ type: "output_text", text: "O novo nicho já consta no cadastro." }] }] };
-  assert.equal(readNicheResearch(falselySaved, 1), null);
+  const privateOnly = { ...search, output: [{ ...search.output[0],
+    action: { type: "search", sources: [{ url: "http://localhost/private" }] } }, search.output[1]] };
+  assert.equal(readNicheResearch(privateOnly, 1), null);
 });
 
 test("falha, recusa e ausência de resposta útil não produzem efeito", () => {
