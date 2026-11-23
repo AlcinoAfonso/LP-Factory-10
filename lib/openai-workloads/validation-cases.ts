@@ -1373,11 +1373,10 @@ function administrativeConfigurationFixture(): Readonly<{
 
   for (const environment of environments) {
     for (const workload of workloads) {
-      const communicationStageTwo = workload === "communication_base_stage2_intelligence";
       const modality = "responses_text";
       const agentBase = workload === "communication_base_agent";
-      const baselineModel = agentBase ? "gpt-6.2-sol" : communicationStageTwo || workload === "pending_setup_conversation" ? "gpt-6-luna" : "gpt-5.4-mini";
-      const baselineReasoning = agentBase ? "medium" : workload === "pending_setup_conversation" ? "xhigh" : communicationStageTwo ? "max" : "none";
+      const baselineModel = agentBase ? "gpt-6.2-sol" : workload === "pending_setup_conversation" ? "gpt-6-luna" : "gpt-5.4-mini";
+      const baselineReasoning = agentBase ? "medium" : workload === "pending_setup_conversation" ? "xhigh" : "none";
       const baselineRevisionId = administrativeUuid(sequence++);
       const bootstrapActivationId = administrativeUuid(sequence++);
 
