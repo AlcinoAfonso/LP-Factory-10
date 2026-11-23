@@ -31,7 +31,6 @@ const WORKLOAD_OPTIONS = [
   "taxon_input_catalog_sufficiency_evaluation",
   "communication_base_stage1_assistance",
   "communication_base_stage2_intelligence",
-  "communication_base_agent",
   "landing_page_dynamic_market_research",
   "supabase_inspect",
 ] as const satisfies readonly OpenAiCostReadWorkloadId[];

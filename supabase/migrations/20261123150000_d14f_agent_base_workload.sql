@@ -1,4 +1,4 @@
--- D14F §3.5. Bootstrap the independent workload and its financial coverage atomically.
+-- D14F §3.5. Bootstrap the independent workload in E21.
 begin;
 
 do $$
@@ -11,19 +11,19 @@ begin
       'public.openai_workload_configuration_revisions'::regclass,
       'public.openai_workload_operational_configurations'::regclass,
       'public.openai_workload_configuration_activations'::regclass,
-      'public.openai_cost_executions'::regclass,'public.openai_cost_coverage'::regclass)
+      'public.openai_cost_executions'::regclass)
       and c.conname in (
         'openai_workload_configuration_revisions_workload_chk','openai_workload_configuration_revisions_modality_chk',
         'openai_workload_operational_configurations_workload_chk','openai_workload_operational_configurations_modality_chk',
         'openai_workload_configuration_activations_workload_chk','openai_workload_configuration_activations_modality_chk',
-        'openai_cost_executions_workload_check','openai_cost_coverage_workload_check') loop
+        'openai_cost_executions_workload_check') loop
     v_count := v_count + 1;
     execute format('alter table %s drop constraint %I',r.conrelid::regclass,r.conname);
     execute format('alter table %s add constraint %I check ((%s) or (workload=%L%s))',
       r.conrelid::regclass,r.conname,r.expression,'communication_base_agent',
       case when r.conname like '%modality_chk' then ' and modality=''responses_text''' else '' end);
   end loop;
-  if v_count <> 8 then
+  if v_count <> 7 then
     raise exception 'd14f_workload_allowlists_incomplete';
   end if;
 end $$;
@@ -107,17 +107,6 @@ alter table public.openai_workload_configuration_revisions
     end
   );
 
-insert into public.openai_model_catalog_models (modality, model, available_for_selection)
-values ('responses_text', 'gpt-6.2-sol', true)
-on conflict (modality, model) do nothing;
-
-insert into public.openai_model_catalog_parameters (
-  modality, model, parameter_kind, parameter_value, available_for_selection
-)
-select 'responses_text', 'gpt-6.2-sol', 'reasoning_effort', effort, true
-from (values ('low'), ('medium'), ('high')) allowed(effort)
-on conflict (modality, model, parameter_kind, parameter_value) do nothing;
-
 do $$
 begin
   if not exists (
@@ -132,10 +121,6 @@ begin
     raise exception 'd14f_initial_model_catalog_unavailable';
   end if;
 end $$;
-
-insert into public.openai_cost_coverage (environment, workload, activated_at, contract_version, metadata)
-select environment, 'communication_base_agent', now(), 'd10d-v4', '{"source":"d14f_workload_bootstrap"}'::jsonb
-from (values ('preview'), ('production'), ('development')) environments(environment);
 
 insert into public.openai_workload_configuration_revisions (
   environment, workload, modality, revision_number, model, reasoning_effort,

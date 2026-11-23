@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 
 import { requirePlatformAdmin } from "@/lib/access/guards";
-import { openAiFinancialCoverage } from "@/openai-costs/pricing";
 import {
   openAiReasoningEfforts,
   isEligibleOpenAiServiceTier,
@@ -341,9 +340,6 @@ async function parseCandidate(
     return { ok: false, state: validationFailure("Nível de serviço incompatível com o modelo.") };
   }
   const serviceTier = rawTier === null || rawTier === "" ? null : rawTier as OpenAiServiceTier;
-  if (unit.workload === "communication_base_agent" && !openAiFinancialCoverage(model, serviceTier).covered) {
-    return { ok: false, state: validationFailure("Selecione um modelo e nível de serviço com cobertura financeira.") };
-  }
   const reasoningEffort = parseReasoningEffort(formData.get("reasoningEffort"));
   if (!reasoningEffort || parseOptionalValue(formData.get("quality")) !== null) {
     return {

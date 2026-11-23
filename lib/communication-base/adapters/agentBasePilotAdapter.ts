@@ -1,7 +1,7 @@
 import "server-only";
 import { createHash, randomUUID } from "node:crypto";
 import { requestOpenAiResponses } from "../../openai-responses/openAiResponsesAdapter";
-import { communicationBaseCostContext, openAiFinancialCoverage } from "../../openai-costs";
+import { communicationBaseCostContext } from "../../openai-costs";
 import { resolveOpenAiProductWorkload } from "../../openai-workloads";
 import type { AgentBaseEnvironment } from "../config";
 import { buildAgentBasePilotPrompt, parseAgentBasePilotResponse, sanitizeAgentBasePilotFailureReason, type AgentBasePilotSection } from "../agent-base/pilot";
@@ -12,13 +12,7 @@ export async function generateAgentBasePilotSection(input: Parameters<typeof bui
   const prompt = buildAgentBasePilotPrompt({ ...input, previous: input.previous.map(({ generationId: _generationId, ...section }) => section) });
   if (!prompt) return { ok: false as const };
   const active = await resolveOpenAiProductWorkload("communication_base_agent", input.environment);
-  if (!active.ok || !active.value.webSearch || !openAiFinancialCoverage(active.value.model, active.value.serviceTier).covered) {
-    console.warn("agent_base_workload_unavailable", {
-      environment: input.environment,
-      reason: active.ok ? "workload_coverage_unconfirmed" : active.error.code,
-    });
-    return { ok: false as const };
-  }
+  if (!active.ok || !active.value.webSearch) return { ok: false as const };
   const configuration = active.value;
   const web = active.value.webSearch;
   const requestId = randomUUID();

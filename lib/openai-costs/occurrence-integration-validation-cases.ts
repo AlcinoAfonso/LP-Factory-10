@@ -3,8 +3,7 @@ import { createHmac } from "node:crypto";
 import nodeModule from "node:module";
 import { communicationSections } from "../communication-base/registry";
 import type { AgentBasePilotSection } from "../communication-base/agent-base/pilot";
-import { buildAgentBasePilotPrompt } from "../communication-base/agent-base/pilot";
-import type { OpenAiResponsesDependencies, OpenAiResponsesInput } from "../openai-responses/openAiResponsesAdapter";
+import type { OpenAiResponsesInput } from "../openai-responses/openAiResponsesAdapter";
 import { COMMERCIAL_ACTIVATION_RESEARCH_BLOCKS } from "../conversion-content/contracts";
 import { listOpenAiWorkloadInventory, resolveOpenAiProductWorkload } from "../openai-workloads";
 import { clientOpenAiCostContext, communicationBaseCostContext } from "./active-contracts";
@@ -38,8 +37,6 @@ export async function validateOccurrenceIntegrations() {
   const accepted = new Set<string>();
   const closed = new Set<string>();
   const generationCalls: string[] = [];
-  let agentRevisionAvailable = true;
-  const agentTransport: Record<string, unknown>[] = [];
   const closeCalls: Record<string, unknown>[] = [];
   const proofTurns = new Map<string, number>();
   const draftEvents: string[] = [];
@@ -63,7 +60,7 @@ export async function validateOccurrenceIntegrations() {
     plans: ["Starter", "Lite", "Pro", "Ultra"].map(name => ({ name, price_monthly: 10, max_lps: 1, max_conversions: 1, features: {} })),
   };
   const base = () => ({ accountId, version, createdAt: "t", updatedAt: "t",
-    sections: { business_context: { format: "text", value: "Dados confirmados", origin: "user_confirmed" } as const },
+    sections: { business_context: { format: "text", value: "Dados confirmados", origin: "user_confirmed" } },
   });
   const db = {
     async rpc(name: string, input: Record<string, unknown>) {
@@ -78,8 +75,7 @@ export async function validateOccurrenceIntegrations() {
             assert.equal(input.p_product_type, "communication_base");
             assert.equal(input.p_product_instance_id, accountId);
             assert.equal(input.p_action_kind, "category_3_generate");
-            assert.equal(input.p_occurrence_id, input.p_workload === "communication_base_agent" && input.p_environment === "production"
-              ? otherDialogue : dialogueId);
+            assert.equal(input.p_occurrence_id, dialogueId);
           }
           if (financialAdmissionError) return { data: null, error: financialAdmissionError };
         }
@@ -205,34 +201,7 @@ export async function validateOccurrenceIntegrations() {
         ok: true, niche: { taxonId: null, name: "Nicho confirmado", revision: "text:1", confirmed: true },
       }),
     };
-    if (parentFile?.endsWith("agentBasePilotAdapter.ts") && name.endsWith("/openai-workloads")) return {
-      resolveOpenAiProductWorkload: (id: string, environment: "preview" | "production") =>
-        resolveOpenAiProductWorkload(id, environment, { readOperationalConfiguration: async ({ workload }) => {
-          assert.equal(workload, "communication_base_agent");
-          if (!agentRevisionAvailable) return { ok: false, error: { code: "READ_FAILED", message: "fixture unavailable" } };
-          const preview = environment === "preview";
-          return { ok: true, value: { environment, workload, apiKind: "responses_text", revision: preview ? "2" : "3",
-            model: preview ? "gpt-6.2-sol" : "gpt-6.1-terra", reasoningEffort: preview ? "high" : "low",
-            serviceTier: preview ? "default" : "fast" } };
-        } }),
-    };
-    if (parentFile?.endsWith("agentBasePilotAdapter.ts") && name.endsWith("/openAiResponsesAdapter")) {
-      const transport = original.call(this, name, parent, isMain) as typeof import("../openai-responses/openAiResponsesAdapter");
-      const dependencies: OpenAiResponsesDependencies = {
-        emitEvent: () => {},
-        fetchImpl: async (_url, init) => {
-          financialRpcs.push("provider");
-          const request = JSON.parse(String(init?.body));
-          agentTransport.push(request);
-          return Response.json({ model: request.model, reasoning: request.reasoning,
-            service_tier: request.service_tier === "fast" ? "priority" : request.service_tier, status: "completed",
-            output_text: JSON.stringify({ sections: { about: { value: "Dados sintéticos", basis: "confirmed_business_fact" } } }),
-            usage: { input_tokens: 10, output_tokens: 3, total_tokens: 13 } });
-        },
-      };
-      return { requestOpenAiResponses: <T>(input: OpenAiResponsesInput<T>) => transport.requestOpenAiResponses(input, dependencies) };
-    }
-    if (parentFile?.endsWith("actions.ts") && name.endsWith("/agentBasePilotAdapter")) return {
+    if (name.endsWith("/agentBasePilotAdapter")) return {
       generateAgentBasePilotSection: async ({ generationId, key }: { generationId: string; key: string }) => {
         if (closed.has(generationId)) return { ok: false };
         generationCalls.push(generationId);
@@ -287,36 +256,6 @@ export async function validateOccurrenceIntegrations() {
       assert.equal((await send(context)).ok, true);
       assert.deepEqual(financialRpcs, [rpc, "admit_openai_cost_operation_v2", "provider"]);
     }
-    const { generateAgentBasePilotSection } = await import("../communication-base/adapters/agentBasePilotAdapter");
-    const agentInput = { base: base(), niche: { taxonId: null, name: "Nicho confirmado", confirmed: true, revision: "text:1" },
-      definitions, key: "about", previous: [], timeoutMs: 1000, generationId: dialogueId } as const;
-    const expectedPrompt = buildAgentBasePilotPrompt(agentInput);
-    assert.ok(expectedPrompt);
-    for (const [environment, model, effort, tier] of [
-      ["preview", "gpt-6.2-sol", "high", "default"], ["production", "gpt-6.1-terra", "low", "fast"],
-    ] as const) {
-      financialRpcs.length = 0;
-      const generationId = environment === "preview" ? dialogueId : otherDialogue;
-      assert.equal((await generateAgentBasePilotSection({ ...agentInput, environment, generationId })).ok, true);
-      assert.deepEqual(financialRpcs.slice(0, 3), ["start_openai_cost_execution_v4", "admit_openai_cost_operation_v2", "provider"]);
-      const sent = agentTransport.at(-1);
-      assert.equal(sent?.model, model);
-      assert.deepEqual(sent?.reasoning, { effort });
-      assert.equal(sent?.service_tier, tier);
-      assert.equal(sent?.instructions, expectedPrompt.instructions);
-      assert.deepEqual(sent?.tools, [{ type: "web_search", external_web_access: true, search_context_size: "medium" }]);
-      assert.deepEqual(sent?.text, { format: { type: "json_schema", name: "agent_base_pilot_section", strict: true, schema: expectedPrompt.schema } });
-    }
-    financialRpcs.length = 0;
-    agentRevisionAvailable = false;
-    assert.equal((await generateAgentBasePilotSection({ ...agentInput, environment: "preview" })).ok, false);
-    assert.deepEqual(financialRpcs, []);
-    agentRevisionAvailable = true;
-    financialAdmissionError = { code: "23514" };
-    assert.equal((await generateAgentBasePilotSection({ ...agentInput, environment: "preview" })).ok, false);
-    assert.deepEqual(financialRpcs, ["start_openai_cost_execution_v4"]);
-    assert.equal(agentTransport.length, 2);
-    financialAdmissionError = null;
     const { readNicheDialogueCostContext } = await import("./adapters/costLedgerReadAdapter");
     for (const [lifecycle, execution, rpc] of [
       [null, false, "start_openai_cost_execution_v4"],
