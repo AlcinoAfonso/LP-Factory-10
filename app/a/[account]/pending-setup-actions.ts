@@ -198,7 +198,7 @@ export async function conversePendingSetupAction(raw: unknown) {
       },
     }, observed.summary);
     if (!result) throw new Error("provider_unavailable");
-    const accepted = result.synthesis.accept ? shown : null;
+    const accepted = result.synthesis.accept === shown?.id ? shown : null;
     const keep = !result.offer && !result.synthesis.clear && !accepted;
     const next = result.offer?.niche
       ? { kind: "semantic" as const, taxonId: null, taxonName: null, nicheDescription: result.offer.niche, expectedNicheRevision: revision }
