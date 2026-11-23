@@ -44,7 +44,7 @@ export default async function Page({ params }: PageProps) {
           dialogueState: conversation.dialogueState,
         }}
         passageEnabled={journey.passageEnabled}
-        whatsappMode={pendingSetupWhatsApp(conversation.messages, conversation.dialogueState?.synthesis)}
+        whatsappMode={pendingSetupWhatsApp(conversation.messages)}
       />
     );
   }
