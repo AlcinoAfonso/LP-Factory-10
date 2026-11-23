@@ -20,7 +20,7 @@ import { closeOpenAiCostOccurrence, lpFactoryOpenAiCostContext } from "@/openai-
 import { generateCommunicationIntelligence } from "@/communication-base/adapters/communicationAiAdapter";
 import type { CommunicationBase } from "@/communication-base/contracts";
 
-import { prepareNicheTurn, type NicheContext } from "@/onboarding/niche-agent";
+import { prepareNicheTurn, type NicheContext } from "@/onboarding/niche-agent/runtime";
 import { displayedOffer } from "@/onboarding/niche-agent/dialogue";
 import { requestOpenAiResponses } from "@/openai-responses/openAiResponsesAdapter";
 
