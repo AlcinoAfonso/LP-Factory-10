@@ -8,7 +8,7 @@ import { webSearchMetadata } from "../../openai-responses/web-search-metadata";
 import { resolveOpenAiProductWorkload, resolveOpenAiWorkloadEnvironment } from "../../openai-workloads";
 import { validNicheDescription } from "../niche-resolution/official-niche-policy";
 import {
-  CONTACT_RECEIPT, mergeNicheMemory, presentOffer, publicResearchTopic, redactNicheText, synthesisReference, withoutWhatsAppField,
+  CONTACT_RECEIPT, SYNTHESIS_QUESTION, mergeNicheMemory, presentOffer, publicResearchTopic, redactNicheText, synthesisReference, withoutWhatsAppField,
   type DialogueText, type DisplayedOffer, type NicheOffer, type SynthesisWrite,
 } from "./dialogue";
 import { NICHE_AGENT_INSTRUCTIONS, NICHE_AGENT_PROMPT_VERSION } from "./prompt";
@@ -86,16 +86,13 @@ export const contactTurn: NicheTurn = {
   synthesis: { accept: null, offer: null, clear: false, nicheReaction: "continue" },
 };
 
-// This guard prevents an uncommitted provider reply from announcing a completed write.
-// It never interprets the user's acceptance.
-const claimsWrite = /\b(?:registrei|gravei|salvei|atualizei|já consta|oficializad[oa]|foi feita a (?:gravação|atualização)|(?:ficou|foi|está) (?:salv[oa]|registrad[oa]|atualizad[oa]|confirmad[oa])|nicho atualizad[oa])\b/iu;
 const project = (value: string | null | undefined) => value ? redactNicheText(value) : null;
 const safeName = (value: unknown) => validNicheDescription(value) && project(value) === value ? value : null;
 
 function safeReply(value: unknown) {
   if (typeof value !== "string") return null;
-  const reply = redactNicheText(value).trim();
-  return reply && reply.length <= 4000 && !claimsWrite.test(reply) ? reply : null;
+  const reply = redactNicheText(value).replaceAll(SYNTHESIS_QUESTION, "").trim();
+  return reply && reply.length <= 4000 ? reply : null;
 }
 
 function readOutput(payload: unknown) {
@@ -119,7 +116,7 @@ function validatedTurn(raw: RawTurn, context: NicheContext, observedSummary: str
     (!context.fixedNiche || niche === context.fixedNiche)
     ? { summary: understanding.data, niche, publicName: name } : null;
   const presentation = offer && presentOffer(offer);
-  const shown = presentation && !claimsWrite.test(presentation.reply) ? presentation : null;
+  const shown = presentation || null;
 
   // The model alone judges acceptance. The server checks only the exact displayed target.
   const candidate = context.displayed && !shown && raw.offer == null && raw.clear !== true &&
@@ -134,11 +131,12 @@ function validatedTurn(raw: RawTurn, context: NicheContext, observedSummary: str
     ? mergeNicheMemory(observedSummary, candidate, corrections) : null;
   const accepted = candidate && summary !== undefined ? candidate : null;
   const clear = raw.clear === true && raw.offer == null && raw.accept == null;
-  const reply = shown?.reply ?? safeReply(raw.reply) ?? (accepted ? "Recebi sua confirmação." : null);
+  const reply = candidate && summary === undefined
+    ? "Não foi possível concluir a confirmação. A proposta e o contexto anterior foram preservados."
+    : shown?.reply ?? safeReply(raw.reply) ?? (accepted ? "Recebi sua confirmação." : null);
   if (!reply) return null;
-  const personal = context.pendingSetup ? safeName(raw.preferredName) : null;
-  const preferredName = personal && context.message.toLocaleLowerCase("pt-BR").includes(personal.toLocaleLowerCase("pt-BR"))
-    ? personal : context.pendingSetup && raw.preferredName === false ? false : null;
+  const preferredName = context.pendingSetup
+    ? safeName(raw.preferredName) ?? (raw.preferredName === false ? false : null) : null;
   return {
     reply, offer: shown ? offer : null, summary: accepted ? summary ?? null : null, preferredName,
     searchTopic: !context.fixedNiche && !candidate && !shown && raw.accept == null && !clear &&
