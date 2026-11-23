@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requirePlatformAdmin } from "@/lib/access/guards";
 import {
   openAiReasoningEfforts,
+  listOpenAiWorkloadPresentations,
   isEligibleOpenAiServiceTier,
   type OpenAiServiceTier,
   resolveOpenAiProductWorkload,
@@ -31,14 +32,7 @@ import { runOpenAiTechnicalConfigurationProof } from "./serviceTierProof";
 
 const ADMIN_PATH = "/admin/workloads-openai";
 
-const productWorkloads = [
-  "niche_resolution",
-  "pending_setup_conversation",
-  "commercial_activation_draft_generation",
-  "communication_base_stage1_assistance",
-  "communication_base_stage2_intelligence",
-  "communication_base_agent",
-] as const;
+const manageableWorkloads = new Set(listOpenAiWorkloadPresentations().map(({ workload }) => workload));
 
 export type OpenAiOperationalActionState = Readonly<{
   status: "idle" | "success" | "error";
@@ -402,7 +396,7 @@ function parseEnvironment(value: FormDataEntryValue | null) {
 
 function parseProductWorkload(value: FormDataEntryValue | null) {
   return typeof value === "string" &&
-    productWorkloads.includes(value as never)
+    manageableWorkloads.has(value as OpenAiProductWorkloadId)
     ? (value as UnitInput["workload"])
     : null;
 }

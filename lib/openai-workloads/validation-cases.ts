@@ -193,22 +193,20 @@ const cases = [
     },
   },
   {
-    name: "inventory exposes seven unique canonical workloads",
+    name: "inventory preserves technical identities without a fixed count",
     run: () => {
-      const inventory = listOpenAiWorkloadInventory();
-      assert.equal(inventory.length, 7);
-      assert.equal(new Set(inventory.map((item) => item.id)).size, 7);
-      assert.deepEqual(
-        inventory.map((item) => item.id),
-        [
-          "pending_setup_conversation",
-          ...productIds,
-          "communication_base_stage1_assistance",
-          "communication_base_stage2_intelligence",
-          "communication_base_agent",
-          "supabase_inspect",
-        ],
-      );
+      const ids = listOpenAiWorkloadInventory().map((item) => item.id);
+      assert.equal(new Set(ids).size, ids.length);
+      for (const id of [
+        "pending_setup_conversation",
+        "niche_resolution",
+        "communication_base_stage1_assistance",
+        "communication_base_stage2_intelligence",
+        "communication_base_agent",
+        "supabase_inspect",
+      ]) {
+        assert.ok(ids.includes(id as (typeof ids)[number]));
+      }
     },
   },
   {
@@ -309,17 +307,10 @@ const cases = [
     name: "public workload presentation is code-owned and deeply immutable",
     run: () => {
       const projection = listOpenAiWorkloadPresentations();
-      assert.deepEqual(
-        projection.map((item) => item.workload),
-        [
-          "pending_setup_conversation",
-          "niche_resolution",
-          "commercial_activation_draft_generation",
-          "communication_base_stage1_assistance",
-          "communication_base_stage2_intelligence",
-          "communication_base_agent",
-        ],
-      );
+      const managedIds = projection.map((item) => item.workload);
+      for (const id of ["pending_setup_conversation", "commercial_activation_draft_generation", "communication_base_agent"]) {
+        assert.ok(managedIds.includes(id as (typeof managedIds)[number]));
+      }
       assert.equal(Object.isFrozen(projection), true);
       for (const workload of projection) {
         assert.equal(Object.isFrozen(workload), true);
@@ -328,8 +319,11 @@ const cases = [
           ["name", "roadmapReference", "visualGroup", "workload"],
         );
       }
-      const niche = projection.find((item) => item.workload === "niche_resolution");
-      assert.equal(niche?.name, "Resolução de nicho");
+      const niche = projection.find((item) => item.workload === "pending_setup_conversation");
+      assert.equal(niche?.name, "Agente Nicho");
+      for (const retired of ["niche_resolution", "communication_base_stage1_assistance", "communication_base_stage2_intelligence"]) {
+        assert.equal(projection.some((item) => item.workload === retired), false);
+      }
       assert.throws(() => {
         (projection as unknown[]).push({});
       }, TypeError);
@@ -405,7 +399,7 @@ const cases = [
         catalog.value,
         listOpenAiWorkloadPresentations(),
       );
-      const text = options.find((item) => item.workload === "niche_resolution");
+      const text = options.find((item) => item.workload === "commercial_activation_draft_generation");
       assert.ok(text?.apiKind === "responses_text");
       assert.deepEqual(text.options, [
         { model: "gpt-5.6-luna", reasoningEffort: "max" },
@@ -795,6 +789,27 @@ const cases = [
     },
   },
   {
+    name: "administrative reader accepts zero and variable numbers of managed workloads",
+    run: () => {
+      const fixture = administrativeConfigurationFixture();
+      const managed = listOpenAiWorkloadPresentations()
+        .map(({ workload }) => workload)
+        .filter((workload) => fixture.units.some((unit) => unit.workload === workload));
+      for (const count of [0, 1, 2, managed.length]) {
+        const included = new Set(managed.slice(0, count));
+        const matches = (row: Record<string, unknown>) =>
+          included.has(row.workload as (typeof managed)[number]);
+        const result = translateOpenAiAdministrativeConfigurationRows(
+          { data: fixture.units.filter(matches), error: null },
+          { data: fixture.revisions.filter(matches), error: null },
+          { data: fixture.activations.filter(matches), error: null },
+        );
+        assert.equal(result.ok, true);
+        if (result.ok) assert.equal(result.value.length, count * 2);
+      }
+    },
+  },
+  {
     name: "administrative read model exposes both independent Agent Base units",
     run: () => {
       const fixture = administrativeConfigurationFixture();
@@ -804,7 +819,7 @@ const cases = [
         { data: fixture.activations, error: null },
       );
       assert.equal(result.ok, true);
-      assert.equal(result.value.length, 12);
+      assert.equal(result.value.length, fixture.units.length);
       for (const environment of ["preview", "production"] as const) {
         const agent: OpenAiAdministrativeConfigurationUnit | undefined = result.value.find(unit => unit.environment === environment && unit.workload === "communication_base_agent");
         assert.ok(agent);
@@ -819,7 +834,7 @@ const cases = [
       assert.equal(Object.isFrozen(result.value[0]), true);
 
       const previewNiche = result.value.find((unit) =>
-        unit.environment === "preview" && unit.workload === "niche_resolution");
+        unit.environment === "preview" && unit.workload === "pending_setup_conversation");
       assert.ok(previewNiche);
       assert.equal(previewNiche.activeRevision.number, 2);
       assert.equal(previewNiche.pendingRevision?.number, 3);
@@ -844,22 +859,19 @@ const cases = [
     },
   },
   {
-    name: "administrative read model keeps six legacy units available before E25 bootstrap",
+    name: "administrative read model supports a single managed workload without historical phase lists",
     run: () => {
-      const fixture = preBootstrapAdministrativeConfigurationFixture();
+      const fixture = singleManagedAdministrativeConfigurationFixture();
       const result = translateOpenAiAdministrativeConfigurationRows(
         { data: fixture.units, error: null },
         { data: fixture.revisions, error: null },
         { data: fixture.activations, error: null },
       );
       assert.equal(result.ok, true);
-      assert.equal(result.value.length, 4);
+      assert.equal(result.value.length, fixture.units.length);
       assert.deepEqual(
         [...new Set(result.value.map((unit) => unit.workload))],
-        [
-          "niche_resolution",
-          "commercial_activation_draft_generation",
-        ],
+        ["commercial_activation_draft_generation"],
       );
     },
   },
@@ -882,24 +894,24 @@ const cases = [
           return fixture;
         })(),
         (() => {
-          const fixture = preBootstrapAdministrativeConfigurationFixture();
+          const fixture = singleManagedAdministrativeConfigurationFixture();
           fixture.units.pop();
           return fixture;
         })(),
         (() => {
-          const fixture = preBootstrapAdministrativeConfigurationFixture();
+          const fixture = singleManagedAdministrativeConfigurationFixture();
           const newUnit = administrativeConfigurationFixture().units.find((unit) =>
             unit.environment === "production" &&
-            unit.workload === "communication_base_stage1_assistance");
+            unit.workload === "communication_base_agent");
           assert.ok(newUnit);
           fixture.units.push(newUnit);
           return fixture;
         })(),
         (() => {
-          const fixture = preBootstrapAdministrativeConfigurationFixture();
+          const fixture = singleManagedAdministrativeConfigurationFixture();
           const newRevision = administrativeConfigurationFixture().revisions.find((revision) =>
             revision.environment === "production" &&
-            revision.workload === "communication_base_stage1_assistance");
+            revision.workload === "communication_base_agent");
           assert.ok(newRevision);
           fixture.revisions.push(newRevision);
           return fixture;
@@ -1346,11 +1358,8 @@ function administrativeConfigurationFixture(): Readonly<{
 }> {
   const environments = ["production", "preview"] as const;
   const workloads = [
-    "niche_resolution",
-    "commercial_activation_draft_generation",
-    "communication_base_stage1_assistance",
-    "communication_base_stage2_intelligence",
     "pending_setup_conversation",
+    "commercial_activation_draft_generation",
     "communication_base_agent",
   ] as const;
   const units: Record<string, unknown>[] = [];
@@ -1360,11 +1369,10 @@ function administrativeConfigurationFixture(): Readonly<{
 
   for (const environment of environments) {
     for (const workload of workloads) {
-      const communicationStageTwo = workload === "communication_base_stage2_intelligence";
       const modality = "responses_text";
       const agentBase = workload === "communication_base_agent";
-      const baselineModel = agentBase ? "gpt-6.2-sol" : communicationStageTwo || workload === "pending_setup_conversation" ? "gpt-6-luna" : "gpt-5.4-mini";
-      const baselineReasoning = agentBase ? "medium" : workload === "pending_setup_conversation" ? "xhigh" : communicationStageTwo ? "max" : "none";
+      const baselineModel = agentBase ? "gpt-6.2-sol" : workload === "pending_setup_conversation" ? "gpt-6-luna" : "gpt-5.4-mini";
+      const baselineReasoning = agentBase ? "medium" : workload === "pending_setup_conversation" ? "xhigh" : "none";
       const baselineRevisionId = administrativeUuid(sequence++);
       const bootstrapActivationId = administrativeUuid(sequence++);
 
@@ -1397,7 +1405,7 @@ function administrativeConfigurationFixture(): Readonly<{
       let activeRevisionId = baselineRevisionId;
       let pendingRevisionId: string | null = null;
       let configurationVersion = 1;
-      if (environment === "preview" && workload === "niche_resolution") {
+      if (environment === "preview" && workload === "pending_setup_conversation") {
         const activeReplacementId = administrativeUuid(sequence++);
         pendingRevisionId = administrativeUuid(sequence++);
         activeRevisionId = activeReplacementId;
@@ -1461,16 +1469,13 @@ function administrativeConfigurationFixture(): Readonly<{
   return { units, revisions, activations };
 }
 
-function preBootstrapAdministrativeConfigurationFixture() {
+function singleManagedAdministrativeConfigurationFixture() {
   const fixture = administrativeConfigurationFixture();
-  const legacyWorkload = (row: Record<string, unknown>) =>
-    row.workload !== "communication_base_stage1_assistance" &&
-    row.workload !== "communication_base_stage2_intelligence" && row.workload !== "pending_setup_conversation" &&
-    row.workload !== "communication_base_agent";
+  const included = (row: Record<string, unknown>) => row.workload === "commercial_activation_draft_generation";
   return {
-    units: fixture.units.filter(legacyWorkload),
-    revisions: fixture.revisions.filter(legacyWorkload),
-    activations: fixture.activations.filter(legacyWorkload),
+    units: fixture.units.filter(included),
+    revisions: fixture.revisions.filter(included),
+    activations: fixture.activations.filter(included),
   };
 }
 
