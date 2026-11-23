@@ -201,7 +201,7 @@ function pilotWebSources(output: unknown[], final?: Record<string, unknown>) {
   return output.map(item => {
     const call = pilotRecord(item);
     const action = pilotRecord(call?.action);
-    if (call?.type !== "web_search_call" || !action) return item;
+    if (call?.type !== "web_search_call" || call.status !== "completed" || !action) return item;
     // open_page sem URL é permitido pela API, mas não representa uma fonte visitada.
     const missingOpenedUrl = action.type === "open_page" && action.url == null;
     const sources = action.sources;
