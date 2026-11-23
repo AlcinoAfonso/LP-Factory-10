@@ -135,8 +135,9 @@ function validatedTurn(raw: RawTurn, context: NicheContext, observedSummary: str
     ? "Não foi possível concluir a confirmação. A proposta e o contexto anterior foram preservados."
     : shown?.reply ?? safeReply(raw.reply) ?? (accepted ? "Recebi sua confirmação." : null);
   if (!reply) return null;
-  const preferredName = context.pendingSetup
-    ? safeName(raw.preferredName) ?? (raw.preferredName === false ? false : null) : null;
+  const personal = context.pendingSetup ? safeName(raw.preferredName) : null;
+  const preferredName = personal && ![offer?.publicName, context.pendingSetup?.publicName, context.displayed?.publicName].includes(personal)
+    ? personal : context.pendingSetup && raw.preferredName === false ? false : null;
   return {
     reply, offer: shown ? offer : null, summary: accepted ? summary ?? null : null, preferredName,
     searchTopic: !context.fixedNiche && !candidate && !shown && raw.accept == null && !clear &&
