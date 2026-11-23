@@ -52,14 +52,9 @@ export function withoutWhatsAppField(text: string) {
   return text.replace(/(?:^|\n)WhatsApp para contato: \(\d{2}\) 9\d{4}-\d{4}$/u, "").trim();
 }
 
-export function pendingSetupWhatsApp(messages: readonly DialogueText[], synthesis?: SynthesisReference | null) {
-  if (messages.some(({ role, content }) => role === "user" && withoutWhatsAppField(content) !== content.trim())) {
-    return "correction" as const;
-  }
-  const first = messages.find(message => message.role === "assistant" && message.content.endsWith(SYNTHESIS_QUESTION));
-  if (synthesis && first?.id === synthesis.messageId && messages.at(-1)?.id === first.id) {
-    return "first-synthesis" as const;
-  }
+export function pendingSetupWhatsApp(messages: readonly DialogueText[]) {
+  return messages.some(({ role, content }) => role === "user" && withoutWhatsAppField(content) !== content.trim())
+    ? "correction" as const : undefined;
 }
 
 export function redactNicheText(text: string) {
