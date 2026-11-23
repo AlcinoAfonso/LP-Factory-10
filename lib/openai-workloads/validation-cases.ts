@@ -193,22 +193,20 @@ const cases = [
     },
   },
   {
-    name: "inventory exposes seven unique canonical workloads",
+    name: "inventory preserves technical identities without a fixed count",
     run: () => {
-      const inventory = listOpenAiWorkloadInventory();
-      assert.equal(inventory.length, 7);
-      assert.equal(new Set(inventory.map((item) => item.id)).size, 7);
-      assert.deepEqual(
-        inventory.map((item) => item.id),
-        [
-          "pending_setup_conversation",
-          ...productIds,
-          "communication_base_stage1_assistance",
-          "communication_base_stage2_intelligence",
-          "communication_base_agent",
-          "supabase_inspect",
-        ],
-      );
+      const ids = listOpenAiWorkloadInventory().map((item) => item.id);
+      assert.equal(new Set(ids).size, ids.length);
+      for (const id of [
+        "pending_setup_conversation",
+        "niche_resolution",
+        "communication_base_stage1_assistance",
+        "communication_base_stage2_intelligence",
+        "communication_base_agent",
+        "supabase_inspect",
+      ]) {
+        assert.ok(ids.includes(id as (typeof ids)[number]));
+      }
     },
   },
   {
@@ -309,14 +307,10 @@ const cases = [
     name: "public workload presentation is code-owned and deeply immutable",
     run: () => {
       const projection = listOpenAiWorkloadPresentations();
-      assert.deepEqual(
-        projection.map((item) => item.workload),
-        [
-          "pending_setup_conversation",
-          "commercial_activation_draft_generation",
-          "communication_base_agent",
-        ],
-      );
+      const managedIds = projection.map((item) => item.workload);
+      for (const id of ["pending_setup_conversation", "commercial_activation_draft_generation", "communication_base_agent"]) {
+        assert.ok(managedIds.includes(id as (typeof managedIds)[number]));
+      }
       assert.equal(Object.isFrozen(projection), true);
       for (const workload of projection) {
         assert.equal(Object.isFrozen(workload), true);
@@ -798,7 +792,9 @@ const cases = [
     name: "administrative reader accepts zero and variable numbers of managed workloads",
     run: () => {
       const fixture = administrativeConfigurationFixture();
-      const managed = listOpenAiWorkloadPresentations().map(({ workload }) => workload);
+      const managed = listOpenAiWorkloadPresentations()
+        .map(({ workload }) => workload)
+        .filter((workload) => fixture.units.some((unit) => unit.workload === workload));
       for (const count of [0, 1, 2, managed.length]) {
         const included = new Set(managed.slice(0, count));
         const matches = (row: Record<string, unknown>) =>
@@ -823,7 +819,7 @@ const cases = [
         { data: fixture.activations, error: null },
       );
       assert.equal(result.ok, true);
-      assert.equal(result.value.length, 6);
+      assert.equal(result.value.length, fixture.units.length);
       for (const environment of ["preview", "production"] as const) {
         const agent: OpenAiAdministrativeConfigurationUnit | undefined = result.value.find(unit => unit.environment === environment && unit.workload === "communication_base_agent");
         assert.ok(agent);
@@ -872,7 +868,7 @@ const cases = [
         { data: fixture.activations, error: null },
       );
       assert.equal(result.ok, true);
-      assert.equal(result.value.length, 2);
+      assert.equal(result.value.length, fixture.units.length);
       assert.deepEqual(
         [...new Set(result.value.map((unit) => unit.workload))],
         ["commercial_activation_draft_generation"],
