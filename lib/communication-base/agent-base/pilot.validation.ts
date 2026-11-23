@@ -287,6 +287,12 @@ const citedFinal = { ...finalMessage, content: [{ type: "output_text", text: web
 const sourceFreeCall = { type: "web_search_call", status: "completed", action: { type: "search" } };
 const citedOnly = { output: [sourceFreeCall, citedFinal] };
 expectSources({ output: [{ ...sourceFreeCall, status: "failed" }, sourceFreeCall, citedFinal] }, 1, 2);
+const citedWithoutCompletedCalls = expectSources({
+  output: [{ ...sourceFreeCall, status: "failed" }, citedFinal],
+}, 1, 1);
+if (citedWithoutCompletedCalls.ok) assert.equal(citedWithoutCompletedCalls.value.researched, true);
+const citedWithoutWebCalls = expectSources({ output: [citedFinal] }, 1, 0);
+if (citedWithoutWebCalls.ok) assert.equal(citedWithoutWebCalls.value.researched, false);
 const cited = parseAgentBasePilotResponse(citedOnly, "audience");
 assert.equal(cited.ok, true, "pilot accepts native final-answer citations as verifiable sources");
 if (cited.ok) {
