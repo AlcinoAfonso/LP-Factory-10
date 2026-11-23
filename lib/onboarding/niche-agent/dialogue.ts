@@ -132,10 +132,10 @@ export function mergeNicheMemory(raw: string | null, confirmed: DisplayedOffer,
   return after.length <= 5700 ? after : undefined;
 }
 
-export function publicResearchTopic(topic: string, context: NicheContext) {
+export function publicResearchTopic(topic: string, context: NicheContext, privateNames: readonly string[] = []) {
   if (!/^[\p{L}\p{M}][\p{L}\p{M} ,?()-]{3,159}$/u.test(topic) ||
     /\b(?:rua|avenida|cep|whatsapp|telefone|endereço|e-mail|cpf|cnpj)\b/iu.test(topic)) return null;
-  const names = [context.pendingSetup?.preferredName || null, context.pendingSetup?.publicName, context.displayed?.publicName];
+  const names = [...privateNames, context.pendingSetup?.preferredName || null, context.pendingSetup?.publicName, context.displayed?.publicName];
   const businessContext = context.businessContext ?? "";
   try {
     const business = JSON.parse(businessContext || "{}") as Record<string, unknown>;
