@@ -327,6 +327,8 @@ test("Web Search envia assunto público e agrega somente fontes válidas em amba
     "Meu endereço residencial é rua dos Alfeneiros 231 apartamento 2.",
     "Meu consultório fica na rua dos Alfeneiros e atendo idosos.",
     "Meu endereço é rua dos Alfeneiros fundos.",
+    "Meu endereço residencial é na rua dos Alfeneiros perto do parque.",
+    "Moro na R. dos Alfeneiros.",
   ]) {
     assert.equal(turn({ ...opening, message: address },
       { reply: "Posso explicar o assunto.", searchTopic: privateTopic, privateNames: [] }).searchTopic, null);
@@ -339,6 +341,8 @@ test("Web Search envia assunto público e agrega somente fontes válidas em amba
     history: [{ id: assistantId, role: "user" as const, content: explicitlyPrivate }],
   };
   assert.equal(publicResearchTopic(privateTopic, withPrivateHistory), null);
+  assert.equal(publicResearchTopic("serviços na avenida Paulista",
+    { ...opening, message: "Meu endereço residencial é Av. Paulista, apartamento 2." }), null);
   assert.equal(publicResearchTopic("planejamento de ruas", withPrivateHistory), "planejamento de ruas");
   assert.equal(turn(privateAddress, { reply: "Posso explicar o assunto.",
     searchTopic: "planejamento de ruas", privateNames: ["Rua das Flores"] }).searchTopic,
