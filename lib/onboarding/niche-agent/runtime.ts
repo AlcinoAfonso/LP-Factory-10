@@ -90,7 +90,7 @@ export const contactTurn: NicheTurn = {
 const project = (value: string | null | undefined) => value ? redactNicheText(value) : null;
 const safeName = (value: unknown) => validNicheDescription(value) && project(value) === value ? value : null;
 
-const claimsStoredEffect = /\b(?:registrei|gravei|salvei|atualizei|oficializei|já consta (?:no|na) cadastro|nicho (?:já )?(?:atualizado|registrado|oficializado|salvo)|(?:foi|está) (?:salv[oa]|registrad[oa]|atualizad[oa]|oficializad[oa]) no (?:cadastro|sistema))\b/iu;
+const claimsStoredEffect = /\b(?:registrei|gravei|salvei|atualizei|oficializei|já consta no (?:cadastro|sistema)|(?:nicho|síntese|summary|resumo|cadastro|nome público)\s+(?:(?:já|foi|está)\s+){0,2}(?:atualizad[oa]|registrad[oa]|oficializad[oa]|salv[oa])|(?:foi|está) (?:salv[oa]|registrad[oa]|atualizad[oa]|oficializad[oa]) no (?:cadastro|sistema))\b/iu;
 
 function safeReply(value: unknown) {
   if (typeof value !== "string") return null;

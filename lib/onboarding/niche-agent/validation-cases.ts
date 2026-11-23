@@ -162,16 +162,17 @@ test("correção é apresentada antes de remover o trecho superado e retém fato
 });
 
 test("texto do modelo não anuncia gravação sem efeito persistido", () => {
-  const falseReceipt = "O novo nicho já consta no cadastro.";
-  const result = turn(context, { reply: falseReceipt, accept: null });
-  assert.match(result.reply, /Vamos conferir/);
-  assert.equal(result.synthesis.accept, null);
-  assert.equal(result.summary, null);
-  const proposalWithReceipt = turn(context, {
-    reply: "Qual público você atende?", offer: { ...proposal, summary: "Nicho atualizado com sucesso." },
-  });
-  assert.equal(proposalWithReceipt.offer, null);
-  assert.equal(proposalWithReceipt.reply, "Qual público você atende?");
+  for (const falseReceipt of ["O novo nicho já consta no cadastro.", "O nicho foi salvo.", "A síntese já foi registrada."]) {
+    const result = turn(context, { reply: falseReceipt, accept: null });
+    assert.match(result.reply, /Vamos conferir/);
+    assert.equal(result.synthesis.accept, null);
+    assert.equal(result.summary, null);
+    const proposalWithReceipt = turn(context, {
+      reply: "Qual público você atende?", offer: { ...proposal, summary: falseReceipt },
+    });
+    assert.equal(proposalWithReceipt.offer, null);
+    assert.equal(proposalWithReceipt.reply, "Qual público você atende?");
+  }
 });
 
 test("metadados inválidos não derrubam a resposta nem são promovidos a efeitos", () => {
@@ -321,6 +322,13 @@ test("Web Search envia assunto público e agrega somente fontes válidas em amba
   assert.equal(addressBlocked.reply, "Posso explicar o assunto.");
   const explicitlyPrivate = "Meu endereço particular é rua dos Alfeneiros.";
   const privateTopic = "serviços em Rua dos Alfeneiros";
+  for (const address of [
+    "Meu endereço particular é rua dos Alfeneiros em São Paulo.",
+    "Meu endereço residencial é rua dos Alfeneiros 231 apartamento 2.",
+  ]) {
+    assert.equal(turn({ ...opening, message: address },
+      { reply: "Posso explicar o assunto.", searchTopic: privateTopic, privateNames: [] }).searchTopic, null);
+  }
   assert.equal(turn({ ...opening, message: explicitlyPrivate },
     { reply: "Posso explicar o assunto.", searchTopic: privateTopic, privateNames: [] }).searchTopic, null);
   assert.equal(turn(privateAddress, { reply: "Posso explicar o assunto.",
@@ -368,7 +376,7 @@ test("Web Search envia assunto público e agrega somente fontes válidas em amba
   assert.equal(readNicheResearch(search, 0), null);
   assert.equal(readNicheResearch(envelope, 1), null);
   const falseReceipt = { ...search, output: [search.output[0], {
-    type: "message", role: "assistant", content: [{ type: "output_text", text: "O novo nicho já consta no cadastro." }],
+    type: "message", role: "assistant", content: [{ type: "output_text", text: "O nicho foi salvo." }],
   }] };
   assert.equal(readNicheResearch(falseReceipt, 1), null);
   const privateOnly = { ...search, output: [{ ...search.output[0],

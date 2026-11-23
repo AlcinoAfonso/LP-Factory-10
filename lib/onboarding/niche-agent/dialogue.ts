@@ -142,14 +142,18 @@ export function publicResearchTopic(topic: string, context: NicheContext, privat
       for (const [, name] of businessContext.matchAll(/^Nome anteriormente informado:[ \t]*([^\r\n]+)/gmu)) names.push(name);
     }
   }
+  const declaredPrivate = /\b(?:meu|minha|nosso|nossa)\s+(?:(?:endere[çc]o(?:\s+(?:particular|residencial|comercial))?|nome\s+(?:pessoal|completo))\s*(?::|é)|(?:consultório|clínica|loja|sede|casa)\s+fica\s+(?:na|no|em)(?=\s+(?:rua|avenida|travessa|alameda)\s))\s*([^.!?;,\r\n]+)/giu;
   for (const { role, content } of [...context.history, { role: "user", content: context.message }]) {
     for (const line of content.split("\n")) {
       if (line.startsWith("Nome público: ")) names.push(line.slice("Nome público: ".length));
     }
-    // Protect values explicitly identified as private at the source, not words in public topics.
-    if (role === "user") {
-      for (const [, value] of content.matchAll(/\b(?:(?:meu|minha|nosso|nossa)\s+(?:endere[çc]o(?:\s+(?:particular|residencial|comercial))?|nome\s+(?:pessoal|completo))\s*(?::|é)|(?:meu|minha|nosso|nossa)\s+(?:consultório|clínica|loja|sede|casa)\s+fica\s+(?:na|no|em)(?=\s+(?:rua|avenida|travessa|alameda)\s))\s*([^.!?;,\r\n]+)/giu)) {
-        names.push(value);
+    if (role !== "user") continue;
+    for (const [, value] of content.matchAll(declaredPrivate)) {
+      names.push(value);
+      // A confirmed private address remains private when the topic omits its number or locality.
+      const [street] = value.trim().split(/\s+(?=\d|n[º°.]|(?:em|no bairro|na cidade|bairro|onde|perto)\b)/iu);
+      if (/^(?:rua|avenida|travessa|alameda)\s+(?:(?:d[aeo]s?)\s+)?\p{L}{2,}/iu.test(street) && street !== value.trim()) {
+        names.push(street);
       }
     }
   }
