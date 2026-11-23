@@ -404,8 +404,10 @@ try{
     assert.equal(JSON.parse(afterContact.summary).classification,proposal);
     assert.equal(afterContact.source_dialogue_id,f.d);
     assert.equal(afterContact.source_user_id,f.u);
-    assert.equal((await finish()).rows[0].ok,true, 'idempotent completion preserves the contact');
-    assert.deepEqual(await memory(f.a),afterContact);
+    assert.equal((await db.query("select complete_account_pending_setup_attendance_v3($1,$2,$3,$4,'official',true,$5) ok",
+      [f.d,f.a,f.u,ready,'(21) 97777-3333'])).rows[0].ok,true,
+      'a second completion with an old version is idempotent even with another contact');
+    assert.deepEqual(await memory(f.a),afterContact, 'the first confirmed contact must not be overwritten');
     assert.equal((await db.query("select status from accounts where id=$1",[f.a])).rows[0].status,'active');
   });
   await test('Pending Setup can finish without a niche after operational and name acceptance',async()=>{
