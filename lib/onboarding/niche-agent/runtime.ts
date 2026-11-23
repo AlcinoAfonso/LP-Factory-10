@@ -58,6 +58,7 @@ const outputShape = z.strictObject({
   corrections: z.array(correctionShape),
   preferredName: z.union([z.string(), z.literal(false)]).nullable(),
   searchTopic: z.string().nullable(),
+  privateNames: z.array(z.string()),
 });
 const format = { type: "json_schema", name: "niche_turn", strict: true,
   schema: z.toJSONSchema(outputShape, { target: "draft-7" }) } as const;
@@ -137,10 +138,16 @@ function validatedTurn(raw: RawTurn, context: NicheContext, observedSummary: str
   if (!reply) return null;
   const preferredName = context.pendingSetup
     ? safeName(raw.preferredName) ?? (raw.preferredName === false ? false : null) : null;
+  const privateNames = z.array(z.string().trim().min(1).max(120)).max(16).safeParse(raw.privateNames);
+  const searchTopic = !context.fixedNiche && !candidate && !shown && raw.accept == null && !clear &&
+    typeof raw.searchTopic === "string" && privateNames.success
+    ? publicResearchTopic(raw.searchTopic.trim(), context, [
+      ...privateNames.data, ...(typeof preferredName === "string" ? [preferredName] : []),
+      ...(name ? [name] : []),
+    ]) : null;
   return {
     reply, offer: shown ? offer : null, summary: accepted ? summary ?? null : null, preferredName,
-    searchTopic: !context.fixedNiche && !candidate && !shown && raw.accept == null && !clear &&
-      typeof raw.searchTopic === "string" ? raw.searchTopic.trim() : null,
+    searchTopic,
     synthesis: {
       offer: shown?.range ?? null, accept: accepted?.id ?? null, clear,
       nicheReaction: accepted?.niche ? "accept" : accepted || clear ? "clear" : "continue",
@@ -156,7 +163,7 @@ export function prepareNicheTurn(context: NicheContext, observedSummary: string 
     role, content: project(context.pendingSetup && role === "user" ? withoutWhatsAppField(content) : content),
   })).filter(item => item.content);
   return {
-    promptVersion: NICHE_AGENT_PROMPT_VERSION, contractVersion: 5,
+    promptVersion: NICHE_AGENT_PROMPT_VERSION, contractVersion: 6,
     request: {
       instructions: NICHE_AGENT_INSTRUCTIONS,
       input: JSON.stringify({ ...context, message, history, summary: project(context.summary),
@@ -210,7 +217,7 @@ export async function requestNicheAgent(accountId: string, dialogueId: string, c
     return null;
   }
   const search = configuration.value.webSearch;
-  const topic = turn.value.searchTopic && publicResearchTopic(turn.value.searchTopic, context);
+  const topic = turn.value.searchTopic;
   if (!search || !topic) return turn.value;
   const research = await requestOpenAiResponses({
     ...transport, promptVersion: prepared.promptVersion, contractVersion: prepared.contractVersion,
