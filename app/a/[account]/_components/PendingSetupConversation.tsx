@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
@@ -8,7 +8,7 @@ import { FormField, FormFieldError, FormFieldHint, FormFieldLabel } from "@/comp
 import { Input } from "@/components/ui/input";
 import type { pendingSetupWhatsApp } from "../../../../lib/onboarding/niche-agent/dialogue";
 import type { PendingSetupConversation as PendingSetupConversationContract } from "../../../../lib/onboarding/pending-setup/contracts";
-import { NicheConversation } from "./NicheConversation";
+import { formatWhatsApp, NicheConversation } from "./NicheConversation";
 import {
   completePendingSetupAction,
   conversePendingSetupAction,
@@ -39,6 +39,8 @@ export function PendingSetupConversation({
   >(savePendingSetupBusinessDisplayNameAction, { ok: true });
   const attendanceButtonClass = conversation.attendanceEnabled ? "!bg-brand-700 !text-white hover:!bg-brand-700/90" : "";
   const businessNameRef = useRef<HTMLInputElement | null>(null);
+  const [whatsApp, setWhatsApp] = useState("");
+  const whatsAppComplete = /^\(\d{2}\) 9\d{4}-\d{4}$/u.test(whatsApp);
   useEffect(() => {
     if (nameState.fieldError) businessNameRef.current?.focus();
   }, [nameState.fieldError]);
@@ -120,6 +122,18 @@ export function PendingSetupConversation({
               <FeedbackMessage tone="error" className="mt-4">
                 {completionState.formError}
               </FeedbackMessage>
+            ) : null}
+            {conversation.attendanceEnabled ? (
+              <FormField className="mt-5">
+                <FormFieldLabel htmlFor="completion-whatsapp">WhatsApp para contato com a LP Factory (opcional)</FormFieldLabel>
+                <Input id="completion-whatsapp" name="whatsapp_contact" type="tel" inputMode="numeric"
+                  autoComplete="tel" placeholder="(99) 99999-9999" maxLength={15} value={whatsApp}
+                  onChange={event => setWhatsApp(formatWhatsApp(event.target.value))} disabled={isCompletionPending}
+                  aria-describedby={whatsApp && !whatsAppComplete ? "completion-whatsapp-hint" : undefined} />
+                {whatsApp && !whatsAppComplete ? (
+                  <FormFieldHint id="completion-whatsapp-hint">Número incompleto. Você pode seguir sem informar.</FormFieldHint>
+                ) : null}
+              </FormField>
             ) : null}
             <Button type="submit" disabled={isCompletionPending} className={cn("mt-5 min-h-11", attendanceButtonClass)}>
               {isCompletionPending ? "Concluindo…" : conversation.attendanceEnabled ? "Ver página comercial" : "Continuar para a próxima etapa"}
