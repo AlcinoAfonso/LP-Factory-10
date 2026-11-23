@@ -1,11 +1,28 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { z } from "zod";
+import type { OpenAiResponsesInput } from "../../openai-responses/openAiResponsesAdapter";
 import { readNicheDialogueCostContext } from "../../openai-costs/adapters/costLedgerReadAdapter";
 import { requestOpenAiResponses } from "../../openai-responses/openAiResponsesAdapter";
+import { webSearchMetadata } from "../../openai-responses/web-search-metadata";
 import { resolveOpenAiProductWorkload, resolveOpenAiWorkloadEnvironment } from "../../openai-workloads";
-import { contactTurn, fixedNicheTurn, prepareNicheTurn, publicResearchTopic, readNicheResearch, type NicheContext } from "./index";
-import { synthesisReference, withoutWhatsAppField } from "./dialogue";
+import { validNicheDescription } from "../niche-resolution/official-niche-policy";
+import {
+  CONTACT_RECEIPT, mergeNicheMemory, presentOffer, publicResearchTopic, redactNicheText, withoutWhatsAppField,
+  type DialogueText, type DisplayedOffer, type NicheOffer, type SynthesisWrite,
+} from "./dialogue";
+import { NICHE_AGENT_INSTRUCTIONS, NICHE_AGENT_PROMPT_VERSION } from "./prompt";
+
+export type NicheContext = Readonly<{
+  message: string;
+  history: readonly DialogueText[];
+  summary: string | null;
+  businessContext: string | null;
+  officialNiche: string | null;
+  fixedNiche?: string | null;
+  displayed: DisplayedOffer | null;
+  pendingSetup?: { preferredName: string | false | null; publicName: string | null; publicNameRequired: boolean };
+}>;
 
 export const conversationalMessage = z.object({
   account: z.string().regex(/^[a-z0-9][a-z0-9-]{0,62}$/),
@@ -24,11 +41,154 @@ export const dialogueState = z.object({
   acceptedName: z.string().nullish(),
   official: z.object({ description: z.string().nullish(), legacyTaxonId: z.string().nullish(),
     legacyUpdatedAt: z.string().nullish() }).optional(),
-  synthesis: synthesisReference.nullish(),
+  synthesis: z.object({ start: z.number().int().positive(), length: z.number().int().positive().max(1000), messageId: z.uuid() }).nullish(),
 });
 
+const offerShape = z.strictObject({
+  summary: z.string(),
+  niche: z.string().nullable(),
+  publicName: z.string().nullable(),
+});
+const correctionShape = z.strictObject({ previous: z.string(), replacement: z.string() });
+const outputShape = z.strictObject({
+  reply: z.string(),
+  offer: offerShape.nullable(),
+  accept: z.string().nullable(),
+  clear: z.boolean(),
+  corrections: z.array(correctionShape),
+  preferredName: z.union([z.string(), z.literal(false)]).nullable(),
+  searchTopic: z.string().nullable(),
+});
+const format = { type: "json_schema", name: "niche_turn", strict: true,
+  schema: z.toJSONSchema(outputShape, { target: "draft-7" }) } as const;
+const fragment = z.string().trim().min(1).max(1000);
+const correction = correctionShape.extend({ previous: fragment, replacement: fragment });
+const envelope = z.object({
+  status: z.literal("completed"),
+  output: z.array(z.object({
+    type: z.string(),
+    role: z.string().optional(),
+    content: z.array(z.object({ type: z.string(), text: z.string().optional() })).optional(),
+  })),
+});
+
+type RawTurn = Partial<Record<keyof typeof outputShape.shape, unknown>>;
+export type NicheTurn = Readonly<{
+  reply: string;
+  offer: NicheOffer | null;
+  synthesis: SynthesisWrite;
+  summary: string | null;
+  preferredName: string | false | null;
+  searchTopic: string | null;
+}>;
+const contactTurn: NicheTurn = {
+  reply: CONTACT_RECEIPT, offer: null, summary: null, preferredName: null, searchTopic: null,
+  synthesis: { accept: null, offer: null, clear: false, nicheReaction: "continue" },
+};
+
+// This guard prevents an uncommitted provider reply from announcing a completed write.
+// It never interprets the user's acceptance.
+const claimsWrite = /\b(?:registrei|gravei|salvei|atualizei|já consta|oficializad[oa]|foi feita a (?:gravação|atualização)|(?:ficou|foi|está) (?:salv[oa]|registrad[oa]|atualizad[oa]|confirmad[oa])|nicho atualizad[oa])\b/iu;
+const project = (value: string | null | undefined) => value ? redactNicheText(value) : null;
+const safeName = (value: unknown) => validNicheDescription(value) && project(value) === value ? value : null;
+
+function safeReply(value: unknown) {
+  if (typeof value !== "string") return null;
+  const reply = redactNicheText(value).trim();
+  return reply && reply.length <= 4000 && !claimsWrite.test(reply) ? reply : null;
+}
+
+function readOutput(payload: unknown) {
+  const data = envelope.safeParse(payload);
+  if (!data.success) return null;
+  const content = data.data.output.filter(item => item.type === "message" && item.role === "assistant")
+    .flatMap(item => item.content ?? []);
+  if (content.some(item => item.type === "refusal")) return null;
+  return content.filter(item => item.type === "output_text").map(item => item.text).join("").trim() || null;
+}
+
+function interpret(raw: RawTurn, context: NicheContext, observedSummary: string | null): NicheTurn | null {
+  const parsedOffer = offerShape.safeParse(raw.offer);
+  const proposed = parsedOffer.success ? parsedOffer.data : null;
+  const niche = safeName(proposed?.niche);
+  const name = context.pendingSetup ? safeName(proposed?.publicName) : null;
+  const understanding = fragment.safeParse(proposed?.summary);
+  const offer = proposed && understanding.success && project(understanding.data) === understanding.data &&
+    (proposed.niche === null || niche) && (!context.pendingSetup || proposed.publicName === null || name) &&
+    (!context.pendingSetup?.publicNameRequired || context.pendingSetup.publicName || name) &&
+    (!context.fixedNiche || niche === context.fixedNiche)
+    ? { summary: understanding.data, niche, publicName: name } : null;
+  const presentation = offer && presentOffer(offer);
+  const shown = presentation && !claimsWrite.test(presentation.reply) ? presentation : null;
+
+  // The model alone judges acceptance. The server checks only the exact displayed target.
+  const candidate = context.displayed && !shown && raw.offer == null && raw.clear !== true &&
+    raw.accept === context.displayed.id &&
+    (!context.fixedNiche || context.displayed.niche === context.fixedNiche)
+    ? context.displayed : null;
+  const corrections = Array.isArray(raw.corrections) ? raw.corrections.slice(0, 6).flatMap(value => {
+    const parsed = correction.safeParse(value);
+    return parsed.success ? [parsed.data] : [];
+  }) : [];
+  const summary = candidate && !context.fixedNiche
+    ? mergeNicheMemory(observedSummary, candidate, corrections) : null;
+  const accepted = candidate && summary !== undefined ? candidate : null;
+  const clear = raw.clear === true && raw.offer == null && raw.accept == null;
+  const reply = shown?.reply ?? safeReply(raw.reply) ?? (accepted ? "Recebi sua confirmação." : null);
+  if (!reply) return null;
+  const personal = context.pendingSetup ? safeName(raw.preferredName) : null;
+  const preferredName = personal && context.message.toLocaleLowerCase("pt-BR").includes(personal.toLocaleLowerCase("pt-BR"))
+    ? personal : context.pendingSetup && raw.preferredName === false ? false : null;
+  return {
+    reply, offer: shown ? offer : null, summary: accepted ? summary ?? null : null, preferredName,
+    searchTopic: !context.fixedNiche && !candidate && !shown && raw.accept == null && !clear &&
+      typeof raw.searchTopic === "string" ? raw.searchTopic.trim() : null,
+    synthesis: {
+      offer: shown?.range ?? null, accept: accepted?.id ?? null, clear,
+      nicheReaction: accepted?.niche ? "accept" : accepted || clear ? "clear" : "continue",
+    },
+  };
+}
+
+export function prepareNicheTurn(context: NicheContext, observedSummary: string | null): Pick<OpenAiResponsesInput<NicheTurn>,
+  "request" | "parseResponse" | "promptVersion" | "contractVersion"> {
+  const original = context.pendingSetup ? withoutWhatsAppField(context.message) : context.message;
+  const message = redactNicheText(original);
+  const history = context.history.map(({ role, content }) => ({
+    role, content: project(context.pendingSetup && role === "user" ? withoutWhatsAppField(content) : content),
+  })).filter(item => item.content);
+  return {
+    promptVersion: NICHE_AGENT_PROMPT_VERSION, contractVersion: 5,
+    request: {
+      instructions: NICHE_AGENT_INSTRUCTIONS,
+      input: JSON.stringify({ ...context, message, history, summary: project(context.summary),
+        businessContext: project(context.businessContext), officialNiche: project(context.officialNiche) }),
+      store: false, background: false, text: { format },
+    },
+    parseResponse(payload) {
+      const text = readOutput(payload);
+      if (text && webSearchMetadata(payload)?.calls === 0) {
+        let raw: unknown;
+        try { raw = JSON.parse(text); } catch { raw = /^[{["]/u.test(text) ? null : { reply: text }; }
+        if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+          const turn = interpret(raw, context, observedSummary);
+          if (turn) return { ok: true, value: turn };
+        }
+      }
+      return { ok: false, kind: "invalid_response", reason: "niche_reply_unavailable" };
+    },
+  };
+}
+
+function readNicheResearch(payload: unknown, limit: number) {
+  const web = webSearchMetadata(payload);
+  const reply = safeReply(readOutput(payload));
+  if (!reply || !web?.calls || web.calls > limit) return null;
+  return reply + "\n\nFontes consultadas em " + new Date().toISOString().slice(0, 10) + ":\n" +
+    web.sources.slice(0, 3).map(source => source.url).join("\n");
+}
+
 export async function requestNicheAgent(accountId: string, dialogueId: string, context: NicheContext, prior: string | null) {
-  if (context.fixedNiche) return fixedNicheTurn(context, prior);
   if (context.pendingSetup && !withoutWhatsAppField(context.message)) return contactTurn;
   const environment = resolveOpenAiWorkloadEnvironment();
   const configuration = await resolveOpenAiProductWorkload("pending_setup_conversation", environment);
