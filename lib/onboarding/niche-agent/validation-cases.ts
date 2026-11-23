@@ -162,7 +162,7 @@ test("correção é apresentada antes de remover o trecho superado e retém fato
 });
 
 test("texto do modelo não anuncia gravação sem efeito persistido", () => {
-  for (const falseReceipt of ["O novo nicho já consta no cadastro.", "O nicho foi salvo.", "A síntese já foi registrada."]) {
+  for (const falseReceipt of ["O novo nicho já consta no cadastro.", "O nicho foi salvo.", "A síntese já foi registrada.", "O nicho ficou salvo."]) {
     const result = turn(context, { reply: falseReceipt, accept: null });
     assert.match(result.reply, /Vamos conferir/);
     assert.equal(result.synthesis.accept, null);
@@ -325,6 +325,8 @@ test("Web Search envia assunto público e agrega somente fontes válidas em amba
   for (const address of [
     "Meu endereço particular é rua dos Alfeneiros em São Paulo.",
     "Meu endereço residencial é rua dos Alfeneiros 231 apartamento 2.",
+    "Meu consultório fica na rua dos Alfeneiros e atendo idosos.",
+    "Meu endereço é rua dos Alfeneiros fundos.",
   ]) {
     assert.equal(turn({ ...opening, message: address },
       { reply: "Posso explicar o assunto.", searchTopic: privateTopic, privateNames: [] }).searchTopic, null);
@@ -376,7 +378,7 @@ test("Web Search envia assunto público e agrega somente fontes válidas em amba
   assert.equal(readNicheResearch(search, 0), null);
   assert.equal(readNicheResearch(envelope, 1), null);
   const falseReceipt = { ...search, output: [search.output[0], {
-    type: "message", role: "assistant", content: [{ type: "output_text", text: "O nicho foi salvo." }],
+    type: "message", role: "assistant", content: [{ type: "output_text", text: "O nicho ficou salvo." }],
   }] };
   assert.equal(readNicheResearch(falseReceipt, 1), null);
   const privateOnly = { ...search, output: [{ ...search.output[0],

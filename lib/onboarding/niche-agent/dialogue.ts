@@ -148,18 +148,17 @@ export function publicResearchTopic(topic: string, context: NicheContext, privat
       if (line.startsWith("Nome público: ")) names.push(line.slice("Nome público: ".length));
     }
     if (role !== "user") continue;
-    for (const [, value] of content.matchAll(declaredPrivate)) {
-      names.push(value);
-      // A confirmed private address remains private when the topic omits its number or locality.
-      const [street] = value.trim().split(/\s+(?=\d|n[º°.]|(?:em|no bairro|na cidade|bairro|onde|perto)\b)/iu);
-      if (/^(?:rua|avenida|travessa|alameda)\s+(?:(?:d[aeo]s?)\s+)?\p{L}{2,}/iu.test(street) && street !== value.trim()) {
-        names.push(street);
-      }
-    }
+    for (const [, value] of content.matchAll(declaredPrivate)) names.push(value);
   }
   const normalize = (text: string) => text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase()
     .replace(/[^\p{L}]+/gu, " ").trim();
-  const lower = normalize(topic);
-  if (names.some(name => name && normalize(name) && (" " + lower + " ").includes(" " + normalize(name) + " "))) return null;
+  const lower = " " + normalize(topic) + " ";
+  if (names.some(name => {
+    if (!name) return false;
+    const value = normalize(name);
+    // Match a named street only when it derives from a known private value.
+    const street = value.match(/^(?:rua|avenida|travessa|alameda)\s+(?:(?:d[aeo]s?)\s+)?(?!(?:d[aeo]s?|em|na|no)\b)\p{L}{2,}/u)?.[0];
+    return (value && lower.includes(" " + value + " ")) || (street && lower.includes(" " + street + " "));
+  })) return null;
   return topic;
 }
