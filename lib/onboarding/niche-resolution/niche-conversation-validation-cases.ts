@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import nodeModule from "node:module";
 import { z } from "zod";
 import type { CommunicationBase } from "../../communication-base/contracts";
-import { fixedNicheTurn, prepareNicheTurn, type NicheContext } from "../niche-agent";
+import type { NicheContext } from "../niche-agent/runtime";
+import { presentOffer } from "../niche-agent/dialogue";
 import type { OfficialAccountNiche } from "./official-niche-policy";
 
 export async function validateNicheConversationActions() {
@@ -47,9 +48,15 @@ export async function validateNicheConversationActions() {
         version: z.number(), requestId: z.uuid(), content: z.string().min(1).max(4000) }),
       requestNicheAgent: async (_account: string, _dialogue: string, context: NicheContext, prior: string | null) => {
         contexts.push(context);
-        return provider ? context.fixedNiche ? fixedNicheTurn(context, prior) : {
-          reply: "Vamos conferir o público.", offer: null, summary: null, synthesis: { accept: null },
-        } : null;
+        if (!provider) return null;
+        if (context.fixedNiche) {
+          const offer = { summary: "A descrição vigente é " + context.fixedNiche + ".", niche: context.fixedNiche, publicName: null };
+          const shown = presentOffer(offer);
+          return shown ? { reply: shown.reply, offer, summary: null, preferredName: null, searchTopic: null,
+            synthesis: { offer: shown.range, accept: null, clear: false, nicheReaction: "continue" } } : null;
+        }
+        return { reply: "Vamos conferir o público.", offer: null, summary: null, preferredName: null, searchTopic: null,
+          synthesis: { offer: null, accept: null, clear: false, nicheReaction: "continue" } };
       },
     };
     return original.call(this, name, parent, isMain);
@@ -122,11 +129,14 @@ export async function validatePendingConfirmedName() {
     if (name.includes("niche-agent/runtime")) return {
       conversationalMessage: z.object({ account: z.string(), dialogueId: z.uuid(), version: z.number(), requestId: z.uuid(), content: z.string() }),
       requestNicheAgent: async (_account: string, _dialogue: string, context: NicheContext) => {
-        const text = JSON.stringify(context.message === "Sim." ? { reply: "Entendido." } : { offer: proposed });
-        const result = prepareNicheTurn(context, null).parseResponse({ status: "completed", output: [
-          { role: "assistant", type: "message", content: [{ type: "output_text", text }] },
-        ] });
-        return result.ok ? result.value : null;
+        if (context.message === "Sim.") {
+          return { reply: "Recebi sua confirmação.", offer: null,
+            summary: JSON.stringify({ confirmedUnderstanding: proposed.summary }), preferredName: null, searchTopic: null,
+            synthesis: { offer: null, accept: context.displayed?.id ?? null, clear: false, nicheReaction: "accept" as const } };
+        }
+        const shown = presentOffer(proposed);
+        return shown ? { reply: shown.reply, offer: proposed, summary: null, preferredName: null, searchTopic: null,
+          synthesis: { offer: shown.range, accept: null, clear: false, nicheReaction: "continue" as const } } : null;
       },
     };
     return original.call(this, name, parent, isMain);
