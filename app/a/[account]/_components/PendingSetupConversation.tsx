@@ -24,7 +24,8 @@ export function PendingSetupConversation({
 }: {
   accountSubdomain: string;
   conversation: Pick<PendingSetupConversationContract,
-    "id" | "version" | "businessDisplayName" | "businessNameCandidate" | "attendanceEnabled" | "messages" | "stage" | "dialogueState">;
+    "id" | "version" | "preferredName" | "preferredNameDeclined" | "businessDisplayName" | "businessNameCandidate" |
+    "attendanceEnabled" | "messages" | "stage" | "dialogueState">;
   passageEnabled: boolean;
   whatsappMode: ReturnType<typeof pendingSetupWhatsApp>;
 }) {
@@ -58,9 +59,11 @@ export function PendingSetupConversation({
             <NicheConversation account={accountSubdomain} dialogueId={conversation.id} version={conversation.version}
               messages={conversation.messages} retry={retry} ended={ready}
               whatsappMode={whatsappMode}
-              introductoryMessage={conversation.businessNameCandidate
-                ? "Vamos identificar o nicho de " + conversation.businessNameCandidate + ". O que você gostaria de destacar?"
-                : "Vamos identificar o nicho do seu negócio. O que você gostaria de destacar sobre o que faz?"}
+              introductoryMessage={conversation.preferredName
+                ? "Sou o Agente Nicho da LP Factory. Olá, " + conversation.preferredName + "! Conte um pouco sobre seu negócio."
+                : conversation.preferredNameDeclined
+                  ? "Sou o Agente Nicho da LP Factory. Conte um pouco sobre seu negócio."
+                  : "Olá! Sou o Agente Nicho da LP Factory. Como posso chamar você? Se preferir, pode começar falando sobre seu negócio."}
               label="Sua mensagem" submit={conversePendingSetupAction} />
           </div>
         ) : null}
