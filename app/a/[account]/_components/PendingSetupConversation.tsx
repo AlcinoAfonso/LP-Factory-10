@@ -115,9 +115,11 @@ export function PendingSetupConversation({
               conversationId={conversation.id}
               version={conversation.version}
             />
-            {!conversation.attendanceEnabled ? <FeedbackMessage tone="success">
-              Entendimento concluído. Falta apenas confirmar a passagem para a próxima etapa.
-            </FeedbackMessage> : null}
+            <FeedbackMessage tone="success">
+              {conversation.attendanceEnabled
+                ? "Dados do negócio confirmados e salvos."
+                : "Entendimento concluído. Falta apenas confirmar a passagem para a próxima etapa."}
+            </FeedbackMessage>
             {completionState.formError ? (
               <FeedbackMessage tone="error" className="mt-4">
                 {completionState.formError}
