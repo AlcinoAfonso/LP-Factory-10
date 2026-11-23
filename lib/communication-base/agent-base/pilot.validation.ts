@@ -286,6 +286,7 @@ const citedFinal = { ...finalMessage, content: [{ type: "output_text", text: web
   annotations: [{ type: "url_citation", url: "https://example.org/cited#section", title: "Fonte citada" }] }] };
 const sourceFreeCall = { type: "web_search_call", status: "completed", action: { type: "search" } };
 const citedOnly = { output: [sourceFreeCall, citedFinal] };
+expectSources({ output: [{ ...sourceFreeCall, status: "failed" }, sourceFreeCall, citedFinal] }, 1, 2);
 const cited = parseAgentBasePilotResponse(citedOnly, "audience");
 assert.equal(cited.ok, true, "pilot accepts native final-answer citations as verifiable sources");
 if (cited.ok) {
