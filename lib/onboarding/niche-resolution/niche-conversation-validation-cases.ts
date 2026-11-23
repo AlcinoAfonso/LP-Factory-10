@@ -139,23 +139,32 @@ export async function validatePendingConfirmedName() {
   const proposed = { summary: "Cuida de jardins de condomínios.", niche: "Jardinagem para condomínios", publicName: null };
   let state: Record<string, unknown> = { acceptedName };
   let proposal: unknown = null;
+  let stage = "business_understanding";
+  const completions: { whatsapp?: string | null }[] = [];
   let messages: { id: string; role: "assistant"; content: string }[] = [];
   const commits: { nameReaction: string; reply: string; proposal: unknown; synthesis: { offer: object | null }; stage: string }[] = [];
   const loader = nodeModule as unknown as { _load: (name: string, parent: unknown, isMain: boolean) => unknown };
   const original = loader._load;
   loader._load = function(name, parent, isMain) {
-    if (name === "server-only" || name.includes("accountNicheResolutionUserAdapter")) return {};
+    if (name === "server-only") return {};
+    if (name.includes("accountNicheResolutionUserAdapter")) return { getConfirmedOperationalNicheResolutionLabel: async () => null };
     if (name === "next/cache") return { revalidatePath: () => {} };
     if (name.includes("getAccessContext")) return { getAccessContext: async () =>
       ({ account: { id: accountId, status: "pending_setup" }, member: { role: "owner", status: "active", userId: accountId } }) };
-    if (name.includes("accountOfficialNicheAdapter")) return { readAccountOfficialNiche: async () => ({ ok: true, niche: null }) };
+    if (name.includes("accountOfficialNicheAdapter")) return {
+      readAccountOfficialNiche: async () => ({ ok: true, niche: null }),
+      getAccountOfficialNiche: async () => ({ confirmed: true }),
+    };
     if (name.includes("accountTaxonomyAdapter")) return { readActivePrimaryAccountTaxon: async () => ({ ok: true, taxon: null }) };
     if (name.includes("pending-setup/config")) return { isE1011PassageEnabled: () => true, isE1012AttendanceEnabled: () => true };
     if (name.includes("pendingSetupConversationAdapter")) return {
       claimPendingNicheTurn: async () => ({ version, replay: false }),
-      loadPendingSetupConversation: async () => ({ id: dialogueId, version, accountContext: { summary: null, updatedAt: "1" },
+      loadPendingSetupConversation: async () => ({ id: dialogueId, version, stage,
+        businessDisplayName: stage === "ready_to_complete" ? acceptedName : null,
+        accountContext: { summary: null, updatedAt: "1" },
         dialogueState: state, attendanceProposal: proposal, messages }),
       commitPendingNicheTurn: async (input: typeof commits[number]) => { commits.push(input); return true; },
+      completePendingSetup: async (input: typeof completions[number]) => { completions.push(input); return { ok: true }; },
     };
     if (name.includes("niche-agent/runtime")) return {
       conversationalMessage: z.object({ account: z.string(), dialogueId: z.uuid(), version: z.number(), requestId: z.uuid(), content: z.string() }),
@@ -189,6 +198,21 @@ export async function validatePendingConfirmedName() {
   assert.equal((await action.conversePendingSetupAction({ ...turn, requestId: crypto.randomUUID(), content: "Sim." })).ok, true);
   assert.equal(commits[2].stage, "ready_to_complete");
   assert.equal(commits[2].nameReaction, "keep");
+  stage = "ready_to_complete";
+  const complete = (phone?: string) => {
+    const form = new FormData();
+    form.set("account_subdomain", "qa-niche");
+    form.set("conversation_id", dialogueId);
+    form.set("expected_version", String(version));
+    if (phone !== undefined) form.set("whatsapp_contact", phone);
+    return action.completePendingSetupAction({ ok: true }, form);
+  };
+  assert.equal((await complete("(21) 99999-9876")).ok, true);
+  assert.equal(completions.at(-1)?.whatsapp, "(21) 99999-9876");
+  assert.equal((await complete()).ok, true);
+  assert.equal(completions.at(-1)?.whatsapp, null);
+  assert.equal((await complete("(21) 99")).ok, true, "incomplete number must not prevent completion");
+  assert.equal(completions.at(-1)?.whatsapp, null);
 }
 
 async function validateNicheProjectionAdapter(base: CommunicationBase, accountId: string, anotherUser: string) {
