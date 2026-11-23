@@ -16,9 +16,9 @@ import type {
 } from "../contracts";
 import {
   openAiImageQualities,
-  openAiProductWorkloadIds,
   openAiReasoningEfforts,
 } from "../contracts";
+import { listOpenAiWorkloadPresentations } from "../registry";
 import { readCompleteOrderedPages } from "./modelCatalogAdapterCore";
 import {
   readWithOpenAiTierCompatibility,
@@ -30,6 +30,12 @@ import {
 export const readOpenAiAdministrativeConfigurations: OpenAiAdministrativeConfigurationReader =
   async (): Promise<OpenAiAdministrativeConfigurationReadResult> => {
     try {
+      const managedWorkloads = listOpenAiWorkloadPresentations().map(({ workload }) => workload);
+      if (managedWorkloads.length === 0) {
+        return translateOpenAiAdministrativeConfigurationRows(
+          { data: [], error: null }, { data: [], error: null }, { data: [], error: null },
+        );
+      }
       const supabase = createServiceClient();
       const [unitRead, revisionRead, activationRead] = await Promise.all([
         readCompleteOrderedPages(async (from, to) =>
@@ -38,7 +44,7 @@ export const readOpenAiAdministrativeConfigurations: OpenAiAdministrativeConfigu
             .select(
               "environment,workload,modality,active_revision_id,pending_revision_id,candidate_model,candidate_reasoning_effort,candidate_quality,candidate_saved_by,candidate_saved_at,configuration_version" + (includeTier ? ",candidate_service_tier" : ""),
             )
-            .in("workload", [...openAiProductWorkloadIds])
+            .in("workload", managedWorkloads)
             .order("environment", { ascending: true })
             .order("workload", { ascending: true })
             .range(from, to)),
@@ -49,7 +55,7 @@ export const readOpenAiAdministrativeConfigurations: OpenAiAdministrativeConfigu
             .select(
               "id,environment,workload,modality,revision_number,model,reasoning_effort,quality,validated_by,validated_at" + (includeTier ? ",service_tier" : ""),
             )
-            .in("workload", [...openAiProductWorkloadIds])
+            .in("workload", managedWorkloads)
             .order("environment", { ascending: true })
             .order("workload", { ascending: true })
             .order("revision_number", { ascending: true })
@@ -61,7 +67,7 @@ export const readOpenAiAdministrativeConfigurations: OpenAiAdministrativeConfigu
             .select(
               "id,environment,workload,modality,activation_number,event_type,previous_revision_id,target_revision_id,actor_user_id,created_at",
             )
-            .in("workload", [...openAiProductWorkloadIds])
+            .in("workload", managedWorkloads)
             .order("environment", { ascending: true })
             .order("workload", { ascending: true })
             .order("activation_number", { ascending: true })

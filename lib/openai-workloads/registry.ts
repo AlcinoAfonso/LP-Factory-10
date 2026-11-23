@@ -14,7 +14,7 @@ const revision = "v2";
 export const openAiWorkloadRegistry = deepFreeze([
   {
     id: "pending_setup_conversation",
-    displayName: "Atendimento inicial por IA",
+    displayName: "Agente Nicho",
     classification: "product_runtime",
     configurationKind: "effective",
     consumer: "Atendimento inicial, orientação comercial e identificação semântica de nicho",
@@ -140,32 +140,14 @@ assertValidRegistry(openAiWorkloadRegistry);
 const workloadPresentations = deepFreeze([
   {
     workload: "pending_setup_conversation",
-    name: "Atendimento inicial por IA",
+    name: "Agente Nicho",
     roadmapReference: "E10.12.4",
-    visualGroup: null,
-  },
-  {
-    workload: "niche_resolution",
-    name: "Resolução de nicho",
-    roadmapReference: "E10.5.6.5",
     visualGroup: null,
   },
   {
     workload: "commercial_activation_draft_generation",
     name: "Geração de draft de ativação comercial",
     roadmapReference: "E10.7.3",
-    visualGroup: null,
-  },
-  {
-    workload: "communication_base_stage1_assistance",
-    name: "Assistência da Etapa 1 da Base de Comunicação",
-    roadmapReference: "E25.1.4",
-    visualGroup: null,
-  },
-  {
-    workload: "communication_base_stage2_intelligence",
-    name: "Inteligência da Etapa 2 da Base de Comunicação",
-    roadmapReference: "E25.1.5",
     visualGroup: null,
   },
   {

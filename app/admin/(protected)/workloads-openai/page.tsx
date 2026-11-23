@@ -51,9 +51,6 @@ export default async function OpenAiWorkloadsPage() {
     readConfigurationsSafely(),
     readCatalogSafely(),
   ]);
-  const managedWorkloads = inventory.filter(
-    (workload) => workload.configurationKind === "effective",
-  );
   const supabaseInspect = inventory.find((workload) => workload.id === "supabase_inspect");
   const catalogModels = catalogRead.ok ? catalogRead.value : null;
   const configurationOptions = catalogModels
@@ -66,7 +63,7 @@ export default async function OpenAiWorkloadsPage() {
         eyebrow="Governança OpenAI"
         title="Workloads OpenAI"
         description="Gerencie o catálogo global de novas escolhas e, separadamente, o lifecycle ativo de cada workload em Preview e Production. Nenhuma candidata altera o runtime antes da ativação humana."
-        meta={`${managedWorkloads.length} workloads técnicos`}
+        meta={`${presentations.length} workloads técnicos`}
       />
 
       <OpenAiWorkloadsTabs

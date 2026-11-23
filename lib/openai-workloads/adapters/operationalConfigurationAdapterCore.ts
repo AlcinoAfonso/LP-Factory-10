@@ -1,5 +1,6 @@
 import { isValidOpenAiServiceTierSnapshot } from "../service-tier";
 import {
+  openAiProductWorkloadIds,
   openAiReasoningEfforts,
   type OpenAiAdministrativeActivation,
   type OpenAiAdministrativeCandidate,
@@ -96,14 +97,7 @@ function exactlyOneRecord(value: unknown): Record<string, unknown> | null {
 function isTextWorkload(
   value: string,
 ): value is OpenAiProductWorkloadId {
-  return (
-    value === "pending_setup_conversation" ||
-    value === "niche_resolution" ||
-    value === "commercial_activation_draft_generation" ||
-    value === "communication_base_stage1_assistance" ||
-    value === "communication_base_stage2_intelligence" ||
-    value === "communication_base_agent"
-  );
+  return openAiProductWorkloadIds.includes(value as OpenAiProductWorkloadId);
 }
 
 function reasoningEffortValue(value: unknown): OpenAiReasoningEffort | null {
@@ -158,18 +152,7 @@ function deepFreeze<T>(value: T): T {
 }
 
 const managedEnvironments = ["production", "preview"] as const;
-const preBootstrapManagedWorkloads = [
-  "niche_resolution",
-  "commercial_activation_draft_generation",
-] as const satisfies readonly ManagedWorkload[];
-const e25ManagedWorkloads = [
-  ...preBootstrapManagedWorkloads,
-  "communication_base_stage1_assistance",
-  "communication_base_stage2_intelligence",
-] as const satisfies readonly ManagedWorkload[];
-
-const attendanceManagedWorkloads = [...e25ManagedWorkloads, "pending_setup_conversation"] as const;
-const managedWorkloads = [...attendanceManagedWorkloads, "communication_base_agent"] as const satisfies readonly ManagedWorkload[];
+const managedWorkloads = listOpenAiWorkloadPresentations().map(({ workload }) => workload);
 
 const unitRowKeys = [
   "environment",
@@ -239,14 +222,12 @@ export function translateOpenAiAdministrativeConfigurationRows(
   const units = exactRecords(unitRead.data, unitRowKeys, "candidate_service_tier");
   const revisions = exactRecords(revisionRead.data, revisionRowKeys, "service_tier");
   const activations = exactRecords(activationRead.data, activationRowKeys);
-  const workloads = units?.length === managedWorkloads.length * managedEnvironments.length
-    ? managedWorkloads
-    : [attendanceManagedWorkloads, e25ManagedWorkloads, preBootstrapManagedWorkloads].find(
-      (set) => units?.length === set.length * managedEnvironments.length,
-    );
-  if (!units || !revisions || !activations || !workloads) {
+  if (!units || !revisions || !activations) {
     return invalidAdministrativeConfiguration();
   }
+  const workloads = managedWorkloads.filter((workload) =>
+    units.some((unit) => unit.workload === workload),
+  );
 
   const projections = listOpenAiWorkloadPresentations().map((presentation) => ({
     workload: presentation.workload,
