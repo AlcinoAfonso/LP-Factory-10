@@ -8,7 +8,7 @@ import { webSearchMetadata } from "../../openai-responses/web-search-metadata";
 import { resolveOpenAiProductWorkload, resolveOpenAiWorkloadEnvironment } from "../../openai-workloads";
 import { validNicheDescription } from "../niche-resolution/official-niche-policy";
 import {
-  CONTACT_RECEIPT, mergeNicheMemory, presentOffer, publicResearchTopic, redactNicheText, withoutWhatsAppField,
+  CONTACT_RECEIPT, mergeNicheMemory, presentOffer, publicResearchTopic, redactNicheText, synthesisReference, withoutWhatsAppField,
   type DialogueText, type DisplayedOffer, type NicheOffer, type SynthesisWrite,
 } from "./dialogue";
 import { NICHE_AGENT_INSTRUCTIONS, NICHE_AGENT_PROMPT_VERSION } from "./prompt";
@@ -41,7 +41,7 @@ export const dialogueState = z.object({
   acceptedName: z.string().nullish(),
   official: z.object({ description: z.string().nullish(), legacyTaxonId: z.string().nullish(),
     legacyUpdatedAt: z.string().nullish() }).optional(),
-  synthesis: z.object({ start: z.number().int().positive(), length: z.number().int().positive().max(1000), messageId: z.uuid() }).nullish(),
+  synthesis: synthesisReference.nullish(),
 });
 
 const offerShape = z.strictObject({
@@ -81,7 +81,7 @@ export type NicheTurn = Readonly<{
   preferredName: string | false | null;
   searchTopic: string | null;
 }>;
-const contactTurn: NicheTurn = {
+export const contactTurn: NicheTurn = {
   reply: CONTACT_RECEIPT, offer: null, summary: null, preferredName: null, searchTopic: null,
   synthesis: { accept: null, offer: null, clear: false, nicheReaction: "continue" },
 };
@@ -107,7 +107,7 @@ function readOutput(payload: unknown) {
   return content.filter(item => item.type === "output_text").map(item => item.text).join("").trim() || null;
 }
 
-function interpret(raw: RawTurn, context: NicheContext, observedSummary: string | null): NicheTurn | null {
+function validatedTurn(raw: RawTurn, context: NicheContext, observedSummary: string | null): NicheTurn | null {
   const parsedOffer = offerShape.safeParse(raw.offer);
   const proposed = parsedOffer.success ? parsedOffer.data : null;
   const niche = safeName(proposed?.niche);
@@ -171,7 +171,7 @@ export function prepareNicheTurn(context: NicheContext, observedSummary: string 
         let raw: unknown;
         try { raw = JSON.parse(text); } catch { raw = /^[{["]/u.test(text) ? null : { reply: text }; }
         if (raw && typeof raw === "object" && !Array.isArray(raw)) {
-          const turn = interpret(raw, context, observedSummary);
+          const turn = validatedTurn(raw, context, observedSummary);
           if (turn) return { ok: true, value: turn };
         }
       }
@@ -180,7 +180,7 @@ export function prepareNicheTurn(context: NicheContext, observedSummary: string 
   };
 }
 
-function readNicheResearch(payload: unknown, limit: number) {
+export function readNicheResearch(payload: unknown, limit: number) {
   const web = webSearchMetadata(payload);
   const reply = safeReply(readOutput(payload));
   if (!reply || !web?.calls || web.calls > limit) return null;
