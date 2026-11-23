@@ -2,6 +2,8 @@ import "server-only";
 
 import { z } from "zod";
 import { createServiceClient } from "../../supabase/service";
+import { clientOpenAiCostContext, type OpenAiCostEnvironment } from "../active-contracts";
+import { resolveOpenAiOccurrenceId } from "../recorder";
 import { buildOccurrenceCostDetail, type OccurrenceCostQuery, type OccurrenceCostResult } from "../occurrence-costs";
 import { COST_LEDGER_PAGE_SIZE, readCostLedgerPages, translateCostLedger } from "./costLedgerReadAdapterCore";
 
@@ -26,6 +28,27 @@ export async function readCostLedgerOperations(
     operations.push(...batch);
   }
   return operations;
+}
+
+export async function readNicheDialogueCostContext(accountId: string, dialogueId: string, environment: OpenAiCostEnvironment) {
+  const context = clientOpenAiCostContext(accountId, { kind: "niche_resolution", eventId: dialogueId });
+  const occurrenceId = resolveOpenAiOccurrenceId(context, environment);
+  const client = createServiceClient();
+  const signal = AbortSignal.timeout(2000);
+  const execution = await client.from("openai_cost_executions").select("id")
+    .eq("occurrence_id", occurrenceId).eq("account_id", accountId)
+    .eq("environment", environment).eq("execution_origin", "runtime")
+    .eq("universe", "client").eq("attribution_status", "attributed")
+    .eq("economic_event_kind", "niche_resolution").eq("economic_event_id", dialogueId)
+    .limit(1).abortSignal(signal).maybeSingle();
+  if (execution.error) return null;
+  if (!execution.data) return context;
+  // Once an execution exists, v4 cannot add dimensions to that occurrence.
+  const { data: lifecycle, error } = await client.from("openai_cost_occurrence_lifecycle")
+    .select("action_kind").eq("occurrence_id", occurrenceId).abortSignal(signal).maybeSingle();
+  if (error) return null;
+  if (lifecycle?.action_kind === "niche_resolution") return context;
+  return !lifecycle || lifecycle.action_kind === null ? { ...context, occurrenceDimensions: undefined } : null;
 }
 
 export async function readOpenAiCostOccurrence(query: OccurrenceCostQuery): Promise<OccurrenceCostResult> {

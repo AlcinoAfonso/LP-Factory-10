@@ -1,7 +1,7 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { clientOpenAiCostContext } from "../../openai-costs";
+import { readNicheDialogueCostContext } from "../../openai-costs/adapters/costLedgerReadAdapter";
 import { requestOpenAiResponses } from "../../openai-responses/openAiResponsesAdapter";
 import { resolveOpenAiProductWorkload, resolveOpenAiWorkloadEnvironment } from "../../openai-workloads";
 import { contactTurn, fixedNicheTurn, prepareNicheTurn, publicResearchTopic, readNicheResearch, type NicheContext } from "./index";
@@ -32,10 +32,15 @@ export async function requestNicheAgent(accountId: string, dialogueId: string, c
   if (context.pendingSetup && !withoutWhatsAppField(context.message)) return contactTurn;
   const environment = resolveOpenAiWorkloadEnvironment();
   const configuration = await resolveOpenAiProductWorkload("pending_setup_conversation", environment);
-  if (!configuration.ok) return null;
+  if (!configuration.ok || environment === "unknown") return null;
+  const financialContext = await readNicheDialogueCostContext(accountId, dialogueId, environment).catch(() => null);
+  if (!financialContext) {
+    console.warn("d15e_niche_cost_context_unavailable", { journey: context.pendingSetup ? "pending_setup" : "account_niche" });
+    return null;
+  }
   const transport = {
     environment, configuration: configuration.value, apiKey: process.env.OPENAI_API_KEY,
-    financialContext: clientOpenAiCostContext(accountId, { kind: "niche_resolution", eventId: dialogueId }),
+    financialContext,
     executionOrigin: "runtime" as const, baselineReference: "d15e_conversational_niche", timeoutMs: 120_000,
     expectedWorkload: "pending_setup_conversation" as const,
   };

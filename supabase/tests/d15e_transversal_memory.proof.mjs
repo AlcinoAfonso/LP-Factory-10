@@ -124,7 +124,7 @@ try{
   await db.query('alter table account_pending_setup_conversations add unique(account_id,user_id)');
   await db.query(read('../migrations/' + migration));
   await db.query(read('../migrations/20261121123500_d15e_pending_setup_contact_in_claim.sql'));
-  await db.query(read('../migrations/20261121202300_d15e_confirm_legacy_niche_in_dialogue.sql'));
+  await db.query(read('../migrations/20261123124000_d15e_confirm_legacy_niche_in_dialogue.sql'));
 
   await test('versioned RPCs are restricted to the server role',async()=>{
     const {rows}=await db.query(`select proname,

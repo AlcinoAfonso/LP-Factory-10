@@ -3,7 +3,7 @@ import { createHmac } from "node:crypto";
 import nodeModule from "node:module";
 import { communicationSections } from "../communication-base/registry";
 import type { AgentBasePilotSection } from "../communication-base/agent-base/pilot";
-import type { AttendanceContext } from "../onboarding/pending-setup/attendance-core";
+import type { OpenAiResponsesInput } from "../openai-responses/openAiResponsesAdapter";
 import { COMMERCIAL_ACTIVATION_RESEARCH_BLOCKS } from "../conversion-content/contracts";
 import { listOpenAiWorkloadInventory, resolveOpenAiProductWorkload } from "../openai-workloads";
 import { clientOpenAiCostContext, communicationBaseCostContext } from "./active-contracts";
@@ -46,6 +46,12 @@ export async function validateOccurrenceIntegrations() {
   let testFinancialAdmission = false;
   let artifactAttempt = 0;
   let draftProviderFails = false;
+  let proofProviderFails = false;
+  let nicheLifecycle: { action_kind: string | null } | null = null;
+  let priorNicheExecution = false;
+  let nicheReadFails = false;
+  const nicheContext = clientOpenAiCostContext(accountId, { kind: "niche_resolution", eventId: dialogueId });
+  const nicheOccurrence = resolveOpenAiOccurrenceId(nicheContext, "development");
   const research = ["business_buyer", "end_customer"].flatMap(audience_scope =>
     COMMERCIAL_ACTIVATION_RESEARCH_BLOCKS.map(research_block => ({ id: audience_scope + research_block, audience_scope, research_block })));
   const catalogInputs: Record<string, unknown> = {
@@ -61,10 +67,16 @@ export async function validateOccurrenceIntegrations() {
       if (testFinancialAdmission) {
         financialRpcs.push(name);
         if (name === "start_openai_cost_execution_v4") {
-          assert.equal(input.p_product_type, "communication_base");
-          assert.equal(input.p_product_instance_id, accountId);
-          assert.equal(input.p_action_kind, "category_3_generate");
-          assert.equal(input.p_occurrence_id, dialogueId);
+          if (input.p_occurrence_id === nicheOccurrence) {
+            assert.equal(input.p_action_kind, "niche_resolution");
+            assert.equal(input.p_product_type, null);
+            assert.equal(input.p_product_instance_id, null);
+          } else {
+            assert.equal(input.p_product_type, "communication_base");
+            assert.equal(input.p_product_instance_id, accountId);
+            assert.equal(input.p_action_kind, "category_3_generate");
+            assert.equal(input.p_occurrence_id, dialogueId);
+          }
           if (financialAdmissionError) return { data: null, error: financialAdmissionError };
         }
         if (name.startsWith("start_openai_cost_execution_")) return { data: input.p_id, error: null };
@@ -85,9 +97,20 @@ export async function validateOccurrenceIntegrations() {
         neq(key: string, value: unknown) { filters["not_" + key] = value; return this; },
         is(key: string, value: unknown) { filters[key] = value; return this; },
         limit() { return this; },
+        abortSignal() { return this; },
         async maybeSingle() {
           if (table === "account_dialogues") return { data: { version: 1, niche_state: {} }, error: null };
+          if (table === "openai_cost_occurrence_lifecycle") {
+            assert.deepEqual(filters, { occurrence_id: nicheOccurrence });
+            return { data: nicheLifecycle, error: nicheReadFails ? { code: "57014" } : null };
+          }
           assert.equal(table, "openai_cost_executions");
+          if (filters.occurrence_id === nicheOccurrence) {
+            assert.deepEqual(filters, { occurrence_id: nicheOccurrence, account_id: accountId,
+              environment: "development", execution_origin: "runtime", universe: "client", attribution_status: "attributed",
+              economic_event_kind: "niche_resolution", economic_event_id: dialogueId });
+            return { data: priorNicheExecution ? { id: executionId } : null, error: null };
+          }
           assert.equal(filters.occurrence_id, inspectId);
           if (filters.not_workload) {
             assert.deepEqual(filters, { occurrence_id: inspectId, not_workload: "supabase_inspect" });
@@ -123,7 +146,8 @@ export async function validateOccurrenceIntegrations() {
     if (name === "server-only") return {};
     if (name === "next/cache") return { revalidatePath: () => {} };
     if (name === "next/server") return { NextResponse: { json: Response.json } };
-    const isDraft = (parent as { filename?: string } | undefined)?.filename?.endsWith("draft-generation.ts");
+    const parentFile = (parent as { filename?: string } | undefined)?.filename;
+    const isDraft = parentFile?.endsWith("draft-generation.ts");
     if (name === "@/lib/supabase/service" || name.endsWith("/supabase/service")) return { createServiceClient: () => isDraft ? draftDb : db };
     if (isDraft && name.endsWith("/openai-workloads")) return {
       ...original.call(this, name, parent, isMain) as object,
@@ -144,17 +168,19 @@ export async function validateOccurrenceIntegrations() {
           : { ok: true, value: { hero: { primary_cta: { label: "Continuar" } }, plans: { plan_narratives: [] }, final_cta: { cta: { label: "Continuar" } } } };
       },
     };
-    if (name.endsWith("/attendance-provider")) return {
-      requestAttendance: async ({ occurrenceId, context }: { occurrenceId?: string; context: AttendanceContext }) => {
-        if (!occurrenceId) return { ok: false };
+    if (parentFile?.endsWith("_proof.ts") && name.endsWith("/openAiResponsesAdapter")) return {
+      requestOpenAiResponses: async <T>({ occurrenceId, parseResponse }: OpenAiResponsesInput<T>) => {
+        assert.ok(occurrenceId);
         assert.equal(closed.has(occurrenceId), false);
-        proofTurns.set(occurrenceId, (proofTurns.get(occurrenceId) ?? 0) + 1);
-        if (context.officialNiche?.name !== "Corretor de imóveis" && context.officialNiche?.name !== "Faculdades")
-          return { ok: false };
-        return { ok: true, responseId: "resp_proof", latencyMs: 1, output: {
-          action: "ask", closureReason: null, sufficientUnderstanding: true, readyToComplete: true,
-          reply: "Resposta técnica", businessUnderstanding: "Entendimento", suggestions: [],
-        } };
+        const turn = (proofTurns.get(occurrenceId) ?? 0) + 1;
+        proofTurns.set(occurrenceId, turn);
+        if (proofProviderFails) return { ok: false, kind: "provider_unavailable" };
+        const result = parseResponse({ status: "completed", output: [{ type: "message", role: "assistant",
+          content: [{ type: "output_text", text: JSON.stringify(turn === 1 ? {
+            offer: { summary: "A empresa mantém jardins de condomínios residenciais.",
+              niche: "Manutenção de jardins para condomínios", publicName: "Jardins do Vale" },
+          } : { reply: "Entendido." }) }] }] });
+        return result.ok ? { ...result, responseId: "resp_proof", latencyMs: 1 } : result;
       },
     };
     if (name.endsWith("/communication-base/access")) return {
@@ -194,18 +220,20 @@ export async function validateOccurrenceIntegrations() {
     const { activeCostTrackingAdapter } = await import("./adapters/activeCostTrackingAdapter");
     const { requestOpenAiResponses } = await import("../openai-responses/openAiResponsesAdapter");
     const productConfiguration = await resolveOpenAiProductWorkload("communication_base_stage2_intelligence", "development");
-    assert.ok(productConfiguration.ok);
+    const nicheConfiguration = await resolveOpenAiProductWorkload("pending_setup_conversation", "development");
+    assert.ok(productConfiguration.ok && nicheConfiguration.ok);
     const productContext = communicationBaseCostContext(accountId, "category_3_generate");
-    const send = (financialContext: typeof productContext) => requestOpenAiResponses({
-      apiKey: secret, configuration: productConfiguration.value, environment: "development",
-      financialContext, occurrenceId: dialogueId, executionOrigin: "runtime",
+    const send = (financialContext: typeof productContext, occurrenceId = dialogueId,
+      configuration = productConfiguration.value) => requestOpenAiResponses({
+      apiKey: secret, configuration, environment: "development",
+      financialContext, occurrenceId, executionOrigin: "runtime",
       request: {}, parseResponse: () => ({ ok: true, value: "test" }),
     }, {
       costRecorder: { ...activeCostTrackingAdapter, finishOperation: async () => {}, finishExecution: async () => {} },
       emitEvent: () => {},
       fetchImpl: async () => {
         financialRpcs.push("provider");
-        return Response.json({ model: productConfiguration.value.model, status: "completed", output: [],
+        return Response.json({ model: configuration.model, status: "completed", output: [],
           usage: { input_tokens: 1, output_tokens: 1, total_tokens: 2 } });
       },
     });
@@ -228,16 +256,44 @@ export async function validateOccurrenceIntegrations() {
       assert.equal((await send(context)).ok, true);
       assert.deepEqual(financialRpcs, [rpc, "admit_openai_cost_operation_v2", "provider"]);
     }
+    const { readNicheDialogueCostContext } = await import("./adapters/costLedgerReadAdapter");
+    for (const [lifecycle, execution, rpc] of [
+      [null, false, "start_openai_cost_execution_v4"],
+      [{ action_kind: "niche_resolution" }, true, "start_openai_cost_execution_v4"],
+      [null, true, "start_openai_cost_execution_v3"],
+      [{ action_kind: null }, true, "start_openai_cost_execution_v3"],
+    ] as const) {
+      nicheLifecycle = lifecycle;
+      priorNicheExecution = execution;
+      const context = await readNicheDialogueCostContext(accountId, dialogueId, "development");
+      assert.ok(context);
+      assert.equal(resolveOpenAiOccurrenceId(context, "development"), nicheOccurrence);
+      financialRpcs.length = 0;
+      assert.equal((await send(context, nicheOccurrence, nicheConfiguration.value)).ok, true);
+      assert.deepEqual(financialRpcs, [rpc, "admit_openai_cost_operation_v2", "provider"]);
+    }
+    priorNicheExecution = false;
+    const newNicheContext = await readNicheDialogueCostContext(accountId, dialogueId, "development");
+    assert.ok(newNicheContext);
+    financialAdmissionError = { code: "23505" };
+    financialRpcs.length = 0;
+    assert.equal((await send(newNicheContext, nicheOccurrence, nicheConfiguration.value)).ok, false);
+    assert.deepEqual(financialRpcs, ["start_openai_cost_execution_v4"]);
+    financialAdmissionError = null;
+    priorNicheExecution = true;
+    nicheLifecycle = { action_kind: "initial_attendance" };
+    assert.equal(await readNicheDialogueCostContext(accountId, dialogueId, "development"), null);
+    nicheReadFails = true;
+    assert.equal(await readNicheDialogueCostContext(accountId, dialogueId, "development"), null);
     testFinancialAdmission = false;
 
     const { completePendingSetup } = await import("../onboarding/pending-setup/adapters/pendingSetupConversationAdapter");
     const { commitNicheConversation } = await import("../onboarding/niche-resolution/adapters/accountNicheDialogueAdapter");
-    const { confirmAccountNicheDialogue } = await import("../onboarding/niche-resolution/adapters/accountOfficialNicheAdapter");
     const pending = { accountId, userId: accountId, conversationId: dialogueId, expectedVersion: 1, resolutionOutcome: "official" as const };
     const active = { accountId, userId: accountId, dialogueId: otherDialogue, expectedVersion: 1, turnToken: accountId,
-      reply: "Resposta", understanding: "", proposal: null, summary: null, observedSummary: null, observedSummaryUpdatedAt: "",
-      acceptedProposal: null, keepProposal: false,
-      synthesis: { accept: null, clear: false, offer: null, partial: false, nicheReaction: "continue" },
+      reply: "Resposta", proposal: null, summary: null, observedSummary: null, observedSummaryUpdatedAt: "",
+      acceptedProposal: null,
+      synthesis: { accept: null, clear: false, offer: null, nicheReaction: "continue" },
     } satisfies Parameters<typeof commitNicheConversation>[0];
     assert.equal((await completePendingSetup(pending)).ok, false);
     commit = { data: { confirmed: false }, error: null };
@@ -248,10 +304,11 @@ export async function validateOccurrenceIntegrations() {
     commit = { data: { confirmed: true }, error: null };
     assert.equal(await commitNicheConversation(active), true);
     commit = { data: null, error: { code: "40001" } };
-    assert.equal((await confirmAccountNicheDialogue({ ...active, actorUserId: accountId })).ok, false);
-    commit = { data: 2, error: null };
+    assert.equal(await commitNicheConversation(active), false);
+    assert.equal(closeCalls.length, 2);
+    commit = { data: { confirmed: true }, error: null };
     closureFails = true;
-    assert.equal((await confirmAccountNicheDialogue({ ...active, actorUserId: accountId })).ok, true);
+    assert.equal(await commitNicheConversation(active), true);
     closureFails = false;
     assert.deepEqual(closeCalls.splice(0).map(call => call.p_occurrence_id),
       [dialogueId, otherDialogue, otherDialogue].map(eventId => resolveOpenAiOccurrenceId(
@@ -320,8 +377,11 @@ export async function validateOccurrenceIntegrations() {
     assert.ok(configuration?.configurationKind === "effective");
     const { runOpenAiCandidateProof } = await import("../../app/admin/(protected)/workloads-openai/_proof");
     const beforeProof = closeCalls.length;
-    assert.equal((await runOpenAiCandidateProof(configuration, "preview", secret, "proof-request")).ok, false);
-    assert.equal([...proofTurns.values()].filter(turns => turns === 2).length, 2);
+    assert.equal((await runOpenAiCandidateProof(configuration, "preview", secret, "proof-request")).ok, true);
+    assert.deepEqual([...proofTurns.values()], [2, 2]);
+    proofProviderFails = true;
+    assert.deepEqual(await runOpenAiCandidateProof(configuration, "preview", secret, "proof-failure"), { ok: false, code: "provider" });
+    assert.deepEqual([...proofTurns.values()], [2, 2, 1]);
     assert.deepEqual(closeCalls.slice(beforeProof).map(call => call.p_occurrence_id).sort(), [...proofTurns.keys()].sort());
     assert.ok(closeCalls.slice(beforeProof).every(call => call.p_execution_origin === "administrative_proof"));
 
