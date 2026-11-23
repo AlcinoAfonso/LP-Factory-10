@@ -148,20 +148,11 @@ export function publicResearchTopic(topic: string, context: NicheContext) {
       for (const [, name] of businessContext.matchAll(/^Nome anteriormente informado:[ \t]*([^\r\n]+)/gmu)) names.push(name);
     }
   }
-  const conversation = [...context.history.map(entry => entry.content), context.message];
-  for (const text of conversation) {
-    names.push(...(text.match(/\p{Lu}[\p{Ll}\p{M}]+(?: +\p{Lu}[\p{Ll}\p{M}]+)+/gu) ?? []));
-    for (const [, name] of text.matchAll(/^Nome público:[ \t]*([^\r\n]+)/gimu)) names.push(name);
-  }
-  // Explicit name declarations are private even when their spelling has no capitals.
-  const declaration = /\b(?:(?:empresa|neg[oó]cio|loja|marca)\s+se\s+chama|(?:minha\s+(?:empresa|loja|marca)|meu\s+neg[oó]cio)\s+[eé]|nome\s+d[ao]\s+(?:empresa|neg[oó]cio|loja|marca)\s+[eé]|me\s+chamo|meu\s+nome\s+[eé])\s+(.+)/iu;
-  const clauseEnd = /[\r\n.,;!?]|\s+e\s+(?=(?:faz(?:emos)?|oferece(?:mos)?|vende(?:mos)?|atende(?:mos)?|atua(?:mos)?|trabalha(?:mos)?|me\s+chamo|meu\s+nome|minha\s+(?:empresa|loja|marca)|meu\s+neg[oó]cio)\b)/iu;
-  const affiliation = /\b(?:[ao]\s+(?:empresa|neg[oó]cio|loja|marca)\s+(?!d[aeo]s?\s)(.+?)\s+(?:faz|oferece|vende|atende|atua|trabalha)\b|trabalho\s+n[ao]\s+(.+?)(?:\s+(?:com|como)\b|$))/iu;
-  for (const text of [businessContext, context.summary ?? "", ...conversation]) {
-    for (const clause of text.split(clauseEnd)) {
-      const named = affiliation.exec(clause);
-      const name = declaration.exec(clause)?.[1] ?? named?.[1] ?? named?.[2];
-      if (name) names.push(name);
+  // Only fields explicitly labeled by the existing dialogue protocol count as known private names.
+  // Ordinary conversation is interpreted by the agent, not by a second grammar parser.
+  for (const { content } of [...context.history, { content: context.message }]) {
+    for (const line of content.split("\n")) {
+      if (line.startsWith("Nome público: ")) names.push(line.slice("Nome público: ".length));
     }
   }
   const normalize = (text: string) => text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase()
