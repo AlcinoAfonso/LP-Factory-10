@@ -59,11 +59,15 @@ function shown() {
 }
 
 test("nome profissional, síntese e nicho aparecem juntos, sem efeito até o aceite", () => {
-  const planned = turn(opening, { reply: "Vamos conferir.", offer: proposal, preferredName: "Clínica Odonto Mais" });
+  const planned = turn(opening, { reply: "Vamos conferir.", offer: proposal, preferredName: null });
   assert.deepEqual(planned.offer, proposal);
   assert.equal(planned.synthesis.accept, null);
   assert.equal(planned.summary, null);
   assert.equal(planned.preferredName, null);
+  const sameName = turn({ ...opening, message: "Pode me chamar de Ana Paula; meu nome profissional também é Ana Paula." },
+    { reply: "Obrigado, Ana Paula.", offer: { ...proposal, publicName: "Ana Paula" }, preferredName: "Ana Paula" });
+  assert.equal(sameName.preferredName, "Ana Paula");
+  assert.equal(sameName.offer?.publicName, "Ana Paula");
   assert.match(planned.reply, /Nome público: Clínica Odonto Mais\nNicho proposto: Odontologia restauradora e estética para adultos\n\nEssa síntese está correta\?$/u);
   const fromBase = turn(context, { offer: proposal, preferredName: "Ana" });
   assert.equal(fromBase.preferredName, null);
@@ -271,7 +275,8 @@ test("retomada envia fatos, histórico e nicho sem contato em cada jornada", () 
 });
 
 test("Web Search envia assunto público e agrega somente fontes válidas em ambas as jornadas", () => {
-  const pending = { ...opening, message: "Minha empresa se chama odonto mais e atende adultos." };
+  const pending = { ...opening, message: "Minha empresa se chama odonto mais e atende adultos.",
+    businessContext: "Nome anteriormente informado: Odonto Mais" };
   const base = { ...context, businessContext: JSON.stringify({ business_name: "Odonto Mais" }) };
   for (const journey of [pending, base]) {
     const topic = "Diferença entre prótese e implante dentário";
@@ -285,6 +290,19 @@ test("Web Search envia assunto público e agrega somente fontes válidas em amba
     assert.equal(turn({ ...journey, message: "Pode pesquisar a diferença entre prótese e implante?", displayed: shown().anchor },
       { reply: "A diferença pode ajudar a escolher a descrição.", searchTopic: topic }).searchTopic, topic);
   }
+  for (const [message, topic] of [
+    ["trabalho na construção civil", "tendências da construção civil"],
+    ["minha empresa é de arquitetura", "projetos de arquitetura sustentáveis"],
+    ["Você pode explicar Marketing Digital?", "Marketing Digital para pequenos negócios"],
+  ]) {
+    assert.equal(publicResearchTopic(topic, { ...opening, message }), topic, message);
+  }
+  assert.equal(publicResearchTopic("Odonto Mais implantes", {
+    ...opening, pendingSetup: { ...opening.pendingSetup!, publicName: "Odonto Mais" },
+  }), null);
+  assert.equal(publicResearchTopic("Maria Silva produtos", {
+    ...opening, pendingSetup: { ...opening.pendingSetup!, preferredName: "Maria Silva" },
+  }), null);
   const lowercaseName = { ...opening, displayed: { ...shown().anchor, publicName: "clínica vale" } };
   assert.equal(publicResearchTopic("clínica vale avaliações", lowercaseName), null);
   assert.equal(publicResearchTopic("clínica vale avaliações", { ...opening,
