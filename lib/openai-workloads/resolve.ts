@@ -63,7 +63,7 @@ export async function resolveOpenAiProductWorkload(
     operational.value.environment !== environment ||
     !isDecimalRevision(operational.value.revision) ||
     !isTechnicalModel(operational.value.model) ||
-    !isValidOpenAiServiceTierSnapshot(operational.value.model, operational.value.serviceTier)
+    !isValidOpenAiServiceTierSnapshot(operational.value.model, operational.value.serviceTier, workload.id)
   ) {
     return failure(
       "OPERATIONAL_CONFIGURATION_INVALID",

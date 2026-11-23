@@ -70,7 +70,7 @@ export function translateOperationalConfigurationRows(
 
   const reasoningEffort = reasoningEffortValue(revision.reasoning_effort);
   if (reasoningEffort === null || revision.quality !== null ||
-    !isValidOpenAiServiceTierSnapshot(model, revision.service_tier)) {
+    !isValidOpenAiServiceTierSnapshot(model, revision.service_tier, input.workload)) {
     return failure(
       "ACTIVE_CONFIGURATION_INVALID",
       "Active text configuration has an invalid shape",
@@ -101,7 +101,8 @@ function isTextWorkload(
     value === "niche_resolution" ||
     value === "commercial_activation_draft_generation" ||
     value === "communication_base_stage1_assistance" ||
-    value === "communication_base_stage2_intelligence"
+    value === "communication_base_stage2_intelligence" ||
+    value === "communication_base_agent"
   );
 }
 
@@ -167,7 +168,8 @@ const e25ManagedWorkloads = [
   "communication_base_stage2_intelligence",
 ] as const satisfies readonly ManagedWorkload[];
 
-const managedWorkloads = [...e25ManagedWorkloads, "pending_setup_conversation"] as const satisfies readonly ManagedWorkload[];
+const attendanceManagedWorkloads = [...e25ManagedWorkloads, "pending_setup_conversation"] as const;
+const managedWorkloads = [...attendanceManagedWorkloads, "communication_base_agent"] as const satisfies readonly ManagedWorkload[];
 
 const unitRowKeys = [
   "environment",
@@ -239,11 +241,9 @@ export function translateOpenAiAdministrativeConfigurationRows(
   const activations = exactRecords(activationRead.data, activationRowKeys);
   const workloads = units?.length === managedWorkloads.length * managedEnvironments.length
     ? managedWorkloads
-    : units?.length === e25ManagedWorkloads.length * managedEnvironments.length
-      ? e25ManagedWorkloads
-      : units?.length === preBootstrapManagedWorkloads.length * managedEnvironments.length
-      ? preBootstrapManagedWorkloads
-      : null;
+    : [attendanceManagedWorkloads, e25ManagedWorkloads, preBootstrapManagedWorkloads].find(
+      (set) => units?.length === set.length * managedEnvironments.length,
+    );
   if (!units || !revisions || !activations || !workloads) {
     return invalidAdministrativeConfiguration();
   }
@@ -536,7 +536,7 @@ function configurationValue(
   serviceTier: unknown,
 ): OpenAiAdministrativeConfigurationValue | null {
   const model = technicalModel(rawModel);
-  if (!model || !isValidOpenAiServiceTierSnapshot(model, serviceTier)) return null;
+  if (!model || !isValidOpenAiServiceTierSnapshot(model, serviceTier, projection.workload)) return null;
   const reasoningEffort = reasoningEffortValue(rawReasoningEffort);
   if (
     reasoningEffort === null ||

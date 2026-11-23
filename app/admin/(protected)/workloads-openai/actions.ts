@@ -37,6 +37,7 @@ const productWorkloads = [
   "commercial_activation_draft_generation",
   "communication_base_stage1_assistance",
   "communication_base_stage2_intelligence",
+  "communication_base_agent",
 ] as const;
 
 export type OpenAiOperationalActionState = Readonly<{
@@ -335,7 +336,7 @@ async function parseCandidate(
   if (!model) return { ok: false, state: validationFailure("Modelo inválido.") };
 
   const rawTier = formData.get("serviceTier");
-  if (rawTier !== null && rawTier !== "" && !isEligibleOpenAiServiceTier(model, rawTier)) {
+  if (rawTier !== null && rawTier !== "" && !isEligibleOpenAiServiceTier(model, rawTier, unit.workload)) {
     return { ok: false, state: validationFailure("Nível de serviço incompatível com o modelo.") };
   }
   const serviceTier = rawTier === null || rawTier === "" ? null : rawTier as OpenAiServiceTier;

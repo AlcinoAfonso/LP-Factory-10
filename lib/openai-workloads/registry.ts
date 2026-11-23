@@ -98,6 +98,28 @@ export const openAiWorkloadRegistry = deepFreeze([
     },
   },
   {
+    id: "communication_base_agent",
+    displayName: "Agente Base",
+    classification: "product_runtime",
+    configurationKind: "effective",
+    consumer: "Geração sequencial da Categoria 3 da Base de Comunicação",
+    fallback: "Falhar fechado sem gravar conteúdo parcial",
+    webSearch: {
+      externalWebAccess: true,
+      searchContextSize: "medium",
+      maxToolCalls: 2,
+      contextWindowTokenBudget: 128000,
+    },
+    configuration: {
+      apiKind: "responses_text",
+      model: "gpt-6.2-sol",
+      reasoningEffort: "medium",
+      serviceTier: "default",
+      source: "repo_catalog",
+      revision,
+    },
+  },
+  {
     id: "supabase_inspect",
     displayName: "Supabase Inspect",
     classification: "operational",
@@ -146,6 +168,12 @@ const workloadPresentations = deepFreeze([
     roadmapReference: "E25.1.5",
     visualGroup: null,
   },
+  {
+    workload: "communication_base_agent",
+    name: "Agente Base",
+    roadmapReference: "25.3.7",
+    visualGroup: null,
+  },
 ] satisfies readonly OpenAiWorkloadPresentation[]);
 
 export function listOpenAiWorkloadPresentations(): readonly OpenAiWorkloadPresentation[] {
@@ -180,7 +208,7 @@ export function isValidResolvedOpenAiProductWorkload(
     actual.effectiveConfigurationVerified === true &&
     validOrigin &&
     isTechnicalModel(actual.model) &&
-    isValidOpenAiServiceTierSnapshot(actual.model, actual.serviceTier) &&
+    isValidOpenAiServiceTierSnapshot(actual.model, actual.serviceTier, actual.id) &&
     openAiReasoningEfforts.includes(actual.reasoningEffort)
   );
 }

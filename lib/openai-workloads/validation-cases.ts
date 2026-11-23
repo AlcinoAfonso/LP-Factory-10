@@ -31,6 +31,7 @@ import {
   normalizeOpenAiResponseUsage,
   resolveOpenAiProductWorkload,
   resolveOpenAiWorkloadEnvironment,
+  type OpenAiAdministrativeConfigurationUnit,
   type OpenAiOperationalConfigurationReader,
   type OpenAiWorkloadEvent,
 } from "./index";
@@ -192,11 +193,11 @@ const cases = [
     },
   },
   {
-    name: "inventory exposes six unique canonical workloads",
+    name: "inventory exposes seven unique canonical workloads",
     run: () => {
       const inventory = listOpenAiWorkloadInventory();
-      assert.equal(inventory.length, 6);
-      assert.equal(new Set(inventory.map((item) => item.id)).size, 6);
+      assert.equal(inventory.length, 7);
+      assert.equal(new Set(inventory.map((item) => item.id)).size, 7);
       assert.deepEqual(
         inventory.map((item) => item.id),
         [
@@ -204,6 +205,7 @@ const cases = [
           ...productIds,
           "communication_base_stage1_assistance",
           "communication_base_stage2_intelligence",
+          "communication_base_agent",
           "supabase_inspect",
         ],
       );
@@ -315,6 +317,7 @@ const cases = [
           "commercial_activation_draft_generation",
           "communication_base_stage1_assistance",
           "communication_base_stage2_intelligence",
+          "communication_base_agent",
         ],
       );
       assert.equal(Object.isFrozen(projection), true);
@@ -792,7 +795,7 @@ const cases = [
     },
   },
   {
-    name: "administrative read model accepts only the complete ten-unit aggregate state",
+    name: "administrative read model exposes both independent Agent Base units",
     run: () => {
       const fixture = administrativeConfigurationFixture();
       const result = translateOpenAiAdministrativeConfigurationRows(
@@ -801,7 +804,16 @@ const cases = [
         { data: fixture.activations, error: null },
       );
       assert.equal(result.ok, true);
-      assert.equal(result.value.length, 10);
+      assert.equal(result.value.length, 12);
+      for (const environment of ["preview", "production"] as const) {
+        const agent: OpenAiAdministrativeConfigurationUnit | undefined = result.value.find(unit => unit.environment === environment && unit.workload === "communication_base_agent");
+        assert.ok(agent);
+        assert.equal(agent.displayName, "Agente Base");
+        assert.equal(agent.activeRevision.number, 1);
+        assert.equal(agent.activeRevision.model, "gpt-6.2-sol");
+        assert.equal(agent.activeRevision.reasoningEffort, "medium");
+        assert.equal(agent.activeRevision.serviceTier, "default");
+      }
       assert.equal(Object.isFrozen(result), true);
       assert.equal(Object.isFrozen(result.value), true);
       assert.equal(Object.isFrozen(result.value[0]), true);
@@ -1339,6 +1351,7 @@ function administrativeConfigurationFixture(): Readonly<{
     "communication_base_stage1_assistance",
     "communication_base_stage2_intelligence",
     "pending_setup_conversation",
+    "communication_base_agent",
   ] as const;
   const units: Record<string, unknown>[] = [];
   const revisions: Record<string, unknown>[] = [];
@@ -1349,8 +1362,9 @@ function administrativeConfigurationFixture(): Readonly<{
     for (const workload of workloads) {
       const communicationStageTwo = workload === "communication_base_stage2_intelligence";
       const modality = "responses_text";
-      const baselineModel = communicationStageTwo || workload === "pending_setup_conversation" ? "gpt-6-luna" : "gpt-5.4-mini";
-      const baselineReasoning = workload === "pending_setup_conversation" ? "xhigh" : communicationStageTwo ? "max" : "none";
+      const agentBase = workload === "communication_base_agent";
+      const baselineModel = agentBase ? "gpt-6.2-sol" : communicationStageTwo || workload === "pending_setup_conversation" ? "gpt-6-luna" : "gpt-5.4-mini";
+      const baselineReasoning = agentBase ? "medium" : workload === "pending_setup_conversation" ? "xhigh" : communicationStageTwo ? "max" : "none";
       const baselineRevisionId = administrativeUuid(sequence++);
       const bootstrapActivationId = administrativeUuid(sequence++);
 
@@ -1362,6 +1376,7 @@ function administrativeConfigurationFixture(): Readonly<{
         revision_number: 1,
         model: baselineModel,
         reasoning_effort: baselineReasoning,
+        ...(agentBase ? { service_tier: "default" } : {}),
         quality: null,
         validated_by: null,
         validated_at: "2026-08-20T12:00:00.000Z",
@@ -1450,7 +1465,8 @@ function preBootstrapAdministrativeConfigurationFixture() {
   const fixture = administrativeConfigurationFixture();
   const legacyWorkload = (row: Record<string, unknown>) =>
     row.workload !== "communication_base_stage1_assistance" &&
-    row.workload !== "communication_base_stage2_intelligence" && row.workload !== "pending_setup_conversation";
+    row.workload !== "communication_base_stage2_intelligence" && row.workload !== "pending_setup_conversation" &&
+    row.workload !== "communication_base_agent";
   return {
     units: fixture.units.filter(legacyWorkload),
     revisions: fixture.revisions.filter(legacyWorkload),

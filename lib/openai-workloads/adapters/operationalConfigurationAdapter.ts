@@ -132,7 +132,7 @@ export async function readOpenAiCandidateConfiguration(input: Readonly<{
       ? (row.candidate_quality as OpenAiImageQuality)
       : null;
     const validShape = reasoningEffort !== null && row.candidate_quality === null &&
-      isValidOpenAiServiceTierSnapshot(model ?? "", row.candidate_service_tier);
+      isValidOpenAiServiceTierSnapshot(model ?? "", row.candidate_service_tier, input.workload);
     return model && version !== null && validShape
       ? {
           ok: true,

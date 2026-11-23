@@ -1,19 +1,20 @@
-import type { OpenAiServiceTier } from "./contracts";
+import type { OpenAiProductWorkloadId, OpenAiServiceTier } from "./contracts";
 
 // E21.2 policy only; the model/effort catalog retains its existing authority.
-export function listOpenAiServiceTiers(model: string): readonly OpenAiServiceTier[] {
+export function listOpenAiServiceTiers(model: string, workload?: OpenAiProductWorkloadId): readonly OpenAiServiceTier[] {
+  if (model === "gpt-6.2-sol" && workload === "communication_base_agent") return ["default"];
   if (model === "gpt-6-luna") return ["default", "fast"];
   if (model === "gpt-6.1-sol") return ["default", "fast", "ultrafast"];
   if (model === "gpt-6.1-terra") return ["default", "fast"];
   return [];
 }
 
-export function isEligibleOpenAiServiceTier(model: string, value: unknown): value is OpenAiServiceTier {
-  return listOpenAiServiceTiers(model).includes(value as OpenAiServiceTier);
+export function isEligibleOpenAiServiceTier(model: string, value: unknown, workload?: OpenAiProductWorkloadId): value is OpenAiServiceTier {
+  return listOpenAiServiceTiers(model, workload).includes(value as OpenAiServiceTier);
 }
 
-export function isValidOpenAiServiceTierSnapshot(model: string, value: unknown): boolean {
-  return value === null || value === undefined || isEligibleOpenAiServiceTier(model, value);
+export function isValidOpenAiServiceTierSnapshot(model: string, value: unknown, workload?: OpenAiProductWorkloadId): boolean {
+  return (value == null && workload !== "communication_base_agent") || isEligibleOpenAiServiceTier(model, value, workload);
 }
 
 export function normalizeOpenAiAppliedServiceTier(value: unknown): string | null {

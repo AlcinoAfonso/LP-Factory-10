@@ -1415,6 +1415,8 @@
 - Fora do escopo: writes, IA, fallback final, account_taxonomy, account_niche_resolutions e escolha de template
 
 3.7 Configuração operacional dos workloads OpenAI
+- D14F §3.5. A migration `20261123150000_d14f_agent_base_workload.sql` cadastra o workload E21 `communication_base_agent` e sua revisão inicial em Preview e Production. Standard explícito na revisão 1 vem da configuração inicial aprovada. Revisões posteriores seguem a prova operacional de serviço. As identidades históricas permanecem em suas linhas originais.
+
 3.7.1 RPCs versionadas
 - `add_openai_model_catalog_model_v1(text, text, text, text[], uuid) → table`: adiciona modelo indisponível e conjunto inicial não vazio de parâmetros conhecidos; rejeita variantes de caixa sob lock transacional.
 - `add_openai_model_catalog_reasoning_effort_v1(text, text, bigint, uuid) → bigint`: anexa effort tipado indisponível a modelo textual existente, com lock da linha e versão otimista.
