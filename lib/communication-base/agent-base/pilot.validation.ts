@@ -191,10 +191,19 @@ assert.equal(parseAgentBasePilotResponse({ output_text: JSON.stringify({ section
 const webOutput = { output_text: JSON.stringify({ sections: { audience: { value: "Resposta sintética", basis: "strategic_hypothesis" } } }), output: [
   { type: "web_search_call", status: "completed", action: { type: "search", sources: [{ url: "https://example.org/source", title: "Fixture" }] } },
 ] };
+const expectSources = (payload: unknown, count: number, webCalls?: number) => {
+  const result = parseAgentBasePilotResponse(payload, "audience");
+  assert.equal(result.ok, true);
+  if (result.ok) {
+    assert.equal(result.value.sources.length, count);
+    if (webCalls !== undefined) assert.equal(result.telemetry.webSearchCallCount, webCalls);
+  }
+  return result;
+};
 const withWeb = parseAgentBasePilotResponse(webOutput, "audience");
 assert.equal(withWeb.ok, true);
 if (withWeb.ok) { assert.equal(withWeb.value.researched, true); assert.equal(withWeb.value.sources.length, 1); }
-assert.equal(parseAgentBasePilotResponse({ ...webOutput, output: [{ type: "web_search_call", status: "failed", action: { type: "search" } }] }, "audience").ok, false);
+expectSources({ ...webOutput, output: [{ type: "web_search_call", status: "failed", action: { type: "search" } }] }, 0, 1);
 // D14F regression: autonomous research can return more than two web output items.
 const autonomousOutput = (count: number) => ({ ...webOutput, output: Array.from({ length: count }, (_, index) => ({
   type: "web_search_call", status: "completed",
@@ -232,20 +241,21 @@ for (const call of [
   { type: "web_search_call", status: "failed", action: { type: "search" } },
   { type: "web_search_call", status: "in_progress", action: { type: "search" } },
   { type: "web_search_call", status: "completed", action: { type: "unknown" } },
-]) rejectPilot({ ...autonomousOutput(3), output: [...autonomousOutput(3).output, call] }, "web_sources_missing");
+]) expectSources({ ...autonomousOutput(3), output: [...autonomousOutput(3).output, call] }, 3, 4);
 for (const action of [
   { type: "search", sources: {} },
   { type: "search", sources: [{ url: "http://example.org/unsafe" }] },
   { type: "open_page", url: "https://user:password@example.org/unsafe" },
   { type: "find_in_page", url: "javascript:alert(1)" },
-]) rejectPilot({ ...autonomousOutput(3), output: [...autonomousOutput(3).output,
+]) expectSources({ ...autonomousOutput(3), output: [...autonomousOutput(3).output,
   { type: "web_search_call", status: "completed", action },
-] }, "web_sources_invalid");
-rejectPilot({ ...webOutput, output: Array.from({ length: 3 }, () => ({
+] }, 3, 4);
+const sourceFree = expectSources({ ...webOutput, output: Array.from({ length: 3 }, () => ({
   type: "web_search_call", status: "completed", action: { type: "search", sources: [] },
-})) }, "web_sources_missing");
+})) }, 0, 3);
+if (sourceFree.ok) assert.equal(sourceFree.value.researched, true);
 assert.equal(parseAgentBasePilotResponse(autonomousOutput(50), "audience").ok, true, "source ceiling remains inclusive");
-rejectPilot(autonomousOutput(51), "web_sources_invalid");
+expectSources(autonomousOutput(51), 50, 51);
 for (const [sections, reason] of [
   [{ audience: { value: "x".repeat(30_001), basis: "strategic_hypothesis" } }, "invalid_stage_two_value"],
   [{ audience: { value: [], basis: "strategic_hypothesis" } }, "invalid_stage_two_value"],
@@ -299,10 +309,10 @@ const citedWithCount = (count: number) => ({ output: [webOutput.output[0], {
 const capped = parseAgentBasePilotResponse(citedWithCount(49), "audience");
 assert.equal(capped.ok, true, "50 distinct sources total remain valid");
 if (capped.ok) assert.equal(capped.telemetry.webSearchSourceCount, 50);
-rejectPilot(citedWithCount(50), "web_sources_invalid");
-rejectPilot({ output: [webOutput.output[0], { ...citedFinal, content: [{
+expectSources(citedWithCount(50), 50, 1);
+expectSources({ output: [webOutput.output[0], { ...citedFinal, content: [{
   ...citedFinal.content[0], annotations: [{ type: "url_citation", url: "http://example.org/unsafe" }],
-}] }] }, "web_sources_invalid");
+}] }] }, 1, 1);
 
 for (const url of [undefined, null]) {
   const result = parseAgentBasePilotResponse({ ...webOutput, output: [webOutput.output[0],
@@ -311,15 +321,15 @@ for (const url of [undefined, null]) {
   assert.equal(result.ok, true, "open_page may omit its URL without inventing evidence");
   if (result.ok) assert.equal(result.telemetry.webSearchCallCount, 2);
 }
-rejectPilot({ output: [sourceFreeCall, finalMessage] }, "web_sources_missing");
-rejectPilot({ output: [sourceFreeCall, { ...citedFinal, content: [{
+expectSources({ output: [sourceFreeCall, finalMessage] }, 0, 1);
+expectSources({ output: [sourceFreeCall, { ...citedFinal, content: [{
   ...citedFinal.content[0], annotations: [{ type: "url_citation", url: "http://example.org/unsafe" }],
-}] }] }, "web_sources_invalid");
-rejectPilot({ output: [{ ...sourceFreeCall, action: { type: "search", sources: [{ url: "http://example.org/unsafe" }] } },
-  citedFinal] }, "web_sources_invalid");
-rejectPilot({ ...webOutput, output: [...webOutput.output,
+}] }] }, 0, 1);
+expectSources({ output: [{ ...sourceFreeCall, action: { type: "search", sources: [{ url: "http://example.org/unsafe" }] } },
+  citedFinal] }, 1, 1);
+expectSources({ ...webOutput, output: [...webOutput.output,
   { type: "web_search_call", status: "completed", action: { type: "find_in_page", url: null } },
-] }, "web_sources_invalid");
+] }, 1, 2);
 
 for (const phase of [undefined, null]) {
   assert.equal(parseAgentBasePilotResponse({ output: [commentaryMessage, ...autonomousOutput(3).output,
@@ -351,10 +361,10 @@ const refused = parseAgentBasePilotResponse({ output_text: webOutput.output_text
 ] }, "audience");
 assert.equal(refused.ok, false, "refusal cannot be hidden by aggregate text");
 if (!refused.ok) { assert.equal(refused.kind, "refusal"); assert.equal(refused.reason, "openai_refusal"); }
-rejectPilot({ output: [...phasedOutput.output,
+expectSources({ output: [...phasedOutput.output,
   { type: "web_search_call", status: "failed", action: { type: "search" } },
-] }, "web_sources_missing");
-rejectPilot({ output: [commentaryMessage, ...autonomousOutput(51).output, finalMessage] }, "web_sources_invalid");
+] }, 3, 4);
+expectSources({ output: [commentaryMessage, ...autonomousOutput(51).output, finalMessage] }, 50, 51);
 rejectPilot({ output: [commentaryMessage, ...autonomousOutput(3).output,
   { ...finalMessage, content: [{ type: "output_text", text: JSON.stringify({ sections: {
     audience: { value: "x".repeat(30_001), basis: "strategic_hypothesis" },
