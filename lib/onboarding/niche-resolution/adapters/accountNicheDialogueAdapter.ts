@@ -37,14 +37,14 @@ export async function claimNicheConversation(input: TurnFence & { requestId: str
 
 export async function commitNicheConversation(input: TurnFence & {
   reply: string; proposal: string | null; summary: string | null; observedSummary: string | null;
-  observedSummaryUpdatedAt: string; acceptedProposal: string | null; synthesis: SynthesisWrite;
+  observedSummaryUpdatedAt: string; acceptedProposal: string | null; keepProposal?: boolean; synthesis: SynthesisWrite;
 }) {
   const { data, error } = await createServiceClient().rpc("commit_account_niche_turn_v2", {
     p_dialogue_id: input.dialogueId, p_account_id: input.accountId, p_user_id: input.userId,
     p_expected_version: input.expectedVersion, p_turn_token: input.turnToken, p_reply: input.reply,
     p_understanding: "", p_proposal: input.proposal, p_summary: input.summary,
     p_observed_summary: input.observedSummary, p_observed_summary_updated_at: input.observedSummaryUpdatedAt,
-    p_accepted_proposal: input.acceptedProposal, p_keep_proposal: false,
+    p_accepted_proposal: input.acceptedProposal, p_keep_proposal: input.keepProposal ?? false,
     p_synthesis: input.synthesis,
   });
   if (!error && data?.confirmed === true) {

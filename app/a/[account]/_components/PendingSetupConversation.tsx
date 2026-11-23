@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
@@ -8,7 +8,7 @@ import { FormField, FormFieldError, FormFieldHint, FormFieldLabel } from "@/comp
 import { Input } from "@/components/ui/input";
 import type { pendingSetupWhatsApp } from "../../../../lib/onboarding/niche-agent/dialogue";
 import type { PendingSetupConversation as PendingSetupConversationContract } from "../../../../lib/onboarding/pending-setup/contracts";
-import { NicheConversation } from "./NicheConversation";
+import { formatWhatsApp, NicheConversation } from "./NicheConversation";
 import {
   completePendingSetupAction,
   conversePendingSetupAction,
@@ -24,7 +24,8 @@ export function PendingSetupConversation({
 }: {
   accountSubdomain: string;
   conversation: Pick<PendingSetupConversationContract,
-    "id" | "version" | "businessDisplayName" | "businessNameCandidate" | "attendanceEnabled" | "messages" | "stage" | "dialogueState">;
+    "id" | "version" | "preferredName" | "preferredNameDeclined" | "businessDisplayName" | "businessNameCandidate" |
+    "attendanceEnabled" | "messages" | "stage" | "dialogueState">;
   passageEnabled: boolean;
   whatsappMode: ReturnType<typeof pendingSetupWhatsApp>;
 }) {
@@ -38,6 +39,8 @@ export function PendingSetupConversation({
   >(savePendingSetupBusinessDisplayNameAction, { ok: true });
   const attendanceButtonClass = conversation.attendanceEnabled ? "!bg-brand-700 !text-white hover:!bg-brand-700/90" : "";
   const businessNameRef = useRef<HTMLInputElement | null>(null);
+  const [whatsApp, setWhatsApp] = useState("");
+  const whatsAppComplete = /^\(\d{2}\) 9\d{4}-\d{4}$/u.test(whatsApp);
   useEffect(() => {
     if (nameState.fieldError) businessNameRef.current?.focus();
   }, [nameState.fieldError]);
@@ -58,9 +61,11 @@ export function PendingSetupConversation({
             <NicheConversation account={accountSubdomain} dialogueId={conversation.id} version={conversation.version}
               messages={conversation.messages} retry={retry} ended={ready}
               whatsappMode={whatsappMode}
-              introductoryMessage={conversation.businessNameCandidate
-                ? "Vamos identificar o nicho de " + conversation.businessNameCandidate + ". O que você gostaria de destacar?"
-                : "Vamos identificar o nicho do seu negócio. O que você gostaria de destacar sobre o que faz?"}
+              introductoryMessage={conversation.preferredName
+                ? "Sou o Agente Nicho da LP Factory. Olá, " + conversation.preferredName + "! Conte um pouco sobre seu negócio."
+                : conversation.preferredNameDeclined
+                  ? "Sou o Agente Nicho da LP Factory. Conte um pouco sobre seu negócio."
+                  : "Olá! Sou o Agente Nicho da LP Factory. Como posso chamar você? Se preferir, pode começar falando sobre seu negócio."}
               label="Sua mensagem" submit={conversePendingSetupAction} />
           </div>
         ) : null}
@@ -110,13 +115,27 @@ export function PendingSetupConversation({
               conversationId={conversation.id}
               version={conversation.version}
             />
-            {!conversation.attendanceEnabled ? <FeedbackMessage tone="success">
-              Entendimento concluído. Falta apenas confirmar a passagem para a próxima etapa.
-            </FeedbackMessage> : null}
+            <FeedbackMessage tone="success">
+              {conversation.attendanceEnabled
+                ? "Dados do negócio confirmados e salvos."
+                : "Entendimento concluído. Falta apenas confirmar a passagem para a próxima etapa."}
+            </FeedbackMessage>
             {completionState.formError ? (
               <FeedbackMessage tone="error" className="mt-4">
                 {completionState.formError}
               </FeedbackMessage>
+            ) : null}
+            {conversation.attendanceEnabled ? (
+              <FormField className="mt-5">
+                <FormFieldLabel htmlFor="completion-whatsapp">WhatsApp para contato com a LP Factory (opcional)</FormFieldLabel>
+                <Input id="completion-whatsapp" name="whatsapp_contact" type="tel" inputMode="numeric"
+                  autoComplete="tel" placeholder="(99) 99999-9999" maxLength={15} value={whatsApp}
+                  onChange={event => setWhatsApp(formatWhatsApp(event.target.value))} disabled={isCompletionPending}
+                  aria-describedby={whatsApp && !whatsAppComplete ? "completion-whatsapp-hint" : undefined} />
+                {whatsApp && !whatsAppComplete ? (
+                  <FormFieldHint id="completion-whatsapp-hint">Número incompleto. Você pode seguir sem informar.</FormFieldHint>
+                ) : null}
+              </FormField>
             ) : null}
             <Button type="submit" disabled={isCompletionPending} className={cn("mt-5 min-h-11", attendanceButtonClass)}>
               {isCompletionPending ? "Concluindo…" : conversation.attendanceEnabled ? "Ver página comercial" : "Continuar para a próxima etapa"}

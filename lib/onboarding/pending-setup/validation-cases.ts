@@ -134,9 +134,14 @@ assert.doesNotMatch(migration, /update\s+public\.account_pending_setup_messages/
 assert.doesNotMatch(migration, /delete\s+from\s+public\.account_pending_setup_messages/i);
 assert.match(pendingSetupActions, /completePendingSetupAction/);
 assert.match(pendingSetupActions, /completePendingSetup/);
+assert.match(pendingSetupActions, /whatsapp_contact/);
 assert.doesNotMatch(pendingSetupActions, /entitlement/i);
 assert.match(pendingSetupConversationSource, /name="business_display_name"/);
+assert.ok(pendingSetupConversationSource.indexOf('name="whatsapp_contact"') >
+  pendingSetupConversationSource.indexOf("{ready ? ("), "WhatsApp appears only in the completed business stage");
+assert.match(pendingSetupConversationSource, /Ver página comercial/);
 assert.match(conversationAdapter, /complete_account_pending_setup_v2/);
+assert.match(conversationAdapter, /complete_account_pending_setup_attendance_v3/);
 assert.equal(existsSync(legacyComponent), false);
 assert.equal(existsSync(legacyValidation), false);
 assert.equal(existsSync(sqlTest), true);

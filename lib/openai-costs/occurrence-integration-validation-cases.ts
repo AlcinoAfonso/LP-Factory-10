@@ -169,17 +169,18 @@ export async function validateOccurrenceIntegrations() {
       },
     };
     if (parentFile?.endsWith("_proof.ts") && name.endsWith("/openAiResponsesAdapter")) return {
-      requestOpenAiResponses: async <T>({ occurrenceId, parseResponse }: OpenAiResponsesInput<T>) => {
+      requestOpenAiResponses: async <T>({ occurrenceId, parseResponse, request }: OpenAiResponsesInput<T>) => {
         assert.ok(occurrenceId);
         assert.equal(closed.has(occurrenceId), false);
         const turn = (proofTurns.get(occurrenceId) ?? 0) + 1;
         proofTurns.set(occurrenceId, turn);
         if (proofProviderFails) return { ok: false, kind: "provider_unavailable" };
+        const displayed = (JSON.parse(String(request.input)) as { displayed?: { id: string } | null }).displayed;
         const result = parseResponse({ status: "completed", output: [{ type: "message", role: "assistant",
           content: [{ type: "output_text", text: JSON.stringify(turn === 1 ? {
             offer: { summary: "A empresa mantém jardins de condomínios residenciais.",
               niche: "Manutenção de jardins para condomínios", publicName: "Jardins do Vale" },
-          } : { reply: "Entendido." }) }] }] });
+          } : { reply: "Entendido.", accept: displayed?.id ?? null }) }] }] });
         return result.ok ? { ...result, responseId: "resp_proof", latencyMs: 1 } : result;
       },
     };

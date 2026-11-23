@@ -110,10 +110,11 @@ async function converseNiche(raw: unknown, home: boolean) {
       officialNiche: niche?.confirmed ? niche.name : null, fixedNiche,
     }, prior);
     if (!turn) throw new Error("provider_unavailable");
-    const acceptedProposal = turn.synthesis.accept ? shown?.niche ?? null : null;
+    const acceptedProposal = turn.synthesis.accept === shown?.id ? shown?.niche ?? null : null;
+    const keepProposal = Boolean(shown && !turn.offer && !turn.synthesis.accept && !turn.synthesis.clear);
     const written = await commitNicheConversation({ ...fence, reply: turn.reply, proposal: turn.offer?.niche ?? null,
       summary: turn.summary, observedSummary: prior, observedSummaryUpdatedAt: claim.summaryUpdatedAt,
-      acceptedProposal, synthesis: turn.synthesis,
+      acceptedProposal, keepProposal, synthesis: turn.synthesis,
     });
     if (!written) throw new Error("turn_not_committed");
     if (acceptedProposal) revalidatePath("/a/" + input.account, "layout");

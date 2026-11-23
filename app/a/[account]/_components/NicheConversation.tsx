@@ -12,7 +12,7 @@ import { AssistantMessageText } from "./AssistantMessageText";
 type Message = Readonly<{ id: string; role: "user" | "assistant"; content: string }>;
 type Submission = Readonly<{ account: string; dialogueId: string | null; version: number; requestId: string; content: string }>;
 
-function formatWhatsApp(raw: string) {
+export function formatWhatsApp(raw: string) {
   const digits = raw.replace(/\D/g, "").slice(0, 11);
   if (!digits) return "";
   if (digits.length <= 2) return "(" + digits;
@@ -30,7 +30,7 @@ export function NicheConversation({
   introductoryMessage: string;
   label: string;
   ended?: boolean;
-  whatsappMode?: "first-synthesis" | "correction";
+  whatsappMode?: "correction";
   focusOnOpen?: boolean;
   submit: (input: Submission) => Promise<{ ok: true } | { ok: false; message: string }>;
 }) {
@@ -91,7 +91,7 @@ export function NicheConversation({
     if (follow.current && log.current) log.current.scrollTop = log.current.scrollHeight;
   }, [messages]);
 
-  const showWhatsApp = whatsappMode === "first-synthesis" || (whatsappMode === "correction" && correctingWhatsApp);
+  const showWhatsApp = whatsappMode === "correction" && correctingWhatsApp;
   const whatsAppComplete = showWhatsApp && /^\(\d{2}\) 9\d{4}-\d{4}$/u.test(whatsApp);
   const pendingMessage = retry ? { requestId: retry.id, content: retry.content } : failed;
   const composing = !pendingMessage && !ended;

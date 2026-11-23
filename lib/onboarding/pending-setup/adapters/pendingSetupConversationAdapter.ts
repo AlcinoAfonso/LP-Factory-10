@@ -248,9 +248,11 @@ export async function completePendingSetup(input: {
   userId: string;
   expectedVersion: number;
   resolutionOutcome: PendingSetupResolutionOutcome;
+  whatsapp?: string | null;
 }): Promise<PendingSetupWriteResult> {
   const service = createServiceClient();
-  const completionRpc = isE1012AttendanceEnabled() ? "complete_account_pending_setup_attendance_v2"
+  const attendance = isE1012AttendanceEnabled();
+  const completionRpc = attendance ? "complete_account_pending_setup_attendance_v3"
     : isE1011PassageEnabled() ? "complete_account_pending_setup_v2"
     : "complete_account_pending_setup_v1";
   const { data, error } = await service.rpc(completionRpc, {
@@ -259,7 +261,7 @@ export async function completePendingSetup(input: {
     p_user_id: input.userId,
     p_expected_version: input.expectedVersion,
     p_resolution_outcome: input.resolutionOutcome,
-    ...(isE1012AttendanceEnabled() ? { p_passage_enabled: isE1011PassageEnabled() } : {}),
+    ...(attendance ? { p_passage_enabled: isE1011PassageEnabled(), p_whatsapp: input.whatsapp ?? null } : {}),
   });
 
   if (error) return writeFailure(error);

@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import nodeModule from "node:module";
 import { z } from "zod";
 import type { CommunicationBase } from "../../communication-base/contracts";
-import { fixedNicheTurn, prepareNicheTurn, type NicheContext } from "../niche-agent";
+import type { NicheContext } from "../niche-agent/runtime";
+import { presentOffer } from "../niche-agent/dialogue";
 import type { OfficialAccountNiche } from "./official-niche-policy";
 
 export async function validateNicheConversationActions() {
@@ -20,7 +21,10 @@ export async function validateNicheConversationActions() {
   let role = "owner", products = false, enabled = true, provider = true, stale = false, replay = false;
   let claims = 0, releases = 0;
   const contexts: NicheContext[] = [];
-  const commits: { proposal: string | null; summary: string | null }[] = [];
+  const commits: { proposal: string | null; summary: string | null; acceptedProposal?: string | null; keepProposal?: boolean }[] = [];
+  let liveProposal: string | null = null;
+  let liveSynthesis: { start: number; length: number; messageId: string } | null = null;
+  let liveMessages: { id: string; role: "user" | "assistant"; content: string }[] = [];
   const loader = nodeModule as unknown as { _load: (name: string, parent: unknown, isMain: boolean) => unknown };
   const original = loader._load;
   loader._load = function(name, parent, isMain) {
@@ -33,9 +37,10 @@ export async function validateNicheConversationActions() {
     if (name.includes("accountNicheDialogueAdapter")) return {
       readNicheConversation: async () => ({ ok: true, dialogue: null }),
       claimNicheConversation: async () => { claims++; return products && niche.confirmed && !replay ? null : { replay, version: 1,
-        state: { official: { description: stale ? "Outro nicho" : niche.name, legacyTaxonId: taxonId, legacyUpdatedAt: revision } },
+        state: { official: { description: stale ? "Outro nicho" : niche.name, legacyTaxonId: taxonId, legacyUpdatedAt: revision },
+          proposal: liveProposal, synthesis: liveSynthesis },
         summary: null, summaryUpdatedAt: revision }; },
-      readNicheDialogueMessages: async () => [],
+      readNicheDialogueMessages: async () => liveMessages,
       commitNicheConversation: async (input: typeof commits[number]) => { commits.push(input); return true; },
       releaseAccountNicheTurn: async () => { releases++; return true; },
     };
@@ -45,11 +50,23 @@ export async function validateNicheConversationActions() {
     if (name.includes("niche-agent/runtime")) return {
       conversationalMessage: z.strictObject({ account: z.string(), dialogueId: z.uuid().nullable(),
         version: z.number(), requestId: z.uuid(), content: z.string().min(1).max(4000) }),
-      requestNicheAgent: async (_account: string, _dialogue: string, context: NicheContext, prior: string | null) => {
+      requestNicheAgent: async (_account: string, _dialogue: string, context: NicheContext) => {
         contexts.push(context);
-        return provider ? context.fixedNiche ? fixedNicheTurn(context, prior) : {
-          reply: "Vamos conferir o público.", offer: null, summary: null, synthesis: { accept: null },
-        } : null;
+        if (!provider) return null;
+        if (context.message === "Maneiro, é isso aí.") return { reply: "Entendi.", offer: null, summary: null,
+          preferredName: null, searchTopic: null, synthesis: {
+            offer: null, accept: context.displayed?.id ?? null, clear: false, nicheReaction: "accept" as const } };
+        if (context.message === "Quero abandonar essa proposta.") return { reply: "Vamos reconsiderar.", offer: null, summary: null,
+          preferredName: null, searchTopic: null, synthesis: {
+            offer: null, accept: null, clear: true, nicheReaction: "clear" as const } };
+        if (context.fixedNiche) {
+          const offer = { summary: "A descrição vigente é " + context.fixedNiche + ".", niche: context.fixedNiche, publicName: null };
+          const shown = presentOffer(offer);
+          return shown ? { reply: shown.reply, offer, summary: null, preferredName: null, searchTopic: null,
+            synthesis: { offer: shown.range, accept: null, clear: false, nicheReaction: "continue" } } : null;
+        }
+        return { reply: "Vamos conferir o público.", offer: null, summary: null, preferredName: null, searchTopic: null,
+          synthesis: { offer: null, accept: null, clear: false, nicheReaction: "continue" } };
       },
     };
     return original.call(this, name, parent, isMain);
@@ -92,6 +109,27 @@ export async function validateNicheConversationActions() {
   stale = true;
   assert.equal((await actions.converseHomeNicheAction(turn)).ok, false);
   assert.equal(releases, 2);
+
+  // Follow the same displayed offer through clarification, assent and explicit withdrawal.
+  stale = false; products = false; niche = { ...niche, confirmed: true };
+  const offer = { summary: "Cuidamos de jardins para condomínios.", niche: "Jardinagem para condomínios", publicName: null };
+  const rendered = presentOffer(offer);
+  assert.ok(rendered);
+  const displayedId = crypto.randomUUID();
+  liveProposal = offer.niche;
+  liveSynthesis = { ...rendered.range, messageId: displayedId };
+  liveMessages = [{ id: displayedId, role: "assistant", content: rendered.reply }];
+  assert.equal((await actions.converseBaseNicheAction({ ...turn, requestId: crypto.randomUUID(), content: "Pode explicar o público?" })).ok, true);
+  assert.equal(contexts.at(-1)?.displayed?.id, displayedId);
+  assert.equal(commits.at(-1)?.keepProposal, true);
+  liveMessages.push({ id: crypto.randomUUID(), role: "assistant", content: commits.at(-1)?.summary ?? "Os condomínios são o público principal." });
+  assert.equal((await actions.converseBaseNicheAction({ ...turn, requestId: crypto.randomUUID(), content: "Maneiro, é isso aí." })).ok, true);
+  assert.equal(contexts.at(-1)?.displayed?.id, displayedId);
+  assert.equal(commits.at(-1)?.acceptedProposal, offer.niche);
+  assert.equal(commits.at(-1)?.keepProposal, false);
+  assert.equal((await actions.converseBaseNicheAction({ ...turn, requestId: crypto.randomUUID(), content: "Quero abandonar essa proposta." })).ok, true);
+  assert.equal(commits.at(-1)?.keepProposal, false);
+  assert.equal(commits.at(-1)?.proposal, null);
 }
 
 export async function validatePendingConfirmedName() {
@@ -101,32 +139,47 @@ export async function validatePendingConfirmedName() {
   const proposed = { summary: "Cuida de jardins de condomínios.", niche: "Jardinagem para condomínios", publicName: null };
   let state: Record<string, unknown> = { acceptedName };
   let proposal: unknown = null;
+  let stage = "business_understanding";
+  const completions: { whatsapp?: string | null }[] = [];
   let messages: { id: string; role: "assistant"; content: string }[] = [];
   const commits: { nameReaction: string; reply: string; proposal: unknown; synthesis: { offer: object | null }; stage: string }[] = [];
   const loader = nodeModule as unknown as { _load: (name: string, parent: unknown, isMain: boolean) => unknown };
   const original = loader._load;
   loader._load = function(name, parent, isMain) {
-    if (name === "server-only" || name.includes("accountNicheResolutionUserAdapter")) return {};
+    if (name === "server-only") return {};
+    if (name.includes("accountNicheResolutionUserAdapter")) return { getConfirmedOperationalNicheResolutionLabel: async () => null };
     if (name === "next/cache") return { revalidatePath: () => {} };
     if (name.includes("getAccessContext")) return { getAccessContext: async () =>
       ({ account: { id: accountId, status: "pending_setup" }, member: { role: "owner", status: "active", userId: accountId } }) };
-    if (name.includes("accountOfficialNicheAdapter")) return { readAccountOfficialNiche: async () => ({ ok: true, niche: null }) };
+    if (name.includes("accountOfficialNicheAdapter")) return {
+      readAccountOfficialNiche: async () => ({ ok: true, niche: null }),
+      getAccountOfficialNiche: async () => ({ confirmed: true }),
+    };
     if (name.includes("accountTaxonomyAdapter")) return { readActivePrimaryAccountTaxon: async () => ({ ok: true, taxon: null }) };
     if (name.includes("pending-setup/config")) return { isE1011PassageEnabled: () => true, isE1012AttendanceEnabled: () => true };
     if (name.includes("pendingSetupConversationAdapter")) return {
       claimPendingNicheTurn: async () => ({ version, replay: false }),
-      loadPendingSetupConversation: async () => ({ id: dialogueId, version, accountContext: { summary: null, updatedAt: "1" },
+      loadPendingSetupConversation: async () => ({ id: dialogueId, version, stage,
+        businessDisplayName: stage === "ready_to_complete" ? acceptedName : null,
+        accountContext: { summary: null, updatedAt: "1" },
         dialogueState: state, attendanceProposal: proposal, messages }),
       commitPendingNicheTurn: async (input: typeof commits[number]) => { commits.push(input); return true; },
+      completePendingSetup: async (input: typeof completions[number]) => { completions.push(input); return { ok: true }; },
     };
     if (name.includes("niche-agent/runtime")) return {
       conversationalMessage: z.object({ account: z.string(), dialogueId: z.uuid(), version: z.number(), requestId: z.uuid(), content: z.string() }),
       requestNicheAgent: async (_account: string, _dialogue: string, context: NicheContext) => {
-        const text = JSON.stringify(context.message === "Sim." ? { reply: "Entendido." } : { offer: proposed });
-        const result = prepareNicheTurn(context, null).parseResponse({ status: "completed", output: [
-          { role: "assistant", type: "message", content: [{ type: "output_text", text }] },
-        ] });
-        return result.ok ? result.value : null;
+        if (context.message === "Pode explicar o nicho?") return { reply: "É a atividade principal e o público atendido.", offer: null,
+          summary: null, preferredName: null, searchTopic: null,
+          synthesis: { offer: null, accept: null, clear: false, nicheReaction: "continue" as const } };
+        if (context.message === "Sim.") {
+          return { reply: "Recebi sua confirmação.", offer: null,
+            summary: JSON.stringify({ confirmedUnderstanding: proposed.summary }), preferredName: null, searchTopic: null,
+            synthesis: { offer: null, accept: context.displayed?.id ?? null, clear: false, nicheReaction: "accept" as const } };
+        }
+        const shown = presentOffer(proposed);
+        return shown ? { reply: shown.reply, offer: proposed, summary: null, preferredName: null, searchTopic: null,
+          synthesis: { offer: shown.range, accept: null, clear: false, nicheReaction: "continue" as const } } : null;
       },
     };
     return original.call(this, name, parent, isMain);
@@ -138,9 +191,28 @@ export async function validatePendingConfirmedName() {
   proposal = commits[0].proposal;
   state = { acceptedName, synthesis: { ...commits[0].synthesis.offer, messageId: assistantId } };
   messages = [{ id: assistantId, role: "assistant", content: commits[0].reply }];
+  assert.equal((await action.conversePendingSetupAction({ ...turn, requestId: crypto.randomUUID(), content: "Pode explicar o nicho?" })).ok, true);
+  assert.equal(commits[1].stage, "niche_confirmation");
+  assert.deepEqual(commits[1].proposal, proposal);
+  messages.push({ id: crypto.randomUUID(), role: "assistant", content: commits[1].reply });
   assert.equal((await action.conversePendingSetupAction({ ...turn, requestId: crypto.randomUUID(), content: "Sim." })).ok, true);
-  assert.equal(commits[1].stage, "ready_to_complete");
-  assert.equal(commits[1].nameReaction, "keep");
+  assert.equal(commits[2].stage, "ready_to_complete");
+  assert.equal(commits[2].nameReaction, "keep");
+  stage = "ready_to_complete";
+  const complete = (phone?: string) => {
+    const form = new FormData();
+    form.set("account_subdomain", "qa-niche");
+    form.set("conversation_id", dialogueId);
+    form.set("expected_version", String(version));
+    if (phone !== undefined) form.set("whatsapp_contact", phone);
+    return action.completePendingSetupAction({ ok: true }, form);
+  };
+  assert.equal((await complete("(21) 99999-9876")).ok, true);
+  assert.equal(completions.at(-1)?.whatsapp, "(21) 99999-9876");
+  assert.equal((await complete()).ok, true);
+  assert.equal(completions.at(-1)?.whatsapp, null);
+  assert.equal((await complete("(21) 99")).ok, true, "incomplete number must not prevent completion");
+  assert.equal(completions.at(-1)?.whatsapp, null);
 }
 
 async function validateNicheProjectionAdapter(base: CommunicationBase, accountId: string, anotherUser: string) {

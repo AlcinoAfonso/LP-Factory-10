@@ -125,6 +125,7 @@ try{
   await db.query(read('../migrations/' + migration));
   await db.query(read('../migrations/20261121123500_d15e_pending_setup_contact_in_claim.sql'));
   await db.query(read('../migrations/20261123124000_d15e_confirm_legacy_niche_in_dialogue.sql'));
+  await db.query(read('../migrations/20261123193555_d15e_whatsapp_after_confirmation.sql'));
 
   await test('versioned RPCs are restricted to the server role',async()=>{
     const {rows}=await db.query(`select proname,
@@ -136,8 +137,9 @@ try{
       where n.nspname='public' and proname=any($1)`,[[
       'claim_account_niche_turn_v2','commit_account_niche_turn_v2',
       'claim_account_pending_setup_turn_v3','commit_account_pending_setup_turn_v5',
+      'complete_account_pending_setup_attendance_v3',
     ]]);
-    assert.equal(rows.length,4);
+    assert.equal(rows.length,5);
     assert.ok(rows.every(row=>row.service&&!row.member&&!row.anon&&!row.ai));
   });
 
@@ -205,6 +207,21 @@ try{
     assert.deepEqual(await write(f,retried,{accept:proposal}),result);
     assert.equal((await reserve(f,{...offered,request:c.request,content:c.content})).replay,true);
     await assert.rejects(reserve(f,{...offered,request:c.request,content:'Resposta diferente'}),/niche_request_conflict/);
+  });
+  await test('clarification keeps the displayed proposal until the next confirmed assent',async()=>{
+    const f = await fixture();
+    const offered = await propose(f);
+    const question = await reserve(f,{...offered,content:'O que significa atender condomínios?'});
+    const displayedId = question.state.synthesis.messageId;
+    const clarified = await write(f,question,{keep:true});
+    const followUp = await reserve(f,{dialogue:question.d,version:clarified.version,content:'Maneiro, é isso aí.'});
+    assert.equal(followUp.state.proposal,proposal);
+    assert.equal(followUp.state.synthesis.messageId,displayedId);
+    const summary = JSON.stringify({...JSON.parse(followUp.summary),confirmedUnderstanding:synthesisText});
+    const result = await write(f,followUp,{accept:proposal,summary,
+      synthesis:effect({accept:displayedId,nicheReaction:'accept'})});
+    assert.equal(result.confirmed,true);
+    assert.equal((await official(f.a)).description,proposal);
   });
   await test('doubt can preserve a proposal; correction replaces it without an official write',async()=>{
     const f = await fixture();
@@ -372,7 +389,26 @@ try{
     assert.equal((await reservePending(f,{version:ready,request:reserved.request,content:reserved.content})).replay,true);
     assert.equal((await db.query('select count(*)::int n from account_pending_setup_messages where conversation_id=$1',[f.d])).rows[0].n,6);
     assert.equal((await db.query('select business_display_name from account_pending_setup_conversations where id=$1',[f.d])).rows[0].business_display_name,'Jardins do Vale');
-    assert.equal((await db.query("select complete_account_pending_setup_attendance_v2($1,$2,$3,$4,'official',true) ok",[f.d,f.a,f.u,ready])).rows[0].ok,true);
+    const beforeContact=await memory(f.a);
+    await assert.rejects(db.query("select complete_account_pending_setup_attendance_v3($1,$2,$3,$4,'official',true,$5)",
+      [f.d,f.a,f.u,ready,'(21) 99999']),/pending_setup_whatsapp_invalid/);
+    await assert.rejects(db.query("select complete_account_pending_setup_attendance_v3($1,$2,$3,$4,'official',true,$5)",
+      [f.d,f.a,f.u,ready+1,'(21) 98888-2222']),/pending_setup_version_conflict/);
+    assert.deepEqual(await memory(f.a),beforeContact);
+    assert.equal((await db.query("select status from accounts where id=$1",[f.a])).rows[0].status,'pending_setup');
+    const finish=() => db.query("select complete_account_pending_setup_attendance_v3($1,$2,$3,$4,'official',true,$5) ok",
+      [f.d,f.a,f.u,ready,'(21) 98888-2222']);
+    assert.equal((await finish()).rows[0].ok,true);
+    const afterContact=await memory(f.a);
+    assert.equal(JSON.parse(afterContact.summary).whatsapp,'(21) 98888-2222');
+    assert.equal(JSON.parse(afterContact.summary).classification,proposal);
+    assert.equal(afterContact.source_dialogue_id,f.d);
+    assert.equal(afterContact.source_user_id,f.u);
+    assert.equal((await db.query("select complete_account_pending_setup_attendance_v3($1,$2,$3,$4,'official',true,$5) ok",
+      [f.d,f.a,f.u,ready,'(21) 97777-3333'])).rows[0].ok,true,
+      'a second completion with an old version is idempotent even with another contact');
+    assert.deepEqual(await memory(f.a),afterContact, 'the first confirmed contact must not be overwritten');
+    assert.equal((await db.query("select status from accounts where id=$1",[f.a])).rows[0].status,'active');
   });
   await test('Pending Setup can finish without a niche after operational and name acceptance',async()=>{
     const f = await pending();
@@ -384,7 +420,10 @@ try{
     const ready = await writePending(f,reserved,{stage:'ready_to_complete',accept:true,nameReaction:'accept',
       synthesis:effect({accept:rows[0].niche_state.synthesis.messageId})});
     assert.equal(await official(f.a),undefined);
-    assert.equal((await db.query("select complete_account_pending_setup_attendance_v2($1,$2,$3,$4,'operational_fallback',true) ok",[f.d,f.a,f.u,ready])).rows[0].ok,true);
+    const beforeContact=await memory(f.a);
+    assert.equal((await db.query("select complete_account_pending_setup_attendance_v3($1,$2,$3,$4,'operational_fallback',true,null) ok",
+      [f.d,f.a,f.u,ready])).rows[0].ok,true);
+    assert.deepEqual(await memory(f.a),beforeContact, 'omitted WhatsApp does not alter confirmed business memory');
   });
   console.log(JSON.stringify({database,postgres:'17',migration,cases:cases.length,result:'passed'}));
 } finally {await db.end();await admin.query('drop database '+database+' with(force)');await admin.end();}

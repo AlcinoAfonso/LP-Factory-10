@@ -93,12 +93,14 @@ export async function completePendingSetupAction(
       : null;
   if (!resolutionOutcome) return { ok: false, formError: GENERIC_ERROR };
 
+  const phone = String(formData.get("whatsapp_contact") ?? "").trim();
   const completed = await completePendingSetup({
     conversationId,
     accountId: actor.accountId,
     userId: actor.userId,
     expectedVersion,
     resolutionOutcome,
+    whatsapp: /^\(\d{2}\) 9\d{4}-\d{4}$/u.test(phone) ? phone : null,
   });
   if (!completed.ok) {
     return {
@@ -198,7 +200,7 @@ export async function conversePendingSetupAction(raw: unknown) {
       },
     }, observed.summary);
     if (!result) throw new Error("provider_unavailable");
-    const accepted = result.synthesis.accept ? shown : null;
+    const accepted = result.synthesis.accept === shown?.id ? shown : null;
     const keep = !result.offer && !result.synthesis.clear && !accepted;
     const next = result.offer?.niche
       ? { kind: "semantic" as const, taxonId: null, taxonName: null, nicheDescription: result.offer.niche, expectedNicheRevision: revision }
