@@ -101,8 +101,9 @@ test("WhatsApp aparece uma vez na primeira síntese e só reabre por ação de c
   assert.equal(pendingSetupWhatsApp([...history, contact, receipt], ref), "correction");
   assert.equal(pendingSetupWhatsApp([contact, receipt, ...history], ref), "correction");
 
-  const freeReply = turn(opening, { reply: "Já entendi a atividade." });
+  const freeReply = turn(opening, { reply: "Já entendi a atividade.\n\nEssa síntese está correta?" });
   assert.equal(freeReply.reply, "Já entendi a atividade.");
+  assert.equal(freeReply.synthesis.offer, null);
   assert.equal(pendingSetupWhatsApp([{ ...collection, content: freeReply.reply }, ...history], ref), "first-synthesis");
 });
 
@@ -169,9 +170,11 @@ test("metadados inválidos não derrubam a resposta nem são promovidos a efeito
   assert.equal(result.offer, null);
   assert.equal(result.summary, null);
   assert.equal(result.synthesis.accept, null);
-  for (const reply of ["Salvei seu nicho.", "O novo nicho já consta no cadastro.", "Pode considerar o nicho oficializado."]) {
-    assert.equal(prepareNicheTurn(context, null).parseResponse(output({ reply, accept: "forjado" })).ok, false);
-  }
+  const explanation = "O nicho ainda não está confirmado; preciso que você aprove a síntese.";
+  assert.equal(turn(context, { reply: explanation }).reply, explanation);
+  const unsupported = turn(context, { reply: "Ainda precisamos confirmar.", accept: "forjado" });
+  assert.equal(unsupported.synthesis.accept, null);
+  assert.equal(unsupported.summary, null);
   for (const field of ["summary", "niche", "publicName"]) {
     const invalid = turn(opening, { reply: safe, offer: { ...proposal, [field]: "O nicho está confirmado." } });
     assert.equal(invalid.offer, null, field);
@@ -180,10 +183,15 @@ test("metadados inválidos não derrubam a resposta nem são promovidos a efeito
   const anchor = shown().anchor;
   assert.equal(turn({ ...opening, message: "Sim.", displayed: anchor },
     { reply: "Entendi.", offer: { niche: 19 }, accept: anchor.id }).synthesis.accept, null);
+  const prior = JSON.stringify({ contextualUnderstanding: "A".repeat(5650) });
+  assert.ok(prior.length < 5700);
   const tooLarge = turn({ ...opening, displayed: anchor, message: "Sim" },
-    { reply: "Recebi sua resposta.", accept: anchor.id }, JSON.stringify({ contextualUnderstanding: "A".repeat(5700) }));
+    { reply: "Recebi sua confirmação.", accept: anchor.id }, prior);
   assert.equal(tooLarge.synthesis.accept, null);
+  assert.equal(tooLarge.synthesis.clear, false);
   assert.equal(tooLarge.summary, null);
+  assert.match(tooLarge.reply, /não foi possível concluir a confirmação/iu);
+  assert.doesNotMatch(tooLarge.reply, /recebi sua confirmação/iu);
 });
 
 test("uma correção negativa remove o fato superado mesmo quando cita a oferta antiga", () => {
@@ -201,6 +209,10 @@ test("uma correção negativa remove o fato superado mesmo quando cita a oferta 
 });
 
 test("nome pessoal é opcional e entendimento suficiente pode seguir com nicho em aberto", () => {
+  const fromHistory = turn({ ...opening, message: "Vendo geleias.", history: [
+    { id: "first", role: "user", content: "Pode me chamar de Ana." },
+  ] }, { reply: "Entendi o que você vende.", preferredName: "Ana" });
+  assert.equal(fromHistory.preferredName, "Ana");
   const offer = { ...proposal, niche: null };
   const observed = turn({ ...opening, message: "Prefiro não informar meu nome." }, { offer, preferredName: false });
   assert.equal(observed.preferredName, false);
