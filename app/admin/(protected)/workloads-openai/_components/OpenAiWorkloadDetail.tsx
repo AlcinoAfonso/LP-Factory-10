@@ -258,7 +258,8 @@ function TextFields({
   const models = useMemo(() => Array.from(new Set(options.options.map((option) => option.model))), [options]);
   const efforts = useMemo(() => Array.from(new Set(options.options.filter((option) => option.model === value.model)
     .map((option) => option.reasoningEffort))), [options, value.model]);
-  const tiers = listOpenAiServiceTiers(value.model);
+  const requiresCoverage = options.workload === "communication_base_agent";
+  const tiers = listOpenAiServiceTiers(value.model, options.workload);
   const tier = value.serviceTier ?? "";
   const financialCoverage = openAiFinancialCoverage(value.model, value.serviceTier);
   return (
@@ -268,7 +269,7 @@ function TextFields({
         <select id={idPrefix + "-model"} name="model" value={value.model} disabled={disabled} className={selectClassName}
           onChange={(event) => {
             const model = event.target.value;
-            onChange({ ...value, model, reasoningEffort: options.options.find((option) => option.model === model)?.reasoningEffort ?? value.reasoningEffort,
+            onChange({ ...value, model, reasoningEffort: requiresCoverage ? value.reasoningEffort : options.options.find((option) => option.model === model)?.reasoningEffort ?? value.reasoningEffort,
               serviceTier: value.serviceTier });
           }}>
           {!models.includes(value.model) ? <option value={value.model}>{value.model} (indisponível)</option> : null}
@@ -289,18 +290,19 @@ function TextFields({
           disabled={disabled || !tierSupported || (tiers.length === 0 && tier === "")}
           className="min-h-11" aria-describedby={`${idPrefix}-tier-hint ${idPrefix}-financial-hint`}
           onChange={(event) => onChange({ ...value, serviceTier: event.target.value === "" ? null : event.target.value as OpenAiServiceTier })}>
-          <option value="">Legado — sem nível explícito</option>
-          {tier && !isEligibleOpenAiServiceTier(value.model, tier) ? <option value={tier} disabled>{openAiServiceTierLabel(value.serviceTier)} (incompatível)</option> : null}
+          <option value="" disabled={requiresCoverage}>{requiresCoverage ? "Selecione um nível" : "Legado — sem nível explícito"}</option>
+          {tier && !isEligibleOpenAiServiceTier(value.model, tier, options.workload) ? <option value={tier} disabled>{openAiServiceTierLabel(value.serviceTier)} (incompatível)</option> : null}
           {tiers.map((choice) => <option key={choice} value={choice}>{openAiServiceTierLabel(choice)}</option>)}
         </Select>
         <FormFieldHint id={idPrefix + "-tier-hint"}>
           {!tierSupported ? "Novos níveis de serviço estão temporariamente indisponíveis. A configuração ativa continua em uso." :
-            tier && !isEligibleOpenAiServiceTier(value.model, tier) ? "Selecione um nível compatível." :
+            tier && !isEligibleOpenAiServiceTier(value.model, tier, options.workload) ? "Selecione um nível compatível." :
             tiers.length === 0 ? "Este modelo mantém o processamento atual." :
             "A escolha será validada por prova e só entrará em uso após ativação humana."}
         </FormFieldHint>
         <FormFieldHint id={idPrefix + "-financial-hint"}>
           {financialCoverage.covered ? "Cobertura financeira disponível para este modelo e serviço; o custo depende da evidência de uso de cada operação." :
+            requiresCoverage ? "Selecione um modelo e nível de serviço com cobertura financeira." :
             "Cobertura financeira não confirmada para este modelo e serviço. O custo poderá ficar indisponível; este aviso não altera a ativação."}
         </FormFieldHint>
       </FormField>
@@ -487,7 +489,8 @@ function configurationIsEligible(
   options: OpenAiWorkloadConfigurationOptions,
   value: OpenAiAdministrativeConfigurationValue,
 ) {
-  return isValidOpenAiServiceTierSnapshot(value.model, value.serviceTier) && options.options.some(
+  return isValidOpenAiServiceTierSnapshot(value.model, value.serviceTier, options.workload) &&
+    (options.workload !== "communication_base_agent" || openAiFinancialCoverage(value.model, value.serviceTier).covered) && options.options.some(
     (option) => option.model === value.model && option.reasoningEffort === value.reasoningEffort,
   );
 }

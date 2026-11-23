@@ -278,6 +278,7 @@ export function workloadLabel(workload: OpenAiActiveCostExecution["workload"]) {
     taxon_input_catalog_sufficiency_evaluation: "Suficiência factual do catálogo",
     communication_base_stage1_assistance: "Assistência da Base — Etapa 1",
     communication_base_stage2_intelligence: "Inteligência da Base — Etapa 2",
+    communication_base_agent: "Agente Base",
     landing_page_dynamic_market_research: "Pesquisa dinâmica de mercado",
     supabase_inspect: "Supabase Inspect",
   };

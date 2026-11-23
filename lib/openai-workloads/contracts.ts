@@ -4,6 +4,7 @@ export const openAiProductWorkloadIds = [
   "commercial_activation_draft_generation",
   "communication_base_stage1_assistance",
   "communication_base_stage2_intelligence",
+  "communication_base_agent",
 ] as const;
 
 export const openAiOperationalWorkloadIds = ["supabase_inspect"] as const;
@@ -59,6 +60,7 @@ export type OpenAiEffectiveConfiguration = Readonly<{
   apiKind: "responses_text";
   model: string;
   reasoningEffort: OpenAiReasoningEffort;
+  serviceTier?: OpenAiServiceTier;
   source: "repo_catalog";
   revision: string;
 }>;

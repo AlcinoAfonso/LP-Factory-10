@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { requirePlatformAdmin } from "@/lib/access/guards";
+import { openAiFinancialCoverage } from "@/openai-costs/pricing";
 import {
   openAiReasoningEfforts,
   isEligibleOpenAiServiceTier,
@@ -37,6 +38,7 @@ const productWorkloads = [
   "commercial_activation_draft_generation",
   "communication_base_stage1_assistance",
   "communication_base_stage2_intelligence",
+  "communication_base_agent",
 ] as const;
 
 export type OpenAiOperationalActionState = Readonly<{
@@ -335,10 +337,13 @@ async function parseCandidate(
   if (!model) return { ok: false, state: validationFailure("Modelo inválido.") };
 
   const rawTier = formData.get("serviceTier");
-  if (rawTier !== null && rawTier !== "" && !isEligibleOpenAiServiceTier(model, rawTier)) {
+  if (rawTier !== null && rawTier !== "" && !isEligibleOpenAiServiceTier(model, rawTier, unit.workload)) {
     return { ok: false, state: validationFailure("Nível de serviço incompatível com o modelo.") };
   }
   const serviceTier = rawTier === null || rawTier === "" ? null : rawTier as OpenAiServiceTier;
+  if (unit.workload === "communication_base_agent" && !openAiFinancialCoverage(model, serviceTier).covered) {
+    return { ok: false, state: validationFailure("Selecione um modelo e nível de serviço com cobertura financeira.") };
+  }
   const reasoningEffort = parseReasoningEffort(formData.get("reasoningEffort"));
   if (!reasoningEffort || parseOptionalValue(formData.get("quality")) !== null) {
     return {
