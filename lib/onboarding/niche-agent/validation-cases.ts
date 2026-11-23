@@ -288,8 +288,26 @@ test("Web Search envia assunto público e agrega somente fontes válidas em amba
     assert.equal(turn({ ...journey, message: "Sim.", displayed: anchor },
       { reply: "Recebi sua confirmação.", accept: anchor.id, searchTopic: topic }).searchTopic, null);
     assert.equal(turn({ ...journey, message: "Pode pesquisar a diferença entre prótese e implante?", displayed: shown().anchor },
-      { reply: "A diferença pode ajudar a escolher a descrição.", searchTopic: topic }).searchTopic, topic);
+      { reply: "A diferença pode ajudar a escolher a descrição.", searchTopic: topic, privateNames: [] }).searchTopic, topic);
   }
+  const firstName = { ...opening, message: "Minha empresa se chama odonto mais e atende adultos.",
+    businessContext: null };
+  const unsafe = turn(firstName, { reply: "Vou pesquisar dados públicos.", searchTopic: "Odonto Mais implantes",
+    privateNames: ["Odonto Mais"] });
+  assert.equal(unsafe.searchTopic, null, "nome empresarial identificado no turno não pode ir à Web");
+  assert.equal(unsafe.reply, "Vou pesquisar dados públicos.");
+  assert.equal(turn(firstName, { reply: "Vou pesquisar dados públicos.", searchTopic: "Odonto Mais implantes" }).searchTopic,
+    null, "metadado de privacidade ausente não autoriza pesquisa");
+  assert.equal(turn(firstName, { reply: "Vou pesquisar dados públicos.", searchTopic: "Odonto Mais implantes",
+    privateNames: ["X".repeat(121)] }).searchTopic, null, "metadado inválido bloqueia pesquisa");
+  const generic = "diferenças entre próteses e implantes dentários";
+  assert.equal(turn(firstName, { reply: "Vou pesquisar dados públicos.", searchTopic: generic,
+    privateNames: ["Odonto Mais"] }).searchTopic, generic);
+  const newPersonal = turn({ ...opening, message: "Me chamo Maria Silva." },
+    { reply: "Entendi, Maria.", preferredName: "Maria Silva",
+      searchTopic: "Maria Silva produtos", privateNames: [] });
+  assert.equal(newPersonal.preferredName, "Maria Silva");
+  assert.equal(newPersonal.searchTopic, null, "nome pessoal identificado no turno protege a pesquisa");
   for (const [message, topic] of [
     ["trabalho na construção civil", "tendências da construção civil"],
     ["minha empresa é de arquitetura", "projetos de arquitetura sustentáveis"],
