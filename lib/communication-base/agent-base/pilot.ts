@@ -127,26 +127,47 @@ export function parseAgentBasePilotResponse(payload: unknown, key: AgentBasePilo
   definitions: readonly CommunicationSectionDefinition[] = []) {
   const selected = selectPilotFinalOutput(payload);
   if (!selected.ok) return selected;
-  payload = selected.value;
-  const output = payload && typeof payload === "object" && "output" in payload ? payload.output : null;
-  const researched = Array.isArray(output) && output.some(item => item?.type === "web_search_call");
-  const parsed = parseStageTwoResponse(payload, { kind: "section", key: key as CommunicationSectionKey }, researched, "autonomous",
+  const response = pilotRecord(selected.value);
+  const calls = Array.isArray(response?.output)
+    ? response.output.filter(item => pilotRecord(item)?.type === "web_search_call") : [];
+  // Content validation is independent from optional Web Search source metadata.
+  const parsed = parseStageTwoResponse({ ...(response ?? {}), output: [] },
+    { kind: "section", key: key as CommunicationSectionKey }, false, "autonomous",
     definitions.length ? definitions : undefined);
   if (!parsed.ok) return parsed;
+
+  const sources = new Map<string, WebSource>();
+  const collect = (raw: unknown) => {
+    if (!pilotSafeSource(raw)) return;
+    const source = pilotRecord(raw)!;
+    const url = new URL(source.url as string);
+    url.hash = "";
+    if (sources.has(url.toString()) || sources.size >= 50) return;
+    const title = typeof source.title === "string" && source.title.trim().length <= 300
+      ? source.title.trim() || null : null;
+    sources.set(url.toString(), { url: url.toString(), title });
+  };
+  for (const rawCall of calls) {
+    const call = pilotRecord(rawCall), action = pilotRecord(call?.action);
+    if (call?.status !== "completed" || !action ||
+        !["search", "open_page", "find_in_page"].includes(String(action.type))) continue;
+    if (action.type !== "search") collect({ url: action.url });
+    if (Array.isArray(action.sources)) action.sources.forEach(collect);
+  }
+  selected.citations.forEach(collect);
   return { ok: true as const, value: {
-    ...parsed.value.suggestions[0], sources: parsed.value.sources, researched: parsed.value.researched,
-  } satisfies AgentBasePilotSection, telemetry: parsed.telemetry };
+    ...parsed.value.suggestions[0], sources: [...sources.values()], researched: calls.length > 0,
+  } satisfies AgentBasePilotSection, telemetry: {
+    webSearchCallCount: calls.length, webSearchSourceCount: sources.size,
+  } };
 }
 
 // Native Responses can emit commentary before tool calls. Only the final message is structured output.
 function selectPilotFinalOutput(payload: unknown) {
   const response = pilotRecord(payload);
-  if (!response || !Array.isArray(response.output)) return { ok: true as const, value: payload };
+  if (!response || !Array.isArray(response.output)) return { ok: true as const, value: payload, citations: [] as unknown[] };
   const messages = response.output.map(pilotRecord).filter((item): item is Record<string, unknown> => item?.type === "message");
-  if (!messages.length) {
-    const output = pilotWebSources(response.output);
-    return output ? { ok: true as const, value: { ...response, output } } : pilotOutputInvalid("web_sources_invalid");
-  }
+  if (!messages.length) return { ok: true as const, value: response, citations: [] as unknown[] };
   if (messages.some(message => Array.isArray(message.content) &&
       message.content.some(part => pilotRecord(part)?.type === "refusal"))) {
     return { ok: false as const, kind: "refusal" as const, reason: "openai_refusal" };
@@ -162,35 +183,12 @@ function selectPilotFinalOutput(payload: unknown) {
     .filter(part => part?.type === "output_text" && typeof part.text === "string")
     .map(part => part!.text as string).join("") : "";
   if (!text.trim()) return pilotOutputInvalid("pilot_final_output_missing");
-  // Keep every web call for the existing source/content checks; never parse aggregated commentary.
-  const normalized = pilotWebSources(response.output, final);
-  return normalized
-    ? { ok: true as const, value: { ...response, output_text: text, output: normalized } }
-    : pilotOutputInvalid("web_sources_invalid");
-}
-
-// Adapta apenas a representação das fontes para o validador existente, sem criar URLs.
-function pilotWebSources(output: unknown[], final?: Record<string, unknown>) {
-  const citations = Array.isArray(final?.content) ? final.content.flatMap(part => {
+  const citations = Array.isArray(final.content) ? final.content.flatMap(part => {
     const annotations = pilotRecord(part)?.annotations;
-    return Array.isArray(annotations) ? annotations.filter(entry => pilotRecord(entry)?.type === "url_citation") : [];
+    return Array.isArray(annotations)
+      ? annotations.filter(item => pilotRecord(item)?.type === "url_citation") : [];
   }) : [];
-  if (citations.some(citation => !pilotSafeSource(citation))) return null;
-  let attached = false;
-  return output.map(item => {
-    const call = pilotRecord(item);
-    const action = pilotRecord(call?.action);
-    if (call?.type !== "web_search_call" || !action) return item;
-    // open_page sem URL é permitido pela API, mas não representa uma fonte visitada.
-    const missingOpenedUrl = action.type === "open_page" && action.url == null;
-    const sources = action.sources;
-    const useCitations = !attached && citations.length > 0 &&
-      (sources === undefined || (Array.isArray(sources) && (!sources.length || sources.some(pilotSafeSource))));
-    if (useCitations) attached = true;
-    return missingOpenedUrl || useCitations
-      ? { ...call, action: { ...action, ...(missingOpenedUrl ? { type: "search" } : {}),
-        ...(useCitations ? { sources: [...(Array.isArray(sources) ? sources : []), ...citations] } : {}) } } : item;
-  });
+  return { ok: true as const, value: { ...response, output_text: text }, citations };
 }
 
 function pilotSafeSource(source: unknown) {
