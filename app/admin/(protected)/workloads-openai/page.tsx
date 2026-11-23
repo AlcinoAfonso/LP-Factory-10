@@ -15,7 +15,6 @@ import { projectOpenAiWorkloadConfigurationOptions } from "@/openai-workloads/ad
 import { OpenAiConfigurationManager } from "./_components/OpenAiConfigurationManager";
 import { OpenAiModelCatalogManager } from "./_components/OpenAiModelCatalogManager";
 import { OpenAiWorkloadsTabs } from "./_components/OpenAiWorkloadsTabs";
-import { AgentBaseQaPanel } from "./_components/AgentBaseQaPanel";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -140,7 +139,6 @@ export default async function OpenAiWorkloadsPage() {
       </details>
         </>}
       />
-      {process.env.VERCEL_ENV === "preview" ? <AgentBaseQaPanel /> : null}
     </div>
   );
 }
