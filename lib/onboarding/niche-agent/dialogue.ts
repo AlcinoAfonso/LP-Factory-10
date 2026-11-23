@@ -142,11 +142,15 @@ export function publicResearchTopic(topic: string, context: NicheContext, privat
       for (const [, name] of businessContext.matchAll(/^Nome anteriormente informado:[ \t]*([^\r\n]+)/gmu)) names.push(name);
     }
   }
-  // Only fields explicitly labeled by the existing dialogue protocol count as known private names.
-  // Ordinary conversation is interpreted by the agent, not by a second grammar parser.
-  for (const { content } of [...context.history, { content: context.message }]) {
+  for (const { role, content } of [...context.history, { role: "user", content: context.message }]) {
     for (const line of content.split("\n")) {
       if (line.startsWith("Nome público: ")) names.push(line.slice("Nome público: ".length));
+    }
+    // Protect values explicitly identified as private at the source, not words in public topics.
+    if (role === "user") {
+      for (const [, value] of content.matchAll(/\b(?:(?:meu|minha|nosso|nossa)\s+(?:endere[çc]o(?:\s+(?:particular|residencial|comercial))?|nome\s+(?:pessoal|completo))\s*(?::|é)|(?:meu|minha|nosso|nossa)\s+(?:consultório|clínica|loja|sede|casa)\s+fica\s+(?:na|no|em)(?=\s+(?:rua|avenida|travessa|alameda)\s))\s*([^.!?;,\r\n]+)/giu)) {
+        names.push(value);
+      }
     }
   }
   const normalize = (text: string) => text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase()
