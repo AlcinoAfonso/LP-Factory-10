@@ -46,7 +46,7 @@ export async function validateNicheConversationActions() {
     if (name.includes("niche-agent/runtime")) return {
       conversationalMessage: z.strictObject({ account: z.string(), dialogueId: z.uuid().nullable(),
         version: z.number(), requestId: z.uuid(), content: z.string().min(1).max(4000) }),
-      requestNicheAgent: async (_account: string, _dialogue: string, context: NicheContext, prior: string | null) => {
+      requestNicheAgent: async (_account: string, _dialogue: string, context: NicheContext) => {
         contexts.push(context);
         if (!provider) return null;
         if (context.fixedNiche) {
