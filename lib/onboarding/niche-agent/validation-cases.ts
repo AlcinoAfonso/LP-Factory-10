@@ -281,8 +281,11 @@ test("Web Search envia assunto público e agrega somente fontes válidas em amba
   for (const journey of [pending, base]) {
     const topic = "Diferença entre prótese e implante dentário";
     assert.equal(publicResearchTopic(topic, journey), topic);
-    for (const privateTopic of ["Odonto Mais implantes", "Telefone da clínica", "Implantes em Rua Almeida"]) {
-      assert.equal(publicResearchTopic(privateTopic, journey), null);
+    assert.equal(publicResearchTopic("Odonto Mais implantes", journey), null);
+    assert.equal(publicResearchTopic("Implantes em Rua Almeida", journey, ["Rua Almeida"]), null);
+    for (const publicTopic of ["serviços de suporte técnico para WhatsApp", "manutenção de telefone celular",
+      "pavimentação de ruas", "planejamento de avenidas", "proteção de CPF para consumidores"]) {
+      assert.equal(publicResearchTopic(publicTopic, journey), publicTopic);
     }
     const anchor = shown().anchor;
     assert.equal(turn({ ...journey, message: "Sim.", displayed: anchor },
@@ -303,6 +306,19 @@ test("Web Search envia assunto público e agrega somente fontes válidas em amba
   const generic = "diferenças entre próteses e implantes dentários";
   assert.equal(turn(firstName, { reply: "Vou pesquisar dados públicos.", searchTopic: generic,
     privateNames: ["Odonto Mais"] }).searchTopic, generic);
+  const privateAddress = { ...opening, message: "Meu consultório fica na Rua das Flores." };
+  const addressBlocked = turn(privateAddress, { reply: "Posso explicar o assunto.", searchTopic: "serviços na Rua das Flores",
+    privateNames: ["Rua das Flores"] });
+  assert.equal(addressBlocked.searchTopic, null, "endereço particular do turno não pode ir à Web");
+  assert.equal(addressBlocked.reply, "Posso explicar o assunto.");
+  assert.equal(turn(privateAddress, { reply: "Posso explicar o assunto.",
+    searchTopic: "planejamento de ruas", privateNames: ["Rua das Flores"] }).searchTopic,
+    "planejamento de ruas", "tema público sobre ruas não é endereço particular");
+  assert.equal(publicResearchTopic("serviços na Rua das Flores",
+    { ...opening, businessContext: JSON.stringify({ address: "Rua das Flores" }) }), null);
+  assert.equal(publicResearchTopic("serviços na Rua das Flores", privateAddress, ["Rua das Flores"]), null);
+  assert.equal(publicResearchTopic("serviços na Rua das Flores 123", privateAddress), null,
+    "consulta com número não passa pelo formato técnico");
   const newPersonal = turn({ ...opening, message: "Me chamo Maria Silva." },
     { reply: "Entendi, Maria.", preferredName: "Maria Silva",
       searchTopic: "Maria Silva produtos", privateNames: [] });
