@@ -926,8 +926,8 @@ Catalogado em 2026-10-14
 
 - Capacidade: a Vercel oferece opt-in por projeto e ambiente para requisições de até 20 MiB, condicionado à configuração de 4 GB para Functions. O Edge mantém o limite anterior. Com o opt-in, o Routing Middleware recebe metadados e cabeçalhos, mas deixa de receber o corpo.
 - Aplicabilidade: a Base de Comunicação já recebe materiais com limite de imagem de 4 MiB. O beta não altera esse contrato funcional. Avaliar apenas se um fluxo aprovado exigir um arquivo maior e o limite de transporte for a causa demonstrada. Comparar com envio direto ao Storage e manter a autorização dos arquivos no fluxo competente.
-- Horizonte indefinido. Exige confirmar elegibilidade, impacto no middleware e custo incremental zero no plano operacional antes de recomendar adoção.
-- Fonte: [changelog Vercel](https://vercel.com/changelog/vercel-functions-now-support-request-bodies-up-to-20mib).
+- Horizonte indefinido. A documentação vigente limita Hobby a 2 GB, abaixo dos 4 GB exigidos pelo beta. Manter no radar. Reavaliar a elegibilidade, o efeito no middleware e o custo incremental se houver um fluxo aprovado e uma opção compatível com o plano.
+- Fontes: [changelog Vercel](https://vercel.com/changelog/vercel-functions-now-support-request-bodies-up-to-20mib) e [memória das Functions por plano](https://vercel.com/docs/functions/configuring-functions/memory).
 
 ---
 
