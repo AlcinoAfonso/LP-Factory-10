@@ -90,8 +90,6 @@ export const contactTurn: NicheTurn = {
 const project = (value: string | null | undefined) => value ? redactNicheText(value) : null;
 const safeName = (value: unknown) => validNicheDescription(value) && project(value) === value ? value : null;
 
-const claimsStoredEffect = /\b(?:registrei|gravei|salvei|atualizei|oficializei|já consta|oficializad[oa]|foi feita a (?:gravação|atualização)|(?:ficou|foi|está)\s+(?:salv[oa]|registrad[oa]|atualizad[oa])|(?:nicho|síntese|summary|resumo|cadastro|nome público)\s+(?:já\s+)?(?:salv[oa]|registrad[oa]|atualizad[oa]))\b/iu;
-
 function safeReply(value: unknown) {
   if (typeof value !== "string") return null;
   const reply = redactNicheText(value).replaceAll(SYNTHESIS_QUESTION, "").trim();
@@ -119,7 +117,7 @@ function validatedTurn(raw: RawTurn, context: NicheContext, observedSummary: str
     (!context.fixedNiche || niche === context.fixedNiche)
     ? { summary: understanding.data, niche, publicName: name } : null;
   const presentation = offer && presentOffer(offer);
-  const shown = presentation && !claimsStoredEffect.test(presentation.reply) ? presentation : null;
+  const shown = presentation || null;
 
   // The model alone judges acceptance. The server checks only the exact displayed target.
   const candidate = context.displayed && !shown && raw.offer == null && raw.clear !== true &&
@@ -134,12 +132,9 @@ function validatedTurn(raw: RawTurn, context: NicheContext, observedSummary: str
     ? mergeNicheMemory(observedSummary, candidate, corrections) : null;
   const accepted = candidate && summary !== undefined ? candidate : null;
   const clear = raw.clear === true && raw.offer == null && raw.accept == null;
-  const text = safeReply(raw.reply);
-  const response = text && claimsStoredEffect.test(text)
-    ? "Vamos conferir o entendimento. O que você gostaria de confirmar ou ajustar?" : text;
   const reply = candidate && summary === undefined
     ? "Não foi possível concluir a confirmação. A proposta e o contexto anterior foram preservados."
-    : shown?.reply ?? response ?? (accepted ? "Recebi sua confirmação." : null);
+    : shown?.reply ?? safeReply(raw.reply) ?? (accepted ? "Recebi sua confirmação." : null);
   if (!reply) return null;
   const preferredName = context.pendingSetup
     ? safeName(raw.preferredName) ?? (raw.preferredName === false ? false : null) : null;
@@ -193,7 +188,7 @@ export function prepareNicheTurn(context: NicheContext, observedSummary: string 
 export function readNicheResearch(payload: unknown, limit: number) {
   const web = webSearchMetadata(payload);
   const reply = safeReply(readOutput(payload));
-  if (!reply || claimsStoredEffect.test(reply) || !web?.calls || web.calls > limit) return null;
+  if (!reply || !web?.calls || web.calls > limit) return null;
   return reply + "\n\nFontes consultadas em " + new Date().toISOString().slice(0, 10) + ":\n" +
     web.sources.slice(0, 3).map(source => source.url).join("\n");
 }
