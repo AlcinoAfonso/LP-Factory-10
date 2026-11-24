@@ -2,7 +2,7 @@
 
 ## 1. Autoridade, validade e fontes
 
-- Data da fotografia técnica: 18/11/2026; baseline anterior de 14/09/2026, reorganizado em 22/09/2026.
+- Data da fotografia técnica: 24/11/2026; baseline anterior de 14/09/2026, reorganizado em 22/09/2026.
 - Objetivo: manter uma fotografia técnica itemizada e rastreável das capacidades OpenAI relevantes ao LP Factory 10.
 - Este documento não define sozinho modelo, `reasoning.effort`, tool, arquitetura ou configuração de produção e não autoriza adoção.
 - A configuração efetiva permanece em `docs/platform-config.md`; a governança das decisões por workload permanece em `docs/gestor-automations.md` e no caso competente do roadmap.
@@ -255,7 +255,9 @@
 - Maturidade: capacidades documentadas no changelog de 15–16/10 e guias específicos; elegibilidade, idiomas, limites e versão do SDK exigem validação focal no caso real.
 - Limites: novo canal exige consentimento, handoff, interrupção e controle de ações; descrição de voz não autoriza imitação de pessoa. Não substitui Responses ou `OAI-W08`, nem justifica streaming, sessão persistente ou agente novo agora.
 - Evolução de 02/11/2026: chamadas SIP de saída disponíveis às organizações pela Live API, utilizando uma operadora SIP; não são criadas pelo endpoint de chamadas da Realtime API. Isso amplia a referência de voz, sem aprovar telefonia no projeto.
-- Fontes: changelog, Connect voice to Decisions, Custom voices e Telephony and SIP oficiais. Sem adoção ou conteúdo financeiro.
+- Evolução de 19/11/2026: `gpt-live-1.1` está documentado para `v1/live/sessions`. Mantém áudio bidirecional simultâneo e melhora transcrição, pronúncia e consistência de sotaque em conversas multilíngues. As instruções da sessão podem indicar em linguagem natural quando delegar raciocínio e ferramentas ao backend. Os limites de sessões simultâneas de 1 e 1.1 são separados. Reasoning effort não integra a configuração de conversação documentada para esse modelo.
+- Standby no WebRTC para GPT-Live 1 e 1.1 mantém a conexão aberta, pausa a inferência por inatividade e retoma ao detectar fala. O tempo configurável de inatividade é de 5 a 60 segundos. Aplicabilidade condicional a recorte de voz aprovado, com validação de interrupção, delegação e retomada.
+- Fontes: [changelog](https://developers.openai.com/api/docs/changelog), [modelo 1.1](https://developers.openai.com/api/docs/models/gpt-live-1.1), [gestão de sessões](https://developers.openai.com/api/docs/guides/live-conversations), [delegação](https://developers.openai.com/api/docs/guides/live-delegation), Connect voice to Decisions, Custom voices e Telephony and SIP.
 
 ### `OAI-C19` — Restrições de níveis de serviço por projeto/organização
 
