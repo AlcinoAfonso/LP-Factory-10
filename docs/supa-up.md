@@ -2288,6 +2288,17 @@ Conferido em 2026-11-07
 ---
 
 
+## 81 — Validação de URLs de objetos no cliente Storage JavaScript *(🟦 Correção publicada; transversal condicional)*
+
+2026-11-19
+
+- Estado: o SDK 2.119.2 inclui uma correção de validação dos limites das URLs de objetos. O lockfile do Core usa `@supabase/supabase-js` e `@supabase/storage-js` 2.89.0; o adaptador de materiais da Base faz upload, exclusão e assinatura no Storage. Este é um delta do cliente, distinto das mudanças no serviço hospedado de `supa#47`.
+- Ação e prioridade: avaliar na próxima manutenção aprovada do SDK, ou diante de falha concreta de integridade nas operações de Storage. Conferir Node.js 22 ou posterior nos ambientes consumidores, compatibilidade com `@supabase/ssr`, Auth e operações de arquivos existentes. A nota da release não informa severidade ou impacto específico no projeto.
+- Horizonte Starter. Permanece por reforçar o SDK em uso. Encerrar com atualização compatível validada nos fluxos consumidores e documentação reconciliada, ou inaplicabilidade fundamentada. A avaliação fica condicionada a custo incremental zero.
+- Fontes: [release 2.119.2](https://github.com/supabase/supabase-js/releases/tag/v2.119.2) e [política de suporte a Node.js](https://supabase.com/changelog/45715-deprecation-notice-dropping-support-for-node-js-20).
+
+---
+
 ## Registro da rodada — Supabase Update August 2026 — 10/08/2026
 
 ### Updates ajustados ou incorporados
