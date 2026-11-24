@@ -743,6 +743,17 @@ Catalogado em 2026-10-27
 ---
 
 
+## github#24 — Espera por eventos de PR no GitHub CLI *(🧪 Preview; transversal condicional)*
+
+2026-11-18
+
+- Estado: `gh event listen` acompanha eventos de revisão, mudança de HEAD e conclusão de checks. Requer GitHub CLI 2.105.0 ou posterior e acesso à preview de Event Streams. O CLI conferido na rodada é 2.96.0 e a elegibilidade da conta não foi verificada.
+- Ação e prioridade: avaliar na próxima revisão aprovada do fluxo de acompanhamento de PRs, caso a espera atual produza custo ou atraso mensurável. Manter a releitura do estado remoto como fonte de decisão para checks, reviews e merge. Não assumir que um comentário de review do Codex produza o mesmo evento que uma revisão formal.
+- Horizonte Starter, condicional. Permanece como opção para reduzir consultas repetidas. Encerrar com benefício, cobertura de eventos e custo incremental zero demonstrados no fluxo real, com os contratos reconciliados, ou com inaplicabilidade fundamentada.
+- Fonte: [anúncio do GitHub](https://github.blog/changelog/2026-11-18-wait-for-pull-request-events-with-github-cli/) e [manual do GitHub CLI](https://cli.github.com/manual/gh_pr).
+
+---
+
 ## Registro da rodada — GitHub Update — 10/08/2026
 
 ### Updates ajustados ou incorporados
