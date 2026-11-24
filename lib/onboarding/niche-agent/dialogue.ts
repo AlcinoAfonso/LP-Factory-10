@@ -142,26 +142,18 @@ export function publicResearchTopic(topic: string, context: NicheContext, privat
       for (const [, name] of businessContext.matchAll(/^Nome anteriormente informado:[ \t]*([^\r\n]+)/gmu)) names.push(name);
     }
   }
-  const streetAbbreviations: Record<string, string> = { r: "rua", av: "avenida", tv: "travessa", al: "alameda" };
-  const expandStreets = (text: string) => text.replace(/\b(r|av|tv|al)\.?(?=\s+\p{L})/giu,
-    (_, abbreviation: string) => streetAbbreviations[abbreviation.toLowerCase()]);
-  const declaredPrivate = /\b(?:(?:meu|minha|nosso|nossa)\s+(?:(?:endere[çc]o(?:\s+(?:particular|residencial|comercial))?|nome(?:\s+(?:pessoal|completo))?)\s*(?::|é)|(?:consultório|clínica|loja|sede|casa)\s+fica\s+(?:na|no|em)(?=\s+(?:rua|avenida|travessa|alameda)\s))|(?:moro|resido)\s+(?:na|no|em)(?=\s+(?:rua|avenida|travessa|alameda)\s))\s*([^.!?;,\r\n]+)/giu;
-  for (const { role, content } of [...context.history, { role: "user", content: context.message }]) {
+  // Known structured fields and explicit protocol labels are technical data, not a grammar for user messages.
+  for (const { content } of [...context.history, { content: context.message }]) {
     for (const line of content.split("\n")) {
       if (line.startsWith("Nome público: ")) names.push(line.slice("Nome público: ".length));
     }
-    if (role !== "user") continue;
-    for (const [, value] of expandStreets(content).matchAll(declaredPrivate)) names.push(value);
   }
-  const normalize = (text: string) => expandStreets(text).normalize("NFD").replace(/\p{M}/gu, "").toLowerCase()
+  const normalize = (text: string) => text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase()
     .replace(/[^\p{L}]+/gu, " ").trim();
   const lower = " " + normalize(topic) + " ";
   if (names.some(name => {
-    if (!name) return false;
-    const value = normalize(name);
-    // Match a named street only when it derives from a known private value.
-    const street = value.match(/\b(?:rua|avenida|travessa|alameda)\s+(?:(?:d[aeo]s?)\s+)?(?!(?:d[aeo]s?|em|na|no)\b)\p{L}{2,}/u)?.[0];
-    return (value && lower.includes(" " + value + " ")) || (street && lower.includes(" " + street + " "));
+    const value = name && normalize(name);
+    return value && lower.includes(" " + value + " ");
   })) return null;
   return topic;
 }
