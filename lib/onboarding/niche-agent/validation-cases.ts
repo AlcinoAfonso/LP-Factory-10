@@ -161,18 +161,20 @@ test("correção é apresentada antes de remover o trecho superado e retém fato
   assert.deepEqual(saved.suggestions, JSON.parse(memory).suggestions);
 });
 
-test("texto do modelo não anuncia gravação sem efeito persistido", () => {
-  for (const falseReceipt of ["O novo nicho já consta no cadastro.", "O nicho foi salvo.", "A síntese já foi registrada.", "O nicho ficou salvo."]) {
-    const result = turn(context, { reply: falseReceipt, accept: null });
-    assert.match(result.reply, /Vamos conferir/);
-    assert.equal(result.synthesis.accept, null);
-    assert.equal(result.summary, null);
-    const proposalWithReceipt = turn(context, {
-      reply: "Qual público você atende?", offer: { ...proposal, summary: falseReceipt },
-    });
-    assert.equal(proposalWithReceipt.offer, null);
-    assert.equal(proposalWithReceipt.reply, "Qual público você atende?");
-  }
+test("negações e fatos empresariais continuam sob interpretação do agente, sem efeitos falsos", () => {
+  const negative = "Não salvei nenhuma informação; preciso da sua confirmação.";
+  const reply = turn(context, { reply: negative, accept: null });
+  assert.equal(reply.reply, negative);
+  assert.equal(reply.synthesis.accept, null);
+  assert.equal(reply.summary, null);
+
+  const fact = "A empresa está registrada como prestadora de serviços e atende condomínios.";
+  const offered = turn(opening, { reply: "Vamos conferir.", offer: { ...proposal, summary: fact } });
+  assert.equal(offered.offer?.summary, fact);
+  assert.match(offered.reply, /A empresa está registrada como prestadora de serviços/u);
+  assert.ok(offered.synthesis.offer);
+  assert.equal(offered.summary, null);
+  assert.equal(turn(context, { reply: "O nicho não foi salvo." }).reply, "O nicho não foi salvo.");
 });
 
 test("metadados inválidos não derrubam a resposta nem são promovidos a efeitos", () => {
@@ -320,33 +322,17 @@ test("Web Search envia assunto público e agrega somente fontes válidas em amba
     privateNames: ["Rua das Flores"] });
   assert.equal(addressBlocked.searchTopic, null, "endereço particular do turno não pode ir à Web");
   assert.equal(addressBlocked.reply, "Posso explicar o assunto.");
-  const explicitlyPrivate = "Meu endereço particular é rua dos Alfeneiros.";
   const privateTopic = "serviços em Rua dos Alfeneiros";
-  for (const address of [
-    "Meu endereço particular é rua dos Alfeneiros em São Paulo.",
-    "Meu endereço residencial é rua dos Alfeneiros 231 apartamento 2.",
-    "Meu consultório fica na rua dos Alfeneiros e atendo idosos.",
-    "Meu endereço é rua dos Alfeneiros fundos.",
-    "Meu endereço residencial é na rua dos Alfeneiros perto do parque.",
-    "Moro na R. dos Alfeneiros.",
-  ]) {
-    assert.equal(turn({ ...opening, message: address },
-      { reply: "Posso explicar o assunto.", searchTopic: privateTopic, privateNames: [] }).searchTopic, null);
-  }
-  assert.equal(turn({ ...opening, message: explicitlyPrivate },
-    { reply: "Posso explicar o assunto.", searchTopic: privateTopic, privateNames: [] }).searchTopic, null);
-  assert.equal(turn(privateAddress, { reply: "Posso explicar o assunto.",
-    searchTopic: "serviços na Rua das Flores", privateNames: [] }).searchTopic, null);
-  const withPrivateHistory = { ...context,
-    history: [{ id: assistantId, role: "user" as const, content: explicitlyPrivate }],
-  };
-  assert.equal(publicResearchTopic(privateTopic, withPrivateHistory), null);
-  assert.equal(publicResearchTopic("serviços na avenida Paulista",
-    { ...opening, message: "Meu endereço residencial é Av. Paulista, apartamento 2." }), null);
-  assert.equal(publicResearchTopic("planejamento de ruas", withPrivateHistory), "planejamento de ruas");
+  assert.equal(turn({ ...opening, message: "Moro na R. dos Alfeneiros." }, {
+    reply: "Posso explicar o assunto.", searchTopic: privateTopic, privateNames: ["Rua dos Alfeneiros"],
+  }).searchTopic, null, "o agente identifica o dado privado na própria mensagem");
+  const knownAddress = { ...opening, businessContext: JSON.stringify({ address: "Rua São Bento" }) };
+  assert.equal(publicResearchTopic("serviços na Rua São Bento", knownAddress), null);
+  assert.equal(publicResearchTopic("serviços na Rua São Francisco", knownAddress),
+    "serviços na Rua São Francisco", "comparação técnica não deduz outro logradouro pelo prefixo");
   assert.equal(turn(privateAddress, { reply: "Posso explicar o assunto.",
     searchTopic: "planejamento de ruas", privateNames: ["Rua das Flores"] }).searchTopic,
-    "planejamento de ruas", "tema público sobre ruas não é endereço particular");
+    "planejamento de ruas", "tema público não é endereço particular");
   assert.equal(publicResearchTopic("serviços na Rua das Flores",
     { ...opening, businessContext: JSON.stringify({ address: "Rua das Flores" }) }), null);
   assert.equal(publicResearchTopic("serviços na Rua das Flores", privateAddress, ["Rua das Flores"]), null);
@@ -381,10 +367,10 @@ test("Web Search envia assunto público e agrega somente fontes válidas em amba
   assert.match(readNicheResearch(search, 1) ?? "", /São procedimentos distintos\.\n\nFontes consultadas.*\nhttps:\/\/example.org\/fonte/u);
   assert.equal(readNicheResearch(search, 0), null);
   assert.equal(readNicheResearch(envelope, 1), null);
-  const falseReceipt = { ...search, output: [search.output[0], {
-    type: "message", role: "assistant", content: [{ type: "output_text", text: "O nicho ficou salvo." }],
+  const explanation = { ...search, output: [search.output[0], {
+    type: "message", role: "assistant", content: [{ type: "output_text", text: "O nicho não foi salvo." }],
   }] };
-  assert.equal(readNicheResearch(falseReceipt, 1), null);
+  assert.match(readNicheResearch(explanation, 1) ?? "", /O nicho não foi salvo\./u);
   const privateOnly = { ...search, output: [{ ...search.output[0],
     action: { type: "search", sources: [{ url: "http://localhost/private" }] } }, search.output[1]] };
   assert.equal(readNicheResearch(privateOnly, 1), null);
