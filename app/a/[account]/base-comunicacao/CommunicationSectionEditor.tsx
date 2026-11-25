@@ -227,19 +227,13 @@ export function CommunicationSectionEditor(props: Readonly<{
         <FormFieldLabel htmlFor={fieldId} className={longText ? "sr-only" : "font-normal"}>{longText ? definition.label : structured && definition.key === "business_name" ? "Nome público" : "Conteúdo da seção"}</FormFieldLabel>
         {guidance && (!longText || !structured) ? <p className="sr-only">{guidance}</p> : null}
         {!longText ? <FormFieldHint id={hintId} className={definition.stage === 2 || (structured && definition.key === "business_name") || definition.format === "text" ? "sr-only" : "leading-5"}>
-          {definition.format === "items"
-            ? definition.stage === 2
-              ? structured ? "Até 20 itens, somando até 30.000 caracteres na seção. Preserve parágrafos e subtítulos nos itens."
-                : "Escreva um item por linha; até 20 itens e 30.000 caracteres somados."
-              : structured ? "Até 20 itens de 400 caracteres. Preserve parágrafos e subtítulos dentro de cada item."
-                : "Escreva um item por linha, até 20 itens de 400 caracteres."
-            : definition.format === "faq"
-              ? definition.stage === 2
-                ? structured ? "Até 15 pares; perguntas e respostas somadas até 30.000 caracteres."
-                  : "Escreva uma pergunta e resposta por linha, separadas por |. Até 15 pares e 30.000 caracteres somados."
-                : structured ? "Até 15 pares. Preencha a pergunta e a resposta nos campos correspondentes."
-                  : "Escreva uma pergunta e resposta por linha, separadas por |. Até 15 pares."
-              : `Até ${communicationTextLimit(definition).toLocaleString("pt-BR")} caracteres. Você pode voltar e complementar depois.`}
+          {definition.stage === 2
+            ? `Texto livre. Até ${communicationTextLimit(definition).toLocaleString("pt-BR")} caracteres.`
+            : definition.format === "items"
+              ? structured ? "Até 20 itens de 400 caracteres. Preserve parágrafos e subtítulos dentro de cada item." : "Escreva um item por linha, até 20 itens de 400 caracteres."
+              : definition.format === "faq"
+                ? structured ? "Até 15 pares. Preencha a pergunta e a resposta nos campos correspondentes." : "Escreva uma pergunta e resposta por linha, separadas por |. Até 15 pares."
+                : `Até ${communicationTextLimit(definition).toLocaleString("pt-BR")} caracteres. Você pode voltar e complementar depois.`}
         </FormFieldHint> : null}
         {structured && definition.key === "business_name" ? <Textarea id={fieldId} name="value" rows={1} value={draft} maxLength={4000} readOnly={saveLocked} className="!min-h-11 resize-y" aria-describedby={hintId} onChange={(event) => setDraft(event.target.value)} /> : structured && definition.stage !== 2 && (definition.format === "items" || definition.format === "faq") ? <StructuredSectionFields format={definition.format} stage={definition.stage} draft={draft} onChange={setDraft} disabled={saveLocked} id={fieldId} /> : <Textarea
           id={fieldId}
