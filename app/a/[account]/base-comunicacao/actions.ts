@@ -17,7 +17,7 @@ import {
   saveCommunicationSection,
   saveGeneratedIntelligence,
 } from "../../../../lib/communication-base/adapters/communicationBaseAdapter";
-import { parseCommunicationFacts, parseSectionValue, withSection, withGeneratedIntelligence } from "../../../../lib/communication-base/policy";
+import { parseCommunicationFacts, parseReviewedSectionValue, parseSectionValue, withSection, withGeneratedIntelligence } from "../../../../lib/communication-base/policy";
 import { parseEditorDraft } from "../../../../lib/communication-base/manual-editor-value";
 import { isCommunicationResourcesEnabled, resolveAgentBaseEnvironment, type AgentBaseEnvironment } from "../../../../lib/communication-base/config";
 import { readCommunicationDefinitions } from "../../../../lib/communication-base/adapters/communicationCatalogAdapter";
@@ -95,7 +95,9 @@ export async function saveCommunicationSectionAction(
   if (!section || !Number.isSafeInteger(version) || version <= 0) {
     return failure("Dados inválidos. Atualize a página e tente novamente.");
   }
-  const parsed = parseSectionValue(section, parseEditorDraft(section.format, rawValue, isCommunicationResourcesEnabled() && formData.get("structured_value") === "true"));
+  const freeText = section.stage === 2 && formData.get("free_text") === "true";
+  const parseManual = freeText ? parseReviewedSectionValue : parseSectionValue;
+  const parsed = parseManual(section, parseEditorDraft(section.format, rawValue, isCommunicationResourcesEnabled() && formData.get("structured_value") === "true", freeText));
   let facts: unknown;
   if (isCommunicationResourcesEnabled() && formData.has("facts")) {
     try { facts = JSON.parse(readFormString(formData, "facts")); } catch { return failure("Revise os registros do negócio."); }

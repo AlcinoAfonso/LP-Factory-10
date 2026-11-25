@@ -4,7 +4,7 @@ import { confirmedStageOneData, hasConfirmedStageOneInput, selectStageTwoInput, 
 import { stageOneStateKey, stageTwoInputStateKey } from "./ui-state-keys";
 import { communicationSections, type CommunicationSectionDefinition } from "./registry";
 import { parseCommunicationFacts, parseSectionValue, parseStoredSections, projectCommunicationBase, withSection } from "./policy";
-import { formatManualEditorValue, parseManualEditorValue } from "./manual-editor-value";
+import { editorDraftValue, formatManualEditorValue, parseManualEditorValue } from "./manual-editor-value";
 import { COMMUNICATION_MATERIAL_BUCKET, imageExtension, ownsMaterialPath, parseCommunicationMaterials, safeMaterialLink } from "./materials";
 import { isCurrentGenerationNiche } from "./generation-guard";
 import { hasHumanNicheConfirmation } from "../onboarding/niche-resolution/contracts";
@@ -18,8 +18,9 @@ for(const [definition,value] of [[faq,[{question:"Qual | opção?\nCom detalhes"
   const stored={format:definition.format,value,origin:"user_reviewed" as const};
   const draft=formatManualEditorValue(value,definition.format);
   assert.deepEqual(parseSectionValue(definition,parseManualEditorValue(definition.format,draft)),value);
-  assert.equal(sectionEditState(definition,stored,draft,true).dirty,false);
-  assert.equal(sectionEditState(definition,stored,draft,true).valid,true);
+  const freeDraft=editorDraftValue(value,definition.format,true,true);
+  assert.equal(sectionEditState(definition,stored,freeDraft,true).dirty,false);
+  assert.equal(sectionEditState(definition,stored,freeDraft,true).valid,true);
 }
 assert.equal(parseCommunicationFacts([{label:"Telefone",value:""}]),null);
 assert.equal(parseCommunicationFacts([{label:"x".repeat(101),value:"v"}]),null);

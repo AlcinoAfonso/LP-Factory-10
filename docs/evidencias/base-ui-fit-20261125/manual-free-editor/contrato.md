@@ -1,0 +1,9 @@
+# Categoria3 — editor manual livre
+
+Autorização humana25/11/2026 após pergunta explícita: adaptar minimamente leitura, validação e salvamento das quatro seções antes em listas/FAQ; preservar os conteúdos existentes; sem alterar pesquisa, prompts ou geração por IA; mesmo PR1187 e sem merge. Objetivo: sete seções com mesmo editor simples amplo deQuem somos, parágrafos/quebras de linha, contador30000, título/ações visíveis, ajuda porícone. Sem toolbar/editorrichtextnovo.
+
+Checkpoint anteriorad2c6ad38ba7af8cc3d461e8d02db4121fbbd08c. Escopo técnico: interface/editor-state, transporte manual explícito free_text apenasstage2, parser/readback deuser_reviewed text dentro doJSONexistente. Catálogo/formats permanecem para aIA; parseSectionValue e originagent_generated continuam estritos. Conteúdos legados só são projetados como texto no rascunho; não há conversão/batchwrite aoabrir. No edit/saveexplícito, texto manual é persistido com origemuser_reviewed. Nenhuma migration/SQL/env/dependência/prompt/workload/adapterdegeração/auth/alteração na categoria1ou2.
+
+Formato do legado: itens separados por uma linha em branco; FAQpergunta seguida de resposta, entradas separadas por linha em branco; conteúdo literal, pipes, acentos e newlines preservados. Separadores adicionados podem levar uma projeção no teto acima de30000: não truncar, não marcar dirty nem gravar automaticamente; novo rascunho editado obedece teto.
+
+Validação: testes sintéticos de round-trip/save/read/projeção/dirty/limites/limpeza/rejeição deobjeto/isolamento das demais seções/strictgenerated. QA hospedada usará sessão existente semSalvar, semIA, semupload; não escrever novo formato no dado real durante oPreview, pois clientes/deployments antigos não têm o novo leitor. Alteração deve chegar à produção conjuntamente. Esse limite de rollout não é autorização para modificar infra/ambientes.

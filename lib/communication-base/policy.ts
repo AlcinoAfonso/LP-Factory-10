@@ -70,6 +70,13 @@ export function parseSectionValue(
   return entries;
 }
 
+// Manual intelligence text is accepted only on user-reviewed writes/reads.
+// Catalog formats and generated-output validation remain strict.
+export function parseReviewedSectionValue(section: CommunicationSectionDefinition, raw: unknown): CommunicationSectionValue | null {
+  return parseSectionValue(section.stage === 2 && typeof raw === "string" &&
+    ["text", "items", "faq"].includes(section.format) ? { ...section, format: "text" } : section, raw);
+}
+
 export function parseStoredSections(raw: unknown, definitions: readonly CommunicationSectionDefinition[] = communicationSections): Record<string, unknown> | null {
   if (!isRecord(raw)) return null;
   for (const [key, stored] of Object.entries(raw)) {
@@ -81,7 +88,7 @@ export function parseStoredSections(raw: unknown, definitions: readonly Communic
           (stored.origin !== "pending_setup_confirmed" ||
             (key !== "business_context" && key !== "business_name"))
         : stored.origin !== "user_reviewed" && stored.origin !== "agent_generated") ||
-      parseSectionValue(definition, stored.value) === null ||
+      (stored.origin === "user_reviewed" ? parseReviewedSectionValue(definition, stored.value) : parseSectionValue(definition, stored.value)) === null ||
       (stored.facts !== undefined && (definition.stage !== 1 || parseCommunicationFacts(stored.facts) === null))) {
       return null;
     }
@@ -131,7 +138,7 @@ export function withSection(
 ): Record<string, unknown> | null {
   const definition = definitions.find((section) => section.key === key);
   if (!definition) return null;
-  const normalized = parseSectionValue(definition, value);
+  const normalized = origin === "user_reviewed" ? parseReviewedSectionValue(definition, value) : parseSectionValue(definition, value);
   if (normalized === null) return null;
   if (definition.stage !== 2 && origin === "user_reviewed") return null;
   if (definition.stage === 2 && origin !== "user_reviewed" && origin !== "agent_generated") return null;
