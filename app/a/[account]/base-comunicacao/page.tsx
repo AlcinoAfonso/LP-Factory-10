@@ -46,8 +46,6 @@ export default async function CommunicationBasePage({ params }: PageProps) {
     access.value.canEdit ? loadBaseNicheConversationAction(access.value.accountSubdomain) : null,
   ]);
   const base = result.ok ? result.value : null;
-  const savedBusinessName = base?.sections.business_name?.value;
-  const businessName = typeof savedBusinessName === "string" ? savedBusinessName.trim() : "";
   const nicheLabel = !taxonomy.ok
     ? "Não foi possível carregar o nicho agora."
     : taxonomy.niche?.name ?? "Nicho ainda não definido";
@@ -75,10 +73,6 @@ export default async function CommunicationBasePage({ params }: PageProps) {
             </h1>
             {showIntroduction ? <CommunicationBaseIntroduction /> : null}
           </div>
-          {businessName ? <p className="text-sm font-medium text-foreground [overflow-wrap:anywhere]">{businessName}</p> : null}
-          <p className="text-sm text-muted-foreground [overflow-wrap:anywhere]">
-            {taxonomy.ok && taxonomy.niche ? <><strong>Nicho:</strong> {nicheLabel}</> : nicheLabel}
-          </p>
         </header>
         {nicheConversation ? <AccountNicheConversation account={access.value.accountSubdomain} state={nicheConversation} /> : access.value.canEdit ? (
           <FeedbackMessage tone="error">Não foi possível carregar a conversa de nicho. Atualize a página para tentar novamente.</FeedbackMessage>

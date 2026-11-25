@@ -16,9 +16,10 @@ export function AccountNicheConversation({ account, state, home }: {
   const [opened, setOpened] = useState(Boolean(state.dialogue && !state.dialogue.ended));
   const [focus, setFocus] = useState(false);
   const dialogue = state.dialogue?.id === hiddenDialogue ? null : state.dialogue;
-  if (state.blocked && !dialogue) return <p className="text-sm text-muted-foreground">{blockedMessage}</p>;
+  if (state.blocked && (!dialogue || (!home && !opened))) return <p className="text-sm text-muted-foreground">{blockedMessage}</p>;
 
-  const label = dialogue?.ended ? "Ver conversa de nicho" : state.confirmed ? "Redefinir nicho"
+  const startNewFromBase = !home && Boolean(dialogue?.ended);
+  const label = startNewFromBase ? (state.hasNiche ? "Redefinir nicho" : "Definir nicho") : dialogue?.ended ? "Ver conversa de nicho" : state.confirmed ? "Redefinir nicho"
     : state.hasNiche && home ? "Confirmar nicho" : "Definir nicho";
   const introduction = state.existingOnly ? "Vamos conferir o nicho cadastrado. Com um produto na conta, só é possível confirmar a descrição atual."
     : state.confirmed ? "O que mudou no seu negócio desde a última definição do nicho?"
@@ -27,6 +28,7 @@ export function AccountNicheConversation({ account, state, home }: {
   return (
     <div className="space-y-3">
       {!opened ? <Button variant="secondary" className="min-h-11" type="button" onClick={() => {
+        if (startNewFromBase && dialogue) setHiddenDialogue(dialogue.id);
         setFocus(true);
         setOpened(true);
       }}>{label}</Button> : (
