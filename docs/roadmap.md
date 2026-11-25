@@ -1436,7 +1436,7 @@
 - Conteúdo: E5/E10.5.6/contas/evidências preservados.
 
 17.1.6 Pipelines operacionais
-- Inspect/Docs Apply em Automations 3.1/3.2; Inspect SQL read-only com ingresso financeiro opcional E21 via HMAC. Apply pós-merge autorizado conforme Platform Config 2.3.
+- Docs Apply em Automations 3.2. Apply pós-merge autorizado conforme Platform Config 2.3. Inspect desativado conforme Automations 3.1.
 - Migrations incrementais imutáveis, sem SQL Editor no fluxo normal (Base Técnica 3.4.4).
 
 17.1.7 Limites
@@ -1746,7 +1746,7 @@
 
 21.1.1 Objetivo e status
 - Objetivo: catálogo/resolução/telemetria comuns.
-- Status: implementado; cinco workloads textuais + Inspect externo, sem imagem ativa.
+- Status: implementado; workloads textuais ativos. Inspect desativado, com consulta histórica de custos.
 
 21.1.2 Registros do recorte
 - Repositório:
@@ -1777,7 +1777,7 @@
 
 21.1.5 Inventário administrativo
 - Status: implementado.
-- Conteúdo: Admin mostra configuração/origem/revisão, modalidade/consumidor/fallback; Inspect não verificado pelo Core. Sem consulta externa para inventário ou conteúdo protegido.
+- Conteúdo: Admin mostra configuração/origem/revisão, modalidade/consumidor/fallback. Sem consulta externa para inventário ou conteúdo protegido.
 
 21.2 Configuração operacional dinâmica dos workloads OpenAI
 
@@ -2063,7 +2063,7 @@
 
 21.5.3 Atribuição e evidência por execução
 - Status: ativa nos ambientes comprovados.
-- Conteúdo: atribuição/idempotência/fail-open em Base Técnica 3.16; ledger Schema 3.11, gates Platform Config 3.5. Cinco workloads e ingresso Inspect E17.1.6 sem credencial mutável de banco.
+- Conteúdo: atribuição/idempotência/fail-open em Base Técnica 3.16; ledger Schema 3.11, gates Platform Config 3.5. Ingresso dedicado do Inspect desativado. Histórico consultável em Custos OpenAI.
 
 21.5.4 Cálculo e reconciliação de custos
 - Status: vigente.

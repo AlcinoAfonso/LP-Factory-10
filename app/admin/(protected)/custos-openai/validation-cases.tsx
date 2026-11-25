@@ -476,7 +476,7 @@ assert.equal(lifetimeCallsBeforeMigration, 0);
 assert.equal(productBeforeMigration.dashboard?.productLifetime, null);
 assert.equal(productBeforeMigration.dashboard?.filteredActive?.totalCalculatedUsd, "0.05");
 
-for (const workload of ["taxon_input_catalog_sufficiency_evaluation", "landing_page_dynamic_market_research"] as const) {
+for (const workload of ["taxon_input_catalog_sufficiency_evaluation", "landing_page_dynamic_market_research", "supabase_inspect"] as const) {
   const historicalForm = new FormData();
   historicalForm.set("periodMode", "custom");
   historicalForm.set("startDate", "2026-08-01");
@@ -502,7 +502,7 @@ for (const workload of ["taxon_input_catalog_sufficiency_evaluation", "landing_p
     readActive: async () => ({ ok: true, value: historicalModel }),
     readLegacy: async () => internal,
   });
-  assert.equal(historical.status, "success", "retired history must remain readable through the dashboard action");
+  assert.equal(historical.status, "success", "historical costs must remain readable through the dashboard action");
   assert.equal(historical.dashboard?.activeFilters.workload, workload);
   assert.equal(historical.dashboard?.filteredActive?.totalCalculatedUsd, "0.05");
   assert.equal(historical.dashboard?.officialTotalUsd, "1", "history filters must not change the global official cost");

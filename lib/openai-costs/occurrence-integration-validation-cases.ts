@@ -387,28 +387,34 @@ export async function validateOccurrenceIntegrations() {
     assert.ok(closeCalls.slice(beforeProof).every(call => call.p_execution_origin === "administrative_proof"));
 
     const { POST } = await import("../../app/api/internal/openai-costs/route");
-    const closeInspect = async (authenticated = true) => {
-      const protocol = OPENAI_COST_INGESTION_PROTOCOL_VERSION;
-      const timestamp = Date.now().toString();
-      const body = JSON.stringify({ version: protocol, action: "closeOccurrence", payload: { executionId, occurrenceId: inspectId } });
-      return POST(new Request("https://test.example/api/internal/openai-costs", {
-        method: "POST", body, headers: { "content-type": "application/json", "x-openai-cost-protocol": protocol,
-          "x-openai-cost-timestamp": timestamp,
-          "x-openai-cost-signature": authenticated ? createHmac("sha256", secret).update(`${timestamp}.${body}`).digest("hex") : "invalid",
-        },
-      }));
-    };
+    const { closeSupabaseInspectCostOccurrence } = await import("./adapters/activeCostTrackingAdapter");
+    const protocol = OPENAI_COST_INGESTION_PROTOCOL_VERSION;
+    const timestamp = Date.now().toString();
+    const body = JSON.stringify({ version: protocol, action: "closeOccurrence", payload: { executionId, occurrenceId: inspectId } });
+    const signature = createHmac("sha256", secret).update(`${timestamp}.${body}`).digest("hex");
     const beforeInspect = closeCalls.length;
-    assert.equal((await closeInspect(false)).status, 401);
+    for (const suppliedSignature of ["invalid", signature]) {
+      const request = new Request("https://test.example/api/internal/openai-costs", {
+        method: "POST", body, headers: { "content-type": "application/json", "x-openai-cost-protocol": protocol,
+          "x-openai-cost-timestamp": timestamp, "x-openai-cost-signature": suppliedSignature },
+      });
+      const response = await POST(request);
+      assert.equal(response.status, 404, "paused ingress stays disabled with the environment flag enabled");
+      assert.deepEqual(await response.json(), { ok: false, code: "disabled" });
+      assert.equal(request.bodyUsed, false);
+    }
+    assert.equal(closeCalls.length, beforeInspect);
+
+    const closeInspect = () => closeSupabaseInspectCostOccurrence(executionId, inspectId, "preview");
     inspectExecutionExists = false;
-    assert.equal((await (await closeInspect()).json()).closed, false);
+    assert.equal(await closeInspect(), false);
     inspectExecutionExists = true;
     foreignWorkloadExists = true;
-    assert.equal((await (await closeInspect()).json()).closed, false);
+    assert.equal(await closeInspect(), false);
     assert.equal(closeCalls.length, beforeInspect);
     foreignWorkloadExists = false;
-    assert.equal((await (await closeInspect()).json()).closed, true);
-    assert.equal((await (await closeInspect()).json()).closed, true, "signed replay uses the same occurrence");
+    assert.equal(await closeInspect(), true);
+    assert.equal(await closeInspect(), true, "retry uses the same occurrence");
     assert.deepEqual(closeCalls.at(-1), { p_occurrence_id: inspectId, p_environment: "preview",
       p_execution_origin: "runtime", p_account_id: null, p_universe: "lp_factory" });
   } finally {
@@ -418,5 +424,5 @@ export async function validateOccurrenceIntegrations() {
       else process.env[key] = value;
     }
   }
-  console.log("PASS D10D terminal and resumable dialogues, signed Category 3 generation, and scoped Inspect ingress");
+  console.log("PASS D10D terminal and resumable dialogues, signed Category 3 generation, and disabled Inspect ingress with scoped closure");
 }

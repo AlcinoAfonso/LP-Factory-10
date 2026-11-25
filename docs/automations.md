@@ -26,14 +26,11 @@
 3. Catálogo de automações operacionais
 
 3.1 Supabase Inspect Actions
-- Objetivo/status: inspeção Supabase implementada via GitHub Actions; consultas SQL read-only e amostras somente em logs/Job Summary.
-- Captura financeira: quando OPENAI_COST_INGESTION_ENABLED habilita o ingresso, eventos assinados de execução/operação são gravados no ledger ativo pelo Core. Essa escrita não persiste consultas nem amostras; configuração em `docs/platform-config.md` — 2.2 e 3.5.
-- Uso: GitHub → Actions → pipeline-supabase-inspect; informar briefing_path ou inputs manuais. SQL livre e batch seguem o README local.
-- Resultado: logs e Job Summary com SQL executado, rowCount, colunas, amostra e diagnóstico; guardrails e limites em `automations/supabase-inspect/README.md`.
-- Dependências: runtime `automations/supabase-inspect/`; workflow `.github/workflows/pipeline-supabase-inspect.yml`; credenciais/configuração em `docs/platform-config.md` — 2.2.
+- Status: workflow manual desativado no GitHub Actions. O ingresso assinado dedicado fica bloqueado no Core. O histórico permanece em `/admin/custos-openai`.
+- Executor e contrato preservados em `automations/supabase-inspect/`. Configuração em `docs/platform-config.md` — 2.2 e 3.5.
 
 3.1.1 Supabase Inspect — presets opcionais de verificação
-- Não implementados nem autorizados; modo livre por SQL permanece disponível. Proposta futura não altera a operação atual nem substitui `docs/schema.md`.
+- Proposta sem implementação ou autorização.
 
 3.2 Pipeline Docs Apply Report
 - Objetivo/status: aplicação de reports JSON em Markdown implementada, com branch, commit e PR para revisão humana.
