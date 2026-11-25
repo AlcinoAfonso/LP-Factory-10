@@ -13,13 +13,14 @@ export function AccountNicheConversation({ account, state, home }: {
   home?: boolean;
 }) {
   const [hiddenDialogue, setHiddenDialogue] = useState<string | null>(null);
-  const [opened, setOpened] = useState(Boolean(state.dialogue && !state.dialogue.ended));
+  const [opened, setOpened] = useState(Boolean(home && state.dialogue && !state.dialogue.ended));
   const [focus, setFocus] = useState(false);
   const dialogue = state.dialogue?.id === hiddenDialogue ? null : state.dialogue;
-  if (state.blocked && (!dialogue || (!home && !opened))) return <p className="text-sm text-muted-foreground">{blockedMessage}</p>;
+  if (state.blocked && !dialogue) return <p className="text-sm text-muted-foreground">{blockedMessage}</p>;
 
   const startNewFromBase = !home && Boolean(dialogue?.ended);
-  const label = startNewFromBase ? (state.hasNiche ? "Redefinir nicho" : "Definir nicho") : dialogue?.ended ? "Ver conversa de nicho" : state.confirmed ? "Redefinir nicho"
+  const baseLabel = state.blocked ? "Consultar conversa de nicho" : state.hasNiche ? "Redefinir nicho" : "Definir nicho";
+  const label = !home ? baseLabel : dialogue?.ended ? "Ver conversa de nicho" : state.confirmed ? "Redefinir nicho"
     : state.hasNiche && home ? "Confirmar nicho" : "Definir nicho";
   const introduction = state.existingOnly ? "Vamos conferir o nicho cadastrado. Com um produto na conta, só é possível confirmar a descrição atual."
     : state.confirmed ? "O que mudou no seu negócio desde a última definição do nicho?"
@@ -27,11 +28,11 @@ export function AccountNicheConversation({ account, state, home }: {
 
   return (
     <div className="space-y-3">
-      {!opened ? <Button variant="secondary" className={home ? "min-h-11" : "min-h-11 !items-start !px-0 !py-0 text-left"} type="button" onClick={() => {
-        if (startNewFromBase && dialogue) setHiddenDialogue(dialogue.id);
+      {!opened ? <><Button variant="secondary" className={home ? "min-h-11" : "min-h-11 !items-start !px-0 !py-0 text-left"} type="button" onClick={() => {
+        if (startNewFromBase && dialogue && !state.blocked) setHiddenDialogue(dialogue.id);
         setFocus(true);
         setOpened(true);
-      }}>{label}</Button> : (
+      }}>{label}</Button>{state.blocked && !home ? <p className="text-sm text-muted-foreground">{blockedMessage}</p> : null}</> : (
         <section aria-label="Conversa sobre o nicho" className="space-y-3 rounded-xl border border-border bg-card p-4 sm:p-6">
           <NicheConversation key={dialogue?.ended ? "ended" : "open"} account={account} dialogueId={dialogue?.id ?? null}
             version={dialogue?.version ?? 0} messages={dialogue?.messages ?? []} retry={dialogue?.retry}

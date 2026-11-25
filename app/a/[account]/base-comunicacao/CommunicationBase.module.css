@@ -1,4 +1,9 @@
 /* Only this account surface; shared typography and semantic tokens stay intact. */
+.surface {
+  color-scheme: only light;
+  background-color: theme("colors.surface.base");
+}
+
 .surface :global(.text-muted-foreground),
 .surface textarea::placeholder,
 .surface input::placeholder {
