@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { before, test } from "node:test";
 import nodeModule from "node:module";
 import type { NicheContext } from "./runtime";
+import { NICHE_AGENT_INSTRUCTIONS, NICHE_AGENT_PROMPT_VERSION } from "./prompt";
 import {
   CONTACT_RECEIPT, displayedOffer, nicheHistory, nicheSummaryContext, pendingSetupWhatsApp, presentOffer, publicResearchTopic, type DialogueText,
 } from "./dialogue";
@@ -72,6 +73,31 @@ test("nome profissional, síntese e nicho aparecem juntos, sem efeito até o ace
   const fromBase = turn(context, { offer: proposal, preferredName: "Ana" });
   assert.equal(fromBase.preferredName, null);
   assert.doesNotMatch(fromBase.reply, /Nome público/u);
+});
+
+test("nicho mercadológico curto preserva síntese, confirmação e público na Base", () => {
+  assert.equal(NICHE_AGENT_PROMPT_VERSION, "d15e_niche_agent_v13");
+  assert.match(NICHE_AGENT_INSTRUCTIONS, /denominação comercial curta e reconhecida no mercado/u);
+  assert.match(NICHE_AGENT_INSTRUCTIONS, /público-alvo da Base de Comunicação/u);
+  assert.match(NICHE_AGENT_INSTRUCTIONS, /não pesquise casos evidentes/u);
+  assert.doesNotMatch(NICHE_AGENT_INSTRUCTIONS, /nicho específico \(atividade principal e público\)/u);
+  const business = { summary: "A empresa tem cinco lojas que vendem hambúrgueres, com tíquete de R$ 35.",
+    niche: "Hamburgueria", publicName: "Deliciou Hamburgueria" };
+  const proposed = turn({ ...opening, message: business.summary }, { reply: "Vamos conferir.", offer: business });
+  assert.deepEqual(proposed.offer, business);
+  assert.match(proposed.reply, /Nicho proposto: Hamburgueria/u);
+  assert.equal(proposed.summary, null, "a proposta não grava sem aceite");
+  const reference = proposed.synthesis.offer;
+  assert.ok(reference);
+  const displayed = displayedOffer({ ...reference, messageId: assistantId },
+    [{ id: assistantId, role: "assistant", content: proposed.reply }],
+    { niche: business.niche, publicName: business.publicName });
+  assert.ok(displayed);
+  const accepted = turn({ ...opening, message: "Correto.", displayed },
+    { reply: "Perfeito.", accept: displayed.id });
+  assert.equal(accepted.synthesis.accept, displayed.id);
+  assert.match(accepted.summary ?? "", /cinco lojas/u);
+  assert.match(accepted.summary ?? "", /Nome público: Deliciou Hamburgueria/u);
 });
 
 test("WhatsApp é independente, invisível no input e sem efeito sobre o alvo de aceite", () => {
