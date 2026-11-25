@@ -409,6 +409,8 @@ async function main() {
   assert.equal(workflow.includes("SUPABASE_SECRET_KEY"), false);
   assert.ok(workflow.includes("OPENAI_COST_INGESTION_HMAC_SECRET"));
   const route = readFileSync("app/api/internal/openai-costs/route.ts", "utf8");
+  assert.match(route, /const SUPABASE_INSPECT_INGESTION_ENABLED = false;/);
+  assert.match(route, /if \(\s*!SUPABASE_INSPECT_INGESTION_ENABLED \|\|[\s\S]*?code: "disabled" \}, \{ status: 404 \}/);
   assert.ok(route.includes("activeCostTrackingAdapter[action]"));
   assert.equal(route.includes("openAiCostRecorder[action]"), false);
   await validateOccurrenceIntegrations();

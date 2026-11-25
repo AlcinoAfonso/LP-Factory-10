@@ -30,10 +30,10 @@
 
 2.2 GitHub Actions
 - Secrets e variáveis conhecidos:
-- `OPENAI_API_KEY`: usado por automações/CI que chamam OpenAI. Consumidor atual: `pipeline-supabase-inspect`.
-- `SUPABASE_DB_URL_READONLY`: conexão read-only para inspeções/automação de banco. Consumidor atual: `pipeline-supabase-inspect`.
+- `OPENAI_API_KEY`: usado por automações/CI que chamam OpenAI. Consumidor versionado: `pipeline-supabase-inspect` (desativado).
+- `SUPABASE_DB_URL_READONLY`: conexão read-only para inspeções/automação de banco. Consumidor versionado: `pipeline-supabase-inspect` (desativado).
 - `OPENAI_COST_INGESTION_HMAC_SECRET`: secret de assinatura do ingresso financeiro do `pipeline-supabase-inspect`; configurado no GitHub Actions e no Core, sem valor versionado.
-- `OPENAI_COST_INGESTION_ENABLED`: variável não sensível que libera o envio financeiro do `pipeline-supabase-inspect`; configurada e ativa no fluxo Production validado.
+- `OPENAI_COST_INGESTION_ENABLED`: variável de envio financeiro do Inspect. O workflow está desativado no GitHub Actions.
 - `OPENAI_COST_INGESTION_URL`: URL HTTPS do endpoint interno do Core; configurada no GitHub Actions para o ingresso Production validado.
 - `OPENAI_COST_INGESTION_ENVIRONMENT`: ambiente explícito enviado pelo workflow, restrito a `production`, `preview` ou `development`; configurada como variável do fluxo validado.
 - `OPENAI_COST_INGESTION_PROTOCOL_VERSION`: versão do protocolo aceito pelo cliente do `supabase_inspect`; configurada como variável do fluxo validado.
@@ -119,11 +119,11 @@
 - OPENAI_ADMIN_KEY: Organization Admin Key com Read only, exclusiva do Core para Costs API em Preview/Production. Configurada e validada nos dois ambientes; separada de OPENAI_API_KEY, nunca em client, log, banco ou payload sanitizado.
 - OPENAI_LP_COST_TRACKING_ENABLED: true somente em Production; ausente em Preview/Development. Sem consumidor após retirada do write-side E21.4; valor inerte, série/corte/cobertura preservados somente leitura. Sem remoção obrigatória ou novo consumidor autorizado.
 - OPENAI_ACTIVE_COST_TRACKING_ENABLED: ledger ativo transversal; Config ativa em Preview/Production, independente por ambiente. No runtime D10D, ausência/vazio/diferente de true bloqueia novos envios cobráveis. A confirmação depende das RPCs da migration D10D; falha após consumo não invalida resultado funcional. Alteração exige redeploy e validação do ambiente.
-- OPENAI_COST_INGESTION_ENABLED: Config do ingresso financeiro assinado de supabase_inspect, escopo Preview/Production do Core alinhado ao workflow. Configurada no Core/GitHub; fluxo Production validado, inclusive rejeição de assinatura inválida/expirada.
+- `OPENAI_COST_INGESTION_ENABLED`: configuração do ingresso assinado do Inspect em Preview/Production. O bloqueio no código de `app/api/internal/openai-costs/route.ts` prevalece sobre o valor hospedado.
 - OPENAI_COST_INGESTION_HMAC_SECRET: Secret exclusivo do ingresso, configurado no GitHub e Core para Production validado; valores independentes por ambiente.
 - OPENAI_COST_INGESTION_ENVIRONMENT: Config para validar ambiente declarado pelo workflow; escopo Preview/Production, configurada no GitHub/Core para Production validado. Revisão de referência code-owned E21.
 - Prazos D10D por persistência: Core, 2 s para admissão e 350 ms para finalização. Inspect, 5 s até receber o recibo do ingresso e 1,5 s para finalização. O ingresso chama o Supabase diretamente. Recibo recebido após o prazo não libera envio.
-- Publicação D10D: antes do merge autorizado, reter os builds de Production sem atribuição automática de domínios e verificar os aliases em uso. Após sucesso do workflow de migrations no SHA de merge, conferir versão, RPCs e acesso do runtime no banco alvo. Só então promover o build de Production desse SHA. Disparar o Inspect na nova revisão somente após confirmar o ingresso atualizado.
+- Publicação D10D: antes do merge autorizado, reter os builds de Production sem atribuição automática de domínios e verificar os aliases em uso. Após sucesso do workflow de migrations no SHA de merge, conferir versão, RPCs e acesso do runtime no banco alvo. Só então promover o build de Production desse SHA.
 - OPENAI_OPERATIONAL_CONFIG_ENABLED: referência legada, sem poder de selecionar baseline em Preview/Production. Cada execução lê a revisão ativa Supabase do ambiente, sem cache/fallback; trocas ordinárias no Admin não exigem código ou redeploy. Development mantém repo_catalog. Variáveis existentes não foram alteradas.
 - E25_1_COMMUNICATION_BASE_ENABLED: Config true em Preview/Production, independente por ambiente; controla rota, actions, navegação e assistência da Base. Ausente/outro valor desabilita sem consultar tabela. Apply, configuração E21 e ativação concluídos; alteração exige redeploy.
 - E25_3_COMMUNICATION_RESOURCES_ENABLED: Config true em Preview/Production do lp-factory-10, independente por ambiente, confirmada em 11/10/2026. Recursos manuais das três categorias e gestão global de seções separados de E25.1; somente true habilita. Preview reativado/validado antes de Production, ambos operacionais. Alterar exige redeploy; desligar preserva E25.1 e dados persistidos. [Recibo final](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1057#issuecomment-6112021128).

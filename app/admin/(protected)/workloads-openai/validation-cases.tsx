@@ -32,8 +32,7 @@ assert.doesNotMatch(page, /listOpenAiWorkloadConfigurationOptions/);
 assert.match(page, /<OpenAiModelCatalogManager/);
 assert.match(page, /<OpenAiConfigurationManager/);
 assert.match(page, /Leitura administrativa indisponível/);
-assert.match(page, /Supabase Inspect/);
-assert.match(page, /Somente leitura/);
+assert.doesNotMatch(page, /Supabase Inspect/);
 
 assert.match(catalog, /Catálogo global/);
 assert.match(catalog, /Disponível para novas candidatas|disponíveis para novas candidatas/i);

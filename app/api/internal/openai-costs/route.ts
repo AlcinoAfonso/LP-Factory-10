@@ -13,9 +13,13 @@ import { validateOpenAiCostIngestion } from "@/openai-costs/ingestion";
 export const runtime = "nodejs";
 
 const MAX_BODY_BYTES = 16_384;
+const SUPABASE_INSPECT_INGESTION_ENABLED = false;
 
 export async function POST(request: Request) {
-  if (process.env.OPENAI_COST_INGESTION_ENABLED?.trim().toLowerCase() !== "true") {
+  if (
+    !SUPABASE_INSPECT_INGESTION_ENABLED ||
+    process.env.OPENAI_COST_INGESTION_ENABLED?.trim().toLowerCase() !== "true"
+  ) {
     return NextResponse.json({ ok: false, code: "disabled" }, { status: 404 });
   }
   if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {

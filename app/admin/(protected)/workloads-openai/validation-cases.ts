@@ -310,6 +310,8 @@ const cases: readonly Case[] = [
   {
     name: "server actions derive authority and proof credentials only on the server",
     run: () => {
+      const page = readFileSync(new URL("page.tsx", import.meta.url), "utf8");
+      assert.doesNotMatch(page, /Supabase Inspect|supabase_inspect/);
       const actions = readFileSync(new URL("actions.ts", import.meta.url), "utf8");
       const proof = readFileSync(new URL("_proof.ts", import.meta.url), "utf8");
       for (const action of [
