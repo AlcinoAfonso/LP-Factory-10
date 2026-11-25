@@ -77,7 +77,7 @@ export default async function CommunicationBasePage({ params }: PageProps) {
           </div>
           {businessName ? <p className="text-sm font-medium text-foreground [overflow-wrap:anywhere]">{businessName}</p> : null}
           <p className="text-sm text-muted-foreground [overflow-wrap:anywhere]">
-            {taxonomy.ok && taxonomy.niche ? `Nicho: ${nicheLabel}` : nicheLabel}
+            {taxonomy.ok && taxonomy.niche ? <><strong>Nicho:</strong> {nicheLabel}</> : nicheLabel}
           </p>
         </header>
         {nicheConversation ? <AccountNicheConversation account={access.value.accountSubdomain} state={nicheConversation} /> : access.value.canEdit ? (

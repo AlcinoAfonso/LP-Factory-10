@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useId, useLayoutEffect, useRef, useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
+import styles from "./CommunicationBase.module.css";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { FormField, FormFieldLabel, FormFieldHint, FormFieldError } from "@/components/ui/form-field";
@@ -205,7 +206,7 @@ export function CommunicationSectionEditor(props: Readonly<{
   const stageTwoPresentation = selectStageTwoSectionPresentation(localStageTwoResult, generalRevision, suggestedSuggestion);
   const stageTwoSuggestion = stageTwoPresentation.suggestion;
   return (
-    <article>
+    <article className={styles.sectionEditor}>
       {structured && definition.key === "business_context" ? <p className="mb-3 text-sm text-muted-foreground">Nicho: {nicheLabel}. Apenas para consulta nesta seção.</p> : null}
       <form action={action} onSubmit={(event) => {
         if (saveLocked || !editState.valid || !editState.dirty) { event.preventDefault(); return; }
@@ -215,15 +216,16 @@ export function CommunicationSectionEditor(props: Readonly<{
           startedSavesRef.current += 1;
           onStageTwoSaveStarted?.();
         }
-      }} className={structured && definition.key === "business_name" ? "space-y-0.5" : "space-y-2"}>
+      }} className={styles.sectionForm}>
+        <div className={styles.editorContent}>
         <input type="hidden" name="account" value={account} />
         <input type="hidden" name="section_key" value={definition.key} />
         <input type="hidden" name="version" value={version} />
         <input type="hidden" name="structured_value" value={String(structured)} />
-        <FormField className={structured && definition.key === "business_name" ? "grid-cols-[repeat(auto-fit,minmax(min(100%,8rem),1fr))] items-center gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,5fr)]" : "gap-1.5"}>
+        <FormField data-grow-text={!(structured && (definition.key === "business_name" || definition.format === "items" || definition.format === "faq")) || undefined} className={structured && definition.key === "business_name" ? "grid-cols-[repeat(auto-fit,minmax(min(100%,8rem),1fr))] items-center gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,5fr)]" : "gap-1.5"}>
         <FormFieldLabel htmlFor={fieldId} className={longText ? "sr-only" : "font-normal"}>{longText ? definition.label : structured && definition.key === "business_name" ? "Nome público" : "Conteúdo da seção"}</FormFieldLabel>
-        {guidance && (!longText || !structured) ? <p className="text-sm text-muted-foreground">{guidance}</p> : null}
-        {!longText ? <FormFieldHint id={hintId} className={structured && definition.key === "business_name" ? "sr-only" : "leading-5"}>
+        {guidance && (!longText || !structured) ? <p className="sr-only">{guidance}</p> : null}
+        {!longText ? <FormFieldHint id={hintId} className={structured && definition.key === "business_name" ? "sr-only" : definition.format === "text" ? "sr-only" : "leading-5"}>
           {definition.format === "items"
             ? definition.stage === 2
               ? structured ? "Até 20 itens, somando até 30.000 caracteres na seção. Preserve parágrafos e subtítulos nos itens."
@@ -245,7 +247,7 @@ export function CommunicationSectionEditor(props: Readonly<{
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           readOnly={saveLocked}
-          placeholder={guidance ?? undefined}
+          placeholder={undefined}
           maxLength={definition.format === "text" ? communicationTextLimit(definition) : undefined}
           aria-invalid={!editState.valid}
           aria-describedby={`${hintId}${!editState.valid ? ` ${fieldId}-error` : ""}${saveLocked ? ` ${saveLockHintId}` : ""}`}
@@ -263,7 +265,7 @@ export function CommunicationSectionEditor(props: Readonly<{
           {assistanceUsed ? <p className="text-xs font-normal leading-5 text-muted-foreground">
             A IA revisa apenas {definition.label} usando os dados confirmados pertinentes e o texto salvo desta seção. As demais seções permanecem como estão.
           </p> : null}
-          <label className="mt-2 flex min-h-11 items-center gap-2 text-sm">
+          <label hidden className="hidden">
             <input type="checkbox" checked={requiresResearch} disabled={saveLocked}
               onChange={(event) => setRequiresResearch(event.target.checked)}
               className="h-5 w-5 accent-brand-700" />
@@ -318,7 +320,8 @@ export function CommunicationSectionEditor(props: Readonly<{
           {aiMessage ? <p role="alert" className="mt-2 text-sm text-state-error">{aiMessage}</p> : null}
         </div>
       ) : null}
-        <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-2 border-t border-border bg-background py-2 [&>button]:px-3 [&>button]:py-1">
+        </div>
+        <div className="sticky bottom-0 shrink-0 flex flex-wrap items-center justify-between gap-2 border-t border-border bg-background py-2 [&>button]:px-3 [&>button]:py-1">
           <Button variant="secondary" className="min-h-11 px-0 font-normal !text-foreground underline underline-offset-4" disabled={saveLocked} onClick={onCancel}>Cancelar</Button>
           <SubmitButton label="Salvar" pendingLabel="Salvando..." disabled={saveLocked || !editState.dirty || !editState.valid} busy={saveLocked} />
         </div>
@@ -507,7 +510,7 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
           <p className="text-xs leading-5 text-muted-foreground">
             Sugestões para as sete seções da Etapa 2. Revise cada uma antes de usar ou salvar.
           </p>
-          <label className="mt-0.5 flex min-h-11 items-center gap-2 text-sm sm:inline-flex">
+          <label hidden className="hidden">
             <input type="checkbox" checked={requiresResearch} onChange={(event) => setRequiresResearch(event.target.checked)}
               className="h-5 w-5 shrink-0 accent-brand-700" />
             Preciso de pesquisa atual ou local para esta geração
