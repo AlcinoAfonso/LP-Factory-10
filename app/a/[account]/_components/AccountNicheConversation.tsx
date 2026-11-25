@@ -13,13 +13,13 @@ export function AccountNicheConversation({ account, state, home }: {
   home?: boolean;
 }) {
   const [hiddenDialogue, setHiddenDialogue] = useState<string | null>(null);
-  const [opened, setOpened] = useState(Boolean(state.dialogue && !state.dialogue.ended));
+  const [opened, setOpened] = useState(Boolean(home && state.dialogue && !state.dialogue.ended));
   const [focus, setFocus] = useState(false);
   const dialogue = state.dialogue?.id === hiddenDialogue ? null : state.dialogue;
   if (state.blocked && (!dialogue || (!home && !opened))) return <p className="text-sm text-muted-foreground">{blockedMessage}</p>;
 
   const startNewFromBase = !home && Boolean(dialogue?.ended);
-  const label = startNewFromBase ? (state.hasNiche ? "Redefinir nicho" : "Definir nicho") : dialogue?.ended ? "Ver conversa de nicho" : state.confirmed ? "Redefinir nicho"
+  const label = !home ? (state.hasNiche ? "Redefinir nicho" : "Definir nicho") : dialogue?.ended ? "Ver conversa de nicho" : state.confirmed ? "Redefinir nicho"
     : state.hasNiche && home ? "Confirmar nicho" : "Definir nicho";
   const introduction = state.existingOnly ? "Vamos conferir o nicho cadastrado. Com um produto na conta, só é possível confirmar a descrição atual."
     : state.confirmed ? "O que mudou no seu negócio desde a última definição do nicho?"

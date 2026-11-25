@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import type { Viewport } from "next";
 import { agentBasePilotCatalogState } from "../../../../lib/communication-base/agent-base/pilot";
 import { readCommunicationDefinitions } from "../../../../lib/communication-base/adapters/communicationCatalogAdapter";
 import { isCommunicationResourcesEnabled, resolveAgentBaseEnvironment } from "../../../../lib/communication-base/config";
@@ -17,6 +18,8 @@ import styles from "./CommunicationBase.module.css";
 import { AccountNicheConversation } from "../_components/AccountNicheConversation";
 import { loadBaseNicheConversationAction } from "../niche-resolution-actions";
 import { CommunicationStageOne, CommunicationStageTwo, StartCommunicationBaseForm } from "./CommunicationSectionEditor";
+
+export const viewport: Viewport = { colorScheme: "only light" };
 
 type PageProps = Readonly<{ params: Promise<{ account: string }> }>;
 
@@ -61,16 +64,16 @@ export default async function CommunicationBasePage({ params }: PageProps) {
     <main className={`${styles.surface} mx-auto max-w-5xl px-4 py-4 sm:px-6 sm:py-6`}>
       <div className="space-y-3">
         <div>
-          <header className="flex items-start justify-between gap-1 sm:gap-2">
-            <div className="flex min-w-0 items-start gap-1 sm:gap-2">
-              <h1 className="min-w-0 py-2 text-xl font-semibold tracking-tight text-foreground [overflow-wrap:anywhere]">
+          <header className="flex flex-wrap items-start justify-between gap-x-1 sm:gap-x-2">
+            <div className="flex min-w-min max-w-fit flex-[4_1_0%] flex-wrap items-start gap-x-1 sm:gap-x-2">
+              <h1 className="min-w-min max-w-fit flex-1 break-normal py-2 text-xl font-semibold tracking-tight text-foreground">
                 Base de Comunicação
               </h1>
               {showIntroduction ? <CommunicationBaseIntroduction /> : null}
             </div>
             <Link
               href={`/a/${encodeURIComponent(access.value.accountSubdomain)}`}
-              className="inline-flex min-h-11 shrink-0 items-center text-sm font-medium text-brand-700 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700"
+              className="ml-auto inline-flex min-h-11 min-w-min max-w-fit flex-1 items-center justify-end text-right text-sm font-medium text-brand-700 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700"
             >
               Voltar à conta
             </Link>
