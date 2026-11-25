@@ -41,6 +41,12 @@ Reconstruir o Agente Nicho como competência única e independente das jornadas:
 
 - No Pending Setup, mostrar o campo opcional com máscara junto da primeira síntese empresarial para confirmação. Após o usuário prosseguir com ou sem número, não reapresentar o campo automaticamente em correções, recargas ou retomadas. Número incompleto tem aviso local e não impede a conversa. A gravação independente no Summary e a correção posterior sem IA permanecem. Nenhum passo ou aceite adicional é obrigatório.
 
+
+## 3.9. Rodada 9 — Denominação comercial de mercado (25/11/2026)
+
+- Priorizar na proposta de nicho a denominação comercial curta e reconhecível no mercado, sem acrescentar público-alvo genérico. Público e posicionamento pertencem à Base de Comunicação; perguntar sobre público apenas quando indispensável para distinguir a atividade. Detalhes operacionais permanecem na síntese e no Summary após aceite. Esta decisão substitui somente a exigência de incluir público no nicho em 3.5 e 3.6.
+- Havendo dúvida material entre categorias, esclarecer o necessário ou usar Web Search pontual já disponível; não exigir pesquisa para atividades evidentes. Fontes não confirmam o nicho por si. Preservar duas jornadas, aceite humano, nichos vigentes, privacidade e persistência, sem novos mecanismos ou infraestrutura.
+
 ## 4. Escopo negativo
 
 - Não criar segundo agente de memória, CRM, engine, job, fila, automação ou infraestrutura antecipada apenas para esta evolução.
