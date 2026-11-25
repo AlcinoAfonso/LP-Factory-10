@@ -1,0 +1,17 @@
+{
+  "runtime": "acefccfcc19704824ca039481fb0b4a7a974b4d6",
+  "deployment": "dpl_CV83YNkAM8nnAVv7AMmVjYKVJBpg",
+  "cases": [
+    {
+      "label": "redefinir-preservado",
+      "active": "TEXTAREA",
+      "log": "O que mudou no seu negócio desde a última definição do nicho?",
+      "value": ""
+    },
+    {
+      "label": "voltar-a-conta",
+      "heading": "Base de Comunicação",
+      "path": "/a/acc-d4363e70/base-comunicacao"
+    }
+  ]
+}
