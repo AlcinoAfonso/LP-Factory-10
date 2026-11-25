@@ -62,7 +62,7 @@ export default async function CommunicationBasePage({ params }: PageProps) {
       <div className="space-y-3">
         <div>
           <header className="flex items-start justify-between gap-1 sm:gap-2">
-            <div className="flex min-w-0 items-start gap-2">
+            <div className="flex min-w-0 items-start gap-1 sm:gap-2">
               <h1 className="min-w-0 py-2 text-xl font-semibold tracking-tight text-foreground [overflow-wrap:anywhere]">
                 Base de Comunicação
               </h1>
