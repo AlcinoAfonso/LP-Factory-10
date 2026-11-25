@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useId, useLayoutEffect, useRef, useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
+import styles from "./CommunicationBase.module.css";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { FormField, FormFieldLabel, FormFieldHint, FormFieldError } from "@/components/ui/form-field";
@@ -125,12 +126,12 @@ export function CommunicationSectionEditor(props: Readonly<{
   const lastClosedSaveRef = useRef(state);
   const startedSavesRef = useRef(0);
   const [submittedVersion, setSubmittedVersion] = useState<number | null>(null);
-  const [draft, setDraft] = useState(editorText(current, structured));
+  const [draft, setDraft] = useState(editorText(current, structured, definition.stage === 2));
   const [factsDraft, setFactsDraft] = useState(JSON.stringify(current?.facts ?? []));
   const priorSectionRef = useRef(current);
   const [dismissedState, setDismissedState] = useState(INITIAL_STATE);
   const priorResetRef = useRef(resetRevision);
-  const priorPersistedRef = useRef(editorText(current, structured));
+  const priorPersistedRef = useRef(editorText(current, structured, definition.stage === 2));
   const lastSyncedSaveRef = useRef(INITIAL_STATE);
   const localRequestRevisionRef = useRef(0);
   const localVersionRef = useRef(version);
@@ -148,7 +149,7 @@ export function CommunicationSectionEditor(props: Readonly<{
   }, [canEdit, editState.dirty, saveLocked, onEditorStateChange]);
   useLayoutEffect(() => {
     localVersionRef.current = version;
-    const persisted = editorText(current, structured);
+    const persisted = editorText(current, structured, definition.stage === 2);
     const reset = priorResetRef.current !== resetRevision;
     const savedRefresh = state.status === "saved" && state !== lastSyncedSaveRef.current &&
       !savePending && submittedVersion !== null && version > submittedVersion;
@@ -185,7 +186,7 @@ export function CommunicationSectionEditor(props: Readonly<{
   }, [state, savePending, submittedVersion, version, onSaved]);
 
   const longText = isBusinessLongTextSection(definition);
-  const value = editorText(current, structured);
+  const value = editorText(current, structured, definition.stage === 2);
   if (!canEdit) {
     return (
       <article>
@@ -205,7 +206,7 @@ export function CommunicationSectionEditor(props: Readonly<{
   const stageTwoPresentation = selectStageTwoSectionPresentation(localStageTwoResult, generalRevision, suggestedSuggestion);
   const stageTwoSuggestion = stageTwoPresentation.suggestion;
   return (
-    <article>
+    <article className={styles.sectionEditor}>
       {structured && definition.key === "business_context" ? <p className="mb-3 text-sm text-muted-foreground">Nicho: {nicheLabel}. Apenas para consulta nesta seção.</p> : null}
       <form action={action} onSubmit={(event) => {
         if (saveLocked || !editState.valid || !editState.dirty) { event.preventDefault(); return; }
@@ -215,43 +216,39 @@ export function CommunicationSectionEditor(props: Readonly<{
           startedSavesRef.current += 1;
           onStageTwoSaveStarted?.();
         }
-      }} className={structured && definition.key === "business_name" ? "space-y-0.5" : "space-y-2"}>
+      }} className={styles.sectionForm}>
+        <div className={styles.editorContent}>
         <input type="hidden" name="account" value={account} />
         <input type="hidden" name="section_key" value={definition.key} />
         <input type="hidden" name="version" value={version} />
         <input type="hidden" name="structured_value" value={String(structured)} />
-        <FormField className={structured && definition.key === "business_name" ? "grid-cols-[repeat(auto-fit,minmax(min(100%,8rem),1fr))] items-center gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,5fr)]" : "gap-1.5"}>
+        <input type="hidden" name="free_text" value={String(definition.stage === 2)} />
+        <FormField data-grow-text={definition.stage === 2 || !(structured && (definition.key === "business_name" || definition.format === "items" || definition.format === "faq")) || undefined} className={structured && definition.key === "business_name" ? "grid-cols-[repeat(auto-fit,minmax(min(100%,8rem),1fr))] items-center gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,5fr)]" : "gap-1.5"}>
         <FormFieldLabel htmlFor={fieldId} className={longText ? "sr-only" : "font-normal"}>{longText ? definition.label : structured && definition.key === "business_name" ? "Nome público" : "Conteúdo da seção"}</FormFieldLabel>
-        {guidance && (!longText || !structured) ? <p className="text-sm text-muted-foreground">{guidance}</p> : null}
-        {!longText ? <FormFieldHint id={hintId} className={structured && definition.key === "business_name" ? "sr-only" : "leading-5"}>
-          {definition.format === "items"
-            ? definition.stage === 2
-              ? structured ? "Até 20 itens, somando até 30.000 caracteres na seção. Preserve parágrafos e subtítulos nos itens."
-                : "Escreva um item por linha; até 20 itens e 30.000 caracteres somados."
-              : structured ? "Até 20 itens de 400 caracteres. Preserve parágrafos e subtítulos dentro de cada item."
-                : "Escreva um item por linha, até 20 itens de 400 caracteres."
-            : definition.format === "faq"
-              ? definition.stage === 2
-                ? structured ? "Até 15 pares; perguntas e respostas somadas até 30.000 caracteres."
-                  : "Escreva uma pergunta e resposta por linha, separadas por |. Até 15 pares e 30.000 caracteres somados."
-                : structured ? "Até 15 pares. Preencha a pergunta e a resposta nos campos correspondentes."
-                  : "Escreva uma pergunta e resposta por linha, separadas por |. Até 15 pares."
-              : `Até ${communicationTextLimit(definition).toLocaleString("pt-BR")} caracteres. Você pode voltar e complementar depois.`}
+        {guidance && (!longText || !structured) ? <p className="sr-only">{guidance}</p> : null}
+        {!longText ? <FormFieldHint id={hintId} className={definition.stage === 2 || (structured && definition.key === "business_name") || definition.format === "text" ? "sr-only" : "leading-5"}>
+          {definition.stage === 2
+            ? `Texto livre. Até ${communicationTextLimit(definition).toLocaleString("pt-BR")} caracteres.`
+            : definition.format === "items"
+              ? structured ? "Até 20 itens de 400 caracteres. Preserve parágrafos e subtítulos dentro de cada item." : "Escreva um item por linha, até 20 itens de 400 caracteres."
+              : definition.format === "faq"
+                ? structured ? "Até 15 pares. Preencha a pergunta e a resposta nos campos correspondentes." : "Escreva uma pergunta e resposta por linha, separadas por |. Até 15 pares."
+                : `Até ${communicationTextLimit(definition).toLocaleString("pt-BR")} caracteres. Você pode voltar e complementar depois.`}
         </FormFieldHint> : null}
-        {structured && definition.key === "business_name" ? <Textarea id={fieldId} name="value" rows={1} value={draft} maxLength={4000} readOnly={saveLocked} className="!min-h-11 resize-y" aria-describedby={hintId} onChange={(event) => setDraft(event.target.value)} /> : structured && (definition.format === "items" || definition.format === "faq") ? <StructuredSectionFields format={definition.format} stage={definition.stage} draft={draft} onChange={setDraft} disabled={saveLocked} id={fieldId} /> : <Textarea
+        {structured && definition.key === "business_name" ? <Textarea id={fieldId} name="value" rows={1} value={draft} maxLength={4000} readOnly={saveLocked} className="!min-h-11 resize-y" aria-describedby={hintId} onChange={(event) => setDraft(event.target.value)} /> : structured && definition.stage !== 2 && (definition.format === "items" || definition.format === "faq") ? <StructuredSectionFields format={definition.format} stage={definition.stage} draft={draft} onChange={setDraft} disabled={saveLocked} id={fieldId} /> : <Textarea
           id={fieldId}
           name="value"
           rows={definition.format === "text" ? 5 : 6}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           readOnly={saveLocked}
-          placeholder={guidance ?? undefined}
-          maxLength={definition.format === "text" ? communicationTextLimit(definition) : undefined}
+          placeholder={undefined}
+          maxLength={definition.stage === 2 || definition.format === "text" ? communicationTextLimit(definition) : undefined}
           aria-invalid={!editState.valid}
           aria-describedby={`${hintId}${!editState.valid ? ` ${fieldId}-error` : ""}${saveLocked ? ` ${saveLockHintId}` : ""}`}
           className={longText ? "min-h-[min(24rem,50dvh)] resize-y text-sm font-normal leading-6 placeholder:font-normal placeholder:text-muted-foreground" : "min-h-40 resize-y text-sm"}
         />}
-        {longText ? <FormFieldHint id={hintId} className="text-right font-normal tabular-nums">{draft.length.toLocaleString("pt-BR")} / {communicationTextLimit(definition).toLocaleString("pt-BR")}</FormFieldHint> : definition.stage === 2 && definition.format === "text" ? <FormFieldHint className="text-right font-normal tabular-nums">{draft.trim().length.toLocaleString("pt-BR")} / {communicationTextLimit(definition).toLocaleString("pt-BR")}</FormFieldHint> : null}
+        {longText ? <FormFieldHint id={hintId} className="text-right font-normal tabular-nums">{draft.length.toLocaleString("pt-BR")} / {communicationTextLimit(definition).toLocaleString("pt-BR")}</FormFieldHint> : definition.stage === 2 ? <FormFieldHint className="text-right font-normal tabular-nums">{draft.trim().length.toLocaleString("pt-BR")} / {communicationTextLimit(definition).toLocaleString("pt-BR")}</FormFieldHint> : null}
         {!editState.valid ? <FormFieldError id={`${fieldId}-error`}>Confira o formato e os limites indicados antes de salvar.</FormFieldError> : null}
         </FormField>
         {structured && definition.stage === 1 && definition.key === "business_name" ? <BusinessFactsFields draft={factsDraft} onChange={setFactsDraft} disabled={saveLocked} id={fieldId + "-facts"} identification /> : null}
@@ -263,7 +260,7 @@ export function CommunicationSectionEditor(props: Readonly<{
           {assistanceUsed ? <p className="text-xs font-normal leading-5 text-muted-foreground">
             A IA revisa apenas {definition.label} usando os dados confirmados pertinentes e o texto salvo desta seção. As demais seções permanecem como estão.
           </p> : null}
-          <label className="mt-2 flex min-h-11 items-center gap-2 text-sm">
+          <label hidden className="hidden">
             <input type="checkbox" checked={requiresResearch} disabled={saveLocked}
               onChange={(event) => setRequiresResearch(event.target.checked)}
               className="h-5 w-5 accent-brand-700" />
@@ -310,15 +307,16 @@ export function CommunicationSectionEditor(props: Readonly<{
           {stageTwoGenerationInFlight && !aiPending ? <p role="status" className="mt-2 text-xs text-muted-foreground">
             Aguarde a geração em andamento antes de revisar esta seção.
           </p> : null}
-          {stageTwoSuggestion !== null ? <Suggestion value={stageTwoSuggestion.value} original={draft} structured={structured} format={definition.format}
+          {stageTwoSuggestion !== null ? <Suggestion value={stageTwoSuggestion.value} original={draft} structured={structured} format={definition.format} freeText={definition.stage === 2}
             basis={stageTwoSuggestion.basis}
-            disabled={saveLocked} onUse={() => setDraft(editorDraftValue(stageTwoSuggestion.value, definition.format, structured))} /> : null}
+            disabled={saveLocked} onUse={() => setDraft(editorDraftValue(stageTwoSuggestion.value, definition.format, structured, definition.stage === 2))} /> : null}
           <Sources sources={stageTwoPresentation.sources} />
           {aiNotice && localStageTwoResult?.generalRevision === generalRevision ? <FeedbackMessage tone="warning" className="mt-2">{aiNotice}</FeedbackMessage> : null}
           {aiMessage ? <p role="alert" className="mt-2 text-sm text-state-error">{aiMessage}</p> : null}
         </div>
       ) : null}
-        <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-2 border-t border-border bg-background py-2 [&>button]:px-3 [&>button]:py-1">
+        </div>
+        <div className="sticky bottom-0 shrink-0 flex flex-wrap items-center justify-between gap-2 border-t border-border bg-background py-2 [&>button]:px-3 [&>button]:py-1">
           <Button variant="secondary" className="min-h-11 px-0 font-normal !text-foreground underline underline-offset-4" disabled={saveLocked} onClick={onCancel}>Cancelar</Button>
           <SubmitButton label="Salvar" pendingLabel="Salvando..." disabled={saveLocked || !editState.dirty || !editState.valid} busy={saveLocked} />
         </div>
@@ -507,7 +505,7 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
           <p className="text-xs leading-5 text-muted-foreground">
             Sugestões para as sete seções da Etapa 2. Revise cada uma antes de usar ou salvar.
           </p>
-          <label className="mt-0.5 flex min-h-11 items-center gap-2 text-sm sm:inline-flex">
+          <label hidden className="hidden">
             <input type="checkbox" checked={requiresResearch} onChange={(event) => setRequiresResearch(event.target.checked)}
               className="h-5 w-5 shrink-0 accent-brand-700" />
             Preciso de pesquisa atual ou local para esta geração
@@ -591,16 +589,17 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
   );
 }
 
-function Suggestion({ value, original, structured, format, basis, disabled = false, onUse }: Readonly<{
+function Suggestion({ value, original, structured, format, basis, disabled = false, freeText = false, onUse }: Readonly<{
   value: CommunicationSectionValue;
   original: string;
   structured: boolean;
   format: CommunicationSectionDefinition["format"];
+  freeText?: boolean;
   basis?: CommunicationSuggestion["basis"];
   disabled?: boolean;
   onUse: () => void;
 }>) {
-  const unchanged = editorDraftValue(value, format, structured).trim() === original.trim();
+  const unchanged = editorDraftValue(value, format, structured, freeText).trim() === original.trim();
   if (unchanged) return <p role="status" className="mt-3 text-sm text-muted-foreground">A versão sugerida é igual ao texto atual. Nenhuma melhoria foi identificada.</p>;
   return <div className="mt-3 border-t border-border pt-3">
     <p className="text-sm font-normal">Versão sugerida</p>
@@ -646,7 +645,7 @@ function ActionFeedback({ state }: Readonly<{ state: CommunicationActionState }>
   );
 }
 
-function editorText(section: CommunicationSection | undefined, structured = false): string {
+function editorText(section: CommunicationSection | undefined, structured = false, freeText = false): string {
   if (!section) return "";
-  return editorDraftValue(section.value, section.format, structured);
+  return editorDraftValue(section.value, section.format, structured, freeText);
 }

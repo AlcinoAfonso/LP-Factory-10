@@ -132,3 +132,37 @@
     color: hsl(var(--muted-foreground)) !important;
   }
 }
+
+/* Editors fill the dialog while keeping explicit actions outside the scrolling content. */
+.sectionBody, .sectionEditor, .sectionForm {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.editorContent {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.editorContent > [data-grow-text] {
+  display: flex;
+  flex: 1 0 8rem;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+.editorContent > [data-grow-text] > textarea {
+  flex: 1;
+  min-height: 6rem !important;
+  resize: none;
+}
+.sectionForm > :last-child { flex-shrink: 0; }
+.sectionBody > div:first-child {
+  flex-shrink: 0;
+  max-height: 35%;
+  overflow-y: auto;
+}

@@ -46,8 +46,6 @@ export default async function CommunicationBasePage({ params }: PageProps) {
     access.value.canEdit ? loadBaseNicheConversationAction(access.value.accountSubdomain) : null,
   ]);
   const base = result.ok ? result.value : null;
-  const savedBusinessName = base?.sections.business_name?.value;
-  const businessName = typeof savedBusinessName === "string" ? savedBusinessName.trim() : "";
   const nicheLabel = !taxonomy.ok
     ? "Não foi possível carregar o nicho agora."
     : taxonomy.niche?.name ?? "Nicho ainda não definido";
@@ -62,27 +60,25 @@ export default async function CommunicationBasePage({ params }: PageProps) {
   return (
     <main className={`${styles.surface} mx-auto max-w-5xl px-4 py-4 sm:px-6 sm:py-6`}>
       <div className="space-y-3">
-        <header className="space-y-1">
-          <Link
-            href={`/a/${encodeURIComponent(access.value.accountSubdomain)}`}
-            className="inline-flex min-h-11 items-center text-sm font-medium text-brand-700 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700"
-          >
-            Voltar à conta
-          </Link>
-          <div className="flex items-start gap-2">
-            <h1 className="min-w-0 py-2 text-xl font-semibold tracking-tight text-foreground [overflow-wrap:anywhere]">
-              Base de Comunicação
-            </h1>
-            {showIntroduction ? <CommunicationBaseIntroduction /> : null}
-          </div>
-          {businessName ? <p className="text-sm font-medium text-foreground [overflow-wrap:anywhere]">{businessName}</p> : null}
-          <p className="text-sm text-muted-foreground [overflow-wrap:anywhere]">
-            {taxonomy.ok && taxonomy.niche ? `Nicho: ${nicheLabel}` : nicheLabel}
-          </p>
-        </header>
-        {nicheConversation ? <AccountNicheConversation account={access.value.accountSubdomain} state={nicheConversation} /> : access.value.canEdit ? (
-          <FeedbackMessage tone="error">Não foi possível carregar a conversa de nicho. Atualize a página para tentar novamente.</FeedbackMessage>
-        ) : null}
+        <div>
+          <header className="flex items-start justify-between gap-1 sm:gap-2">
+            <div className="flex min-w-0 items-start gap-1 sm:gap-2">
+              <h1 className="min-w-0 py-2 text-xl font-semibold tracking-tight text-foreground [overflow-wrap:anywhere]">
+                Base de Comunicação
+              </h1>
+              {showIntroduction ? <CommunicationBaseIntroduction /> : null}
+            </div>
+            <Link
+              href={`/a/${encodeURIComponent(access.value.accountSubdomain)}`}
+              className="inline-flex min-h-11 shrink-0 items-center text-sm font-medium text-brand-700 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700"
+            >
+              Voltar à conta
+            </Link>
+          </header>
+          {nicheConversation ? <AccountNicheConversation account={access.value.accountSubdomain} state={nicheConversation} /> : access.value.canEdit ? (
+            <FeedbackMessage tone="error">Não foi possível carregar a conversa de nicho. Atualize a página para tentar novamente.</FeedbackMessage>
+          ) : null}
+        </div>
         {!result.ok ? (
           <FeedbackMessage tone="error">
             Não foi possível carregar a Base agora. Atualize a página e tente novamente.

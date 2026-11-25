@@ -1,0 +1,82 @@
+{
+  "runtime": "7d5cec688df47b68d27eda886784f950d701e6b6",
+  "deployment": "dpl_DmxrdRQTLxFYPQg3XzAw3XUv4txq",
+  "cases": [
+    {
+      "label": "notebook1366",
+      "action": {
+        "bottom": 236.8000030517578,
+        "height": 44,
+        "width": 132.8625030517578,
+        "x": 195.1999969482422,
+        "y": 192.8000030517578
+      },
+      "banner": {
+        "bottom": 64.80000305175781,
+        "height": 64.80000305175781,
+        "width": 1366.4000244140625,
+        "x": 0,
+        "y": 0
+      },
+      "bannerText": "LP Factory\nLP Factory.\nactive\n\nServiços de comunicação comercial, marketing e vendas realizados por agentes de IA\n\nBase de Comunicação\nMembros\nA",
+      "heading": {
+        "bottom": 180.8000030517578,
+        "height": 44,
+        "width": 205.8500061035156,
+        "x": 195.1999969482422,
+        "y": 136.8000030517578
+      },
+      "mainText": "Voltar à conta\nBase de Comunicação\nRedefinir nicho\nDados do negócio\nMateriais de comunicação\nInteligência e copy\nSeções da Dados do negócio\nSeção\tEstado\n\nIdentificação do negócio\n\tCom conteúdo\n\nAtuação\n\tCom conteúdo\n\nOfertas\n\tAinda não preenchida\n\nAtendimento, horários, contatos e agendamento\n\tAinda não preenchida\n\nProvas, credenciais e resultados\n\tAinda não preenchida\n\nReferências institucionais\n\tAinda não preenchida\n\nPreferências e limites\n\tAinda não preenchida",
+      "scrollWidth": 1366,
+      "viewport": [
+        1366,
+        768
+      ]
+    },
+    {
+      "label": "nova-conversa-notebook",
+      "snapshot": "- banner:\n  - link \"Ir para início\":\n    - /url: /a/home\n    - text: LP Factory\n  - generic: LP Factory.\n  - 'generic \"status da conta: active\"': active\n  - paragraph: Serviços de comunicação comercial, marketing e vendas realizados por agentes de IA\n  - link \"Base de Comunicação\":\n    - /url: /a/acc-d4363e70/base-comunicacao\n    - generic: Base de Comunicação\n  - link \"Membros\":\n    - /url: /a/acc-d4363e70/members\n  - button \"A\"\n- main:\n  - link \"Voltar à conta\":\n    - /url: /a/acc-d4363e70\n  - heading \"Base de Comunicação\" [level=1]\n  - button \"Como funciona\":\n  - region \"Conversa sobre o nicho\":\n    - log \"Histórico da conversa\":\n      - paragraph: O que mudou no seu negócio desde a última definição do nicho?\n    - generic: Sua mensagem\n    - textbox \"Sua mensagem\" [active]\n    - button \"Enviar mensagem\" [disabled]\n  - tablist \"Categorias da Base de Comunicação\":\n    - tab \"Dados do negócio\" [selected]\n    - tab \"Materiais de comunicação\"\n    - tab \"Inteligência e copy\"\n  - tabpanel \"Dados do negócio\":\n    - table \"Seções da Dados do negócio\":\n      - caption: Seções da Dados do negócio\n      - rowgroup:\n        - row \"Seção Estado\":\n          - columnheader \"Seção\"\n          - columnheader \"Estado\"\n      - rowgroup:\n        - row \"Identificação do negócio Com conteúdo\":\n          - rowheader \"Identificação do negócio\":\n            - button \"Identificação do negócio\":\n              - generic: Identificação do negócio\n          - cell \"Com conteúdo\"\n        - row \"Atuação Com conteúdo\":\n          - rowheader \"Atuação\":\n            - button \"Atuação\":\n              - generic: Atuação\n          - cell \"Com conteúdo\"\n        - row \"Ofertas Ainda não preenchida\":\n          - rowheader \"Ofertas\":\n            - button \"Ofertas\":\n              - generic: Ofertas\n          - cell \"Ainda não preenchida\"\n        - row \"Atendimento, horários, contatos e agendamento Ainda não preenchida\":\n          - rowheader \"Atendimento, horários, contatos e agendamento\":\n            - button \"Atendimento, horários, contatos e agendamento\":\n              - generic: Atendimento, horários, contatos e agendamento\n          - cell \"Ainda não preenchida\"\n        - row \"Provas, credenciais e resultados Ainda não preenchida\":\n          - rowheader \"Provas, credenciais e resultados\":\n            - button \"Provas, credenciais e resultados\":\n              - generic: Provas, credenciais e resultados\n          - cell \"Ainda não preenchida\"\n        - row \"Referências institucionais Ainda não preenchida\":\n          - rowheader \"Referências institucionais\":\n            - button \"Referências institucionais\":\n              - generic: Referências institucionais\n          - cell \"Ainda não preenchida\"\n        - row \"Preferências e limites Ainda não preenchida\":\n          - rowheader \"Preferências e limites\":\n            - button \"Preferências e limites\":\n              - generic: Preferências e limites\n          - cell \"Ainda não preenchida\"\n- alert"
+    },
+    {
+      "label": "mobile390",
+      "action": {
+        "bottom": 300.8000183105469,
+        "height": 44,
+        "width": 132.8625030517578,
+        "x": 16,
+        "y": 256.8000183105469
+      },
+      "banner": {
+        "bottom": 136.8000030517578,
+        "height": 136.8000030517578,
+        "width": 390.3999938964844,
+        "x": 0,
+        "y": 0
+      },
+      "bannerText": "LP Factory\nLP Factory.\nactive\n\nServiços de comunicação comercial, marketing e vendas realizados por agentes de IA\n\nBase\nMembros\nA",
+      "heading": {
+        "bottom": 244.8000030517578,
+        "height": 44,
+        "width": 205.8500061035156,
+        "x": 16,
+        "y": 200.8000030517578
+      },
+      "mainText": "Voltar à conta\nBase de Comunicação\nRedefinir nicho\nNegócio\nMateriais\nInteligência e copy\n\nDados do negócio\n\nSeções da Dados do negócio\nSeção\tEstado\nIdentificação do negócio\nCom conteúdo\n\n\nAtuação\nCom conteúdo\n\n\nOfertas\nAinda não preenchida\n\n\nAtendimento, horários, contatos e agendamento\nAinda não preenchida\n\n\nProvas, credenciais e resultados\nAinda não preenchida\n\n\nReferências institucionais\nAinda não preenchida\n\n\nPreferências e limites\nAinda não preenchida",
+      "scrollWidth": 390,
+      "viewport": [
+        390,
+        844
+      ]
+    },
+    {
+      "label": "nova-conversa-mobile",
+      "snapshot": "- banner:\n  - link \"Ir para início\":\n    - /url: /a/home\n    - text: LP Factory\n  - generic: LP Factory.\n  - 'generic \"status da conta: active\"': active\n  - paragraph: Serviços de comunicação comercial, marketing e vendas realizados por agentes de IA\n  - link \"Base de Comunicação\":\n    - /url: /a/acc-d4363e70/base-comunicacao\n    - generic: Base\n  - link \"Membros\":\n    - /url: /a/acc-d4363e70/members\n  - button \"A\"\n- main:\n  - link \"Voltar à conta\":\n    - /url: /a/acc-d4363e70\n  - heading \"Base de Comunicação\" [level=1]\n  - button \"Como funciona\":\n  - region \"Conversa sobre o nicho\":\n    - log \"Histórico da conversa\":\n      - paragraph: O que mudou no seu negócio desde a última definição do nicho?\n    - generic: Sua mensagem\n    - textbox \"Sua mensagem\" [active]\n    - button \"Enviar mensagem\" [disabled]\n  - tablist \"Categorias da Base de Comunicação\":\n    - tab \"Dados do negócio\" [selected]: Negócio\n    - tab \"Materiais de comunicação\": Materiais\n    - tab \"Inteligência e copy\"\n  - tabpanel \"Dados do negócio\":\n    - paragraph: Dados do negócio\n    - table \"Seções da Dados do negócio\":\n      - caption: Seções da Dados do negócio\n      - rowgroup:\n        - row \"Seção Estado\":\n          - columnheader \"Seção\"\n          - columnheader \"Estado\"\n      - rowgroup:\n        - row \"Identificação do negócio Com conteúdo\":\n          - rowheader \"Identificação do negócio Com conteúdo\":\n            - button \"Identificação do negócio Com conteúdo\":\n              - generic: Identificação do negócio\n              - generic: Com conteúdo\n        - row \"Atuação Com conteúdo\":\n          - rowheader \"Atuação Com conteúdo\":\n            - button \"Atuação Com conteúdo\":\n              - generic: Atuação\n              - generic: Com conteúdo\n        - row \"Ofertas Ainda não preenchida\":\n          - rowheader \"Ofertas Ainda não preenchida\":\n            - button \"Ofertas Ainda não preenchida\":\n              - generic: Ofertas\n              - generic: Ainda não preenchida\n        - row \"Atendimento, horários, contatos e agendamento Ainda não preenchida\":\n          - rowheader \"Atendimento, horários, contatos e agendamento Ainda não preenchida\":\n            - button \"Atendimento, horários, contatos e agendamento Ainda não preenchida\":\n              - generic: Atendimento, horários, contatos e agendamento\n              - generic: Ainda não preenchida\n        - row \"Provas, credenciais e resultados Ainda não preenchida\":\n          - rowheader \"Provas, credenciais e resultados Ainda não preenchida\":\n            - button \"Provas, credenciais e resultados Ainda não preenchida\":\n              - generic: Provas, credenciais e resultados\n              - generic: Ainda não preenchida\n        - row \"Referências institucionais Ainda não preenchida\":\n          - rowheader \"Referências institucionais Ainda não preenchida\":\n            - button \"Referências institucionais Ainda não preenchida\":\n              - generic: Referências institucionais\n              - generic: Ainda não preenchida\n        - row \"Preferências e limites Ainda não preenchida\":\n          - rowheader \"Preferências e limites Ainda não preenchida\":\n            - button \"Preferências e limites Ainda não preenchida\":\n              - generic: Preferências e limites\n              - generic: Ainda não preenchida\n- alert"
+    },
+    {
+      "label": "members-mobile-global-header",
+      "banner": "LP Factory\nLP Factory.\nactive\n\nServiços de comunicação comercial, marketing e vendas realizados por agentes de IA\n\nBase\nMembros\nA",
+      "heading": "Membros e convites",
+      "url": "/a/acc-d4363e70/members"
+    }
+  ]
+}

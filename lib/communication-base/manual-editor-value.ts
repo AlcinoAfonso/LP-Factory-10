@@ -12,10 +12,19 @@ export function parseManualEditorValue(format: CommunicationSectionFormat, raw: 
   try { return JSON.parse(raw || "[]"); } catch { return null; }
 }
 
-export function editorDraftValue(value: CommunicationSectionValue, format: CommunicationSectionFormat, structured: boolean): string {
+export function editorDraftValue(value: CommunicationSectionValue, format: CommunicationSectionFormat, structured: boolean, freeText = false): string {
+  if (freeText) return formatIntelligenceEditorText(value);
   return structured ? formatManualEditorValue(value, format) : formatEditorValue(value, format);
 }
 
-export function parseEditorDraft(format: CommunicationSectionFormat, raw: string, structured: boolean): unknown {
+export function parseEditorDraft(format: CommunicationSectionFormat, raw: string, structured: boolean, freeText = false): unknown {
+  if (freeText) return raw;
   return structured ? parseManualEditorValue(format, raw) : parseEditorValue(format, raw);
+}
+
+// Presentation only: no newline collapsing, pipe substitution, truncation or automatic persistence.
+export function formatIntelligenceEditorText(value: CommunicationSectionValue): string {
+  if (typeof value === "string") return value;
+  return value.map(entry => typeof entry === "string" ? entry
+    : "question" in entry ? entry.question + "\n" + entry.answer : "").join("\n\n");
 }
