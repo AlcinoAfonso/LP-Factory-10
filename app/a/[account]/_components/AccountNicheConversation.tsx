@@ -27,7 +27,7 @@ export function AccountNicheConversation({ account, state, home }: {
 
   return (
     <div className="space-y-3">
-      {!opened ? <Button variant="secondary" className="min-h-11" type="button" onClick={() => {
+      {!opened ? <Button variant="secondary" className={home ? "min-h-11" : "min-h-11 items-start px-0 py-0 text-left"} type="button" onClick={() => {
         if (startNewFromBase && dialogue) setHiddenDialogue(dialogue.id);
         setFocus(true);
         setOpened(true);
