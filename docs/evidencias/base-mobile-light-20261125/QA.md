@@ -16,3 +16,11 @@ A tentativa de zoom pelo atalho nativo do navegador não alterou métricas; não
 A captura antes-corretor.jpg foi feita antes da correção sem viewport CSS registrada (JPEG 456×656). A referência humana tem 591×1280, viewport desconhecida. As capturas novas têm os tamanhos CSS registrados em qa-runtime.json; não há alegação de comparação pixel a pixel com o aparelho.
 
 Home preservada por condição home; estados sem conversa/encerrado mantêm os mesmos callbacks e transporte, mas não foram exercitados ao vivo nesta conta ativa. Bloqueios de produto e autorizações permanecem no código anterior. PR em rascunho, sem merge ou alteração de produção nesta etapa.
+
+## Delta final eef46631
+
+Code Review independente encontrou perda do acesso visual ao histórico quando blocked=true. Corrigido somente no componente de apresentação: acionador Consultar conversa de nicho preserva diálogo e mensagens, inclusive encerrados, e mantém ended=true no componente existente. Nenhuma action, guarda de servidor ou regra de envio alterada.
+
+npm ci e npm run check novamente concluídos com exit 0. Harness isolado local com o componente real e dependências de servidor substituídas por stubs que falham se chamadas: passou para histórico bloqueado ativo/encerrado (abertura preserva ID/mensagens e ended=true), bloqueado sem histórico (sem acionador), Base ativa recolhida e Home ativa aberta. Trata-se de verificação sintética de estado/props, não de renderização de conta bloqueada no navegador.
+
+Preview READY dpl_Duy3epismFUKy8taTFkhxNFoj7jq, SHA eef466314f363a72e8e60257d8f48825f1e23827. Smoke no navegador integrado da mesma conta autorizada, 320×568: entrada recolhida, título inteiro em duas linhas, retorno à direita em duas linhas, fundo branco e meta only light; clique retoma a mesma mensagem anterior, campo vazio focado e envio desabilitado. Capturas final320.jpg e final320-conversa.jpg; métricas finais adicionadas a qa-runtime.json. Nenhuma mensagem digitada/enviada. Mantidos todos os limites de aparelho real e de estados bloqueados não exercitados ao vivo.

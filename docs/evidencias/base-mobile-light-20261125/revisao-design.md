@@ -36,3 +36,27 @@ O ganho em relação à baseline é perceptível: a identidade e as seções fic
 Agente `/root/design_mobile_light`, papel `gestor-design`, atuação somente leitura. HEAD permaneceu `eb424143`; o estado Git rastreado observado antes e depois contém somente a remoção/renomeação da baseline já informada pelo Executor. Não escrevi arquivos, alterei configuração, executei fluxos de IA nem criei agentes. Modelo/effort efetivos não foram verificados.
 
 **Próximo passo mínimo:** entregar o Preview para repetir a verificação no aparelho original, especialmente fundo claro e fonte/tamanho utilizados pelo usuário. Manter o PR em rascunho e sem merge até essa confirmação humana. Não há indicação de novo redesign ou de ampliação do escopo.
+
+## Retorno integral — delta focal eef46631
+
+25/11/2026 15:16
+
+**Modo:** `revisao_resultado`, delta focal do mesmo caso Base mobile clara. **Versão:** `eef466314f363a72e8e60257d8f48825f1e23827`, branch `codex-app/base-mobile-light-20261125`.
+
+**Fontes:** diff desde `eb424143`, versão atual de `AccountNicheConversation.tsx`, contrato visual/Design System já consultados e evidências renderizadas anteriores de `eb424143`. Não há evidência de navegador do novo estado bloqueado.
+
+**Parecer do delta**
+
+- O acionador **“Consultar conversa de nicho”** distingue corretamente consulta de redefinição quando há bloqueio por produto.
+- O aviso explica uma restrição necessária à decisão, em tratamento secundário compatível com o contrato operacional.
+- O clique mantém ID e mensagens do diálogo bloqueado, inclusive encerrado. A condição `!state.blocked` impede esconder esse histórico para iniciar outra conversa.
+- O bloqueio continua transmitido ao componente como `ended=true`. Não identifiquei alteração de apresentação que proponha edição ou remoção da restrição.
+- O delta não altera o cabeçalho, o esquema claro ou o estado ativo não bloqueado. O parecer visual anterior continua aplicável às capturas desses estados.
+
+**Conclusão:** delta de apresentação coerente com o contrato, sem achado material identificável nesta revisão focal. **O estado bloqueado permanece com evidência renderizada insuficiente e não está aprovado como QA de navegador.**
+
+O harness informado verifica cenários de estado; não comprova composição visual, foco ou comportamento real do navegador. `npm ci` e `check` aprovados são informação do Executor, não reexecução deste agente.
+
+**Próximo passo mínimo:** registrar o smoke da versão nova e, quando houver ambiente autorizado com bloqueio, conferir acionador, aviso, histórico, ausência de composer e foco. Permanecem os limites anteriores de fonte ampliada e Android/Samsung/Force Dark não testados.
+
+Agente `/root/design_mobile_light`, somente leitura. HEAD conferido `eef466314`; estado rastreado limpo. Nenhum arquivo, configuração ou dado alterado; nenhum agente adicional acionado.
