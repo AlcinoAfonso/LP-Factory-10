@@ -62,7 +62,7 @@ export default async function CommunicationBasePage({ params }: PageProps) {
 
   return (
     <main className={`${styles.surface} mx-auto max-w-5xl px-4 py-4 sm:px-6 sm:py-6`}>
-      <div className="space-y-3">
+      <div className="space-y-1">
         <div>
           <header className="flex flex-wrap items-start justify-between gap-x-1 sm:gap-x-2">
             <div className="flex min-w-min max-w-fit flex-[4_1_0%] flex-wrap items-start gap-x-1 sm:gap-x-2">
