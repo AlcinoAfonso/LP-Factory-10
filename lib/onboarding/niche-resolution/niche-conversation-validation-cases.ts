@@ -61,6 +61,9 @@ export async function validateNicheConversationActions() {
         if (context.message === "Maneiro, é isso aí.") return { reply: "Entendi.", offer: null, summary: null,
           preferredName: null, searchTopic: null, synthesis: {
             offer: null, accept: context.displayed?.id ?? null, clear: false, nicheReaction: "accept" as const } };
+        if (context.message === "Resposta longa.") return { reply: "R".repeat(3990), offer: null, summary: null,
+          preferredName: null, searchTopic: null, synthesis: {
+            offer: null, accept: context.displayed?.id ?? null, clear: false, nicheReaction: "accept" as const } };
         if (context.message === "Quero abandonar essa proposta.") return { reply: "Vamos reconsiderar.", offer: null, summary: null,
           preferredName: null, searchTopic: null, synthesis: {
             offer: null, accept: null, clear: true, nicheReaction: "clear" as const } };
@@ -140,6 +143,13 @@ export async function validateNicheConversationActions() {
   assert.equal(commits.at(-1)?.keepProposal, false);
   assert.match(commits.at(-1)?.reply ?? "", /Entendi\.\n\nNicho alterado para Jardinagem para condomínios\./u,
     "the receipt is stored in the same transaction as the confirmation");
+  assert.equal((await actions.converseBaseNicheAction({
+    ...turn, requestId: crypto.randomUUID(), content: "Resposta longa.",
+  })).ok, true);
+  const longReply = commits.at(-1)?.reply ?? "";
+  assert.equal(longReply.length, 4000, "a resposta permanece dentro do limite");
+  assert.ok(longReply.startsWith("R".repeat(3000)), "o conteúdo do agente não é descartado");
+  assert.match(longReply, /\n\nNicho alterado para Jardinagem para condomínios\.$/u);
   const priorCommits = commits.length;
   failCommit = true;
   assert.equal((await actions.converseBaseNicheAction({
