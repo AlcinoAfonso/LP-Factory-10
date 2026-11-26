@@ -1,6 +1,8 @@
 import "server-only";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/service";
+import { createClient } from "@/lib/supabase/server";
+import { resolvePreferredNameFromAuth, validatePreferredName } from "../../pending-setup/policy";
 import { closeOpenAiNicheDialogueOccurrence } from "../../../openai-costs/recorder";
 import { dialogueState, turnText } from "../../niche-agent/runtime";
 import type { SynthesisWrite } from "../../niche-agent/dialogue";
@@ -85,4 +87,19 @@ export async function readNicheDialogueMessages(dialogueId: string) {
     if (batch.data.length < 1000) break;
   }
   return messages;
+}
+
+export async function readNicheInterlocutorName(accountId: string, userId: string): Promise<string | null> {
+  try {
+    const [auth, stored] = await Promise.all([
+      createClient().then(client => client.auth.getUser()),
+      createServiceClient().from("account_pending_setup_conversations")
+        .select("preferred_name,preferred_name_declined")
+        .eq("account_id", accountId).eq("user_id", userId).eq("stage", "completed").maybeSingle(),
+    ]);
+    const user = auth.data.user;
+    if (auth.error || !user || user.id !== userId || stored.error || stored.data?.preferred_name_declined) return null;
+    const preferred = validatePreferredName(stored.data?.preferred_name, user.email);
+    return preferred.ok ? preferred.value : resolvePreferredNameFromAuth(user.user_metadata, user.email);
+  } catch { return null; }
 }

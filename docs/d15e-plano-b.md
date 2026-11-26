@@ -47,6 +47,12 @@ Reconstruir o Agente Nicho como competência única e independente das jornadas:
 - Priorizar na proposta de nicho a denominação comercial curta e reconhecível no mercado, sem acrescentar público-alvo genérico. Público e posicionamento pertencem à Base de Comunicação; perguntar sobre público apenas quando indispensável para distinguir a atividade. Detalhes operacionais permanecem na síntese e no Summary após aceite. Esta decisão substitui somente a exigência de incluir público no nicho em 3.5 e 3.6.
 - Havendo dúvida material entre categorias, esclarecer o necessário ou usar Web Search pontual já disponível; não exigir pesquisa para atividades evidentes. Fontes não confirmam o nicho por si. Preservar duas jornadas, aceite humano, nichos vigentes, privacidade e persistência, sem novos mecanismos ou infraestrutura.
 
+
+## 3.10. Rodada 10 — Continuidade personalizada na Base (26/11/2026)
+
+- O acionador existente da Base reutiliza o Agente Nicho com Summary, nicho vigente, Base confirmada e Diálogo do participante. A abertura permite corrigir a classificação anterior ou atualizar a atividade, sem presumir mudança do negócio.
+- Chamar naturalmente o interlocutor pelo nome pessoal autorizado da própria conta e usuário, usando o nome do Pending Setup ou, na ausência, o perfil autenticado. Respeitar recusa, não inferir nome público como nome pessoal e continuar sem nome quando indisponível. Preservar autorização, isolamento entre membros, restrição por produtos e confirmação humana; sem nova estrutura ou classificador semântico.
+
 ## 4. Escopo negativo
 
 - Não criar segundo agente de memória, CRM, engine, job, fila, automação ou infraestrutura antecipada apenas para esta evolução.

@@ -19,6 +19,7 @@ export type NicheContext = Readonly<{
   summary: string | null;
   businessContext: string | null;
   officialNiche: string | null;
+  interlocutorName?: string | null;
   fixedNiche?: string | null;
   displayed: DisplayedOffer | null;
   pendingSetup?: { preferredName: string | false | null; publicName: string | null; publicNameRequired: boolean };
