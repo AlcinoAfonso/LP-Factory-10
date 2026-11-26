@@ -1,8 +1,8 @@
 0. Introdução
 0.1. Cabeçalho
 • Documento: README — LP Factory 10 (MVP)
-• Versão: 12 — 04/11/2026
-• Data: 04/11/2026
+• Versão: 13 — 26/11/2026
+• Data: 26/11/2026
 • Escopo: visão geral do produto + documentos de referência + pendências estratégicas
 
 1. Visão geral do produto
@@ -49,11 +49,13 @@
 • Regras verificáveis, segurança, fatos, estado e contratos permanecem determinísticos quando possível; IA preserva flexibilidade controlada onde a natureza do resultado for semântica, criativa ou persuasiva.
 • Avaliação, radar tecnológico, catalogação ou possibilidade de comercialização independente de agentes não autorizam implementação, mudança de stack, nova infraestrutura nem ampliação de escopo.
 
-1.5. Modelo de oferta
-• A direção do modelo de oferta é uma base simples acompanhada de serviços com IA organizados em agentes, contratáveis individualmente ou em conjunto conforme a necessidade do cliente e a validação comercial.
-• Cada serviço deve ter responsabilidade, escopo, entrega e limites claros, sem customização técnica ilimitada por cliente. Nos agentes, separar a competência do contexto da empresa atendida e evitar dependências desnecessárias de telas ou jornadas; contratação individual não pressupõe execução fora da plataforma.
-• Combos podem surgir posteriormente a partir de padrões reais de contratação e operação; essa direção não altera automaticamente contratos comerciais vigentes, cuja mudança depende de recorte aprovado.
-• O modelo pode evoluir em direção a Outcome-as-a-Service quando houver resultado mensurável e atribuição suficientemente confiável, sem exigir precificação por resultado no MVP.
+1.5. Modelo de oferta e cobrança
+• A LP Factory vende serviços de comunicação comercial; agentes e software são meios de produção, não o produto principal.
+• O MVP cobra uma mensalidade recorrente por conta com saldo comum de créditos para os serviços e ações de valor disponibilizados, sem divisão por Starter, Lite, Pro ou Ultra.
+• Créditos representam ações de valor, não tokens, chamadas, retries, workloads ou custo do provedor; sua calibração considera valor, custo total da entrega, frequência e evidência real.
+• Cada serviço mantém escopo, entrega e limites claros; o saldo transversal evita planos ou regras próprias por serviço sem necessidade comprovada.
+• Starter, Lite, Pro e Ultra tornam-se modelo comercial legado. Sua retirada exige recorte próprio e preservação ou substituição comprovada das capacidades necessárias de contratação, autorização, acesso e histórico.
+• Outcome-as-a-Service permanece evolução possível somente com resultado mensurável e atribuição confiável.
 
 2. Documentos de referência
 • docs/base-tecnica.md — regras técnicas de runtime, implementação segura, arquitetura, adapters, imports, SSR, observability e anti-regressão.
@@ -66,7 +68,7 @@
 
 3. Pendências estratégicas (em aberto)
 3.1. Definições do MVP
-• Modelo comercial mínimo • Serviços iniciais • Limites da operação gerenciada
+• Serviços iniciais • Limites da operação gerenciada • Calibração de créditos, preço e margem
 
 3.2. Padrões de entrega
 • Definir entregável e critério de aceite dos serviços prioritários.
