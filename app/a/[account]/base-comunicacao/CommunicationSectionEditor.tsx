@@ -465,8 +465,8 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
       {canEdit && !canGenerate ? <div className="rounded-lg border border-border px-3 py-2">
         <p className="text-sm text-muted-foreground">Defina e confirme um nicho oficial para gerar sugestões com IA. A edição manual continua disponível.</p>
       </div> : null}
-      {canEdit && canGenerate ? <div className="rounded-lg border border-border bg-background px-3 py-2">
-        {pilotEnabled ? <div className="space-y-2">
+      {canEdit && canGenerate && pilotEnabled ? <div className="rounded-lg border border-border bg-background px-3 py-2">
+        <div className="space-y-2">
           <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-3">
             <Button type="button" aria-describedby={pilotEffectId} aria-haspopup={hasSavedPilotContent ? "dialog" : undefined}
               aria-busy={pilotPending} className="group min-h-11 shrink-0 max-sm:!bg-transparent max-sm:!p-0 max-sm:shadow-none"
@@ -499,7 +499,7 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
               <Button className="min-h-11" disabled={pilotBlocked} onClick={confirmPilotGeneration}>Gerar e substituir</Button>
             </div>
           </dialog>
-        </div> : null}
+        </div>
 
         {generationInFlight && !pilotPending ? <p role="status" className="mt-2 text-xs text-muted-foreground">
           Aguarde a operação de IA em andamento.
