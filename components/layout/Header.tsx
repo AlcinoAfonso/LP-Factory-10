@@ -49,12 +49,12 @@ function getVariant(ctx: Partial<any>, userEmail?: string | null): HeaderVariant
   return 'public';
 }
 
-function BrandWordmark() {
+function BrandWordmark({ compact = false }: { compact?: boolean }) {
   return (
     <Link
       href="/a/home"
       aria-label="Ir para início"
-      className="inline-flex items-center rounded-md border border-brand-600/20 bg-brand-50 px-2.5 py-1 text-sm font-semibold tracking-wide text-brand-700 transition-colors hover:border-brand-600/35 hover:bg-brand-50/70"
+      className={`inline-flex items-center rounded-md border border-brand-600/20 bg-brand-50 px-2.5 py-1 text-sm font-semibold tracking-wide text-brand-700 transition-colors hover:border-brand-600/35 hover:bg-brand-50/70 ${compact ? "max-sm:min-h-11 max-sm:px-2 max-sm:text-xs" : ""}`}
     >
       LP Factory
     </Link>
@@ -126,19 +126,19 @@ function HeaderAccount({
 
   return (
     <header className={`${keepVisible ? "sticky top-0 z-40 " : ""}border-b border-border bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85`}>
-      <div className={publicName ? "mx-auto flex min-h-14 max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2 sm:px-4" : "mx-auto flex h-14 max-w-6xl items-center px-3 sm:px-4"}>
-        <BrandWordmark />
+      <div className={publicName ? `mx-auto flex min-h-14 max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2 sm:px-4 ${keepVisible ? "max-sm:gap-x-2 max-sm:gap-y-1" : ""}` : "mx-auto flex h-14 max-w-6xl items-center px-3 sm:px-4"}>
+        <BrandWordmark compact={keepVisible} />
 
         {publicName ? <div className="order-3 w-full min-w-0 sm:order-none sm:w-auto sm:flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="break-words text-base font-semibold text-foreground">{publicName}</span>
+            <span className={`break-words text-base font-semibold text-foreground ${keepVisible ? "max-sm:text-sm" : ""}`}>{publicName}</span>
             <StatusChip status={account?.status} />
           </div>
           {identity?.officialTaxonName ? <p className="mt-1 break-words text-sm text-muted-foreground">{identity.officialTaxonName}</p>
             : identity?.operationalNicheLabel ? <p className="mt-1 line-clamp-2 break-words text-sm text-muted-foreground" title={identity.operationalNicheLabel}>Referência operacional: {identity.operationalNicheLabel}</p> : null}
         </div> : <div className="flex-1" />}
 
-        <div className="ml-auto flex items-center gap-1.5 sm:gap-3">
+        <div className={`ml-auto flex items-center gap-1.5 sm:gap-3 ${keepVisible ? "max-sm:gap-1" : ""}`}>
           {communicationBaseEnabled ? (
             <Link
               href={`/a/${account.subdomain}/base-comunicacao`}

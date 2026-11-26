@@ -66,14 +66,14 @@ export default async function CommunicationBasePage({ params }: PageProps) {
         <div>
           <header className="flex flex-wrap items-start justify-between gap-x-1 sm:gap-x-2">
             <div className="flex min-w-min max-w-fit flex-[4_1_0%] flex-wrap items-start gap-x-1 sm:gap-x-2">
-              <h1 className="min-w-min max-w-fit flex-1 break-normal py-2 text-xl font-semibold tracking-tight text-foreground">
+              <h1 className="min-w-min max-w-fit flex-1 break-normal py-2 text-lg font-semibold tracking-tight text-foreground sm:text-xl">
                 Base de Comunicação
               </h1>
               {showIntroduction ? <CommunicationBaseIntroduction /> : null}
             </div>
             <Link
               href={`/a/${encodeURIComponent(access.value.accountSubdomain)}`}
-              className="ml-auto inline-flex min-h-11 min-w-min max-w-fit flex-1 items-center justify-end text-right text-sm font-medium text-brand-700 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700"
+              className="ml-auto inline-flex min-h-11 max-w-full shrink-0 items-center justify-end whitespace-nowrap text-right text-sm font-medium text-brand-700 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700"
             >
               Voltar à conta
             </Link>

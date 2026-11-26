@@ -10,7 +10,10 @@ export function CommunicationBaseTabs({stageOne,stageTwo,materials}:Readonly<{st
   const labels=materials?["Dados do negócio","Materiais de comunicação","Inteligência e copy"]:["Verdade da empresa","Inteligência de comunicação"];
   const shortLabels=materials?["Negócio","Materiais","Inteligência e copy"]:labels;
   const panels=materials?[stageOne,materials,stageTwo]:[stageOne,stageTwo];
-  return <div><div role="tablist" aria-label="Categorias da Base de Comunicação" className="flex flex-wrap border-b border-border">
+  const tabLayout = materials
+    ? "grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.7fr)] sm:flex sm:flex-wrap"
+    : "flex flex-wrap";
+  return <div><div role="tablist" aria-label="Categorias da Base de Comunicação" className={`border-b border-border ${tabLayout}`}>
     {labels.map((label,i)=><button key={label} ref={el=>{tabs.current[i]=el;}} type="button" role="tab" id={"communication-tab-"+i}
       aria-controls={"communication-panel-"+i} aria-label={label} aria-selected={selected===i} tabIndex={selected===i?0:-1}
       onClick={()=>setSelected(i)} onKeyDown={event=>{
