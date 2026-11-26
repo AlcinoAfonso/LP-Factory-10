@@ -53,6 +53,13 @@ Reconstruir o Agente Nicho como competência única e independente das jornadas:
 - O acionador existente da Base reutiliza o Agente Nicho com Summary, nicho vigente, Base confirmada e Diálogo do participante. A abertura permite corrigir a classificação anterior ou atualizar a atividade, sem presumir mudança do negócio.
 - Chamar naturalmente o interlocutor pelo nome pessoal autorizado da própria conta e usuário, usando o nome do Pending Setup ou, na ausência, o perfil autenticado. Respeitar recusa, não inferir nome público como nome pessoal e continuar sem nome quando indisponível. Preservar autorização, isolamento entre membros, restrição por produtos e confirmação humana; sem nova estrutura ou classificador semântico.
 
+
+## 3.11. Rodada 11 — Diálogo modal e confirmação factual (26/11/2026)
+
+- Na Base de Comunicação, o botão de nicho abre o mesmo diálogo em modal responsivo, com fechamento e retorno ao acionador, sem perder mensagens ou rascunho ao fechar. A Home conserva a apresentação vigente.
+- Ao propor redefinição, o Agente Nicho explica brevemente a denominação com base nos fatos disponíveis e solicita confirmação no diálogo. O aceite segue interpretação autônoma pela IA e verificação determinística do alvo apresentado, sem classificadores lexicais.
+- Após confirmação e gravação atômica bem-sucedida, o histórico recebe o aviso factual de nicho atualizado, sem anúncio antecipado pelo modelo; falha não produz aviso de sucesso. Preservar todas as autorizações, restrição por produtos, Summary, retomada e privacidade.
+
 ## 4. Escopo negativo
 
 - Não criar segundo agente de memória, CRM, engine, job, fila, automação ou infraestrutura antecipada apenas para esta evolução.
