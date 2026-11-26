@@ -18,10 +18,10 @@ export async function validateNicheConversationActions() {
   const revision = "2026-11-21T12:00:00+00:00";
   let niche: OfficialAccountNiche = { name: "Jardinagem", taxonId, revision: "legacy:" + taxonId + ":" + revision,
     textRevision: 0, legacyUpdatedAt: revision, confirmed: true, confirmedAt: null, confirmedBy: null };
-  let role = "owner", products = false, enabled = true, provider = true, stale = false, replay = false;
+  let role = "owner", products = false, enabled = true, provider = true, stale = false, replay = false, failCommit = false;
   let claims = 0, releases = 0;
   const contexts: NicheContext[] = [];
-  const commits: { proposal: string | null; summary: string | null; acceptedProposal?: string | null; keepProposal?: boolean }[] = [];
+  const commits: { reply: string; proposal: string | null; summary: string | null; acceptedProposal?: string | null; keepProposal?: boolean }[] = [];
   let liveProposal: string | null = null;
   let liveSynthesis: { start: number; length: number; messageId: string } | null = null;
   let liveMessages: { id: string; role: "user" | "assistant"; content: string }[] = [];
@@ -42,7 +42,11 @@ export async function validateNicheConversationActions() {
           proposal: liveProposal, synthesis: liveSynthesis },
         summary: null, summaryUpdatedAt: revision }; },
       readNicheDialogueMessages: async () => liveMessages,
-      commitNicheConversation: async (input: typeof commits[number]) => { commits.push(input); return true; },
+      commitNicheConversation: async (input: typeof commits[number]) => {
+        if (failCommit) return false;
+        commits.push(input);
+        return true;
+      },
       releaseAccountNicheTurn: async () => { releases++; return true; },
     };
     if (name.includes("communicationBaseAdapter")) return { readBusinessContextForNiche: async () =>
@@ -55,6 +59,9 @@ export async function validateNicheConversationActions() {
         contexts.push(context);
         if (!provider) return null;
         if (context.message === "Maneiro, é isso aí.") return { reply: "Entendi.", offer: null, summary: null,
+          preferredName: null, searchTopic: null, synthesis: {
+            offer: null, accept: context.displayed?.id ?? null, clear: false, nicheReaction: "accept" as const } };
+        if (context.message === "Resposta longa.") return { reply: "R".repeat(3990), offer: null, summary: null,
           preferredName: null, searchTopic: null, synthesis: {
             offer: null, accept: context.displayed?.id ?? null, clear: false, nicheReaction: "accept" as const } };
         if (context.message === "Quero abandonar essa proposta.") return { reply: "Vamos reconsiderar.", offer: null, summary: null,
@@ -89,6 +96,7 @@ export async function validateNicheConversationActions() {
   assert.equal(contexts[0].interlocutorName, "Armando");
   assert.match(contexts[0].businessContext ?? "", /Jardinagem para condomínios/u);
   assert.equal(commits[0].summary, null);
+  assert.doesNotMatch(commits[0].reply, /Nicho alterado para/u, "no receipt before confirmation");
   provider = false;
   const failed = await actions.converseBaseNicheAction(turn);
   assert.equal(failed.ok, false);
@@ -111,6 +119,7 @@ export async function validateNicheConversationActions() {
   assert.equal(home?.existingOnly, true);
   assert.equal((await actions.converseHomeNicheAction(turn)).ok, true);
   assert.equal(commits.at(-1)?.proposal, niche.name);
+  assert.doesNotMatch(commits.at(-1)?.reply ?? "", /Nicho alterado para/u, "Home remains unchanged");
   stale = true;
   assert.equal((await actions.converseHomeNicheAction(turn)).ok, false);
   assert.equal(releases, 2);
@@ -132,6 +141,22 @@ export async function validateNicheConversationActions() {
   assert.equal(contexts.at(-1)?.displayed?.id, displayedId);
   assert.equal(commits.at(-1)?.acceptedProposal, offer.niche);
   assert.equal(commits.at(-1)?.keepProposal, false);
+  assert.match(commits.at(-1)?.reply ?? "", /Entendi\.\n\nNicho alterado para Jardinagem para condomínios\./u,
+    "the receipt is stored in the same transaction as the confirmation");
+  assert.equal((await actions.converseBaseNicheAction({
+    ...turn, requestId: crypto.randomUUID(), content: "Resposta longa.",
+  })).ok, true);
+  const longReply = commits.at(-1)?.reply ?? "";
+  assert.equal(longReply.length, 4000, "a resposta permanece dentro do limite");
+  assert.ok(longReply.startsWith("R".repeat(3000)), "o conteúdo do agente não é descartado");
+  assert.match(longReply, /\n\nNicho alterado para Jardinagem para condomínios\.$/u);
+  const priorCommits = commits.length;
+  failCommit = true;
+  assert.equal((await actions.converseBaseNicheAction({
+    ...turn, requestId: crypto.randomUUID(), content: "Maneiro, é isso aí.",
+  })).ok, false, "failed commit must not announce successful confirmation");
+  assert.equal(commits.length, priorCommits, "failed transaction did not persist receipt");
+  failCommit = false;
   assert.equal((await actions.converseBaseNicheAction({ ...turn, requestId: crypto.randomUUID(), content: "Quero abandonar essa proposta." })).ok, true);
   assert.equal(commits.at(-1)?.keepProposal, false);
   assert.equal(commits.at(-1)?.proposal, null);

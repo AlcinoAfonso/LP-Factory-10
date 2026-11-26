@@ -115,7 +115,14 @@ async function converseNiche(raw: unknown, home: boolean) {
     if (!turn) throw new Error("provider_unavailable");
     const acceptedProposal = turn.synthesis.accept === shown?.id ? shown?.niche ?? null : null;
     const keepProposal = Boolean(shown && !turn.offer && !turn.synthesis.accept && !turn.synthesis.clear);
-    const written = await commitNicheConversation({ ...fence, reply: turn.reply, proposal: turn.offer?.niche ?? null,
+    // This receipt becomes visible only if the atomic niche confirmation commits successfully.
+    const receipt = acceptedProposal && !home
+      ? niche?.name === acceptedProposal ? `Nicho confirmado: ${acceptedProposal}.`
+        : `Nicho alterado para ${acceptedProposal}.` : null;
+    const reply = receipt
+      ? turn.reply.slice(0, 4000 - receipt.length - 2) + "\n\n" + receipt
+      : turn.reply;
+    const written = await commitNicheConversation({ ...fence, reply, proposal: turn.offer?.niche ?? null,
       summary: turn.summary, observedSummary: prior, observedSummaryUpdatedAt: claim.summaryUpdatedAt,
       acceptedProposal, keepProposal, synthesis: turn.synthesis,
     });
