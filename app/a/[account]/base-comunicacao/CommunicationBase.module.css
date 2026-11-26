@@ -18,6 +18,10 @@
   font-size: 0.825rem;
 }
 
+.surface .characterCounter:global(.text-xs.text-muted-foreground) {
+  font-size: 0.55rem;
+}
+
 .surface textarea::placeholder,
 .surface input::placeholder {
   font-size: 1em;

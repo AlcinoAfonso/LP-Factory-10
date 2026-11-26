@@ -199,6 +199,7 @@ export function CommunicationSectionEditor(props: Readonly<{
   }
 
   const fieldId = `communication-${definition.key}`;
+  const hideFieldLabel = longText || definition.stage === 2;
   const hintId = `${fieldId}-hint`;
   const saveLockHintId = `${fieldId}-save-lock`;
   const guidance = structured && longText ? getSectionGuidance(definition.key)?.description
@@ -224,7 +225,9 @@ export function CommunicationSectionEditor(props: Readonly<{
         <input type="hidden" name="structured_value" value={String(structured)} />
         <input type="hidden" name="free_text" value={String(definition.stage === 2)} />
         <FormField data-grow-text={definition.stage === 2 || !(structured && (definition.key === "business_name" || definition.format === "items" || definition.format === "faq")) || undefined} className={structured && definition.key === "business_name" ? "grid-cols-[repeat(auto-fit,minmax(min(100%,8rem),1fr))] items-center gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,5fr)]" : "gap-1.5"}>
-        <FormFieldLabel htmlFor={fieldId} className={longText ? "sr-only" : "font-normal"}>{longText ? definition.label : structured && definition.key === "business_name" ? "Nome público" : "Conteúdo da seção"}</FormFieldLabel>
+        <FormFieldLabel htmlFor={fieldId} className={hideFieldLabel ? "sr-only" : "font-normal"}>
+          {hideFieldLabel ? definition.label : structured && definition.key === "business_name" ? "Nome público" : "Conteúdo da seção"}
+        </FormFieldLabel>
         {guidance && (!longText || !structured) ? <p className="sr-only">{guidance}</p> : null}
         {!longText ? <FormFieldHint id={hintId} className={definition.stage === 2 || (structured && definition.key === "business_name") || definition.format === "text" ? "sr-only" : "leading-5"}>
           {definition.stage === 2
@@ -248,7 +251,11 @@ export function CommunicationSectionEditor(props: Readonly<{
           aria-describedby={`${hintId}${!editState.valid ? ` ${fieldId}-error` : ""}${saveLocked ? ` ${saveLockHintId}` : ""}`}
           className={longText ? "min-h-[min(24rem,50dvh)] resize-y text-sm font-normal leading-6 placeholder:font-normal placeholder:text-muted-foreground" : "min-h-40 resize-y text-sm"}
         />}
-        {longText ? <FormFieldHint id={hintId} className="text-right font-normal tabular-nums">{draft.length.toLocaleString("pt-BR")} / {communicationTextLimit(definition).toLocaleString("pt-BR")}</FormFieldHint> : definition.stage === 2 ? <FormFieldHint className="text-right font-normal tabular-nums">{draft.trim().length.toLocaleString("pt-BR")} / {communicationTextLimit(definition).toLocaleString("pt-BR")}</FormFieldHint> : null}
+        {longText || definition.stage === 2 ? (
+          <FormFieldHint id={longText ? hintId : undefined} className={`${styles.characterCounter} text-right font-normal tabular-nums`}>
+            {(longText ? draft.length : draft.trim().length).toLocaleString("pt-BR")} / {communicationTextLimit(definition).toLocaleString("pt-BR")}
+          </FormFieldHint>
+        ) : null}
         {!editState.valid ? <FormFieldError id={`${fieldId}-error`}>Confira o formato e os limites indicados antes de salvar.</FormFieldError> : null}
         </FormField>
         {structured && definition.stage === 1 && definition.key === "business_name" ? <BusinessFactsFields draft={factsDraft} onChange={setFactsDraft} disabled={saveLocked} id={fieldId + "-facts"} identification /> : null}
