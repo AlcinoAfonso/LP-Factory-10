@@ -73,7 +73,7 @@ export default async function CommunicationBasePage({ params }: PageProps) {
             </div>
             <Link
               href={`/a/${encodeURIComponent(access.value.accountSubdomain)}`}
-              className="ml-auto inline-flex min-h-11 min-w-min max-w-fit flex-1 items-center justify-end text-right text-sm font-medium text-brand-700 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700"
+              className="ml-auto inline-flex min-h-11 max-w-full shrink-0 items-center justify-end whitespace-nowrap text-right text-sm font-medium text-brand-700 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700"
             >
               Voltar à conta
             </Link>
