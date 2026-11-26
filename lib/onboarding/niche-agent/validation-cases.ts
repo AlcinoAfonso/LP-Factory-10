@@ -76,7 +76,7 @@ test("nome profissional, síntese e nicho aparecem juntos, sem efeito até o ace
 });
 
 test("nicho mercadológico curto preserva síntese, confirmação e público na Base", () => {
-  assert.equal(NICHE_AGENT_PROMPT_VERSION, "d15e_niche_agent_v13");
+  assert.equal(NICHE_AGENT_PROMPT_VERSION, "d15e_niche_agent_v14");
   assert.match(NICHE_AGENT_INSTRUCTIONS, /denominação comercial curta e reconhecida no mercado/u);
   assert.match(NICHE_AGENT_INSTRUCTIONS, /público-alvo da Base de Comunicação/u);
   assert.match(NICHE_AGENT_INSTRUCTIONS, /não pesquise casos evidentes/u);
