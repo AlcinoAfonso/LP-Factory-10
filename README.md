@@ -50,12 +50,12 @@
 • Avaliação, radar tecnológico, catalogação ou possibilidade de comercialização independente de agentes não autorizam implementação, mudança de stack, nova infraestrutura nem ampliação de escopo.
 
 1.5. Modelo de oferta e cobrança
-• A LP Factory vende serviços de comunicação comercial; agentes e software são meios de produção e operação, não o produto principal.
-• O modelo de cobrança do MVP é uma mensalidade recorrente por conta com saldo comum de créditos, utilizável nos serviços e ações de valor disponibilizados à conta, sem segmentação comercial por Starter, Lite, Pro ou Ultra.
-• Créditos representam ações de valor compreensíveis pelo cliente, não tokens, chamadas, retries, workloads ou custos do provedor. Seu peso deve considerar valor entregue, custo total da execução, frequência e simplicidade comercial, com calibração por evidência real.
-• Cada serviço mantém responsabilidade, escopo, entrega e limites claros, sem customização técnica ilimitada; o mesmo saldo transversal evita criar planos, carteiras ou regras distintas por serviço sem necessidade comprovada.
-• Starter, Lite, Pro e Ultra passam a ser modelo comercial legado. Contratos e capacidades já implementados só podem ser retirados em recorte próprio, após identificar impactos e preservar ou substituir de forma comprovada as capacidades necessárias de contratação, autorização, acesso e histórico.
-• O modelo pode evoluir para Outcome-as-a-Service quando houver resultado mensurável e atribuição confiável, sem exigir cobrança por resultado no MVP.
+• A LP Factory vende serviços de comunicação comercial; agentes e software são meios de produção, não o produto principal.
+• O MVP cobra uma mensalidade recorrente por conta com saldo comum de créditos para os serviços e ações de valor disponibilizados, sem divisão por Starter, Lite, Pro ou Ultra.
+• Créditos representam ações de valor, não tokens, chamadas, retries, workloads ou custo do provedor; sua calibração considera valor, custo total da entrega, frequência e evidência real.
+• Cada serviço mantém escopo, entrega e limites claros; o saldo transversal evita planos ou regras próprias por serviço sem necessidade comprovada.
+• Starter, Lite, Pro e Ultra tornam-se modelo comercial legado. Sua retirada exige recorte próprio e preservação ou substituição comprovada das capacidades necessárias de contratação, autorização, acesso e histórico.
+• Outcome-as-a-Service permanece evolução possível somente com resultado mensurável e atribuição confiável.
 
 2. Documentos de referência
 • docs/base-tecnica.md — regras técnicas de runtime, implementação segura, arquitetura, adapters, imports, SSR, observability e anti-regressão.
