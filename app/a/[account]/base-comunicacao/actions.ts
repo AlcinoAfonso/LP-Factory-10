@@ -131,8 +131,7 @@ export async function generateCommunicationIntelligenceAction(input: Readonly<{
       !Number.isSafeInteger(input.version) || input.version <= 0 ||
       typeof input.requiresCurrentResearch !== "boolean" ||
       !input.target || typeof input.target !== "object" ||
-      (input.target.kind !== "general" &&
-        (input.target.kind !== "section" || getCommunicationSection(input.target.key)?.stage !== 2))) {
+      (input.target.kind !== "section" || getCommunicationSection(input.target.key)?.stage !== 2)) {
     return { ok: false, message: "A solicitação é inválida. Atualize a página e tente novamente." };
   }
   const access = await requireCommunicationBaseAccess(input.account, true);
