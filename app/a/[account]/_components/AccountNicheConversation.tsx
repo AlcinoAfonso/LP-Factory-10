@@ -22,9 +22,12 @@ export function AccountNicheConversation({ account, state, home }: {
   const baseLabel = state.blocked ? "Consultar conversa de nicho" : state.hasNiche ? "Redefinir nicho" : "Definir nicho";
   const label = !home ? baseLabel : dialogue?.ended ? "Ver conversa de nicho" : state.confirmed ? "Redefinir nicho"
     : state.hasNiche && home ? "Confirmar nicho" : "Definir nicho";
-  const introduction = state.existingOnly ? "Vamos conferir o nicho cadastrado. Com um produto na conta, só é possível confirmar a descrição atual."
-    : state.confirmed ? "O que mudou no seu negócio desde a última definição do nicho?"
-      : "O que você gostaria de destacar sobre seu negócio para definirmos o nicho?";
+  const greeting = state.interlocutorName ? `Olá, ${state.interlocutorName}. ` : "";
+  const introduction = state.existingOnly
+    ? greeting + "Vamos conferir o nicho cadastrado. Com um produto na conta, só é possível confirmar a descrição atual."
+    : state.confirmed
+      ? greeting + (state.nicheName ? `Seu nicho atual é ${state.nicheName}. ` : "") + "O que você gostaria de corrigir ou atualizar?"
+      : greeting + "O que você gostaria de destacar sobre seu negócio para definirmos o nicho?";
 
   return (
     <div className="space-y-3">
