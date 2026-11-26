@@ -120,7 +120,7 @@ async function converseNiche(raw: unknown, home: boolean) {
       ? niche?.name === acceptedProposal ? `Nicho confirmado: ${acceptedProposal}.`
         : `Nicho alterado para ${acceptedProposal}.` : null;
     const reply = receipt
-      ? turn.reply.length + receipt.length + 2 <= 4000 ? turn.reply + "\n\n" + receipt : receipt
+      ? turn.reply.slice(0, 4000 - receipt.length - 2) + "\n\n" + receipt
       : turn.reply;
     const written = await commitNicheConversation({ ...fence, reply, proposal: turn.offer?.niche ?? null,
       summary: turn.summary, observedSummary: prior, observedSummaryUpdatedAt: claim.summaryUpdatedAt,
