@@ -6,7 +6,7 @@ import { NICHE_AGENT_INSTRUCTIONS, NICHE_AGENT_PROMPT_VERSION } from "./prompt";
 import {
   CONTACT_RECEIPT, displayedOffer, nicheHistory, nicheSummaryContext, pendingSetupWhatsApp, presentOffer, publicResearchTopic, type DialogueText,
 } from "./dialogue";
-import { validateNicheConversationActions, validatePendingConfirmedName } from "../niche-resolution/niche-conversation-validation-cases";
+import { validateNicheConversationActions, validateNicheInterlocutorIdentity, validatePendingConfirmedName } from "../niche-resolution/niche-conversation-validation-cases";
 
 let prepareNicheTurn: typeof import("./runtime").prepareNicheTurn;
 let contactTurn: typeof import("./runtime").contactTurn;
@@ -98,6 +98,17 @@ test("nicho mercadológico curto preserva síntese, confirmação e público na 
   assert.equal(accepted.synthesis.accept, displayed.id);
   assert.match(accepted.summary ?? "", /cinco lojas/u);
   assert.match(accepted.summary ?? "", /Nome público: Deliciou Hamburgueria/u);
+});
+
+test("nome do interlocutor da conta ativa orienta o diálogo e permanece fora da pesquisa", () => {
+  assert.equal(NICHE_AGENT_PROMPT_VERSION, "d15e_niche_agent_v14");
+  assert.match(NICHE_AGENT_INSTRUCTIONS, /Se interlocutorName estiver informado/u);
+  const named = { ...context, interlocutorName: "Armando" };
+  const input = JSON.parse(String(prepareNicheTurn(named, null).request.input));
+  assert.equal(input.interlocutorName, "Armando");
+  assert.equal(publicResearchTopic("serviços para Armando", named), null, "nome pessoal não é tópico público");
+  assert.equal(publicResearchTopic("mercado de hamburguerias", named), "mercado de hamburguerias");
+  assert.equal(JSON.parse(String(prepareNicheTurn(context, null).request.input)).interlocutorName, undefined);
 });
 
 test("WhatsApp é independente, invisível no input e sem efeito sobre o alvo de aceite", () => {
@@ -409,5 +420,6 @@ test("falha, recusa e ausência de resposta útil não produzem efeito", () => {
   assert.equal(parseResponse({ status: "completed", output: [{ type: "message", role: "assistant", content: [{ type: "refusal" }] }] }).ok, false);
 });
 
+test("identidade da pessoa é isolada por conta e usuário e respeita recusa", validateNicheInterlocutorIdentity);
 test("ações preservam a autorização D14D e a retomada após falha", validateNicheConversationActions);
 test("Pending Setup preserva nome público aceito ao confirmar o nicho e avançar", validatePendingConfirmedName);
