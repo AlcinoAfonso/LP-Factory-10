@@ -76,7 +76,7 @@ test("nome profissional, síntese e nicho aparecem juntos, sem efeito até o ace
 });
 
 test("nicho mercadológico curto preserva síntese, confirmação e público na Base", () => {
-  assert.equal(NICHE_AGENT_PROMPT_VERSION, "d15e_niche_agent_v14");
+  assert.equal(NICHE_AGENT_PROMPT_VERSION, "d15e_niche_agent_v15");
   assert.match(NICHE_AGENT_INSTRUCTIONS, /denominação comercial curta e reconhecida no mercado/u);
   assert.match(NICHE_AGENT_INSTRUCTIONS, /público-alvo da Base de Comunicação/u);
   assert.match(NICHE_AGENT_INSTRUCTIONS, /não pesquise casos evidentes/u);
@@ -101,8 +101,10 @@ test("nicho mercadológico curto preserva síntese, confirmação e público na 
 });
 
 test("nome do interlocutor da conta ativa orienta o diálogo e permanece fora da pesquisa", () => {
-  assert.equal(NICHE_AGENT_PROMPT_VERSION, "d15e_niche_agent_v14");
+  assert.equal(NICHE_AGENT_PROMPT_VERSION, "d15e_niche_agent_v15");
   assert.match(NICHE_AGENT_INSTRUCTIONS, /Se interlocutorName estiver informado/u);
+  assert.match(NICHE_AGENT_INSTRUCTIONS, /explique brevemente na síntese quais fatos do negócio fundamentam/u);
+  assert.doesNotMatch(NICHE_AGENT_INSTRUCTIONS, /lista de confirmações|expressões equivalentes a sim/u);
   const named = { ...context, interlocutorName: "Armando" };
   const input = JSON.parse(String(prepareNicheTurn(named, null).request.input));
   assert.equal(input.interlocutorName, "Armando");
