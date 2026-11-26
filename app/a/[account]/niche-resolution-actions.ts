@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { readAccountOfficialNiche } from "../../../lib/onboarding/niche-resolution/adapters/accountOfficialNicheAdapter";
 import {
-  claimNicheConversation, commitNicheConversation, readNicheConversation, readNicheDialogueMessages, releaseAccountNicheTurn,
+  claimNicheConversation, commitNicheConversation, readNicheConversation, readNicheDialogueMessages, readNicheInterlocutorName, releaseAccountNicheTurn,
 } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheDialogueAdapter";
 import { conversationalMessage, requestNicheAgent } from "../../../lib/onboarding/niche-agent/runtime";
 import { displayedOffer, nicheHistory, nicheSummaryContext } from "../../../lib/onboarding/niche-agent/dialogue";
@@ -38,15 +38,17 @@ async function loadAccountNicheConversation(account: string, home: boolean) {
     if (home && !isAccountNicheEditingEnabled()) return null;
     const ctx = await nicheEditorContext(account);
     if (!ctx?.account || !["owner", "admin", "editor"].includes(ctx.member.role)) return null;
-    const [current, products, conversation] = await Promise.all([
+    const [current, products, conversation, interlocutorName] = await Promise.all([
       readAccountOfficialNiche(ctx.account.id), readAccountNicheProductGuard(ctx.account.id),
       readNicheConversation(ctx.account.id, ctx.member.userId),
+      readNicheInterlocutorName(ctx.account.id, ctx.member.userId),
     ]);
     if (!current.ok || products === null || !conversation.ok) return null;
     const niche = current.niche;
     const existingOnly = Boolean(home && products && niche && !niche.confirmed);
     return { blocked: Boolean(niche && products && !existingOnly), existingOnly,
-      confirmed: Boolean(niche?.confirmed), hasNiche: Boolean(niche), dialogue: conversation.dialogue };
+      confirmed: Boolean(niche?.confirmed), hasNiche: Boolean(niche), nicheName: niche?.name ?? null,
+      interlocutorName, dialogue: conversation.dialogue };
   } catch { return null; }
 }
 
@@ -76,10 +78,11 @@ async function converseNiche(raw: unknown, home: boolean) {
     const ctx = await nicheEditorContext(input.account);
     if (!ctx?.account || !["owner", "admin", "editor"].includes(ctx.member.role)) return failure;
     const identity = { accountId: ctx.account.id, userId: ctx.member.userId, dialogueId: input.dialogueId ?? input.requestId };
-    const [current, business, products] = await Promise.all([
+    const [current, business, products, interlocutorName] = await Promise.all([
       readAccountOfficialNiche(identity.accountId),
       readBusinessContextForNiche({ accountId: identity.accountId, actorUserId: identity.userId }),
       readAccountNicheProductGuard(identity.accountId),
+      readNicheInterlocutorName(identity.accountId, identity.userId),
     ]);
     if (!current.ok || !business.ok || products === null) return failure;
     const niche = current.niche;
@@ -106,7 +109,7 @@ async function converseNiche(raw: unknown, home: boolean) {
     const turn = await requestNicheAgent(identity.accountId, identity.dialogueId, {
       message: input.content, history: nicheHistory(messages, input.requestId),
       displayed: shown, summary: nicheSummaryContext(prior),
-      businessContext: JSON.stringify(business.value),
+      businessContext: JSON.stringify(business.value), interlocutorName,
       officialNiche: niche?.confirmed ? niche.name : null, fixedNiche,
     }, prior);
     if (!turn) throw new Error("provider_unavailable");
