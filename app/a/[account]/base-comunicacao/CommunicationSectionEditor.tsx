@@ -18,7 +18,7 @@ import { editorDraftValue } from "../../../../lib/communication-base/manual-edit
 import { hasSectionContent, sectionEditState } from "./_components/section-edit-state";
 
 import type { CommunicationBase, CommunicationSection, CommunicationSectionValue } from "../../../../lib/communication-base/contracts";
-import { hasStageTwoContent, type CommunicationSuggestion, type WebSource } from "../../../../lib/communication-base/ai-core";
+import { type CommunicationSuggestion, type WebSource } from "../../../../lib/communication-base/ai-core";
 import { selectStageTwoSectionPresentation, stageTwoBasisLabel, type LocalStageTwoResult } from "../../../../lib/communication-base/stage-two-presentation";
 import { communicationSections, getCommunicationSection, isBusinessLongTextSection, type CommunicationSectionKey } from "../../../../lib/communication-base/registry";
 import { communicationTextLimit } from "../../../../lib/communication-base/policy";
@@ -358,13 +358,6 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
   const [pilotProgress, setPilotProgress] = useState("");
   const [pilotMessage, setPilotMessage] = useState("");
   const [pilotError, setPilotError] = useState(false);
-  const [pending, startTransition] = useTransition();
-  const [message, setMessage] = useState("");
-  const [messageIsError, setMessageIsError] = useState(false);
-  const [requiresResearch, setRequiresResearch] = useState(false);
-  const [suggestions, setSuggestions] = useState<Partial<Record<string, CommunicationSuggestion>>>({});
-  const [generalRevision, setGeneralRevision] = useState(0);
-  const [sources, setSources] = useState<readonly WebSource[]>([]);
   const [saveInFlightCount, setSaveInFlightCount] = useState(0);
   const [generationInFlight, setGenerationInFlight] = useState(false);
   const generationGateRef = useRef(createStageTwoGenerationGate());
@@ -388,7 +381,6 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
   const pilotConfirmation = useRef<{ version: number; catalogKey: string; saveRevision: number } | null>(null);
   const hasSavedPilotContent = stageTwo.some(({ key }) => hasSectionContent(base.sections[key]?.value));
   const pilotBlocked = generationInFlight || saveInFlightCount > 0 || pilotPending;
-  const SuggestionOptions = pilotEnabled ? "details" : "div";
   const pilotSections = pilotSources?.version === base.version && pilotSources.catalogKey === pilotCatalogKey ? pilotSources.sections : [];
 
   function startPilotGeneration() {
@@ -473,8 +465,8 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
       {canEdit && !canGenerate ? <div className="rounded-lg border border-border px-3 py-2">
         <p className="text-sm text-muted-foreground">Defina e confirme um nicho oficial para gerar sugestões com IA. A edição manual continua disponível.</p>
       </div> : null}
-      {canEdit && canGenerate ? <div className="rounded-lg border border-border bg-background px-3 py-2">
-        {pilotEnabled ? <div className="space-y-2">
+      {canEdit && canGenerate && pilotEnabled ? <div className="rounded-lg border border-border bg-background px-3 py-2">
+        <div className="space-y-2">
           <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-3">
             <Button type="button" aria-describedby={pilotEffectId} aria-haspopup={hasSavedPilotContent ? "dialog" : undefined}
               aria-busy={pilotPending} className="group min-h-11 shrink-0 max-sm:!bg-transparent max-sm:!p-0 max-sm:shadow-none"
@@ -507,73 +499,13 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
               <Button className="min-h-11" disabled={pilotBlocked} onClick={confirmPilotGeneration}>Gerar e substituir</Button>
             </div>
           </dialog>
-        </div> : null}
-        <SuggestionOptions className={pilotEnabled ? "mt-2 border-t border-border" : undefined}>
-          {pilotEnabled ? <summary className="min-h-11 cursor-pointer rounded-sm py-3 text-sm leading-5 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            Sugestões sem salvar
-          </summary> : null}
-          <p className="text-xs leading-5 text-muted-foreground">
-            Sugestões para as sete seções da Etapa 2. Revise cada uma antes de usar ou salvar.
-          </p>
-          <label hidden className="hidden">
-            <input type="checkbox" checked={requiresResearch} onChange={(event) => setRequiresResearch(event.target.checked)}
-              className="h-5 w-5 shrink-0 accent-brand-700" />
-            Preciso de pesquisa atual ou local para esta geração
-          </label>
-          <button type="button" disabled={pending || generationInFlight || saveInFlightCount > 0}
-            onClick={() => {
-              if (!canStartGeneralGeneration(pendingSavesRef.current)) return;
-              if (!tryStartStageTwoGeneration()) {
-                setMessageIsError(true);
-                setMessage("Aguarde a revisão em andamento antes de gerar sugestões para toda a Etapa 2.");
-                return;
-              }
-              const requestedVersion = base.version;
-              const requestSaveRevision = saveRevisionRef.current;
-              startTransition(async () => {
-                setMessage("");
-                setMessageIsError(false);
-                setSuggestions({});
-                setSources([]);
-                try {
-                  const result = await generateCommunicationIntelligenceAction({
-                    account, target: { kind: "general" }, version: requestedVersion, requiresCurrentResearch: requiresResearch,
-                  });
-                  if (!canInstallGeneralSuggestion(requestedVersion, currentVersionRef.current,
-                      requestSaveRevision, saveRevisionRef.current)) {
-                    setMessageIsError(true);
-                    setMessage("A Base mudou durante a geração. Atualize a página antes de gerar sugestões.");
-                    return;
-                  }
-                  if (result.ok) {
-                    setSuggestions(Object.fromEntries(result.draft.suggestions.map((item) => [item.key, item])));
-                    setSources(result.draft.sources);
-                    setGeneralRevision((current) => current + 1);
-                    setMessage(["Sugestões prontas para revisão. Nenhuma seção foi salva automaticamente.", result.notice].filter(Boolean).join(" "));
-                  } else {
-                    setMessageIsError(true);
-                    setMessage(result.message);
-                  }
-                } catch {
-                  setMessageIsError(true);
-                  setMessage("A geração está indisponível agora. Continue a edição manual.");
-                } finally {
-                  finishStageTwoGeneration();
-                }
-              });
-            }}
-            className="mt-0.5 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-2 py-1 text-xs font-medium leading-4 text-foreground disabled:cursor-wait disabled:opacity-60 sm:ml-3 sm:mt-0">
-            {pending ? "Preparando sugestões..." : pilotEnabled ? "Gerar sugestões"
-              : hasStageTwoContent(base) ? "Atualizar inteligência com IA" : "Gerar inteligência com IA"}
-          </button>
-        </SuggestionOptions>
-        {generationInFlight && !pending && !pilotPending ? <p role="status" className="mt-2 text-xs text-muted-foreground">
-          Aguarde a revisão em andamento antes de gerar sugestões para toda a Etapa 2.
+        </div>
+
+        {generationInFlight && !pilotPending ? <p role="status" className="mt-2 text-xs text-muted-foreground">
+          Aguarde a operação de IA em andamento.
         </p> : null}
-        {message ? <p role={messageIsError ? "alert" : "status"} className="mt-2 text-sm">{message}</p> : null}
-        <Sources sources={sources} />
       </div> : null}
-      <CommunicationSectionCollection definitions={stageTwo} base={base} showGuidance={structured} suggestedKeys={Object.keys(suggestions)}
+      <CommunicationSectionCollection definitions={stageTwo} base={base} showGuidance={structured}
         pilotKeys={pilotSections.map(section => section.key)}
         renderDetail={(section, controls) => <>
           {pilotSections.filter(result => result.key === section.key && result.sources.length).map(result => <section key={result.key} aria-label="Fontes desta geração" className="mb-4 space-y-2 border-b border-border pb-3">
@@ -582,7 +514,7 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
           </section>)}
           <CommunicationSectionEditor {...controls}
           account={account} version={base.version} definition={section} current={base.sections[section.key as CommunicationSectionKey]}
-          canEdit={canEdit} canGenerate={canGenerate} structured={structured} suggestedSuggestion={suggestions[section.key]} generalRevision={generalRevision}
+          canEdit={canEdit} canGenerate={canGenerate} structured={structured}
           stageTwoGenerationInFlight={generationInFlight}
           onStageTwoGenerationStart={tryStartStageTwoGeneration}
           onStageTwoGenerationFinished={finishStageTwoGeneration}
