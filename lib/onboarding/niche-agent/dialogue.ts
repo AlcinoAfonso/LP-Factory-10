@@ -129,7 +129,8 @@ export function mergeNicheMemory(raw: string | null, confirmed: DisplayedOffer,
 
 export function publicResearchTopic(topic: string, context: NicheContext, privateNames: readonly string[] = []) {
   if (!/^[\p{L}\p{M}][\p{L}\p{M} ,?()-]{3,159}$/u.test(topic)) return null;
-  const names = [...privateNames, context.pendingSetup?.preferredName || null, context.pendingSetup?.publicName, context.displayed?.publicName];
+  const names = [...privateNames, context.interlocutorName, context.pendingSetup?.preferredName || null,
+    context.pendingSetup?.publicName, context.displayed?.publicName];
   const businessContext = context.businessContext ?? "";
   try {
     const business = JSON.parse(businessContext || "{}") as Record<string, unknown>;
