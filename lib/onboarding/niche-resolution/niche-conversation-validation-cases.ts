@@ -36,6 +36,7 @@ export async function validateNicheConversationActions() {
     if (name.includes("accountTaxonomyAdapter")) return { isAccountNicheEditingEnabled: () => enabled, readAccountNicheProductGuard: async () => products };
     if (name.includes("accountNicheDialogueAdapter")) return {
       readNicheConversation: async () => ({ ok: true, dialogue: null }),
+      readNicheInterlocutorName: async () => "Armando",
       claimNicheConversation: async () => { claims++; return products && niche.confirmed && !replay ? null : { replay, version: 1,
         state: { official: { description: stale ? "Outro nicho" : niche.name, legacyTaxonId: taxonId, legacyUpdatedAt: revision },
           proposal: liveProposal, synthesis: liveSynthesis },
@@ -81,7 +82,11 @@ export async function validateNicheConversationActions() {
   assert.equal((await actions.converseHomeNicheAction(turn)).ok, false);
   assert.equal(claims, 0);
   enabled = true;
+  const baseState = await actions.loadBaseNicheConversationAction(turn.account);
+  assert.equal(baseState?.interlocutorName, "Armando");
+  assert.equal(baseState?.nicheName, "Jardinagem");
   assert.equal((await actions.converseBaseNicheAction(turn)).ok, true);
+  assert.equal(contexts[0].interlocutorName, "Armando");
   assert.match(contexts[0].businessContext ?? "", /Jardinagem para condomínios/u);
   assert.equal(commits[0].summary, null);
   provider = false;
@@ -130,6 +135,55 @@ export async function validateNicheConversationActions() {
   assert.equal((await actions.converseBaseNicheAction({ ...turn, requestId: crypto.randomUUID(), content: "Quero abandonar essa proposta." })).ok, true);
   assert.equal(commits.at(-1)?.keepProposal, false);
   assert.equal(commits.at(-1)?.proposal, null);
+}
+
+export async function validateNicheInterlocutorIdentity() {
+  const accountId = crypto.randomUUID(), ownerId = crypto.randomUUID(), memberId = crypto.randomUUID();
+  let actorId = ownerId, storedName: string | null = "Armando", declined = false, failed = false;
+  let metadata: Record<string, unknown> = { name: "Nome do perfil" };
+  let filters: Record<string, string> = {};
+  const loader = nodeModule as unknown as { _load: (name: string, parent: unknown, isMain: boolean) => unknown };
+  const original = loader._load;
+  loader._load = function(name, parent, isMain) {
+    if (name === "server-only") return {};
+    if (name === "@/lib/supabase/server") return { createClient: async () => ({
+      auth: { getUser: async () => ({ data: { user: { id: actorId, email: "qa@example.com", user_metadata: metadata } }, error: null }) },
+    }) };
+    if (name === "@/lib/supabase/service") return { createServiceClient: () => ({
+      from: (table: string) => {
+        assert.equal(table, "account_pending_setup_conversations");
+        const query: Record<string, string> = {};
+        const builder = {
+          select: (columns: string) => { assert.equal(columns, "preferred_name,preferred_name_declined"); return builder; },
+          eq: (key: string, value: string) => { query[key] = value; return builder; },
+          maybeSingle: async () => {
+            filters = { ...query };
+            return { data: !failed && query.account_id === accountId && query.user_id === ownerId &&
+              query.stage === "completed" ? { preferred_name: storedName, preferred_name_declined: declined } : null,
+              error: failed ? { code: "read_failed" } : null };
+          },
+        };
+        return builder;
+      },
+    }) };
+    if (name.includes("openai-costs/recorder")) return { closeOpenAiNicheDialogueOccurrence: async () => {} };
+    if (name.includes("niche-agent/runtime")) return { dialogueState: z.object({}), turnText: z.object({
+      role: z.string(), content: z.string(),
+    }) };
+    return original.call(this, name, parent, isMain);
+  };
+  const adapter = await import("./adapters/accountNicheDialogueAdapter").finally(() => { loader._load = original; });
+  assert.equal(await adapter.readNicheInterlocutorName(accountId, ownerId), "Armando");
+  assert.deepEqual(filters, { account_id: accountId, user_id: ownerId, stage: "completed" });
+  declined = true;
+  assert.equal(await adapter.readNicheInterlocutorName(accountId, ownerId), null, "explicit refusal overrides profile");
+  declined = false; storedName = null; metadata = { full_name: "Nome do perfil" };
+  assert.equal(await adapter.readNicheInterlocutorName(accountId, ownerId), "Nome do perfil");
+  actorId = memberId; metadata = { preferred_name: "Marta" };
+  assert.equal(await adapter.readNicheInterlocutorName(accountId, memberId), "Marta", "another member uses their own identity");
+  assert.equal(await adapter.readNicheInterlocutorName(accountId, ownerId), null, "authentication mismatch denies name");
+  failed = true;
+  assert.equal(await adapter.readNicheInterlocutorName(accountId, memberId), null, "failed lookup omits name");
 }
 
 export async function validatePendingConfirmedName() {
