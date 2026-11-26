@@ -22,6 +22,13 @@
   font-size: 0.55rem;
 }
 
+@media (max-width: 639px) {
+  .surface [role="tablist"] [role="tab"] {
+    padding-inline: 0.25rem;
+    font-size: 0.8125rem;
+  }
+}
+
 .surface textarea::placeholder,
 .surface input::placeholder {
   font-size: 1em;

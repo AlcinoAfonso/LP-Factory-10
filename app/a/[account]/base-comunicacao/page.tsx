@@ -66,7 +66,7 @@ export default async function CommunicationBasePage({ params }: PageProps) {
         <div>
           <header className="flex flex-wrap items-start justify-between gap-x-1 sm:gap-x-2">
             <div className="flex min-w-min max-w-fit flex-[4_1_0%] flex-wrap items-start gap-x-1 sm:gap-x-2">
-              <h1 className="min-w-min max-w-fit flex-1 break-normal py-2 text-xl font-semibold tracking-tight text-foreground">
+              <h1 className="min-w-min max-w-fit flex-1 break-normal py-2 text-lg font-semibold tracking-tight text-foreground sm:text-xl">
                 Base de Comunicação
               </h1>
               {showIntroduction ? <CommunicationBaseIntroduction /> : null}

@@ -475,13 +475,16 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
       </div> : null}
       {canEdit && canGenerate ? <div className="rounded-lg border border-border bg-background px-3 py-2">
         {pilotEnabled ? <div className="space-y-2">
-          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
+          <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-3">
             <Button type="button" aria-describedby={pilotEffectId} aria-haspopup={hasSavedPilotContent ? "dialog" : undefined}
-              aria-busy={pilotPending} className="min-h-11 shrink-0" disabled={pilotBlocked}
-              onClick={requestPilotGeneration}>Gerar Categoria 3</Button>
+              aria-busy={pilotPending} className="group min-h-11 shrink-0 max-sm:!bg-transparent max-sm:!p-0 max-sm:shadow-none"
+              disabled={pilotBlocked} onClick={requestPilotGeneration}>
+              <span className="max-sm:inline-flex max-sm:min-h-9 max-sm:items-center max-sm:rounded-md max-sm:bg-brand-700 max-sm:px-3 max-sm:py-1.5 max-sm:text-[0.8125rem] max-sm:text-white max-sm:group-hover:bg-brand-700/90">
+                Gerar Categoria 3
+              </span>
+            </Button>
             <p id={pilotEffectId} className="text-xs leading-5 text-muted-foreground">
-              Ao concluir, substitui e salva toda a Categoria 3, inclusive edições anteriores.
-              Se uma seção falhar ou a Base mudar, nada será salvo.
+              {hasSavedPilotContent ? "Substitui e salva todas as seções." : "Gera e salva todas as seções."}
             </p>
           </div>
           <p role="status" className="text-sm text-muted-foreground empty:sr-only">{pilotProgress}</p>
