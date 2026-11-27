@@ -373,7 +373,7 @@ export function CommunicationSectionEditor(props: Readonly<{
 export function CommunicationStageOne({ account, base, canEdit, structured = false, definitions = communicationSections, nicheLabel }: Readonly<{
   account: string; base: CommunicationBase; canEdit: boolean; structured?: boolean; definitions?: readonly CommunicationSectionDefinition[]; nicheLabel?: string;
 }>) {
-  return <CommunicationSectionCollection definitions={definitions.filter((section) => section.stage === 1)} base={base} showGuidance={structured} hideTextEditorClose={canEdit}
+  return <CommunicationSectionCollection definitions={definitions.filter((section) => section.stage === 1)} base={base} showGuidance={structured} hideEditorClose={canEdit}
     renderDetail={(definition, controls) => <CommunicationSectionEditor {...controls}
       account={account} version={base.version} definition={definition}
       current={base.sections[definition.key as CommunicationSectionKey]} canEdit={canEdit} structured={structured} nicheLabel={nicheLabel} />} />;
@@ -542,7 +542,7 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
           Aguarde a operação de IA em andamento.
         </p> : null}
       </div> : null}
-      <CommunicationSectionCollection definitions={stageTwo} base={base} showGuidance={structured} hideTextEditorClose={canEdit}
+      <CommunicationSectionCollection definitions={stageTwo} base={base} showGuidance={structured} hideEditorClose={canEdit}
         pilotKeys={pilotSections.map(section => section.key)}
         renderDetail={(section, controls) => <>
           {pilotSections.filter(result => result.key === section.key && result.sources.length).map(result => <section key={result.key} aria-label="Fontes desta geração" className="mb-4 space-y-2 border-b border-border pb-3">

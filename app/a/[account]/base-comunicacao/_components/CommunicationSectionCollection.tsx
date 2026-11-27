@@ -20,13 +20,13 @@ export type SectionDetailControls = Readonly<{
 }>;
 type DetailRenderer = (definition: CommunicationSectionDefinition, controls: SectionDetailControls) => ReactNode;
 
-export function CommunicationSectionCollection({ definitions, base, suggestedKeys = [], pilotKeys = [], renderDetail, showGuidance = false, hideTextEditorClose = false }: Readonly<{
+export function CommunicationSectionCollection({ definitions, base, suggestedKeys = [], pilotKeys = [], renderDetail, showGuidance = false, hideEditorClose = false }: Readonly<{
   definitions: readonly CommunicationSectionDefinition[];
   base: CommunicationBase;
   suggestedKeys?: readonly string[];
   pilotKeys?: readonly string[];
   showGuidance?: boolean;
-  hideTextEditorClose?: boolean;
+  hideEditorClose?: boolean;
   renderDetail: DetailRenderer;
 }>) {
   return <table className="w-full table-fixed text-left text-sm">
@@ -38,7 +38,8 @@ export function CommunicationSectionCollection({ definitions, base, suggestedKey
     <tbody className="divide-y divide-border">{definitions.map((definition) => <SectionRow key={definition.key}
       definition={definition} hasContent={hasSectionContent(base.sections[definition.key]?.value) || Boolean(base.sections[definition.key]?.facts?.length)}
       hasSuggestion={suggestedKeys.includes(definition.key)} hasPilot={pilotKeys.includes(definition.key)} renderDetail={renderDetail}
-      showGuidance={showGuidance} showCloseButton={!hideTextEditorClose || !supportsCommunicationTextFormatting(definition)} />)}</tbody>
+      showGuidance={showGuidance}
+      showCloseButton={!hideEditorClose || (definition.key !== "business_name" && !supportsCommunicationTextFormatting(definition))} />)}</tbody>
   </table>;
 }
 
