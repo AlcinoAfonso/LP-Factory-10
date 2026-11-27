@@ -292,8 +292,9 @@ export function CommunicationTextEditor({
       </div>
       {activeLink && <a href={activeLink.address} target="_blank" rel="noopener noreferrer"
         aria-label="Abrir link em nova aba" title="Abrir link em nova aba"
-        className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center border-l border-border text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+        className="inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap border-l border-border px-2 text-xs font-medium text-primary hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
         onMouseDown={event => event.preventDefault()}>
+        Abrir link
         <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
           strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
           <path d="M14 4h6v6m0-6-9 9M11 6H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" />
