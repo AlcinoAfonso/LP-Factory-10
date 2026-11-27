@@ -22,8 +22,8 @@ const sectionGuidance: Readonly<Record<string, Readonly<{ description: string; h
     "help": "Exemplo 1: Profissional com 15 anos de experiência e registro ativo no conselho profissional (nº XXXXX).\n\nExemplo 2: Redução do tempo médio de resposta aos clientes de duas horas para três minutos após a implantação de atendimento com inteligência artificial.\n\nUtilize informações verdadeiras e verificáveis. Depoimentos e avaliações de clientes devem ser organizados na Categoria 2 — Materiais de comunicação."
   },
   "materials": {
-    "description": "Informe links para o site, redes sociais, portfólio, apresentações e outros materiais institucionais que ajudem a conhecer melhor seu negócio.",
-    "help": "Adicione os endereços do seu site, perfis nas redes sociais, portfólio, apresentações e outras páginas institucionais. Identifique brevemente o conteúdo de cada link. Logotipos, fotos e vídeos devem ser organizados na categoria Materiais de comunicação."
+    "description": "Informe os links do site, landing pages, perfis nas redes sociais e demais páginas oficiais do seu negócio.",
+    "help": "Exemplo 1: Site institucional (link do site) e Instagram (link do perfil).\n\nExemplo 2: Perfil da Empresa no Google — Google Meu Negócio (link do perfil), onde os clientes podem conhecer o negócio e consultar suas avaliações.\n\nIdentifique brevemente cada referência. Documentos, imagens, vídeos e outros materiais devem ser organizados na Categoria 2 — Materiais de comunicação."
   },
   "preferences": {
     "description": "Informe suas preferências de comunicação e o que deve ser evitado, como palavras, temas, abordagens, promessas ou outras restrições do seu negócio.",
