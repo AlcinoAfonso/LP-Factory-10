@@ -26,8 +26,8 @@ const sectionGuidance: Readonly<Record<string, Readonly<{ description: string; h
     "help": "Exemplo 1: Site institucional (link do site) e Instagram (link do perfil).\n\nExemplo 2: Perfil da Empresa no Google — Google Meu Negócio (link do perfil), onde os clientes podem conhecer o negócio e consultar suas avaliações.\n\nIdentifique brevemente cada referência. Documentos, imagens, vídeos e outros materiais devem ser organizados na Categoria 2 — Materiais de comunicação."
   },
   "preferences": {
-    "description": "Informe suas preferências de comunicação e o que deve ser evitado, como palavras, temas, abordagens, promessas ou outras restrições do seu negócio.",
-    "help": "Explique como deseja que sua marca se comunique: termos preferidos, tom, assuntos sensíveis e abordagens que não devem ser utilizadas. Informe restrições profissionais, legais ou comerciais e promessas que não podem ser feitas."
+    "description": "Informe suas preferências de comunicação, incluindo linguagem, tom, abordagens desejadas e restrições que devem ser respeitadas.",
+    "help": "Exemplo 1: Utilizar linguagem simples e acolhedora, evitando termos técnicos e promessas de resultados garantidos.\n\nExemplo 2: Nosso agente de atendimento deve conversar naturalmente com os clientes, sem pressioná-los a comprar.\n\nExemplo 3: Em um consultório médico, o agente deve preservar a privacidade dos pacientes e encaminhar questões que exijam avaliação médica para um profissional habilitado.\n\nInforme também eventuais restrições legais, éticas, profissionais, comerciais e de privacidade específicas do seu negócio."
   },
   "visual_identity": {
     "description": "Reúna os elementos que identificam visualmente sua marca para orientar a criação dos materiais de comunicação.",
