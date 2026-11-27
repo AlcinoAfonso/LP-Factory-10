@@ -171,9 +171,6 @@
   flex-direction: column;
   gap: 0.375rem;
 }
-.editorContent > [data-grow-text]:has(> .textEditor) {
-  min-height: 0;
-}
 .editorContent > [data-grow-text] > textarea {
   flex: 1;
   min-height: 6rem !important;
@@ -212,6 +209,10 @@
   overflow-wrap: anywhere;
   font-size: 0.875rem;
   line-height: 1.5rem;
+}
+
+.textEditor .textEditorContent {
+  contain: size;
 }
 
 .textEditorContent:focus-visible {
