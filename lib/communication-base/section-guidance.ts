@@ -6,8 +6,8 @@ const sectionGuidance: Readonly<Record<string, Readonly<{ description: string; h
     "help": "Preencha o nome pelo qual seu negócio é conhecido, os dados de identificação fiscal e o endereço. Utilize o nome completo ou a razão social, conforme seu tipo de negócio. Informe apenas os dados disponíveis e acrescente outras informações se necessário."
   },
   "business_context": {
-    "description": "Descreva as áreas de atividade do negócio, os mercados em que atua e sua abrangência geográfica.",
-    "help": "Exemplos: atuação em determinado bairro, cidade, região, país ou mercado internacional."
+    "description": "Informe as localidades ou regiões abrangidas pelo seu negócio.",
+    "help": "Exemplo: Rio de Janeiro e municípios vizinhos."
   },
   "offers": {
     "description": "Apresente os produtos e serviços oferecidos, suas especialidades, preços e condições, quando aplicável.",
