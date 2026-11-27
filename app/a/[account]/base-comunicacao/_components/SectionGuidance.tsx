@@ -11,7 +11,7 @@ export function SectionGuidance({ sectionKey, id, open, showDescription = true }
     {showDescription ? <p className="mb-2">{guidance.description}</p> : null}
     <div id={id} hidden={!open} className="space-y-2 pb-2">
       {!showDescription ? <p>{guidance.description}</p> : null}
-      <p>{guidance.help}</p>
+      <p className="whitespace-pre-line">{guidance.help}</p>
     </div>
   </div>;
 }
