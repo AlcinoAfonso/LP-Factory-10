@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { clientOpenAiCostContext, closeOpenAiCostOccurrence } from "../../../../lib/openai-costs";
 import { pilotProof, resolveAgentBaseGenerationId, verifiedPilotProof } from "../../../../lib/communication-base/agent-base/generation-proof";
+import { pilotTraceId } from "../../../../lib/communication-base/agent-base/pilot-trace";
 import { createClient } from "../../../../lib/supabase/server";
 import { generateAgentBasePilotSection } from "../../../../lib/communication-base/adapters/agentBasePilotAdapter";
 import { agentBasePilotOrder, agentBasePilotCatalogState, selectAgentBasePilotInput,
@@ -242,9 +243,21 @@ async function logAgentBasePilotAccessDenial(phase: "initial" | "revalidation", 
 
 export async function runAgentBasePilotAction(input: Readonly<{
   account: string; version: number; previous?: readonly AgentBasePilotSection[];
-  catalogState?: string; nicheRevision?: string;
+  catalogState?: string; nicheRevision?: string; clientTraceId?: string;
 }>): Promise<AgentBasePilotActionResult> {
-  const fail = (message: string, invalidated = false) => ({ ok: false as const, message, invalidated });
+  const traceId = pilotTraceId(input?.clientTraceId);
+  const step = Array.isArray(input?.previous) ? input.previous.length + 1 : 1;
+  const report = (phase: "received" | "rejected" | "signed_return", section?: string) => {
+    try {
+      console.info(JSON.stringify({ event: "agent_base_pilot_server", traceId, step, phase,
+        ...(section ? { section } : {}) }));
+    } catch { /* Logging cannot affect the action. */ }
+  };
+  const fail = (message: string, invalidated = false) => {
+    report("rejected");
+    return { ok: false as const, message, invalidated };
+  };
+  report("received");
   const environment = resolveAgentBaseEnvironment();
   if (!environment) return fail("A geração da Categoria 3 não está disponível.");
   if (!input || typeof input.account !== "string" || !Number.isSafeInteger(input.version) || input.version <= 0 ||
@@ -311,6 +324,7 @@ export async function runAgentBasePilotAction(input: Readonly<{
   const section = { ...result.value, generationId };
   const proof = pilotProof(process.env.OPENAI_API_KEY, environment, access.value.accountId, input.version, catalogState, taxonomy.niche.revision, section);
   if (!proof) return fail("Não foi possível validar a geração. Nada foi salvo.");
+  report("signed_return", target.key);
   return { ok: true, section: { ...section, proof }, catalogState, nicheRevision: taxonomy.niche.revision };
 }
 
