@@ -2,32 +2,32 @@
 // independently of catalog labels/order and customer content. No client data is written.
 const sectionGuidance: Readonly<Record<string, Readonly<{ description: string; help: string }>>> = {
   "business_name": {
-    "description": "Identifique seu negócio para fins fiscais e de correspondência.",
-    "help": "Preencha o nome pelo qual seu negócio é conhecido, os dados de identificação fiscal e o endereço. Utilize o nome completo ou a razão social, conforme seu tipo de negócio. Informe apenas os dados disponíveis e acrescente outras informações se necessário."
+    "description": "Informe os dados de identificação comercial, fiscal e cadastral do seu negócio.",
+    "help": "Exemplo: Nome público — Clínica Sorriso; razão social — Clínica Sorriso Ltda.; CNPJ — XX.XXX.XXX/XXXX-XX.\n\nPreencha os dados disponíveis e acrescente outras informações de identificação, quando necessário. Os endereços de atendimento ao público devem ser informados na seção Atendimento."
   },
   "business_context": {
-    "description": "Informe onde e como seu negócio atua, incluindo as regiões atendidas e as modalidades de atendimento.",
-    "help": "Exemplos: atendimento presencial, online ou a domicílio; bairros, cidades ou regiões atendidas. O nicho do negócio já foi identificado na etapa inicial e aparece apenas para consulta, sem possibilidade de alteração nesta seção."
+    "description": "Informe as localidades ou regiões abrangidas pelo seu negócio.",
+    "help": "Exemplo 1: Rio de Janeiro e municípios vizinhos.\n\nExemplo 2: Todo o território brasileiro."
   },
   "offers": {
-    "description": "Apresente os produtos e serviços oferecidos, suas especialidades, preços e condições, quando aplicável.",
-    "help": "Descreva os principais produtos ou serviços do seu negócio, suas características e especialidades. Quando aplicável, informe preços, pacotes, formas de pagamento, condições de contratação e outras informações que ajudem o cliente a compreender suas ofertas."
+    "description": "Descreva os produtos e serviços oferecidos pelo seu negócio, incluindo preços e condições comerciais, quando definidos.",
+    "help": "Exemplo 1: Consultoria financeira individual — R$ 300 por sessão, com pagamento via Pix.\n\nExemplo 2: Camisetas, calças e vestidos.\n\nCaso possua catálogos ou tabelas extensas de preços, descreva aqui apenas as principais ofertas. Consulte a Categoria 2 — Materiais de comunicação para verificar os recursos disponíveis para inclusão desses materiais."
   },
   "service": {
-    "description": "Informe os horários de atendimento, os canais de contato disponíveis e como os clientes podem agendar serviços ou atendimentos, quando aplicável.",
-    "help": "Informe os dias e horários de funcionamento, telefones, WhatsApp, e-mail e outros canais de contato. Explique como o cliente pode solicitar atendimento ou realizar agendamentos, incluindo links, horários disponíveis e eventuais orientações necessárias."
+    "description": "Informe as modalidades de atendimento, endereços de atendimento presencial, dias e horários, telefones, WhatsApp, e-mails e formas de agendamento (incluindo links), quando aplicável.",
+    "help": "Exemplo 1: Atendimento odontológico presencial na Rua das Flores, 120, sala 305, Centro, Rio de Janeiro/RJ, de segunda a sexta-feira, das 9h às 18h. Agendamento pelo WhatsApp (99) 99999-9999.\n\nExemplo 2: Atendimento 24 horas por dia, todos os dias, por meio de um agente conversacional de inteligência artificial no WhatsApp (99) 99999-9999.\n\nCaso existam particularidades no atendimento, como procedimentos, orientações, condições especiais ou encaminhamentos, descreva-as também nesta seção."
   },
   "proof": {
-    "description": "Informe certificações, registros profissionais, prêmios, experiências e resultados comprovados que demonstrem a credibilidade do seu negócio.",
-    "help": "Inclua formações, certificações, registros profissionais, prêmios, tempo de experiência e resultados verificáveis, quando relevantes. Evite afirmações sem comprovação. Depoimentos de clientes pertencem à seção 2.3."
+    "description": "Informe experiências, qualificações, certificações, registros profissionais, premiações e resultados comprovados que demonstrem a credibilidade do seu negócio.",
+    "help": "Exemplo 1: Profissional com 15 anos de experiência e registro ativo no conselho profissional (nº XXXXX).\n\nExemplo 2: Redução do tempo médio de resposta aos clientes de duas horas para três minutos após a implantação de atendimento com inteligência artificial.\n\nUtilize informações verdadeiras e verificáveis. Depoimentos e avaliações de clientes devem ser organizados na Categoria 2 — Materiais de comunicação."
   },
   "materials": {
-    "description": "Informe links para o site, redes sociais, portfólio, apresentações e outros materiais institucionais que ajudem a conhecer melhor seu negócio.",
-    "help": "Adicione os endereços do seu site, perfis nas redes sociais, portfólio, apresentações e outras páginas institucionais. Identifique brevemente o conteúdo de cada link. Logotipos, fotos e vídeos devem ser organizados na categoria Materiais de comunicação."
+    "description": "Informe os links do site, landing pages, perfis nas redes sociais e demais páginas oficiais do seu negócio.",
+    "help": "Exemplo 1: Site institucional (link do site) e Instagram (link do perfil).\n\nExemplo 2: Perfil da Empresa no Google — Google Meu Negócio (link do perfil), onde os clientes podem conhecer o negócio e consultar suas avaliações.\n\nIdentifique brevemente cada referência. Para documentos, imagens, vídeos e outros materiais, consulte os recursos disponíveis na Categoria 2 — Materiais de comunicação."
   },
   "preferences": {
-    "description": "Informe suas preferências de comunicação e o que deve ser evitado, como palavras, temas, abordagens, promessas ou outras restrições do seu negócio.",
-    "help": "Explique como deseja que sua marca se comunique: termos preferidos, tom, assuntos sensíveis e abordagens que não devem ser utilizadas. Informe restrições profissionais, legais ou comerciais e promessas que não podem ser feitas."
+    "description": "Informe suas preferências de comunicação, incluindo linguagem, tom, abordagens desejadas e restrições que devem ser respeitadas.",
+    "help": "Exemplo 1: Utilizar linguagem simples e acolhedora, evitando termos técnicos e promessas de resultados garantidos.\n\nExemplo 2: Nosso agente de atendimento deve conversar naturalmente com os clientes, sem pressioná-los a comprar.\n\nExemplo 3: Em um consultório médico, o agente deve preservar a privacidade dos pacientes e encaminhar questões que exijam avaliação médica para um profissional habilitado.\n\nInforme também eventuais restrições legais, éticas, profissionais, comerciais e de privacidade específicas do seu negócio."
   },
   "visual_identity": {
     "description": "Reúna os elementos que identificam visualmente sua marca para orientar a criação dos materiais de comunicação.",
