@@ -81,6 +81,10 @@ function SectionRow({ definition, hasContent, hasSuggestion, hasPilot, renderDet
     else if (editorStateRef.current.dirty) { if (!discardRef.current?.open) discardRef.current?.showModal(); }
     else closeDetail();
   }
+  function closeWithEscape() {
+    if (guidanceVisible) setGuidanceOpen(false);
+    else requestClose();
+  }
   useLayoutEffect(() => { closeRequestRef.current = requestClose; });
   const onEditorStateChange = useCallback((dirty: boolean, saving: boolean) => {
     editorStateRef.current = { dirty, saving };
@@ -117,10 +121,16 @@ function SectionRow({ definition, hasContent, hasSuggestion, hasPilot, renderDet
       </button>
       <dialog ref={dialogRef} aria-labelledby={titleId}
         className="m-auto h-[min(42rem,calc(100dvh-1rem))] max-h-[calc(100dvh-1rem)] w-[calc(100dvw-1rem)] max-w-3xl overflow-hidden rounded-xl border border-border bg-background p-0 text-left text-foreground shadow-xl backdrop:bg-black/40 open:flex open:flex-col"
+        onKeyDownCapture={event => {
+          if (showCloseButton || event.key !== "Escape" || event.nativeEvent.isComposing ||
+              !(event.target instanceof HTMLElement) || !event.target.isContentEditable) return;
+          event.preventDefault();
+          event.stopPropagation();
+          closeWithEscape();
+        }}
         onCancel={(event) => {
           event.preventDefault();
-          if (guidanceVisible) { setGuidanceOpen(false);  }
-          else requestClose();
+          closeWithEscape();
         }}
         onClick={(event) => {
           if (event.target !== event.currentTarget) return;
