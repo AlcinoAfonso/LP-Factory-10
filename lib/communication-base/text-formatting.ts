@@ -5,10 +5,12 @@ import { getCommunicationSection, isBusinessLongTextSection, type CommunicationS
 
 export const MAX_TEXT_INDENT = 6;
 export const MAX_LIST_DEPTH = 8;
+export const MAX_ORDERED_LIST_START = Number.MAX_SAFE_INTEGER - 30_000;
 
 const offset = z.number().int().nonnegative();
 const inlineStyle = z.enum(["bold", "italic", "boldItalic"]);
 const spanSchema = z.tuple([offset, offset, inlineStyle.optional()]);
+const listStart = z.number().int().min(Number.MIN_SAFE_INTEGER).max(MAX_ORDERED_LIST_START);
 const textBlockSchema = z.strictObject({
   kind: z.enum(["paragraph", "title", "subtitle"]),
   indent: offset.max(MAX_TEXT_INDENT).optional(),
@@ -16,7 +18,7 @@ const textBlockSchema = z.strictObject({
 });
 const listSchema = z.strictObject({
   kind: z.enum(["bullets", "numbered"]),
-  start: offset.min(1).max(999_999).optional(),
+  start: listStart.optional(),
   items: z.array(z.array(z.unknown()).min(1)).min(1),
 });
 
@@ -51,6 +53,10 @@ function styleOf(node: JSONContent): InlineStyle | undefined {
 
 // All written words live in value. The layout only points into that string.
 export function serializeCommunicationText(document: JSONContent): CommunicationTextDraft {
+  return serializeDocument(document, false);
+}
+
+function serializeDocument(document: JSONContent, showListStructure: boolean): CommunicationTextDraft {
   let text = "";
   let hasFormatting = false;
   let hasWrittenText = false;
@@ -58,7 +64,7 @@ export function serializeCommunicationText(document: JSONContent): Communication
   const appendLine = (prefix: string) => {
     if (lineStarted) text += "\n";
     lineStarted = true;
-    text += prefix;
+    if (showListStructure) text += prefix;
   };
 
   function serializeBlocks(nodes: JSONContent[], depth = 0, itemPrefix?: string): Block[] {
@@ -133,7 +139,7 @@ export function communicationTextDocument(value: string, formatting?: Communicat
       if ("items" in block) {
         return {
           type: block.kind === "bullets" ? "bulletList" : "orderedList",
-          ...(block.start ? { attrs: { start: block.start } } : {}),
+          ...(block.start === undefined ? {} : { attrs: { start: block.start } }),
           content: block.items.map(item => ({ type: "listItem", content: toNodes(item) })),
         };
       }
@@ -154,6 +160,13 @@ export function communicationTextDocument(value: string, formatting?: Communicat
   }
 
   return { type: "doc", content: toNodes(formatting.blocks) };
+}
+
+export function communicationTextForReading(value: string, formatting: CommunicationTextFormatting | undefined, limit: number): string {
+  if (!formatting) return value;
+  const structured = serializeDocument(communicationTextDocument(value, formatting), true).text.trim();
+  // Keep all written text when adding list labels or indentation would exceed an existing input limit.
+  return structured.length <= limit ? structured : value;
 }
 
 function readBlocks(input: unknown[], depth: number, budget: { remaining: number }): Block[] | null {

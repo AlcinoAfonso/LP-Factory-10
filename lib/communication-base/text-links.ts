@@ -1,7 +1,8 @@
-import { find } from "linkifyjs";
+const urlTokens = /\bhttps?:\/\/[^\s<>"“”«»\u0000-\u001f\u007f]+/giu;
+const closing = new Map([["(", ")"], ["[", "]"], ["{", "}"]]);
 
 export function isHttpAddress(value: string): boolean {
-  if (!/^https?:\/\//i.test(value) || /\s/u.test(value)) return false;
+  if (!/^https?:\/\//i.test(value) || /[\s\u0000-\u001f\u007f]/u.test(value)) return false;
   try {
     const parsed = new URL(value);
     return Boolean(parsed.hostname && (parsed.protocol === "http:" || parsed.protocol === "https:"));
@@ -10,6 +11,25 @@ export function isHttpAddress(value: string): boolean {
   }
 }
 
+function addressInSentence(token: string): string {
+  const expected: string[] = [];
+  for (const [index, character] of token.split("").entries()) {
+    const terminator = closing.get(character);
+    if (terminator) expected.push(terminator);
+    else if (character === ")" || character === "]" || character === "}") {
+      if (expected.at(-1) !== character) return token.slice(0, index);
+      expected.pop();
+    }
+  }
+  return token.replace(/[.,;!?]+$/u, "");
+}
+
 export function communicationTextLinks(text: string) {
-  return /https?:\/\//i.test(text) ? find(text, "url").filter(link => isHttpAddress(link.value)) : [];
+  const links: { value: string; start: number; end: number }[] = [];
+  const standalone = text.trim();
+  for (const match of text.matchAll(urlTokens)) {
+    const value = match[0] === standalone ? standalone : addressInSentence(match[0]);
+    if (isHttpAddress(value)) links.push({ value, start: match.index, end: match.index + value.length });
+  }
+  return links;
 }

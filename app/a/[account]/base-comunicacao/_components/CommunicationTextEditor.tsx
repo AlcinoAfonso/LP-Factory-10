@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { communicationTextLinks, isHttpAddress } from "../../../../../lib/communication-base/text-links";
 import {
-  communicationTextDocument, MAX_LIST_DEPTH, MAX_TEXT_INDENT, serializeCommunicationText,
+  communicationTextDocument, MAX_LIST_DEPTH, MAX_ORDERED_LIST_START, MAX_TEXT_INDENT, serializeCommunicationText,
   type CommunicationTextDraft, type CommunicationTextFormatting,
 } from "../../../../../lib/communication-base/text-formatting";
 import styles from "../CommunicationBase.module.css";
@@ -90,6 +90,10 @@ function preservePastedAddresses(html: string): string {
     if (address && isHttpAddress(address) && !link.textContent?.includes(address)) {
       link.after(document.createTextNode(link.textContent?.trim() ? ` (${address})` : address));
     }
+  }
+  for (const list of template.content.querySelectorAll("ol[start]")) {
+    const start = Number.parseInt(list.getAttribute("start") ?? "", 10);
+    if (!Number.isSafeInteger(start) || start > MAX_ORDERED_LIST_START) list.removeAttribute("start");
   }
   return template.innerHTML;
 }
