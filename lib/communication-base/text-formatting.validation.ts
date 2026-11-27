@@ -50,6 +50,9 @@ assert.deepEqual(communicationTextLinks("Visite [http://[2001:db8::1]:8080/x?tes
   ["http://[2001:db8::1]:8080/x?teste=1"]);
 assert.equal(communicationTextLinks("https://example.com/a!")[0]?.value, "https://example.com/a!");
 assert.equal(communicationTextLinks("Veja (https://example.com/a!)")[0]?.value, "https://example.com/a!");
+assert.equal(communicationTextLinks("Visite 'https://example.com/politica'.")[0]?.value, "https://example.com/politica");
+assert.equal(communicationTextLinks("Visite ‘https://example.com/d'água!’.")[0]?.value, "https://example.com/d'água!");
+assert.equal(communicationTextLinks("https://example.com/d'água")[0]?.value, "https://example.com/d'água");
 assert.equal(isHttpAddress("javascript:alert(1)"), false);
 assert.equal(isHttpAddress("https://"), false);
 
