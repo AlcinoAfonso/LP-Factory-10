@@ -2,19 +2,19 @@
 // independently of catalog labels/order and customer content. No client data is written.
 const sectionGuidance: Readonly<Record<string, Readonly<{ description: string; help: string }>>> = {
   "business_name": {
-    "description": "Identifique seu negócio para fins fiscais e de correspondência.",
-    "help": "Preencha o nome pelo qual seu negócio é conhecido, os dados de identificação fiscal e o endereço. Utilize o nome completo ou a razão social, conforme seu tipo de negócio. Informe apenas os dados disponíveis e acrescente outras informações se necessário."
+    "description": "Informe os dados de identificação comercial, fiscal e cadastral do seu negócio.",
+    "help": "Exemplo: Nome público — Clínica Sorriso; razão social — Clínica Sorriso Ltda.; CNPJ — XX.XXX.XXX/XXXX-XX.\n\nPreencha os dados disponíveis e acrescente outras informações de identificação, quando necessário. Os endereços de atendimento ao público devem ser informados na seção Atendimento."
   },
   "business_context": {
     "description": "Informe as localidades ou regiões abrangidas pelo seu negócio.",
-    "help": "Exemplo: Rio de Janeiro e municípios vizinhos."
+    "help": "Exemplo 1: Rio de Janeiro e municípios vizinhos.\n\nExemplo 2: Todo o território brasileiro."
   },
   "offers": {
     "description": "Descreva os produtos e serviços oferecidos pelo seu negócio, incluindo preços e condições comerciais, quando definidos.",
     "help": "Exemplo 1: Consultoria financeira individual — R$ 300 por sessão, com pagamento via Pix.\n\nExemplo 2: Camisetas, calças e vestidos.\n\nCaso possua catálogos ou tabelas extensas de preços, descreva aqui apenas as principais ofertas. Consulte a Categoria 2 — Materiais de comunicação para verificar os recursos disponíveis para inclusão desses materiais."
   },
   "service": {
-    "description": "Informe as modalidades de atendimento, endereços de atendimento presencial, dias e horários, telefones, WhatsApp, e-mails e formas de agendamento, quando aplicável.",
+    "description": "Informe as modalidades de atendimento, endereços de atendimento presencial, dias e horários, telefones, WhatsApp, e-mails e formas de agendamento (incluindo links), quando aplicável.",
     "help": "Exemplo 1: Atendimento odontológico presencial na Rua das Flores, 120, sala 305, Centro, Rio de Janeiro/RJ, de segunda a sexta-feira, das 9h às 18h. Agendamento pelo WhatsApp (99) 99999-9999.\n\nExemplo 2: Atendimento 24 horas por dia, todos os dias, por meio de um agente conversacional de inteligência artificial no WhatsApp (99) 99999-9999.\n\nCaso existam particularidades no atendimento, como procedimentos, orientações, condições especiais ou encaminhamentos, descreva-as também nesta seção."
   },
   "proof": {
@@ -23,7 +23,7 @@ const sectionGuidance: Readonly<Record<string, Readonly<{ description: string; h
   },
   "materials": {
     "description": "Informe os links do site, landing pages, perfis nas redes sociais e demais páginas oficiais do seu negócio.",
-    "help": "Exemplo 1: Site institucional (link do site) e Instagram (link do perfil).\n\nExemplo 2: Perfil da Empresa no Google — Google Meu Negócio (link do perfil), onde os clientes podem conhecer o negócio e consultar suas avaliações.\n\nIdentifique brevemente cada referência. Documentos, imagens, vídeos e outros materiais devem ser organizados na Categoria 2 — Materiais de comunicação."
+    "help": "Exemplo 1: Site institucional (link do site) e Instagram (link do perfil).\n\nExemplo 2: Perfil da Empresa no Google — Google Meu Negócio (link do perfil), onde os clientes podem conhecer o negócio e consultar suas avaliações.\n\nIdentifique brevemente cada referência. Para documentos, imagens, vídeos e outros materiais, consulte os recursos disponíveis na Categoria 2 — Materiais de comunicação."
   },
   "preferences": {
     "description": "Informe suas preferências de comunicação, incluindo linguagem, tom, abordagens desejadas e restrições que devem ser respeitadas.",
