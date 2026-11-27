@@ -97,7 +97,14 @@ export async function saveCommunicationSectionAction(
   }
   const freeText = section.stage === 2 && formData.get("free_text") === "true";
   const parseManual = freeText ? parseReviewedSectionValue : parseSectionValue;
-  const parsed = parseManual(section, parseEditorDraft(section.format, rawValue, isCommunicationResourcesEnabled() && formData.get("structured_value") === "true", freeText));
+  const submittedFormatting = formData.get("text_formatting");
+  let formatting: unknown;
+  if (submittedFormatting !== null) {
+    if (typeof submittedFormatting !== "string") return failure("Revise a formatação do texto.");
+    try { formatting = JSON.parse(submittedFormatting); } catch { return failure("Revise a formatação do texto."); }
+  }
+  const text = submittedFormatting === null ? rawValue : rawValue.replace(/\r\n?/g, "\n");
+  const parsed = parseManual(section, parseEditorDraft(section.format, text, isCommunicationResourcesEnabled() && formData.get("structured_value") === "true", freeText));
   let facts: unknown;
   if (isCommunicationResourcesEnabled() && formData.has("facts")) {
     try { facts = JSON.parse(readFormString(formData, "facts")); } catch { return failure("Revise os registros do negócio."); }
@@ -112,6 +119,7 @@ export async function saveCommunicationSectionAction(
     expectedVersion: version,
     definitions: definitions.value,
     facts,
+    formatting,
     origin: section.stage === 1 ? "user_confirmed" : "user_reviewed",
   });
   if (!result.ok) return failure(errorMessage(result.error));

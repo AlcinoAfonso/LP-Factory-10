@@ -2,8 +2,9 @@ import type { CommunicationSection, CommunicationSectionValue } from "../../../.
 import type { CommunicationSectionDefinition } from "../../../../../lib/communication-base/registry";
 import { editorDraftValue, parseEditorDraft } from "../../../../../lib/communication-base/manual-editor-value";
 import { parseCommunicationFacts, parseReviewedSectionValue, parseSectionValue } from "../../../../../lib/communication-base/policy";
+import type { CommunicationTextFormatting } from "../../../../../lib/communication-base/text-formatting";
 
-export function sectionEditState(definition: CommunicationSectionDefinition, current: CommunicationSection | undefined, draft: string, structured = false, factsDraft?: string) {
+export function sectionEditState(definition: CommunicationSectionDefinition, current: CommunicationSection | undefined, draft: string, structured = false, factsDraft?: string, formatting?: CommunicationTextFormatting | null) {
   const freeText = definition.stage === 2;
   const parseManual = freeText ? parseReviewedSectionValue : parseSectionValue;
   const persistedText = current ? editorDraftValue(current.value, definition.format, structured, freeText) : "";
@@ -14,9 +15,10 @@ export function sectionEditState(definition: CommunicationSectionDefinition, cur
   const normalizedFacts = parseCommunicationFacts(facts);
   const factsDirty = normalizedFacts === null ? factsDraft !== JSON.stringify(current?.facts ?? []) : JSON.stringify(normalizedFacts) !== JSON.stringify(current?.facts ?? []);
   // Legacy separators can put the display above the text ceiling; never truncate on open.
-  const untouchedLegacy = freeText && current && draft === persistedText && parseReviewedSectionValue(definition, current.value) !== null;
+  const formattingDirty = formatting !== undefined && JSON.stringify(formatting ?? null) !== JSON.stringify(current?.formatting ?? null);
+  const untouchedLegacy = freeText && current && draft === persistedText && !formattingDirty && parseReviewedSectionValue(definition, current.value) !== null;
   return { valid: (parsed !== null || Boolean(untouchedLegacy)) && normalizedFacts !== null,
-    dirty: factsDirty || (!untouchedLegacy && (parsed === null ? draft !== persistedText : JSON.stringify(parsed) !== JSON.stringify(persisted))) };
+    dirty: factsDirty || formattingDirty || (!untouchedLegacy && (parsed === null ? draft !== persistedText : JSON.stringify(parsed) !== JSON.stringify(persisted))) };
 }
 
 export function hasSectionContent(value: CommunicationSectionValue | undefined): boolean {

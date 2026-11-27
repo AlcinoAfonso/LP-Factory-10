@@ -1,4 +1,5 @@
 import type { CommunicationSectionKey, CommunicationSectionFormat } from "./registry";
+import type { CommunicationTextFormatting } from "./text-formatting";
 
 export type CommunicationFact = Readonly<{ label: string; value: string }>;
 export type CommunicationFaq = Readonly<{ question: string; answer: string }>;
@@ -20,6 +21,7 @@ export type CommunicationSection = Readonly<{
   value: CommunicationSectionValue;
   origin: CommunicationSectionOrigin;
   facts?: readonly CommunicationFact[];
+  formatting?: CommunicationTextFormatting;
 }>;
 
 export type CommunicationBase = Readonly<{

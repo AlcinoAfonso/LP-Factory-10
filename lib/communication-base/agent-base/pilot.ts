@@ -9,10 +9,11 @@ import { AGENT_BASE_DIFFERENTIATORS_PROMPT, AGENT_BASE_DIFFERENTIATORS_PROMPT_VE
 import { AGENT_BASE_FAQ_PROMPT, AGENT_BASE_FAQ_PROMPT_VERSION, AGENT_BASE_FAQ_SECTION_SCHEMA } from "./faq-prompt";
 import { CREDENTIAL_PATTERN, COMMUNICATION_ASSISTANCE_TEXT_MAX, parseStageTwoResponse, stageTwoSchema,
   type CommunicationSuggestion, type OfficialNicheContext, type WebSource } from "../ai-core";
-import type { CommunicationBase } from "../contracts";
+import type { CommunicationBase, CommunicationFact, CommunicationSection, CommunicationSectionValue } from "../contracts";
 import { COMMUNICATION_FAQ_MAX, COMMUNICATION_ITEMS_MAX, parseCommunicationFacts, parseSectionValue } from "../policy";
 import { getSectionGuidance } from "../section-guidance";
 import type { CommunicationSectionDefinition, CommunicationSectionKey } from "../registry";
+import { communicationTextForReading } from "../text-formatting";
 
 const prompts = {
   about: { text: AGENT_BASE_ABOUT_PROMPT, version: AGENT_BASE_ABOUT_PROMPT_VERSION, format: "text" },
@@ -53,7 +54,12 @@ export function agentBasePilotCatalogState(definitions: readonly CommunicationSe
 }
 
 export function selectAgentBasePilotInput(base: CommunicationBase, definitions: readonly CommunicationSectionDefinition[]) {
-  const confirmed: Record<string, unknown> = {};
+  const confirmed: Record<string, Readonly<{
+    label: string;
+    value: CommunicationSectionValue;
+    facts: readonly CommunicationFact[];
+    origin: CommunicationSection["origin"];
+  }>> = {};
   const excluded: string[] = [];
   for (const definition of definitions) {
     if (definition.stage !== 1) continue;
@@ -87,6 +93,13 @@ export function buildAgentBasePilotPrompt(input: Readonly<{
       !input.niche.confirmed || !input.niche.name.trim() ||
       input.previous.some((section, index) => section.key !== order?.[index]?.key) ||
       CREDENTIAL_PATTERN.test(JSON.stringify([input.niche, input.previous]))) return null;
+  const confirmedWithLayout = Object.fromEntries(Object.entries(selected.confirmed).map(([key, entry]) => [key, {
+    ...entry,
+    value: typeof entry.value === "string"
+      ? communicationTextForReading(entry.value, input.base.sections[key]?.formatting, COMMUNICATION_ASSISTANCE_TEXT_MAX)
+      : entry.value,
+  }]));
+  if (CREDENTIAL_PATTERN.test(JSON.stringify(confirmedWithLayout))) return null;
   const specialized = Object.hasOwn(prompts, input.key) ? prompts[input.key as keyof typeof prompts] : null;
   const guidance = getSectionGuidance(input.key);
   const instructions = specialized?.text ?? [
@@ -114,7 +127,7 @@ export function buildAgentBasePilotPrompt(input: Readonly<{
     input: JSON.stringify({
       target_section: { key: target.key, label: target.label, format: target.format },
       section_order: order!.map(({ key, label }) => ({ key, label })),
-      confirmed_business_data: selected.confirmed,
+      confirmed_business_data: confirmedWithLayout,
       official_niche: { taxon_id: input.niche.taxonId, name: input.niche.name },
       previous_sections: input.previous.map(({ key, value, basis, sources, researched }) =>
         ({ key, value, basis, sources, researched })),

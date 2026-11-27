@@ -169,6 +169,7 @@ export async function saveCommunicationSection(input: Readonly<{
   origin: CommunicationSection["origin"];
   definitions?: readonly CommunicationSectionDefinition[];
   facts?: unknown;
+  formatting?: unknown;
 }>): Promise<CommunicationBaseResult<CommunicationBase>> {
   if (!input.accountId || !Number.isInteger(input.expectedVersion) || input.expectedVersion <= 0) {
     return { ok: false, error: "invalid" };
@@ -187,7 +188,7 @@ export async function saveCommunicationSection(input: Readonly<{
     }
     const sections = parseStoredSections(current.sections_json, input.definitions);
     if (!sections) return { ok: false, error: "read_failed" };
-    const next = withSection(sections, input.key, input.value, input.origin, input.definitions, input.facts);
+    const next = withSection(sections, input.key, input.value, input.origin, input.definitions, input.facts, input.formatting);
     if (!next) return { ok: false, error: "invalid" };
 
     const { data, error } = await service
