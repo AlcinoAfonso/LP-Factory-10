@@ -18,8 +18,8 @@ const sectionGuidance: Readonly<Record<string, Readonly<{ description: string; h
     "help": "Exemplo 1: Atendimento odontológico presencial na Rua das Flores, 120, sala 305, Centro, Rio de Janeiro/RJ, de segunda a sexta-feira, das 9h às 18h. Agendamento pelo WhatsApp (99) 99999-9999.\n\nExemplo 2: Atendimento 24 horas por dia, todos os dias, por meio de um agente conversacional de inteligência artificial no WhatsApp (99) 99999-9999.\n\nCaso existam particularidades no atendimento, como procedimentos, orientações, condições especiais ou encaminhamentos, descreva-as também nesta seção."
   },
   "proof": {
-    "description": "Informe certificações, registros profissionais, prêmios, experiências e resultados comprovados que demonstrem a credibilidade do seu negócio.",
-    "help": "Inclua formações, certificações, registros profissionais, prêmios, tempo de experiência e resultados verificáveis, quando relevantes. Evite afirmações sem comprovação. Depoimentos de clientes pertencem à seção 2.3."
+    "description": "Informe experiências, qualificações, certificações, registros profissionais, premiações e resultados comprovados que demonstrem a credibilidade do seu negócio.",
+    "help": "Exemplo 1: Profissional com 15 anos de experiência e registro ativo no conselho profissional (nº XXXXX).\n\nExemplo 2: Redução do tempo médio de resposta aos clientes de duas horas para três minutos após a implantação de atendimento com inteligência artificial.\n\nUtilize informações verdadeiras e verificáveis. Depoimentos e avaliações de clientes devem ser organizados na Categoria 2 — Materiais de comunicação."
   },
   "materials": {
     "description": "Informe links para o site, redes sociais, portfólio, apresentações e outros materiais institucionais que ajudem a conhecer melhor seu negócio.",
