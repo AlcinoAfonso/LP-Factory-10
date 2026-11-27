@@ -8,15 +8,19 @@ export function pilotTraceId(value: unknown): string | null {
 }
 
 export function pilotClientFailureKind(error: unknown): PilotClientFailureKind {
-  if (!error || typeof error !== "object") return "unexpected";
-  const record = error as { name?: unknown; message?: unknown };
-  const name = typeof record.name === "string" ? record.name : "";
-  const message = typeof record.message === "string" ? record.message : "";
-  if (name === "AbortError") return "aborted";
-  if (/connection closed|premature close|socket hang up|terminated/i.test(message)) return "connection_closed";
-  if (/failed to fetch|fetch failed|network|load failed|econnreset/i.test(message)) return "network";
-  if (name === "SyntaxError" || /decode|deserializ|unexpected end of json/i.test(message)) return "decode";
-  return "unexpected";
+  try {
+    if (!error || typeof error !== "object") return "unexpected";
+    const record = error as { name?: unknown; message?: unknown };
+    const name = typeof record.name === "string" ? record.name : "";
+    const message = typeof record.message === "string" ? record.message : "";
+    if (name === "AbortError") return "aborted";
+    if (/connection closed|premature close|socket hang up|terminated/i.test(message)) return "connection_closed";
+    if (/failed to fetch|fetch failed|network|load failed|econnreset/i.test(message)) return "network";
+    if (name === "SyntaxError" || /decode|deserializ|unexpected end of json/i.test(message)) return "decode";
+    return "unexpected";
+  } catch {
+    return "unexpected";
+  }
 }
 
 export async function observePilotTransport<T>(
