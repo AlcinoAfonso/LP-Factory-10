@@ -73,9 +73,14 @@ function linkDecorations(doc: EditorNode, readOnly: boolean): DecorationSet {
   doc.descendants((node, pos) => {
     if (!node.isTextblock) return;
     for (const { from, to, address } of linksInBlock(node, pos + 1)) {
-      decorations.push(Decoration.inline(from, to, readOnly
-        ? { nodeName: "a", href: address, target: "_blank", rel: "noopener noreferrer", class: styles.textEditorLink }
-        : { nodeName: "span", class: styles.textEditorLink }));
+      decorations.push(Decoration.inline(from, to, {
+        nodeName: "a",
+        href: address,
+        target: "_blank",
+        rel: "noopener noreferrer",
+        class: styles.textEditorLink,
+        ...(readOnly ? {} : { tabindex: "-1", draggable: "false" }),
+      }));
     }
     return false;
   });
@@ -163,6 +168,12 @@ export function CommunicationTextEditor({
       snapshots.set(doc, draft);
       return draft;
     };
+    const keepEditingOnLinkClick = (_view: unknown, event: MouseEvent) => {
+      if (!readOnly && event.target instanceof Element && event.target.closest("a[href]")) {
+        event.preventDefault();
+      }
+      return event.defaultPrevented;
+    };
 
     const editorRules = Extension.create({
       name: "communicationTextRules",
@@ -203,7 +214,11 @@ export function CommunicationTextEditor({
       enablePasteRules: false,
       editorProps: {
         attributes: { class: styles.textEditorContent },
-        handleDOMEvents: { keydown: (_view, event) => event.key === "Tab" },
+        handleDOMEvents: {
+          keydown: (_view, event) => event.key === "Tab",
+          click: keepEditingOnLinkClick,
+          auxclick: keepEditingOnLinkClick,
+        },
         transformPastedHTML: preservePastedAddresses,
       },
       onCreate: ({ editor }) => setEditor(editor),
