@@ -10,8 +10,8 @@ const sectionGuidance: Readonly<Record<string, Readonly<{ description: string; h
     "help": "Exemplo: Rio de Janeiro e municípios vizinhos."
   },
   "offers": {
-    "description": "Apresente os produtos e serviços oferecidos, suas especialidades, preços e condições, quando aplicável.",
-    "help": "Descreva os principais produtos ou serviços do seu negócio, suas características e especialidades. Quando aplicável, informe preços, pacotes, formas de pagamento, condições de contratação e outras informações que ajudem o cliente a compreender suas ofertas."
+    "description": "Descreva os produtos e serviços oferecidos pelo seu negócio, incluindo preços e condições comerciais, quando definidos.",
+    "help": "Exemplo 1: Consultoria financeira individual — R$ 300 por sessão, com pagamento via Pix.\n\nExemplo 2: Camisetas, calças e vestidos.\n\nCaso possua catálogos ou tabelas extensas de preços, descreva aqui apenas as principais ofertas. Consulte a Categoria 2 — Materiais de comunicação para verificar os recursos disponíveis para inclusão desses materiais."
   },
   "service": {
     "description": "Descreva como e quando seu negócio atende os clientes.",
