@@ -122,11 +122,10 @@ export function CommunicationSectionEditor(props: Readonly<{
   onStageTwoGenerationFinished?: () => void;
   onStageTwoSaveStarted?: () => void;
   onStageTwoSaveFinished?: () => void;
-  nicheLabel?: string;
 }> & SectionDetailControls) {
   const { account, version, definition, current, canEdit, structured = false, suggestedSuggestion, generalRevision = 0,
     stageTwoGenerationInFlight = false, onStageTwoGenerationStart, onStageTwoGenerationFinished,
-    onStageTwoSaveStarted, onStageTwoSaveFinished, nicheLabel, canGenerate = false, detailOpen, resetRevision, onEditorStateChange, onCancel, onSaved } = props;
+    onStageTwoSaveStarted, onStageTwoSaveFinished, canGenerate = false, detailOpen, resetRevision, onEditorStateChange, onCancel, onSaved } = props;
   const [state, action, savePending] = useActionState(saveCommunicationSectionAction, INITIAL_STATE);
   const lastHandledSaveStateRef = useRef(state);
   const lastClosedSaveRef = useRef(state);
@@ -210,7 +209,6 @@ export function CommunicationSectionEditor(props: Readonly<{
     const hasContent = hasSectionContent(current?.value);
     return (
       <article>
-        {structured && definition.key === "business_context" ? <p className="mb-3 text-sm text-muted-foreground">Nicho: {nicheLabel}. Apenas para consulta nesta seção.</p> : null}
         {current && hasContent ? (
           formattedText && typeof current.value === "string" ? (
             detailOpen && <CommunicationTextEditor key={editorRevision} label={definition.label} text={value} formatting={current.formatting} />
@@ -232,7 +230,6 @@ export function CommunicationSectionEditor(props: Readonly<{
   const stageTwoSuggestion = stageTwoPresentation.suggestion;
   return (
     <article className={styles.sectionEditor}>
-      {structured && definition.key === "business_context" ? <p className="mb-3 text-sm text-muted-foreground">Nicho: {nicheLabel}. Apenas para consulta nesta seção.</p> : null}
       <form action={action} onSubmit={(event) => {
         if (saveLocked || !editState.valid || !editState.dirty) { event.preventDefault(); return; }
         localRequestRevisionRef.current += 1;
@@ -370,13 +367,13 @@ export function CommunicationSectionEditor(props: Readonly<{
   );
 }
 
-export function CommunicationStageOne({ account, base, canEdit, structured = false, definitions = communicationSections, nicheLabel }: Readonly<{
-  account: string; base: CommunicationBase; canEdit: boolean; structured?: boolean; definitions?: readonly CommunicationSectionDefinition[]; nicheLabel?: string;
+export function CommunicationStageOne({ account, base, canEdit, structured = false, definitions = communicationSections }: Readonly<{
+  account: string; base: CommunicationBase; canEdit: boolean; structured?: boolean; definitions?: readonly CommunicationSectionDefinition[];
 }>) {
   return <CommunicationSectionCollection definitions={definitions.filter((section) => section.stage === 1)} base={base} showGuidance={structured} hideEditorClose={canEdit}
     renderDetail={(definition, controls) => <CommunicationSectionEditor {...controls}
       account={account} version={base.version} definition={definition}
-      current={base.sections[definition.key as CommunicationSectionKey]} canEdit={canEdit} structured={structured} nicheLabel={nicheLabel} />} />;
+      current={base.sections[definition.key as CommunicationSectionKey]} canEdit={canEdit} structured={structured} />} />;
 }
 
 export function CommunicationStageTwo({ account, base, canEdit, canGenerate = false, structured = false, definitions = communicationSections, pilotEnabled = false, pilotCatalogKey = "" }: Readonly<{
