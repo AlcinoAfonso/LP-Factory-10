@@ -15,7 +15,7 @@ function addressInSentence(token: string, preceding: string | undefined): string
   const quote = preceding === "'" ? "'" : preceding === "‘" ? "’" : undefined;
   if (quote) {
     const lastQuote = token.lastIndexOf(quote);
-    if (lastQuote >= 0 && /^[.,;!?]*$/u.test(token.slice(lastQuote + 1))) return token.slice(0, lastQuote);
+    if (lastQuote >= 0 && /^[.,;:!?…)\]}]*$/u.test(token.slice(lastQuote + 1))) return token.slice(0, lastQuote);
   }
   const expected: string[] = [];
   for (const [index, character] of token.split("").entries()) {

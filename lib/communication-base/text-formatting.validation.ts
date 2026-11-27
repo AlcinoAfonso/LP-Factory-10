@@ -53,6 +53,9 @@ assert.equal(communicationTextLinks("Veja (https://example.com/a!)")[0]?.value, 
 assert.equal(communicationTextLinks("Visite 'https://example.com/politica'.")[0]?.value, "https://example.com/politica");
 assert.equal(communicationTextLinks("Visite ‘https://example.com/d'água!’.")[0]?.value, "https://example.com/d'água!");
 assert.equal(communicationTextLinks("https://example.com/d'água")[0]?.value, "https://example.com/d'água");
+assert.equal(communicationTextLinks("Veja ('https://example.com/politica').")[0]?.value, "https://example.com/politica");
+assert.equal(communicationTextLinks("Veja [‘https://example.com/politica’].")[0]?.value, "https://example.com/politica");
+assert.equal(communicationTextLinks("'https://example.com/politica': veja os detalhes.")[0]?.value, "https://example.com/politica");
 assert.equal(isHttpAddress("javascript:alert(1)"), false);
 assert.equal(isHttpAddress("https://"), false);
 
