@@ -38,6 +38,7 @@
 1.4.4. Princípios de implementação
 • O MVP prioriza simplicidade, não fragilidade.
 • A menor solução segura capaz de entregar o resultado atual deve prevalecer sobre arquitetura mais sofisticada.
+• Os serviços da LP Factory devem respeitar a legislação aplicável, a privacidade dos dados e as normas éticas e profissionais pertinentes a cada nicho, independentemente das orientações registradas pelo cliente na Base de Comunicação.
 • Não criar banco, rota, job, agente, automação, engine, service ou nova infraestrutura para uma necessidade futura, hipotética ou ainda não validada.
 • Nova camada técnica exige necessidade atual comprovada, benefício proporcional e ausência de alternativa mais simples já disponível.
 • Implementação que se torne desproporcional ao valor esperado pode ser interrompida, simplificada ou removida em vez de receber novas camadas para preservá-la.
