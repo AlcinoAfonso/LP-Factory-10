@@ -1,5 +1,6 @@
 import "./resource-validation-cases";
 import "./manual-intelligence.validation";
+import "./text-formatting.validation";
 import "./agent-base/research.validation";
 import "./agent-base/sections.validation";
 import "./agent-base/insights-b.validation";

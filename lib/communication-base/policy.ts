@@ -11,6 +11,7 @@ import type {
   CommunicationSection,
   CommunicationSectionValue,
 } from "./contracts";
+import { parseCommunicationTextFormatting, supportsCommunicationTextFormatting } from "./text-formatting";
 
 export const COMMUNICATION_TEXT_MAX = 4000;
 export const COMMUNICATION_BUSINESS_TEXT_MAX = 30_000;
@@ -116,6 +117,13 @@ export function projectCommunicationBase(input: Readonly<{
     if (entry !== undefined) {
       const section = { ...(entry as CommunicationSection) };
       if (!includeFacts) delete section.facts;
+      if (section.formatting !== undefined) {
+        const formatting = typeof section.value === "string" && supportsCommunicationTextFormatting(definition) &&
+          (section.origin === "user_confirmed" || section.origin === "user_reviewed")
+          ? parseCommunicationTextFormatting(section.value, section.formatting) : null;
+        if (formatting) section.formatting = formatting;
+        else delete section.formatting;
+      }
       sections[definition.key] = section;
     }
   }
@@ -135,6 +143,7 @@ export function withSection(
   origin: CommunicationSection["origin"],
   definitions: readonly CommunicationSectionDefinition[] = communicationSections,
   rawFacts?: unknown,
+  rawFormatting?: unknown,
 ): Record<string, unknown> | null {
   const definition = definitions.find((section) => section.key === key);
   if (!definition) return null;
@@ -144,14 +153,23 @@ export function withSection(
   if (definition.stage === 2 && origin !== "user_reviewed" && origin !== "agent_generated") return null;
   if (origin === "pending_setup_confirmed" &&
       key !== "business_context" && key !== "business_name") return null;
-  const previous = isRecord(current[key]) ? current[key] : {};
+  const previous = isRecord(current[key]) ? { ...current[key] } : {};
   const facts = rawFacts === undefined ? previous.facts : rawFacts;
   const parsedFacts = facts === undefined ? undefined : parseCommunicationFacts(facts);
   if (parsedFacts === null || (parsedFacts !== undefined && definition.stage !== 1)) return null;
+  const editableText = supportsCommunicationTextFormatting(definition) &&
+    (origin === "user_confirmed" || origin === "user_reviewed") && typeof normalized === "string";
+  const formatting = rawFormatting === undefined || rawFormatting === null ? undefined
+    : editableText ? parseCommunicationTextFormatting(normalized, rawFormatting) : null;
+  if (formatting === null || (rawFormatting === null && !editableText)) return null;
+  if (rawFormatting !== undefined || normalized !== previous.value || origin !== previous.origin) {
+    delete previous.formatting;
+  }
   return {
     ...current,
     [key]: { ...previous, format: definition.format, value: normalized, origin,
-      ...(parsedFacts === undefined ? {} : { facts: parsedFacts }) },
+      ...(parsedFacts === undefined ? {} : { facts: parsedFacts }),
+      ...(formatting ? { formatting } : {}) },
   };
 }
 

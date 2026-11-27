@@ -11,6 +11,7 @@ import { getSectionGuidance } from "../../../../../lib/communication-base/sectio
 import { hasSectionContent } from "./section-edit-state";
 
 export type SectionDetailControls = Readonly<{
+  detailOpen: boolean;
   resetRevision: number;
   onEditorStateChange: (dirty: boolean, saving: boolean) => void;
   onCancel: () => void;
@@ -49,6 +50,7 @@ function SectionRow({ definition, hasContent, hasSuggestion, hasPilot, renderDet
   const editorStateRef = useRef({ dirty: false, saving: false });
   const closeRequestRef = useRef<() => void>(() => undefined);
   const [resetRevision, setResetRevision] = useState(0);
+  const [detailOpen, setDetailOpen] = useState(false);
   const [closingMessage, setClosingMessage] = useState("");
   const [guidanceOpen, setGuidanceOpen] = useState(false);
   const guidanceVisible = guidanceOpen;
@@ -62,6 +64,7 @@ function SectionRow({ definition, hasContent, hasSuggestion, hasPilot, renderDet
     discardRef.current?.close();
     dialogRef.current?.close();
     editorStateRef.current = { dirty: false, saving: false };
+    setDetailOpen(false);
     setResetRevision((revision) => revision + 1);
     setClosingMessage("");
     setGuidanceOpen(false);
@@ -102,6 +105,7 @@ function SectionRow({ definition, hasContent, hasSuggestion, hasPilot, renderDet
         onClick={() => {
           window.history.pushState({ ...window.history.state }, "", window.location.href); historyEntryRef.current = true;
           dialogRef.current?.showModal(); dialogRef.current?.querySelector<HTMLElement>("button[data-section-close],input:not([type=hidden]),textarea")?.focus({ preventScroll: true });
+          setDetailOpen(true);
         }}><span className="break-words font-medium text-brand-700 hover:underline dark:text-primary">{definition.label}</span>
         <span className="text-xs leading-5 text-muted-foreground sm:hidden">{hasSuggestion ? "Sugestão disponível" : hasContent ? "Com conteúdo" : "Ainda não preenchida"}{hasPilot ? <span className="block text-xs text-muted-foreground">Gerado pelo Agente Base</span> : null}</span>
       </button>
@@ -135,7 +139,7 @@ function SectionRow({ definition, hasContent, hasSuggestion, hasPilot, renderDet
         <div ref={bodyRef} className={`${styles.sectionBody} min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 sm:px-4}`}>
           {sectionGuidance}
           {closingMessage ? <FeedbackMessage tone="warning" className="mb-4">{closingMessage}</FeedbackMessage> : null}
-          <SectionDetailContent definition={definition} controls={{ resetRevision, onCancel: requestClose, onSaved: closeDetail, onEditorStateChange }} renderDetail={renderDetail} />
+          <SectionDetailContent definition={definition} controls={{ detailOpen, resetRevision, onCancel: requestClose, onSaved: closeDetail, onEditorStateChange }} renderDetail={renderDetail} />
         </div>
       </dialog>
       <dialog ref={discardRef} aria-labelledby={discardTitleId}
