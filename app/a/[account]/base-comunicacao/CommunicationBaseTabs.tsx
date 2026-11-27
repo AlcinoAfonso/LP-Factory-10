@@ -22,7 +22,7 @@ export function CommunicationBaseTabs({stageOne,stageTwo,materials}:Readonly<{st
       }}
       className={"min-h-11 min-w-0 border-b-2 px-2 py-2 text-center text-sm font-medium leading-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset sm:px-4 "+(selected===i?"border-brand-700 text-brand-700 dark:border-primary dark:text-primary":"border-transparent text-muted-foreground hover:text-foreground")}><span className="sm:hidden">{shortLabels[i]}</span><span className="hidden sm:inline">{label}</span></button>)}
   </div>{panels.map((panel,i)=><div key={i} id={"communication-panel-"+i} role="tabpanel" aria-labelledby={"communication-tab-"+i}
-    tabIndex={0} hidden={selected!==i} className="pt-3">{materials && i !== 2 ? <p className="mb-2 text-sm font-medium sm:hidden">{labels[i]}</p> : null}{panel}</div>)}</div>;
+    tabIndex={0} hidden={selected!==i} className="pt-3">{panel}</div>)}</div>;
 }
 
 export function CommunicationBaseIntroduction() {
