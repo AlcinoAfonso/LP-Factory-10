@@ -134,17 +134,22 @@ type Props = Readonly<{
   onChange?: (draft: CommunicationTextDraft) => void;
 }>;
 
-const toolClass = "min-h-11 shrink-0 !px-2 !py-1 !text-xs !font-normal !text-foreground aria-pressed:bg-accent hover:!bg-accent";
+const toolClass = "min-h-11 min-w-11 shrink-0 whitespace-nowrap !px-2 !py-1 !text-xs !font-normal !text-foreground aria-pressed:bg-accent hover:!bg-accent focus-visible:ring-inset";
+
+function HistoryArrow({ redo = false }: Readonly<{ redo?: boolean }>) {
+  return <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+    strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={redo ? "-scale-x-100" : undefined}>
+    <path d="M9 5l-5 5 5 5M4 10h9a5 5 0 1 1 0 10h-2" />
+  </svg>;
+}
 
 export function CommunicationTextEditor({
   id, label, describedBy, invalid = false, locked = false, limit = 30_000, text, formatting, onChange,
 }: Props) {
   const mount = useRef<HTMLDivElement>(null);
-  const moreButton = useRef<HTMLButtonElement>(null);
   const [initial] = useState(() => communicationTextDocument(text, formatting));
   const [editor, setEditor] = useState<Editor | null>(null);
   const [, renderToolbar] = useState(0);
-  const [more, setMore] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
   const readOnly = onChange === undefined;
 
@@ -252,19 +257,15 @@ export function CommunicationTextEditor({
     : Boolean(editor && canIndentParagraph(editor, direction));
   const keepSelection = (event: React.MouseEvent<HTMLButtonElement>) => event.preventDefault();
 
-  return <div className={readOnly ? styles.textEditorReadOnly : styles.textEditor}
-    onKeyDownCapture={event => {
-      if (event.key !== "Escape" || !more) return;
-      event.preventDefault();
-      event.stopPropagation();
-      setMore(false);
-      moreButton.current?.focus();
-    }}>
-    {!readOnly && <div className="shrink-0 border-b border-border px-1.5" aria-label="Formatação do texto" role="group">
-      <div className="flex flex-wrap items-center gap-x-1">
+  return <div className={readOnly ? styles.textEditorReadOnly : styles.textEditor}>
+    {!readOnly && <div className="flex min-w-0 shrink-0 border-b border-border" aria-label="Formatação do texto" role="group">
+      <div className="flex min-w-0 flex-1 items-center overflow-x-auto overscroll-x-contain px-1.5 [scrollbar-width:thin]">
         <Button variant="secondary" className={toolClass} aria-pressed={editor?.isActive("heading", { level: 2 }) ?? false}
           disabled={toolsDisabled} onMouseDown={keepSelection} onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}>Título</Button>
-        <Select aria-label="Lista" className="!h-11 !w-auto max-w-full shrink-0 !border-transparent !bg-transparent !px-1 !text-xs"
+        <Button variant="secondary" className={toolClass} aria-label="Subtítulo" title="Subtítulo"
+          aria-pressed={editor?.isActive("heading", { level: 3 }) ?? false}
+          disabled={toolsDisabled} onMouseDown={keepSelection} onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}>Subtít.</Button>
+        <Select aria-label="Lista" title="Tipo de lista" className="!h-11 !w-auto min-w-11 shrink-0 !border-transparent !bg-transparent !px-1 !text-xs focus-visible:ring-inset"
           value={list} disabled={toolsDisabled} onChange={event => {
             const value = event.target.value;
             const chain = editor?.chain().focus();
@@ -276,28 +277,28 @@ export function CommunicationTextEditor({
           <option value="bullets">Com marcadores</option>
           <option value="numbered">Numerada</option>
         </Select>
-        <Button variant="secondary" className={toolClass} aria-pressed={editor?.isActive("bold") ?? false}
-          disabled={toolsDisabled} onMouseDown={keepSelection} onClick={() => editor?.chain().focus().toggleBold().run()}>Negrito</Button>
-        <Button ref={moreButton} variant="secondary" className={toolClass} aria-expanded={more} aria-controls={`${id}-tools`}
-          disabled={toolsDisabled} onMouseDown={keepSelection} onClick={() => setMore(open => !open)}>Mais</Button>
-        {activeLink && <a href={activeLink.address} target="_blank" rel="noopener noreferrer"
-          className="inline-flex min-h-11 max-w-full items-center rounded-md px-2 text-xs text-primary underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          onMouseDown={event => event.preventDefault()}>Abrir link em nova aba</a>}
+        <Button variant="secondary" className={toolClass} aria-label="Negrito" title="Negrito" aria-pressed={editor?.isActive("bold") ?? false}
+          disabled={toolsDisabled} onMouseDown={keepSelection} onClick={() => editor?.chain().focus().toggleBold().run()}><span className="text-sm font-bold">N</span></Button>
+        <Button variant="secondary" className={toolClass} aria-label="Itálico" title="Itálico" aria-pressed={editor?.isActive("italic") ?? false}
+          disabled={toolsDisabled} onMouseDown={keepSelection} onClick={() => editor?.chain().focus().toggleItalic().run()}><span className="text-sm italic">I</span></Button>
+        <Button variant="secondary" className={toolClass} aria-label="Aumentar recuo" title="Aumentar recuo"
+          disabled={toolsDisabled || !canIndent(1)} onMouseDown={keepSelection} onClick={() => editor && changeIndent(editor, 1)}>Recuo +</Button>
+        <Button variant="secondary" className={toolClass} aria-label="Diminuir recuo" title="Diminuir recuo"
+          disabled={toolsDisabled || !canIndent(-1)} onMouseDown={keepSelection} onClick={() => editor && changeIndent(editor, -1)}>Recuo −</Button>
+        <Button variant="secondary" className={toolClass} aria-label="Desfazer" title="Desfazer" disabled={toolsDisabled || !editor?.can().undo()}
+          onMouseDown={keepSelection} onClick={() => editor?.chain().focus().undo().run()}><HistoryArrow /></Button>
+        <Button variant="secondary" className={toolClass} aria-label="Refazer" title="Refazer" disabled={toolsDisabled || !editor?.can().redo()}
+          onMouseDown={keepSelection} onClick={() => editor?.chain().focus().redo().run()}><HistoryArrow redo /></Button>
       </div>
-      <div id={`${id}-tools`} hidden={!more} className={more ? "flex flex-wrap items-center gap-x-1 border-t border-border" : undefined}>
-        <Button variant="secondary" className={toolClass} aria-pressed={editor?.isActive("heading", { level: 3 }) ?? false}
-          disabled={toolsDisabled} onMouseDown={keepSelection} onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}>Subtítulo</Button>
-        <Button variant="secondary" className={toolClass} aria-pressed={editor?.isActive("italic") ?? false}
-          disabled={toolsDisabled} onMouseDown={keepSelection} onClick={() => editor?.chain().focus().toggleItalic().run()}>Itálico</Button>
-        <Button variant="secondary" className={toolClass} disabled={toolsDisabled || !canIndent(1)}
-          onMouseDown={keepSelection} onClick={() => editor && changeIndent(editor, 1)}>Aumentar recuo</Button>
-        <Button variant="secondary" className={toolClass} disabled={toolsDisabled || !canIndent(-1)}
-          onMouseDown={keepSelection} onClick={() => editor && changeIndent(editor, -1)}>Diminuir recuo</Button>
-        <Button variant="secondary" className={toolClass} disabled={toolsDisabled || !editor?.can().undo()}
-          onMouseDown={keepSelection} onClick={() => editor?.chain().focus().undo().run()}>Desfazer</Button>
-        <Button variant="secondary" className={toolClass} disabled={toolsDisabled || !editor?.can().redo()}
-          onMouseDown={keepSelection} onClick={() => editor?.chain().focus().redo().run()}>Refazer</Button>
-      </div>
+      {activeLink && <a href={activeLink.address} target="_blank" rel="noopener noreferrer"
+        aria-label="Abrir link em nova aba" title="Abrir link em nova aba"
+        className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center border-l border-border text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+        onMouseDown={event => event.preventDefault()}>
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+          strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14 4h6v6m0-6-9 9M11 6H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" />
+        </svg>
+      </a>}
     </div>}
     <div ref={mount} className={styles.textEditorMount} />
     {limitReached && <span className="sr-only" role="status">Limite de {limit.toLocaleString("pt-BR")} caracteres atingido.</span>}
