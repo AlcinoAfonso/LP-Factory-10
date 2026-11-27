@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { FormField, FormFieldLabel, FormFieldHint, FormFieldError } from "@/components/ui/form-field";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import type { AgentBasePilotSection } from "../../../../lib/communication-base/agent-base/pilot";
+import { observePilotTransport, pilotClientFailureKind } from "../../../../lib/communication-base/agent-base/pilot-trace";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CommunicationSectionCollection, type SectionDetailControls } from "./_components/CommunicationSectionCollection";
 import { getSectionGuidance } from "../../../../lib/communication-base/section-guidance";
@@ -429,12 +430,30 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
       const sections: AgentBasePilotSection[] = [];
       let catalogState = "";
       let nicheRevision = "";
+      const traceId = globalThis.crypto?.randomUUID?.() ?? null;
+      let step = 0;
+      let phase = "preparing";
+      const report = (event: string, section?: string, failure?: string) => {
+        try {
+          console.info("agent_base_pilot_client", {
+            traceId, event, step, ...(section ? { section } : {}),
+            ...(failure ? { failure } : {}),
+          });
+        } catch { /* Diagnostics cannot change the generation. */ }
+      };
       try {
         for (const [index, definition] of stageTwo.entries()) {
           setPilotProgress(`Gerando ${index + 1} de ${stageTwo.length}: ${definition.label}…`);
-          const result = await runAgentBasePilotAction({
-            account, version: requestedVersion, previous: sections, catalogState, nicheRevision,
-          });
+          step = index + 1;
+          phase = "request";
+          const result = await observePilotTransport(
+            () => runAgentBasePilotAction({
+              account, version: requestedVersion, previous: sections, catalogState, nicheRevision,
+              clientTraceId: traceId ?? undefined,
+            }),
+            (event, failure) => report("step_" + event, definition.key, failure),
+          );
+          phase = "response";
           if (!result.ok) { setPilotError(true); setPilotMessage(result.message); return; }
           if (result.section.key !== definition.key ||
               !canInstallGeneralSuggestion(requestedVersion, currentVersionRef.current,
@@ -445,16 +464,25 @@ export function CommunicationStageTwo({ account, base, canEdit, canGenerate = fa
           sections.push(result.section);
           catalogState = result.catalogState;
           nicheRevision = result.nicheRevision;
+          phase = "accepted";
+          report("step_accepted", definition.key);
         }
         setPilotProgress("Salvando a Categoria 3…");
+        phase = "save";
+        report("save_dispatch");
         const saved = await saveAgentBasePilotAction({
           account, version: requestedVersion, sections, catalogState, nicheRevision,
         });
+        phase = "save_response";
+        report("save_resolved");
         if (!saved.ok) { setPilotError(true); setPilotMessage(saved.message); return; }
         setPilotSources({ version: requestedVersion + 1, catalogKey: pilotCatalogKey, sections });
         setPilotMessage("Categoria 3 atualizada e salva. Você pode editar cada seção.");
+        phase = "refresh";
         router.refresh();
-      } catch {
+        report("complete");
+      } catch (error) {
+        report("client_exception_at_" + phase, undefined, pilotClientFailureKind(error));
         setPilotError(true); setPilotMessage("Não foi possível concluir a geração. O conteúdo salvo foi preservado.");
       } finally {
         setPilotProgress("");
