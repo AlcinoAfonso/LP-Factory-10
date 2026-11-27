@@ -14,8 +14,8 @@ const sectionGuidance: Readonly<Record<string, Readonly<{ description: string; h
     "help": "Exemplo 1: Consultoria financeira individual — R$ 300 por sessão, com pagamento via Pix.\n\nExemplo 2: Camisetas, calças e vestidos.\n\nCaso possua catálogos ou tabelas extensas de preços, descreva aqui apenas as principais ofertas. Consulte a Categoria 2 — Materiais de comunicação para verificar os recursos disponíveis para inclusão desses materiais."
   },
   "service": {
-    "description": "Descreva como e quando seu negócio atende os clientes.",
-    "help": "Informe as modalidades de atendimento (presencial, online ou a domicílio), dias e horários de funcionamento, telefones, WhatsApp, e-mail e outros canais. Explique como solicitar atendimento ou, quando aplicável, agendar, incluindo links, horários disponíveis e orientações necessárias."
+    "description": "Informe as modalidades de atendimento, os dias e horários, os canais de contato e como realizar agendamentos, quando aplicável.",
+    "help": "Exemplo 1: Atendimento presencial com agendamento pelo WhatsApp, de segunda a sexta-feira, das 9h às 18h.\n\nExemplo 2: Atendimento online pelo WhatsApp, em horário comercial."
   },
   "proof": {
     "description": "Informe certificações, registros profissionais, prêmios, experiências e resultados comprovados que demonstrem a credibilidade do seu negócio.",
