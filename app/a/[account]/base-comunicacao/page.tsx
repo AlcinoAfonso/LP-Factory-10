@@ -49,9 +49,6 @@ export default async function CommunicationBasePage({ params }: PageProps) {
     access.value.canEdit ? loadBaseNicheConversationAction(access.value.accountSubdomain) : null,
   ]);
   const base = result.ok ? result.value : null;
-  const nicheLabel = !taxonomy.ok
-    ? "Não foi possível carregar o nicho agora."
-    : taxonomy.niche?.name ?? "Nicho ainda não definido";
   const pendingSetupCandidate = result.ok && !base && access.value.canEdit
     ? await readPendingSetupInitialContext(access.value.accountId)
     : null;
@@ -112,7 +109,7 @@ export default async function CommunicationBasePage({ params }: PageProps) {
               </p>
             ) : null}
             <CommunicationBaseTabs stageOne={<CommunicationStageOne account={access.value.accountSubdomain}
-              base={base} canEdit={access.value.canEdit} structured={structured} nicheLabel={nicheLabel} definitions={definitions.ok ? definitions.value : []} />}
+              base={base} canEdit={access.value.canEdit} structured={structured} definitions={definitions.ok ? definitions.value : []} />}
               stageTwo={<CommunicationStageTwo key={`${stageTwoInputStateKey(base)}:${taxonomy.ok ? taxonomy.niche?.taxonId ?? "" : "error"}:${taxonomy.ok ? taxonomy.niche?.revision ?? "" : ""}`} account={access.value.accountSubdomain}
                 base={base} canEdit={access.value.canEdit} canGenerate={canGenerate}
                 structured={structured} definitions={definitions.ok ? definitions.value : []} pilotEnabled={resolveAgentBaseEnvironment() !== null} pilotCatalogKey={pilotCatalogKey} />}

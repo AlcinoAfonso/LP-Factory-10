@@ -139,7 +139,7 @@ type Props = Readonly<{
   onChange?: (draft: CommunicationTextDraft) => void;
 }>;
 
-const toolClass = "min-h-11 min-w-11 shrink-0 whitespace-nowrap !px-2 !py-1 !text-xs !font-normal !text-foreground aria-pressed:bg-accent hover:!bg-accent focus-visible:ring-inset";
+const toolClass = "min-h-11 min-w-11 shrink-0 whitespace-nowrap !px-2 !py-1 !text-[0.6875rem] !font-normal !text-foreground aria-pressed:bg-accent hover:!bg-accent focus-visible:ring-inset sm:!text-xs";
 
 function HistoryArrow({ redo = false }: Readonly<{ redo?: boolean }>) {
   return <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
@@ -280,7 +280,7 @@ export function CommunicationTextEditor({
         <Button variant="secondary" className={toolClass} aria-label="Subtítulo" title="Subtítulo"
           aria-pressed={editor?.isActive("heading", { level: 3 }) ?? false}
           disabled={toolsDisabled} onMouseDown={keepSelection} onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}>Subtít.</Button>
-        <Select aria-label="Lista" title="Tipo de lista" className="!h-11 !w-auto min-w-11 shrink-0 !border-transparent !bg-transparent !px-1 !text-xs focus-visible:ring-inset"
+        <Select aria-label="Lista" title="Tipo de lista" className="!h-11 !w-[6.25rem] min-w-11 shrink-0 !border-transparent !bg-transparent !px-1 !text-[0.6875rem] max-sm:text-ellipsis focus-visible:ring-inset sm:!w-auto sm:!text-xs"
           value={list} disabled={toolsDisabled} onChange={event => {
             const value = event.target.value;
             const chain = editor?.chain().focus();
@@ -293,9 +293,9 @@ export function CommunicationTextEditor({
           <option value="numbered">Numerada</option>
         </Select>
         <Button variant="secondary" className={toolClass} aria-label="Negrito" title="Negrito" aria-pressed={editor?.isActive("bold") ?? false}
-          disabled={toolsDisabled} onMouseDown={keepSelection} onClick={() => editor?.chain().focus().toggleBold().run()}><span className="text-sm font-bold">N</span></Button>
+          disabled={toolsDisabled} onMouseDown={keepSelection} onClick={() => editor?.chain().focus().toggleBold().run()}><span className="text-xs font-bold sm:text-sm">N</span></Button>
         <Button variant="secondary" className={toolClass} aria-label="Itálico" title="Itálico" aria-pressed={editor?.isActive("italic") ?? false}
-          disabled={toolsDisabled} onMouseDown={keepSelection} onClick={() => editor?.chain().focus().toggleItalic().run()}><span className="text-sm italic">I</span></Button>
+          disabled={toolsDisabled} onMouseDown={keepSelection} onClick={() => editor?.chain().focus().toggleItalic().run()}><span className="text-xs italic sm:text-sm">I</span></Button>
         <Button variant="secondary" className={toolClass} aria-label="Aumentar recuo" title="Aumentar recuo"
           disabled={toolsDisabled || !canIndent(1)} onMouseDown={keepSelection} onClick={() => editor && changeIndent(editor, 1)}>Recuo +</Button>
         <Button variant="secondary" className={toolClass} aria-label="Diminuir recuo" title="Diminuir recuo"
@@ -307,7 +307,7 @@ export function CommunicationTextEditor({
       </div>
       {activeLink && <a href={activeLink.address} target="_blank" rel="noopener noreferrer"
         aria-label="Abrir link em nova aba" title="Abrir link em nova aba"
-        className="inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap border-l border-border px-2 text-xs font-medium text-primary hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+        className="inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap border-l border-border px-2 text-[0.6875rem] font-medium text-primary hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:text-xs"
         onMouseDown={event => event.preventDefault()}>
         Abrir link
         <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
