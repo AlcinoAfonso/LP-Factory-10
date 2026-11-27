@@ -6,16 +6,16 @@ const sectionGuidance: Readonly<Record<string, Readonly<{ description: string; h
     "help": "Preencha o nome pelo qual seu negócio é conhecido, os dados de identificação fiscal e o endereço. Utilize o nome completo ou a razão social, conforme seu tipo de negócio. Informe apenas os dados disponíveis e acrescente outras informações se necessário."
   },
   "business_context": {
-    "description": "Informe onde e como seu negócio atua, incluindo as regiões atendidas e as modalidades de atendimento.",
-    "help": "Exemplos: atendimento presencial, online ou a domicílio; bairros, cidades ou regiões atendidas. O nicho do negócio já foi identificado na etapa inicial e aparece apenas para consulta, sem possibilidade de alteração nesta seção."
+    "description": "Descreva as áreas de atividade do negócio, os mercados em que atua e sua abrangência geográfica.",
+    "help": "Exemplos: atuação em determinado bairro, cidade, região, país ou mercado internacional."
   },
   "offers": {
     "description": "Apresente os produtos e serviços oferecidos, suas especialidades, preços e condições, quando aplicável.",
     "help": "Descreva os principais produtos ou serviços do seu negócio, suas características e especialidades. Quando aplicável, informe preços, pacotes, formas de pagamento, condições de contratação e outras informações que ajudem o cliente a compreender suas ofertas."
   },
   "service": {
-    "description": "Informe os horários de atendimento, os canais de contato disponíveis e como os clientes podem agendar serviços ou atendimentos, quando aplicável.",
-    "help": "Informe os dias e horários de funcionamento, telefones, WhatsApp, e-mail e outros canais de contato. Explique como o cliente pode solicitar atendimento ou realizar agendamentos, incluindo links, horários disponíveis e eventuais orientações necessárias."
+    "description": "Descreva como e quando seu negócio atende os clientes.",
+    "help": "Informe as modalidades de atendimento (presencial, online ou a domicílio), dias e horários de funcionamento, telefones, WhatsApp, e-mail e outros canais. Explique como solicitar atendimento ou, quando aplicável, agendar, incluindo links, horários disponíveis e orientações necessárias."
   },
   "proof": {
     "description": "Informe certificações, registros profissionais, prêmios, experiências e resultados comprovados que demonstrem a credibilidade do seu negócio.",
