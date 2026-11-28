@@ -1,5 +1,6 @@
+import { createChainableState, isNodeActive } from "@tiptap/core";
 import type { ResolvedPos } from "@tiptap/pm/model";
-import { Selection, TextSelection, type Transaction } from "@tiptap/pm/state";
+import { Selection, TextSelection, type EditorState, type Transaction } from "@tiptap/pm/state";
 import { canSplit } from "@tiptap/pm/transform";
 
 function lineBoundary(position: ResolvedPos, side: "before" | "after"): number | undefined {
@@ -51,4 +52,12 @@ export function isolateHeadingSelection(tr: Transaction): void {
   const end = selection.empty ? start : mapping.map(to, -1);
   const backwards = selection.anchor > selection.head;
   tr.setSelection(TextSelection.create(tr.doc, backwards ? end : start, backwards ? start : end));
+}
+
+export function selectedHeadingLevel(state: EditorState): 2 | 3 | null {
+  const transaction = state.tr;
+  isolateHeadingSelection(transaction);
+  const isolated = transaction.selectionSet ? createChainableState({ state, transaction }) : state;
+  if (isNodeActive(isolated, "heading", { level: 2 })) return 2;
+  return isNodeActive(isolated, "heading", { level: 3 }) ? 3 : null;
 }

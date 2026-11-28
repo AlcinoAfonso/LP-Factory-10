@@ -3,7 +3,7 @@ import { getSchema, type JSONContent } from "@tiptap/core";
 import { setBlockType } from "@tiptap/pm/commands";
 import { EditorState, TextSelection } from "@tiptap/pm/state";
 import StarterKit from "@tiptap/starter-kit";
-import { isolateHeadingSelection } from "../../app/a/[account]/base-comunicacao/_components/heading-selection";
+import { isolateHeadingSelection, selectedHeadingLevel } from "../../app/a/[account]/base-comunicacao/_components/heading-selection";
 import { sectionEditState } from "../../app/a/[account]/base-comunicacao/_components/section-edit-state";
 import { selectStageTwoInput, stageTwoPrompt } from "./ai-core";
 import { buildAgentBasePilotPrompt, selectAgentBasePilotInput } from "./agent-base/pilot";
@@ -25,21 +25,25 @@ const previousLine = "• Elaboração de propostas comerciais (previsto).";
 const selectedTitle = "7. Modelo de cobrança";
 const nextLine = "O modelo comercial começa aqui.";
 
-function formatHeading(content: JSONContent[], select: (start: Record<string, number>) => [number, number], level: 2 | 3) {
+function editorWithSelection(content: JSONContent[], select: (start: Record<string, number>) => [number, number]) {
   const doc = editorSchema.nodeFromJSON({ type: "doc", content });
   const starts: Record<string, number> = {};
   doc.descendants((node, pos) => {
     if (node.isText && node.text) starts[node.text] = pos;
   });
   const selection = TextSelection.create(doc, ...select(starts));
-  const initial = EditorState.create({ doc, selection });
+  return EditorState.create({ doc, selection });
+}
+
+function formatHeading(content: JSONContent[], select: (start: Record<string, number>) => [number, number], level: 2 | 3) {
+  const initial = editorWithSelection(content, select);
   const tr = initial.tr;
   isolateHeadingSelection(tr);
   const isolated = initial.apply(tr);
   let formatted = isolated.doc;
   assert.equal(setBlockType(editorSchema.nodes.heading, { level })(isolated, update => { formatted = update.doc; }), true);
   const draft = serializeCommunicationText(formatted.toJSON());
-  assert.equal(draft.text, serializeCommunicationText(doc.toJSON()).text);
+  assert.equal(draft.text, serializeCommunicationText(initial.doc.toJSON()).text);
   assert.deepEqual(parseCommunicationTextFormatting(draft.text, draft.formatting), draft.formatting);
   return formatted.toJSON().content as JSONContent[];
 }
@@ -71,6 +75,14 @@ const nextToList = formatHeading([
 assert.deepEqual(nextToList.map(node => node.type), ["bulletList", "heading", "paragraph"]);
 assert.equal(nextToList[0].content?.[0]?.content?.[0]?.type, "paragraph");
 assert.equal(nextToList[1].attrs?.level, 3);
+
+const existingHeading = editorWithSelection([
+  paragraph(previousLine),
+  { ...paragraph(selectedTitle), type: "heading", attrs: { level: 2 } },
+  paragraph(nextLine),
+], starts => [starts[previousLine] + previousLine.length, starts[nextLine]]);
+assert.equal(selectedHeadingLevel(existingHeading), 2);
+assert.equal(existingHeading.selection.$from.parent.textContent, previousLine);
 
 const rich: JSONContent = { type: "doc", content: [
   paragraph(" "),
