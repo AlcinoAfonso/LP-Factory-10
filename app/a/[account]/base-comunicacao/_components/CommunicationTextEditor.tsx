@@ -15,6 +15,7 @@ import {
   type CommunicationTextDraft, type CommunicationTextFormatting,
 } from "../../../../../lib/communication-base/text-formatting";
 import styles from "../CommunicationBase.module.css";
+import { isolateHeadingSelection, selectedHeadingLevel } from "./heading-selection";
 
 const blocks = ["paragraph", "heading"];
 const textKit = StarterKit.configure({
@@ -141,6 +142,13 @@ type Props = Readonly<{
 
 const toolClass = "min-h-11 min-w-11 shrink-0 whitespace-nowrap !px-2 !py-1 !text-[0.6875rem] !font-normal !text-foreground aria-pressed:bg-accent hover:!bg-accent focus-visible:ring-inset sm:!text-xs";
 
+function toggleSelectedHeading(editor: Editor, level: 2 | 3) {
+  return editor.chain().focus().command(({ tr }) => {
+    isolateHeadingSelection(tr);
+    return true;
+  }).toggleHeading({ level }).run();
+}
+
 function HistoryArrow({ redo = false }: Readonly<{ redo?: boolean }>) {
   return <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
     strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={redo ? "-scale-x-100" : undefined}>
@@ -252,6 +260,7 @@ export function CommunicationTextEditor({
   }, [describedBy, editor, id, invalid, label, locked, readOnly]);
 
   const selection = editor?.state.selection;
+  const headingLevel = editor && !readOnly ? selectedHeadingLevel(editor.state) : null;
   const $from = selection?.$from;
   let list = "none";
   if ($from) {
@@ -275,11 +284,11 @@ export function CommunicationTextEditor({
   return <div className={readOnly ? styles.textEditorReadOnly : styles.textEditor}>
     {!readOnly && <div className="flex min-w-0 shrink-0 border-b border-border" aria-label="Formatação do texto" role="group">
       <div className="flex min-w-0 flex-1 items-center overflow-x-auto overscroll-x-contain px-1.5 [scrollbar-width:thin]">
-        <Button variant="secondary" className={toolClass} aria-pressed={editor?.isActive("heading", { level: 2 }) ?? false}
-          disabled={toolsDisabled} onMouseDown={keepSelection} onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}>Título</Button>
+        <Button variant="secondary" className={toolClass} aria-pressed={headingLevel === 2}
+          disabled={toolsDisabled} onMouseDown={keepSelection} onClick={() => editor && toggleSelectedHeading(editor, 2)}>Título</Button>
         <Button variant="secondary" className={toolClass} aria-label="Subtítulo" title="Subtítulo"
-          aria-pressed={editor?.isActive("heading", { level: 3 }) ?? false}
-          disabled={toolsDisabled} onMouseDown={keepSelection} onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}>Subtít.</Button>
+          aria-pressed={headingLevel === 3}
+          disabled={toolsDisabled} onMouseDown={keepSelection} onClick={() => editor && toggleSelectedHeading(editor, 3)}>Subtít.</Button>
         <Select aria-label="Lista" title="Tipo de lista" className="!h-11 !w-[6.25rem] min-w-11 shrink-0 !border-transparent !bg-transparent !px-1 !text-[0.6875rem] max-sm:text-ellipsis focus-visible:ring-inset sm:!w-auto sm:!text-xs"
           value={list} disabled={toolsDisabled} onChange={event => {
             const value = event.target.value;
