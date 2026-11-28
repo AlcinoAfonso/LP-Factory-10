@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { OpenAiActiveCostReadModel, OpenAiCostReadWorkloadId } from "@/openai-costs/active-contracts";
-import { decimalFromNonNegativeString, subtractDecimal } from "@/openai-costs/decimal";
+import { addDecimal, decimalFromNonNegativeString, formatDecimal, subtractDecimal, type DecimalValue } from "@/openai-costs/decimal";
 import { buildOpenAiEconomicHierarchy, type OpenAiEconomicAccount } from "@/openai-costs/economic-hierarchy";
 import { formatUsd, workloadLabel } from "./OpenAiEconomicHierarchy";
 
@@ -24,7 +24,12 @@ export function OpenAiCostAccountPeriod({ active, period }: Readonly<{ active: O
       const difference = left && right ? subtractDecimal(right, left).coefficient : 0n;
       return difference > 0n ? 1 : difference < 0n ? -1 : a.accountName.localeCompare(b.accountName, "pt-BR");
     });
-    return { rows, priced };
+    const total = rows.reduce<DecimalValue | null>((sum, account) => {
+      const amount = priced.has(account.accountId) ? decimalFromNonNegativeString(account.calculatedCostUsd) : null;
+      return amount ? sum ? addDecimal(sum, amount) : amount : sum;
+    }, null);
+    const incomplete = rows.some(account => account.pendingCount > 0 || account.unavailableCount > 0);
+    return { rows, priced, total: total ? formatDecimal(total) : null, incomplete };
   }, [active]);
 
   if (active.economicDimensionStatus === "v1_fallback") {
@@ -35,25 +40,34 @@ export function OpenAiCostAccountPeriod({ active, period }: Readonly<{ active: O
     <section aria-labelledby="cost-account-period-title" className="space-y-2">
       <h2 id="cost-account-period-title" className="text-base font-semibold">Custos por conta</h2>
       <p className="text-sm text-muted-foreground">{period} · {accounts.rows.length} {accounts.rows.length === 1 ? "conta" : "contas"} · Controle ativo</p>
+      {accounts.rows.length > 0 ? (
+        <dl className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 rounded-md border border-border bg-muted/40 px-3 py-2">
+          <dt className="text-sm font-semibold">Total das contas no período</dt>
+          <dd className="text-base font-semibold tabular-nums [overflow-wrap:anywhere]">
+            {accounts.total === null ? "Sem valor calculado" : formatUsd(accounts.total)}
+          </dd>
+          {accounts.incomplete ? <dd className="basis-full text-xs text-muted-foreground">Há custos em apuração ou indisponíveis.</dd> : null}
+        </dl>
+      ) : null}
       <div className="overflow-x-auto rounded-lg border border-border bg-card">
         <table className="w-full text-sm">
           <thead className="bg-muted text-muted-foreground">
-            <tr><th scope="col" className="px-2 py-2 text-left sm:px-3">Conta</th><th scope="col" className="px-2 py-2 text-right sm:px-3">Custo no período</th><th scope="col"><span className="sr-only">Detalhe</span></th></tr>
+            <tr><th scope="col" className="px-2 py-2 text-left sm:px-3">Conta</th><th scope="col" className="px-2 py-2 text-right sm:px-3">Custo no período</th></tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {accounts.rows.length === 0 ? <tr><td colSpan={3} className="px-2 py-3 text-muted-foreground">Nenhum custo ativo para as contas desta seleção.</td></tr> : accounts.rows.map(account => (
+            {accounts.rows.length === 0 ? <tr><td colSpan={2} className="px-2 py-3 text-muted-foreground">Nenhum custo ativo para as contas desta seleção.</td></tr> : accounts.rows.map(account => (
               <tr key={account.accountId}>
                 <th scope="row" className="px-2 py-1 text-left font-medium [overflow-wrap:anywhere] sm:px-3">
-                  {account.accountName}
-                  {account.pendingCount > 0 || account.unavailableCount > 0
-                    ? <span className="block text-xs font-normal text-muted-foreground">{accounts.priced.has(account.accountId) ? "Custo parcial" : "Em apuração ou indisponível"}</span> : null}
+                  <button type="button" aria-haspopup="dialog"
+                    className="block min-h-11 w-full rounded-sm py-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    onClick={() => { setSelected(account); dialog.current?.showModal(); }}>
+                    <span className="font-semibold text-brand-700 underline underline-offset-2">{account.accountName}</span>
+                    {account.pendingCount > 0 || account.unavailableCount > 0
+                      ? <span className="block text-xs font-normal text-muted-foreground">{accounts.priced.has(account.accountId) ? "Custo parcial" : "Em apuração ou indisponível"}</span> : null}
+                  </button>
                 </th>
                 <td className="whitespace-nowrap px-2 py-1 text-right font-semibold tabular-nums sm:px-3">
                   {accounts.priced.has(account.accountId) ? formatUsd(account.calculatedCostUsd) : "—"}
-                </td>
-                <td className="w-px px-2 py-1 sm:px-3">
-                  <Button type="button" variant="secondary" className="min-h-11 min-w-11 px-2"
-                    aria-label={`Abrir ${account.accountName}`} onClick={() => { setSelected(account); dialog.current?.showModal(); }}>Abrir</Button>
                 </td>
               </tr>
             ))}

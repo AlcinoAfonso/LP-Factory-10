@@ -486,7 +486,42 @@ assert.match(productMarkup, /Subtotal parcial.*US\$ 0,05/);
 assert.match(productMarkup, /Acumulado da Base no histórico vinculado.*US\$ 0,08/);
 const accountMarkup = renderToStaticMarkup(<OpenAiCostAccountPeriod active={productSelection.dashboard.filteredActive!} period="01/08/2026 a 28/08/2026" />);
 assert.match(accountMarkup, /Custo parcial.*US\$ 0,05/);
-assert.match(accountMarkup, /Abrir/);
+assert.match(accountMarkup, /Total das contas no período.*US\$ 0,05.*Há custos em apuração ou indisponíveis.*<table/);
+assert.match(accountMarkup, /<button[^>]*aria-haspopup="dialog"[^>]*><span[^>]*>Cliente E21\.5\.6<\/span>/);
+assert.doesNotMatch(accountMarkup, />Abrir<|aria-label="Abrir/);
+
+const firstAccountExecution = productModel.executions[0];
+const manyAccountExecutions = Array.from({ length: 100 }, (_, sequence) => ({
+  ...firstAccountExecution,
+  executionId: `exec-account-${sequence}`,
+  accountId: `account-${sequence}`,
+  accountName: `Conta de teste ${sequence}`,
+  calculatedCostUsd: "0.010000000003",
+  unavailableOperationCount: 0,
+  operations: [{ ...priced, operationId: `op-account-${sequence}`, costUsd: "0.010000000003" }],
+}));
+const outsideAccountList = {
+  ...firstAccountExecution,
+  executionId: "internal-only",
+  universe: "lp_factory" as const,
+  accountId: null,
+  accountName: null,
+  calculatedCostUsd: "999",
+  unavailableOperationCount: 0,
+  operations: [{ ...priced, operationId: "op-internal", costUsd: "999" }],
+};
+const manyAccountMarkup = renderToStaticMarkup(<OpenAiCostAccountPeriod active={{
+  ...productModel, executions: [firstAccountExecution, ...manyAccountExecutions, outsideAccountList],
+}} period="01/08/2026 a 28/08/2026" />);
+assert.match(manyAccountMarkup, /101 contas/);
+assert.match(manyAccountMarkup, /Total das contas no período.*US\$ 1,0500000003.*<table/);
+assert.doesNotMatch(manyAccountMarkup, /US\$ 999/);
+
+const unknownAccountMarkup = renderToStaticMarkup(<OpenAiCostAccountPeriod active={{
+  ...productModel, executions: [{ ...firstAccountExecution, calculatedCostUsd: "0", operations: [unknown] }],
+}} period="01/08/2026 a 28/08/2026" />);
+assert.match(unknownAccountMarkup, /Total das contas no período.*Sem valor calculado.*<table/);
+assert.doesNotMatch(unknownAccountMarkup, /US\$ 0,00/);
 const workloadResult = buildOpenAiCostsFinancialComposition({
   selection: current, official: await originalSources.readOfficial(), legacy: internal,
   active: { ok: true, value: { ...productModel, executions: productModel.executions.map(execution => ({
