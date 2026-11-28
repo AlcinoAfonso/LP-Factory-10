@@ -72,21 +72,14 @@ const costLabels = {
   unavailable: "Custo indisponível",
 };
 
-export function OccurrenceCostDetailView({ detail }: Readonly<{ detail: OccurrenceCostDetail }>) {
+export function OccurrenceCostDetailView({ detail, compact = false }: Readonly<{ detail: OccurrenceCostDetail; compact?: boolean }>) {
   const scope = detail.executions[0];
   const workloads = [...new Set(detail.executions.map(execution => execution.workload))];
   const retryCount = detail.executions.reduce((count, execution) =>
     count + execution.operations.filter(operation => operation.retryOfOperationId !== null).length, 0);
   const tone = detail.status === "complete" ? "success" : detail.status === "accumulated" ? "neutral" : "warning";
-  return (
-    <div className="space-y-3 border-t border-border pt-3">
-      <div role="status" className="flex flex-wrap items-center gap-2">
-        <AdminStatusBadge tone={tone}>{costLabels[detail.status]}</AdminStatusBadge>
-        {detail.calculatedCostUsd === null ? null : <strong className="text-lg">{formatUsd(detail.calculatedCostUsd)}</strong>}
-      </div>
-      {detail.operationCount === 0 ? <p className="text-sm text-muted-foreground">Nenhuma operação admitida consta no ledger desta ocorrência.</p> : null}
-      {detail.pendingCount > 0 ? <p className="text-sm text-muted-foreground">Operações aguardando finalização financeira ({detail.pendingCount}).</p> : null}
-      {detail.unavailableCount > 0 ? <p className="text-sm text-muted-foreground">Operações com custo indisponível ({detail.unavailableCount}). Consulte o motivo nos detalhes.</p> : null}
+  const technical = (
+    <div className="space-y-3">
       <dl className="grid gap-x-4 gap-y-2 text-sm sm:grid-cols-2 xl:grid-cols-3">
         <Datum label="Ocorrência financeira" value={detail.closedAt ? "Encerrada em " + formatTimestamp(detail.closedAt) : "Aberta"} />
         <Datum label="Responsável econômico" value={scope.accountId ? scope.accountName ?? scope.accountId : universeLabel(scope.universe)} />
@@ -98,6 +91,25 @@ export function OccurrenceCostDetailView({ detail }: Readonly<{ detail: Occurren
       </dl>
       <p className="text-sm text-muted-foreground">Execuções {detail.executions.length} · Operações {detail.operationCount} · Retries {retryCount}</p>
       {detail.executions.map(execution => <OpenAiCostExecutionDetails key={execution.executionId} execution={execution} hideUnprovenAmount />)}
+    </div>
+  );
+  return (
+    <div className="space-y-3 border-t border-border pt-3">
+      {compact ? <div className="space-y-1">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-2">
+          <h3 className="text-sm font-semibold">Custo integral da ocorrência</h3>
+          {detail.calculatedCostUsd === null ? null : <strong className="whitespace-nowrap text-lg">{formatUsd(detail.calculatedCostUsd)}</strong>}
+        </div>
+        <p className="text-sm text-muted-foreground">Todos os workloads e períodos</p>
+        <div role="status"><AdminStatusBadge tone={tone}>{costLabels[detail.status]}</AdminStatusBadge></div>
+      </div> : <div role="status" className="flex flex-wrap items-center gap-2">
+          <AdminStatusBadge tone={tone}>{costLabels[detail.status]}</AdminStatusBadge>
+          {detail.calculatedCostUsd === null ? null : <strong className="text-lg">{formatUsd(detail.calculatedCostUsd)}</strong>}
+        </div>}
+      {detail.operationCount === 0 ? <p className="text-sm text-muted-foreground">Nenhuma operação admitida consta no ledger desta ocorrência.</p> : null}
+      {detail.pendingCount > 0 ? <p className="text-sm text-muted-foreground">Operações aguardando finalização financeira ({detail.pendingCount}).</p> : null}
+      {detail.unavailableCount > 0 ? <p className="text-sm text-muted-foreground">Operações com custo indisponível ({detail.unavailableCount}). Consulte o motivo nos detalhes.</p> : null}
+      {compact ? <details><summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">Detalhes técnicos</summary>{technical}</details> : technical}
     </div>
   );
 }

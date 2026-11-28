@@ -8,7 +8,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { OpenAiCostExecutionDetails } from "./_components/OpenAiEconomicHierarchy";
 
-import { refreshOpenAiCostsActionCore } from "./action-core";
+import { refreshOpenAiCostsActionCore, searchOpenAiCostAccountsActionCore } from "./action-core";
 import {
   readOpenAiLpCostPages,
   translateOpenAiLpCostRows,
@@ -21,6 +21,18 @@ import {
 } from "../../../../lib/openai-costs/dashboard";
 
 async function runValidationCases() {
+let accountSearchCalls = 0;
+const accountSearch = async (name: string) => {
+  accountSearchCalls++;
+  assert.equal(name, "Clínica Aurora");
+  return [{ id: "f1990000-0000-4000-8000-000000000010", name, subdomain: null }];
+};
+assert.equal(await searchOpenAiCostAccountsActionCore("Clínica Aurora", { authorize: async () => ({ allowed: false }), search: accountSearch }), null);
+assert.deepEqual(await searchOpenAiCostAccountsActionCore("A", { authorize: async () => ({ allowed: true }), search: accountSearch }), []);
+assert.equal(accountSearchCalls, 0);
+assert.equal((await searchOpenAiCostAccountsActionCore(" Clínica  Aurora ", { authorize: async () => ({ allowed: true }), search: accountSearch }))?.[0]?.name, "Clínica Aurora");
+assert.equal(accountSearchCalls, 1);
+
 const now = new Date("2026-08-28T15:00:00.000Z");
 const current = parseOpenAiCostsPeriodSelection({
   mode: "current_month",
@@ -291,10 +303,16 @@ loader._load = function(name, parent, isMain) {
   };
   return originalLoader.call(this, name, parent, isMain);
 };
-const [{ DialogueCostDetailView, OpenAiDialogueCosts }, { OccurrenceCostDetailView, OpenAiOccurrenceCosts }, { OpenAiCostModelTotals }, { OpenAiOccurrencePeriod }] = await Promise.all([
+const [{ DialogueCostDetailView, OpenAiDialogueCosts }, { OccurrenceCostDetailView, OpenAiOccurrenceCosts }, { OpenAiCostModelTotals, OpenAiCostsDashboard }, { OpenAiOccurrencePeriod }, { OpenAiCostAccountPeriod }] = await Promise.all([
   import("./_components/OpenAiDialogueCosts"), import("./_components/OpenAiOccurrenceCosts"),
   import("./_components/OpenAiCostsDashboard"), import("./_components/OpenAiOccurrencePeriod"),
+  import("./_components/OpenAiCostAccountPeriod"),
 ]).finally(() => { loader._load = originalLoader; });
+const initialMarkup = renderToStaticMarkup(<OpenAiCostsDashboard startDate="2026-08-01" endDate="2026-08-28" />);
+assert.match(initialMarkup, /role="combobox"[^>]*placeholder="Todas as contas"/);
+assert.doesNotMatch(initialMarkup, /Conta \(UUID\)/);
+assert.match(initialMarkup, /<option value="communication_base_agent">Agente Base<\/option>/);
+assert.match(initialMarkup, /Consultar saldo OpenAI/);
 const modelMarkup = renderToStaticMarkup(<OpenAiCostModelTotals groups={composition.filteredActive!.modelGroups} />);
 assert.match(modelMarkup, /<th scope="row"[^>]*>gpt-6\.1-terra<\/th>/);
 assert.match(modelMarkup, /US\$ 0,05/);
@@ -460,13 +478,25 @@ assert.equal(productSelection.dashboard?.filteredActive?.totalCalculatedUsd, "0.
 assert.deepEqual(productSelection.dashboard?.productLifetime, productLifetime);
 assert.equal(productSelection.dashboard?.globalReconciliationUsd, "0.7");
 assert.ok(productSelection.dashboard);
-const productMarkup = renderToStaticMarkup(<OpenAiOccurrencePeriod dashboard={productSelection.dashboard} filters={{
-  account: <label>Conta<input /></label>, product: <label>Produto/serviço<select /></label>, submit: <button>Atualizar custos</button>,
-}} />);
-assert.match(productMarkup, /<th scope="col"[^>]*><label>Conta<input\/><\/label><\/th>/);
-assert.match(productMarkup, /<th scope="col"[^>]*><label>Produto\/serviço<select><\/select><\/label><\/th>/);
-assert.match(productMarkup, /Subtotal calculável do período.*US\$ 0,05/);
+const productMarkup = renderToStaticMarkup(<OpenAiOccurrencePeriod dashboard={productSelection.dashboard} />);
+assert.match(productMarkup, /Subtotal parcial.*US\$ 0,05/);
 assert.match(productMarkup, /Acumulado da Base no histórico vinculado.*US\$ 0,08/);
+const accountMarkup = renderToStaticMarkup(<OpenAiCostAccountPeriod active={productSelection.dashboard.filteredActive!} period="01/08/2026 a 28/08/2026" />);
+assert.match(accountMarkup, /Custo parcial.*US\$ 0,05/);
+assert.match(accountMarkup, /Abrir/);
+const workloadResult = buildOpenAiCostsFinancialComposition({
+  selection: current, official: await originalSources.readOfficial(), legacy: internal,
+  active: { ok: true, value: { ...productModel, executions: productModel.executions.map(execution => ({
+    ...execution, workload: "communication_base_agent",
+  })) } },
+  activeFilters: { accountId: productAccount, workload: "communication_base_agent" },
+});
+const workloadMarkup = renderToStaticMarkup(<OpenAiOccurrencePeriod dashboard={workloadResult} />);
+assert.match(workloadMarkup, /Eventos · Agente Base/);
+assert.match(workloadMarkup, /US\$ 0,05/);
+const compactDetail = renderToStaticMarkup(<OccurrenceCostDetailView detail={buildOccurrenceCostDetail(occurrenceId, closedAt, [{ ...occurrenceExecution, operations: [priced] }])} compact />);
+assert.match(compactDetail, /Custo integral da ocorrência.*Todos os workloads e períodos/);
+assert.match(compactDetail, /<details><summary[^>]*>Detalhes técnicos/);
 let lifetimeCallsBeforeMigration = 0;
 const productBeforeMigration = await refreshOpenAiCostsActionCore(productForm, {
   ...originalSources,
@@ -543,7 +573,7 @@ assert.ok(actionCoreSource.indexOf("await dependencies.authorize()") < actionCor
 for (const expected of [
   "Mês atual",
   "Personalizado",
-  "Atualizar custos",
+  "Consultar",
   "Gasto oficial OpenAI",
   "Clientes",
   "LP Factory",
@@ -568,10 +598,9 @@ for (const expected of [
   "Retry",
   "Web Search",
   "Os filtros internos não alteram o gasto oficial nem a reconciliação global",
-  "Visão global na OpenAI",
-  "Os acessos abaixo saem da LP Factory e abrem em nova aba",
+  "Visão global",
   "Abrir Usage na OpenAI",
-  "Abrir faturamento e créditos na OpenAI",
+  "Consultar saldo OpenAI",
 ]) {
   assert.equal(
     [componentSource, hierarchySource, hierarchyModelSource].some((source) => source.includes(expected)),

@@ -22,6 +22,21 @@ export type OpenAiCostsActionState = Readonly<{
   dashboard: OpenAiCostsFinancialComposition | null;
 }>;
 
+export type OpenAiCostAccountOption = Readonly<{ id: string; name: string; subdomain: string | null }>;
+
+export async function searchOpenAiCostAccountsActionCore(
+  input: unknown,
+  dependencies: Readonly<{
+    authorize: () => Promise<Readonly<{ allowed: boolean }>>;
+    search: (name: string) => Promise<readonly OpenAiCostAccountOption[] | null>;
+  }>,
+) {
+  if (!(await dependencies.authorize()).allowed) return null;
+  const name = typeof input === "string" ? input.trim().replace(/\s+/g, " ") : "";
+  if (name.length < 2 || name.length > 100) return [];
+  return await dependencies.search(name);
+}
+
 export type OpenAiCostsActionDependencies = Readonly<{
   authorize: () => Promise<Readonly<{ allowed: boolean }>>;
   readOfficial: (period: OpenAiCostsPeriod) => Promise<OpenAiOfficialCostsReadResult>;
