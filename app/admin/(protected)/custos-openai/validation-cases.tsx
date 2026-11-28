@@ -313,6 +313,9 @@ assert.match(initialMarkup, /role="combobox"[^>]*placeholder="Todas as contas"/)
 assert.doesNotMatch(initialMarkup, /Conta \(UUID\)/);
 assert.match(initialMarkup, /<option value="communication_base_agent">Agente Base<\/option>/);
 assert.match(initialMarkup, /Consultar saldo OpenAI/);
+assert.match(initialMarkup, /id="custos-tab-consulta"[^>]* role="tab" aria-selected="true"/);
+assert.match(initialMarkup, /id="custos-panel-global" role="tabpanel"[^>]* hidden=""/);
+assert.doesNotMatch(initialMarkup, /Consulta técnica por identificador|Resumo global em USD/);
 const modelMarkup = renderToStaticMarkup(<OpenAiCostModelTotals groups={composition.filteredActive!.modelGroups} />);
 assert.match(modelMarkup, /<th scope="row"[^>]*>gpt-6\.1-terra<\/th>/);
 assert.match(modelMarkup, /US\$ 0,05/);
@@ -494,6 +497,11 @@ const workloadResult = buildOpenAiCostsFinancialComposition({
 const workloadMarkup = renderToStaticMarkup(<OpenAiOccurrencePeriod dashboard={workloadResult} />);
 assert.match(workloadMarkup, /Eventos · Agente Base/);
 assert.match(workloadMarkup, /US\$ 0,05/);
+assert.match(workloadMarkup, /Subtotais por tipo de ação/);
+const queryMarkup = renderToStaticMarkup(<OpenAiOccurrencePeriod dashboard={workloadResult} showActionSubtotals={false} />);
+assert.match(queryMarkup, /Eventos · Agente Base/);
+assert.match(queryMarkup, /US\$ 0,05/);
+assert.doesNotMatch(queryMarkup, /Subtotais por tipo de ação/);
 const compactDetail = renderToStaticMarkup(<OccurrenceCostDetailView detail={buildOccurrenceCostDetail(occurrenceId, closedAt, [{ ...occurrenceExecution, operations: [priced] }])} compact />);
 assert.match(compactDetail, /Custo integral da ocorrência.*Todos os workloads e períodos/);
 assert.match(compactDetail, /<details><summary[^>]*>Detalhes técnicos/);

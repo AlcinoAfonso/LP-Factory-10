@@ -19,8 +19,9 @@ const cell = "px-2 py-1 align-middle sm:px-3";
 const dateUtc = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "UTC" });
 type OccurrenceRow = ReturnType<typeof summarizeOccurrencePeriod>["rows"][number];
 
-export function OpenAiOccurrencePeriod({ dashboard }: Readonly<{
+export function OpenAiOccurrencePeriod({ dashboard, showActionSubtotals = true }: Readonly<{
   dashboard: OpenAiCostsFinancialComposition;
+  showActionSubtotals?: boolean;
 }>) {
   const dialog = useRef<HTMLDialogElement>(null);
   const requestId = useRef(0);
@@ -107,7 +108,7 @@ export function OpenAiOccurrencePeriod({ dashboard }: Readonly<{
             </tbody>
           </table>
         </div>
-      {byAction.length > 0 ? (
+      {showActionSubtotals && byAction.length > 0 ? (
         <details className="rounded-lg border border-border bg-card px-3 text-sm">
           <summary className="min-h-11 cursor-pointer py-3 font-medium">Subtotais por tipo de ação</summary>
           <dl className="space-y-1 pb-3">

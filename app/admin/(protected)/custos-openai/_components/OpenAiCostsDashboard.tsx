@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useActionState, useEffect, useRef, useState, type ReactNode } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
 
 import { OpenAiDialogueCosts } from "./OpenAiDialogueCosts";
 import { OpenAiCostAccountFilter } from "./OpenAiCostAccountFilter";
@@ -62,12 +62,8 @@ export function OpenAiCostsDashboard({ startDate, endDate }: Props) {
     if (!pending && state.status !== "idle") resultRef.current?.focus();
   }, [pending, state.status]);
 
-  return (
-    <div className="min-w-0 space-y-3">
-      <header className="flex flex-wrap items-center justify-between gap-x-3">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Custos OpenAI</h1>
-        <ExternalLink href={OPENAI_BILLING_URL}>Consultar saldo OpenAI ↗</ExternalLink>
-      </header>
+  const query = (
+    <>
       <form onSubmit={event => {
         event.preventDefault();
         if (pending) return;
@@ -136,27 +132,99 @@ export function OpenAiCostsDashboard({ startDate, endDate }: Props) {
               : <p className={allSourcesAvailable ? "sr-only" : "text-sm text-muted-foreground"}>{allSourcesAvailable ? "Consulta atualizada." : "Há fontes indisponíveis. Consulte a Visão global."}</p>}
       </div>
 
-      {dashboard?.filteredActive ? showEvents ? <OpenAiOccurrencePeriod dashboard={dashboard} /> :
+      {dashboard?.filteredActive ? showEvents ? <OpenAiOccurrencePeriod dashboard={dashboard} showActionSubtotals={false} /> :
         <OpenAiCostAccountPeriod active={dashboard.filteredActive} period={`${formatDate(dashboard.selection.startDate)} a ${formatDate(dashboard.selection.endDate)}`} />
         : dashboard ? <p className="text-sm text-muted-foreground">Custos ativos indisponíveis para esta consulta.</p> : null}
 
-      {!showEvents && dashboard?.filteredActive ? <details className="rounded-lg border border-border bg-card px-3">
-        <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">Ocorrências do período</summary>
-        <div className="pb-3"><OpenAiOccurrencePeriod dashboard={dashboard} /></div>
-      </details> : null}
+    </>
+  );
 
-      <details className="rounded-lg border border-border bg-card px-3">
-        <summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold">Visão global</summary>
-        <div className="space-y-4 pb-3">
-          {dashboard ? <DashboardResult dashboard={dashboard} /> : <p className="text-sm text-muted-foreground">Consulte um período para ver os totais globais.</p>}
-          <ExternalLink href={OPENAI_USAGE_URL}>Abrir Usage na OpenAI</ExternalLink>
-          <details>
-            <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">Consulta técnica por identificador</summary>
-            <OpenAiOccurrenceCosts />
-          </details>
-        </div>
-      </details>
+  const global = (
+    <>
+      {dashboard ? <>
+        <DashboardResult dashboard={dashboard} />
+        {dashboard.filteredActive ? <DiagnosticDisclosure title="Ocorrências e subtotais por ação">
+          <OpenAiOccurrencePeriod dashboard={dashboard} />
+        </DiagnosticDisclosure> : null}
+      </> : <p className="text-sm text-muted-foreground">Selecione um período na aba Consulta para ver os totais globais.</p>}
+      <ExternalLink href={OPENAI_USAGE_URL}>Abrir Usage na OpenAI</ExternalLink>
+      <DiagnosticDisclosure title="Consulta técnica por identificador">
+        <OpenAiOccurrenceCosts />
+      </DiagnosticDisclosure>
+    </>
+  );
+
+  return (
+    <div className="min-w-0 space-y-3">
+      <header className="flex flex-wrap items-center justify-between gap-x-3">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Custos OpenAI</h1>
+        <ExternalLink href={OPENAI_BILLING_URL}>Consultar saldo OpenAI ↗</ExternalLink>
+      </header>
+      <CostTabs query={query} global={global} />
     </div>
+  );
+}
+
+const COST_TABS = [{ id: "consulta", label: "Consulta" }, { id: "global", label: "Visão global" }] as const;
+type CostTab = typeof COST_TABS[number]["id"];
+const desktopQuery = "(min-width: 768px)";
+
+function subscribeToDesktop(onChange: () => void) {
+  const media = window.matchMedia(desktopQuery);
+  media.addEventListener("change", onChange);
+  return () => media.removeEventListener("change", onChange);
+}
+
+function desktopSnapshot() {
+  return window.matchMedia(desktopQuery).matches;
+}
+
+function CostTabs({ query, global }: Readonly<{ query: ReactNode; global: ReactNode }>) {
+  const [active, setActive] = useState<CostTab>("consulta");
+  const desktop = useSyncExternalStore(subscribeToDesktop, desktopSnapshot, () => false);
+
+  function selectWithKeyboard(event: KeyboardEvent<HTMLButtonElement>, tab: CostTab) {
+    const directional = desktop
+      ? event.key === "ArrowLeft" || event.key === "ArrowRight"
+      : event.key === "ArrowUp" || event.key === "ArrowDown";
+    const next = event.key === "Home" ? "consulta" : event.key === "End" ? "global" :
+      directional ? tab === "consulta" ? "global" : "consulta" : null;
+    if (!next) return;
+    event.preventDefault();
+    setActive(next);
+    document.getElementById(`custos-tab-${next}`)?.focus();
+  }
+
+  return (
+    <div className="min-w-0 space-y-3">
+      <div role="tablist" aria-label="Visões de custos" aria-orientation={desktop ? "horizontal" : "vertical"}
+        className="grid gap-1 md:flex md:border-b md:border-border">
+        {COST_TABS.map(tab => (
+          <button key={tab.id} id={`custos-tab-${tab.id}`} type="button" role="tab" aria-selected={active === tab.id}
+            aria-controls={`custos-panel-${tab.id}`} tabIndex={active === tab.id ? 0 : -1}
+            onClick={() => setActive(tab.id)} onKeyDown={event => selectWithKeyboard(event, tab.id)}
+            className={`flex min-h-11 items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-left text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring md:rounded-none md:border-x-0 md:border-t-0 md:border-b-2 md:bg-transparent ${active === tab.id ? "border-l-2 border-l-green-600 text-foreground md:border-b-brand-700 md:border-l-0" : "text-muted-foreground md:border-b-transparent"}`}>
+            <span aria-hidden="true" className={`w-3 md:hidden ${active === tab.id ? "text-green-700" : ""}`}>{active === tab.id ? "⌄" : "›"}</span>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      {COST_TABS.map(tab => (
+        <div key={tab.id} id={`custos-panel-${tab.id}`} role="tabpanel" aria-labelledby={`custos-tab-${tab.id}`}
+          hidden={active !== tab.id} className="min-w-0 space-y-3">
+          {active === tab.id ? tab.id === "consulta" ? query : global : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DiagnosticDisclosure({ title, children }: Readonly<{ title: string; children: ReactNode }>) {
+  return (
+    <details className="rounded-lg border border-border bg-card px-3">
+      <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring">{title}</summary>
+      <div className="min-w-0 pb-3">{children}</div>
+    </details>
   );
 }
 
@@ -179,8 +247,6 @@ function DashboardResult({ dashboard }: Readonly<{ dashboard: OpenAiCostsFinanci
         <p className="rounded-md border border-border bg-muted p-3 text-sm leading-6 text-foreground">Os filtros internos não alteram o gasto oficial nem a reconciliação global. O subtotal filtrado aparece na seção Controle ativo.</p>
       </section>
 
-      <CoverageSection dashboard={dashboard} />
-      <OpenAiDialogueCosts result={dashboard.dialogues} active={dashboard.active} filters={dashboard.activeFilters} />
       {dashboard.legacy && dashboard.legacy.providerCreditFailureCount > 0 ? (
         <StatusPanel tone="danger" title="Crédito ou limite OpenAI requer atenção" role="alert">
           O período contém {dashboard.legacy.providerCreditFailureCount} ocorrência de provider associada a crédito ou limite insuficiente. Consulte a administração da OpenAI; nenhum detalhe financeiro interno é exibido ao cliente.
@@ -189,10 +255,20 @@ function DashboardResult({ dashboard }: Readonly<{ dashboard: OpenAiCostsFinanci
       {dashboard.officialErrorCode ? <StatusPanel tone="warning" title="Costs API indisponível">Os valores internos disponíveis continuam consultáveis. Motivo ({dashboard.officialErrorCode}).</StatusPanel> : null}
       {!dashboard.active ? <StatusPanel tone="danger" title="Controle ativo indisponível" role="alert">Não foi possível ler as execuções do período. Motivo ({dashboard.activeErrorCode ?? "READ_FAILED"}).</StatusPanel> : null}
       {!dashboard.legacy ? <StatusPanel tone="warning" title="Histórico congelado indisponível">Não foi possível ler o histórico do período. Motivo ({dashboard.legacyErrorCode ?? "READ_FAILED"}).</StatusPanel> : null}
-      {dashboard.economicHierarchy ? <OpenAiEconomicHierarchyView hierarchy={dashboard.economicHierarchy} /> : null}
-      {dashboard.filteredActive ? <OpenAiCostModelTotals groups={dashboard.filteredActive.modelGroups} /> : null}
+      <DiagnosticDisclosure title="Cobertura e atualização"><CoverageSection dashboard={dashboard} /></DiagnosticDisclosure>
+      <DiagnosticDisclosure title="Diálogos do Agente Nicho">
+        <OpenAiDialogueCosts result={dashboard.dialogues} active={dashboard.active} filters={dashboard.activeFilters} />
+      </DiagnosticDisclosure>
+      {dashboard.economicHierarchy ? <DiagnosticDisclosure title="Visão econômica por evento">
+        <OpenAiEconomicHierarchyView hierarchy={dashboard.economicHierarchy} />
+      </DiagnosticDisclosure> : null}
+      {dashboard.filteredActive ? <DiagnosticDisclosure title="Custos por modelo">
+        <OpenAiCostModelTotals groups={dashboard.filteredActive.modelGroups} />
+      </DiagnosticDisclosure> : null}
       {dashboard.filteredActive && (dashboard.activeFilters.universe || dashboard.activeFilters.accountId || dashboard.activeFilters.workload || dashboard.activeFilters.product)
-        ? <ActiveCostSection active={dashboard.filteredActive} filters={dashboard.activeFilters} />
+        ? <DiagnosticDisclosure title="Controle ativo">
+          <ActiveCostSection active={dashboard.filteredActive} filters={dashboard.activeFilters} />
+        </DiagnosticDisclosure>
         : null}
     </div>
   );
