@@ -1,17 +1,21 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState, type ReactNode } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
 
 import { OpenAiDialogueCosts } from "./OpenAiDialogueCosts";
+import { OpenAiCostAccountFilter } from "./OpenAiCostAccountFilter";
+import { OpenAiCostAccountPeriod } from "./OpenAiCostAccountPeriod";
 import { OpenAiOccurrenceCosts } from "./OpenAiOccurrenceCosts";
 import { OpenAiOccurrencePeriod } from "./OpenAiOccurrencePeriod";
 import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 import type { OpenAiActiveCostReadModel, OpenAiCostReadWorkloadId } from "@/openai-costs/active-contracts";
 import type { OpenAiCostsFinancialComposition } from "@/openai-costs/dashboard";
 import { refreshOpenAiCostsAction, type OpenAiCostsActionState } from "../actions";
+import type { OpenAiCostAccountOption } from "../action-core";
 import {
   OpenAiCostExecutionDetails,
   OpenAiEconomicHierarchyView,
+  workloadLabel,
 } from "./OpenAiEconomicHierarchy";
 
 type Props = Readonly<{ startDate: string; endDate: string }>;
@@ -19,7 +23,7 @@ type Props = Readonly<{ startDate: string; endDate: string }>;
 const INITIAL_STATE: OpenAiCostsActionState = {
   status: "idle",
   code: null,
-  message: "Selecione o período e atualize para consultar os custos.",
+  message: "Escolha os filtros e selecione Consultar.",
   dashboard: null,
 };
 const OPENAI_USAGE_URL = "https://platform.openai.com/usage";
@@ -31,111 +35,196 @@ const WORKLOAD_OPTIONS = [
   "taxon_input_catalog_sufficiency_evaluation",
   "communication_base_stage1_assistance",
   "communication_base_stage2_intelligence",
+  "communication_base_agent",
   "landing_page_dynamic_market_research",
   "supabase_inspect",
 ] as const satisfies readonly OpenAiCostReadWorkloadId[];
-const controlClassName = "min-h-11 rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:cursor-not-allowed disabled:opacity-60";
+const controlClassName = "min-h-11 min-w-0 w-full rounded-md border border-input bg-background px-1.5 text-sm outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:cursor-not-allowed disabled:opacity-60 sm:px-3";
 
 export function OpenAiCostsDashboard({ startDate, endDate }: Props) {
   const [periodMode, setPeriodMode] = useState<"current_month" | "custom">("current_month");
   const [universe, setUniverse] = useState<"" | "lp_factory" | "client">("");
-  const [accountId, setAccountId] = useState("");
+  const [account, setAccount] = useState<OpenAiCostAccountOption | null>(null);
   const [product, setProduct] = useState("");
   const [workload, setWorkload] = useState("");
   const [start, setStart] = useState(startDate);
   const [end, setEnd] = useState(endDate);
-  const [state, formAction, pending] = useActionState(refreshOpenAiCostsAction, INITIAL_STATE);
+  const [state, formAction, pending] = useActionState(async (previous: OpenAiCostsActionState, formData: FormData) => {
+    const result = await refreshOpenAiCostsAction(previous, formData);
+    return result.dashboard ? result : { ...result, dashboard: previous.dashboard };
+  }, INITIAL_STATE);
   const resultRef = useRef<HTMLDivElement>(null);
   const dashboard = state.dashboard;
-  const showOccurrenceFilters = dashboard?.active?.economicDimensionStatus === "v3_operation_period";
+  const showEvents = dashboard && (dashboard.activeFilters.workload || dashboard.activeFilters.product || dashboard.activeFilters.universe === "lp_factory");
   const allSourcesAvailable = dashboard && !dashboard.officialErrorCode && dashboard.active && dashboard.legacy;
-  const accountFilter = (
-    <FormLabel label="Conta (UUID)">
-      <input type="text" value={accountId} onChange={(event) => setAccountId(event.target.value.trim())} disabled={universe === "lp_factory" || pending} autoComplete="off" placeholder="Todas as contas" className={controlClassName} />
-    </FormLabel>
-  );
-  const productFilter = (
-    <FormLabel label="Produto/serviço">
-      <select value={product} onChange={event => setProduct(event.target.value)} className={controlClassName} disabled={universe === "lp_factory" || pending}>
-        <option value="">Todos</option><option value="communication_base">Base de Comunicação</option><option value="unlinked">Sem produto identificado</option>
-      </select>
-    </FormLabel>
-  );
-  const submit = (
-    <button type="submit" form="openai-cost-query" disabled={pending} className="inline-flex min-h-11 items-center justify-center rounded-md bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:cursor-not-allowed disabled:opacity-60">
-      {pending ? "Atualizando…" : "Atualizar custos"}
-    </button>
-  );
 
   useEffect(() => {
     if (!pending && state.status !== "idle") resultRef.current?.focus();
   }, [pending, state.status]);
 
-  return (
-    <div className="space-y-6">
-      <form id="openai-cost-query" action={formAction} className="rounded-lg border border-border bg-card p-4 shadow-card sm:p-6">
-        <input type="hidden" name="accountId" value={accountId} />
+  const query = (
+    <>
+      <form onSubmit={event => {
+        event.preventDefault();
+        if (pending) return;
+        const selection = new FormData(event.currentTarget);
+        startTransition(() => formAction(selection));
+      }} className="rounded-lg border border-border bg-card p-2 sm:p-3">
+        <input type="hidden" name="accountId" value={account?.id ?? ""} />
         <input type="hidden" name="product" value={product} />
-        <fieldset disabled={pending} className="space-y-5">
-          <legend className="text-base font-semibold text-foreground">Período e filtros da consulta</legend>
-          <p id="cost-query-help" className="text-sm leading-6 text-muted-foreground">
-            A consulta ocorre somente ao selecionar Atualizar. Períodos personalizados aceitam até 180 dias. Os filtros alteram apenas o controle ativo; o total oficial e a reconciliação permanecem globais.
-          </p>
-          <div className="grid gap-4 sm:grid-cols-3 sm:items-end">
+        <fieldset disabled={pending} className="min-w-0 space-y-2">
+          <legend className="sr-only">Período e filtros da consulta</legend>
+          <div className="grid grid-cols-2 items-end gap-1.5 min-[420px]:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,1fr)] sm:gap-3 [&>label:last-child]:col-span-2 min-[420px]:[&>label:last-child]:col-span-1">
             <FormLabel label="Período">
-              <select name="periodMode" value={periodMode} onChange={(event) => setPeriodMode(event.target.value as typeof periodMode)} aria-describedby="cost-query-help" className={controlClassName}>
+              <select name="periodMode" value={periodMode} onChange={(event) => setPeriodMode(event.target.value as typeof periodMode)} className={controlClassName}>
                 <option value="current_month">Mês atual</option><option value="custom">Personalizado</option>
               </select>
             </FormLabel>
-            <FormLabel label="Data inicial">
-              <input type="date" name="startDate" value={start} onChange={event => setStart(event.target.value)} disabled={periodMode === "current_month" || pending} required={periodMode === "custom"} className={controlClassName} />
-            </FormLabel>
-            <FormLabel label="Data final">
-              <input type="date" name="endDate" value={end} onChange={event => setEnd(event.target.value)} max={endDate} disabled={periodMode === "current_month" || pending} required={periodMode === "custom"} className={controlClassName} />
-            </FormLabel>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {!showOccurrenceFilters ? <>{accountFilter}{productFilter}</> : null}
-            <FormLabel label="Universo">
-              <select name="universe" value={universe} onChange={(event) => { const next = event.target.value as typeof universe; setUniverse(next); if (next === "lp_factory") { setAccountId(""); setProduct(""); } }} className={controlClassName}>
-                <option value="">Todos os universos</option><option value="client">Cliente</option><option value="lp_factory">LP Factory</option>
-              </select>
-            </FormLabel>
+            <OpenAiCostAccountFilter value={account} onChange={setAccount} disabled={universe === "lp_factory" || pending} />
             <FormLabel label="Workload">
               <select name="workload" value={workload} onChange={event => setWorkload(event.target.value)} className={controlClassName}>
-                <option value="">Todos os workloads</option>
+                <option value="">Todos</option>
                 {WORKLOAD_OPTIONS.map((workload) => <option key={workload} value={workload}>{workloadLabel(workload)}</option>)}
               </select>
             </FormLabel>
           </div>
-          {!showOccurrenceFilters ? submit : null}
+          {periodMode === "custom" ? <div className="grid grid-cols-2 gap-2">
+            <FormLabel label="Data inicial">
+              <input type="date" name="startDate" value={start} onChange={event => setStart(event.target.value)} max={endDate} required className={controlClassName} />
+            </FormLabel>
+            <FormLabel label="Data final">
+              <input type="date" name="endDate" value={end} onChange={event => setEnd(event.target.value)} max={endDate} required className={controlClassName} />
+            </FormLabel>
+          </div> : null}
+          <div className="flex flex-wrap items-start justify-between gap-x-2">
+            <details className="min-w-0 flex-1">
+              <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium text-muted-foreground">
+                Mais filtros{universe || product ? " · ativos" : ""}
+              </summary>
+              <div className="grid gap-2 pb-2 sm:grid-cols-2">
+                <FormLabel label="Universo">
+                  <select name="universe" value={universe} onChange={event => {
+                    const next = event.target.value as typeof universe;
+                    setUniverse(next);
+                    if (next === "lp_factory") { setAccount(null); setProduct(""); }
+                  }} className={controlClassName}>
+                    <option value="">Todos os universos</option><option value="client">Cliente</option><option value="lp_factory">LP Factory</option>
+                  </select>
+                </FormLabel>
+                <FormLabel label="Produto/serviço">
+                  <select value={product} onChange={event => setProduct(event.target.value)} className={controlClassName} disabled={universe === "lp_factory"}>
+                    <option value="">Todos</option><option value="communication_base">Base de Comunicação</option><option value="unlinked">Sem produto identificado</option>
+                  </select>
+                </FormLabel>
+              </div>
+            </details>
+            <button type="submit" disabled={pending} className="inline-flex min-h-11 items-center justify-center rounded-md bg-brand-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:opacity-60">
+              {pending ? "Consultando…" : "Consultar"}
+            </button>
+          </div>
         </fieldset>
       </form>
 
-      {pending ? <p role="status" className="text-sm text-muted-foreground">Atualizando a seleção. Os resultados anteriores permanecem visíveis.</p> : null}
-      {dashboard ? <OpenAiOccurrencePeriod dashboard={dashboard} filters={showOccurrenceFilters
-        ? { account: accountFilter, product: productFilter, submit }
-        : undefined} /> : null}
-      <OpenAiOccurrenceCosts />
-
-      <section className="rounded-lg border border-border bg-card p-4 shadow-card sm:p-6" aria-labelledby="openai-external-links-title">
-        <h2 id="openai-external-links-title" className="text-base font-semibold text-foreground">Visão global na OpenAI</h2>
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">Usage, faturamento e créditos permanecem na plataforma OpenAI. Os acessos abaixo saem da LP Factory e abrem em nova aba conforme as permissões da sua organização.</p>
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <ExternalLink href={OPENAI_USAGE_URL}>Abrir Usage na OpenAI</ExternalLink>
-          <ExternalLink href={OPENAI_BILLING_URL}>Abrir faturamento e créditos na OpenAI</ExternalLink>
-        </div>
-      </section>
-
       <div ref={resultRef} tabIndex={-1} className="rounded-lg outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30" aria-live="polite" aria-atomic="true">
-        {pending ? <StatusPanel tone="neutral" title="Consultando custos">Buscando o total oficial, o controle ativo e o histórico congelado do mesmo período.</StatusPanel>
-          : state.status === "error" ? <StatusPanel tone="danger" title="Consulta indisponível" role="alert">{state.message} {state.code ? `Código: ${state.code}.` : ""}</StatusPanel>
-            : state.status === "idle" ? <StatusPanel tone="neutral" title="Nenhuma consulta executada">{state.message}</StatusPanel>
-              : <StatusPanel tone={allSourcesAvailable ? "success" : "warning"} title={allSourcesAvailable ? "Consulta atualizada" : "Consulta com fontes indisponíveis"}>{state.message}</StatusPanel>}
+        {pending ? <p className="text-sm text-muted-foreground">{dashboard ? "Consultando. Os resultados anteriores permanecem visíveis." : "Consultando custos…"}</p>
+          : state.status === "error" ? <StatusPanel tone="danger" title="Consulta indisponível" role="alert">{state.message} {dashboard ? "Os resultados anteriores permanecem visíveis." : null}</StatusPanel>
+            : state.status === "idle" ? <p className="text-sm text-muted-foreground">{state.message}</p>
+              : <p className={allSourcesAvailable ? "sr-only" : "text-sm text-muted-foreground"}>{allSourcesAvailable ? "Consulta atualizada." : "Há fontes indisponíveis. Consulte a Visão global."}</p>}
       </div>
 
-      {dashboard ? <DashboardResult dashboard={dashboard} /> : null}
+      {dashboard?.filteredActive ? showEvents ? <OpenAiOccurrencePeriod dashboard={dashboard} showActionSubtotals={false} /> :
+        <OpenAiCostAccountPeriod active={dashboard.filteredActive} period={`${formatDate(dashboard.selection.startDate)} a ${formatDate(dashboard.selection.endDate)}`} />
+        : dashboard ? <p className="text-sm text-muted-foreground">Custos ativos indisponíveis para esta consulta.</p> : null}
+
+    </>
+  );
+
+  const global = (
+    <>
+      {dashboard ? <>
+        <DashboardResult dashboard={dashboard} />
+        {dashboard.filteredActive ? <DiagnosticDisclosure title="Ocorrências e subtotais por ação">
+          <OpenAiOccurrencePeriod dashboard={dashboard} />
+        </DiagnosticDisclosure> : null}
+      </> : <p className="text-sm text-muted-foreground">Selecione um período na aba Consulta para ver os totais globais.</p>}
+      <ExternalLink href={OPENAI_USAGE_URL}>Abrir Usage na OpenAI</ExternalLink>
+      <DiagnosticDisclosure title="Consulta técnica por identificador">
+        <OpenAiOccurrenceCosts />
+      </DiagnosticDisclosure>
+    </>
+  );
+
+  return (
+    <div className="min-w-0 space-y-3">
+      <header className="flex flex-wrap items-center justify-between gap-x-3">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Custos OpenAI</h1>
+        <ExternalLink href={OPENAI_BILLING_URL}>Consultar saldo OpenAI ↗</ExternalLink>
+      </header>
+      <CostTabs query={query} global={global} />
     </div>
+  );
+}
+
+const COST_TABS = [{ id: "consulta", label: "Consulta" }, { id: "global", label: "Visão global" }] as const;
+type CostTab = typeof COST_TABS[number]["id"];
+const desktopQuery = "(min-width: 768px)";
+
+function subscribeToDesktop(onChange: () => void) {
+  const media = window.matchMedia(desktopQuery);
+  media.addEventListener("change", onChange);
+  return () => media.removeEventListener("change", onChange);
+}
+
+function desktopSnapshot() {
+  return window.matchMedia(desktopQuery).matches;
+}
+
+function CostTabs({ query, global }: Readonly<{ query: ReactNode; global: ReactNode }>) {
+  const [active, setActive] = useState<CostTab>("consulta");
+  const desktop = useSyncExternalStore(subscribeToDesktop, desktopSnapshot, () => false);
+
+  function selectWithKeyboard(event: KeyboardEvent<HTMLButtonElement>, tab: CostTab) {
+    const directional = desktop
+      ? event.key === "ArrowLeft" || event.key === "ArrowRight"
+      : event.key === "ArrowUp" || event.key === "ArrowDown";
+    const next = event.key === "Home" ? "consulta" : event.key === "End" ? "global" :
+      directional ? tab === "consulta" ? "global" : "consulta" : null;
+    if (!next) return;
+    event.preventDefault();
+    setActive(next);
+    document.getElementById(`custos-tab-${next}`)?.focus();
+  }
+
+  return (
+    <div className="min-w-0 space-y-3">
+      <div role="tablist" aria-label="Visões de custos" aria-orientation={desktop ? "horizontal" : "vertical"}
+        className="grid gap-1 md:flex md:border-b md:border-border">
+        {COST_TABS.map(tab => (
+          <button key={tab.id} id={`custos-tab-${tab.id}`} type="button" role="tab" aria-selected={active === tab.id}
+            aria-controls={`custos-panel-${tab.id}`} tabIndex={active === tab.id ? 0 : -1}
+            onClick={() => setActive(tab.id)} onKeyDown={event => selectWithKeyboard(event, tab.id)}
+            className={`flex min-h-11 items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-left text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring md:rounded-none md:border-x-0 md:border-t-0 md:border-b-2 md:bg-transparent ${active === tab.id ? "border-l-2 border-l-green-600 text-foreground md:border-b-brand-700 md:border-l-0" : "text-muted-foreground md:border-b-transparent"}`}>
+            <span aria-hidden="true" className={`w-3 md:hidden ${active === tab.id ? "text-green-700" : ""}`}>{active === tab.id ? "⌄" : "›"}</span>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      {COST_TABS.map(tab => (
+        <div key={tab.id} id={`custos-panel-${tab.id}`} role="tabpanel" aria-labelledby={`custos-tab-${tab.id}`}
+          hidden={active !== tab.id} className="min-w-0 space-y-3">
+          {active === tab.id ? tab.id === "consulta" ? query : global : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DiagnosticDisclosure({ title, children }: Readonly<{ title: string; children: ReactNode }>) {
+  return (
+    <details className="rounded-lg border border-border bg-card px-3">
+      <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring">{title}</summary>
+      <div className="min-w-0 pb-3">{children}</div>
+    </details>
   );
 }
 
@@ -158,8 +247,6 @@ function DashboardResult({ dashboard }: Readonly<{ dashboard: OpenAiCostsFinanci
         <p className="rounded-md border border-border bg-muted p-3 text-sm leading-6 text-foreground">Os filtros internos não alteram o gasto oficial nem a reconciliação global. O subtotal filtrado aparece na seção Controle ativo.</p>
       </section>
 
-      <CoverageSection dashboard={dashboard} />
-      <OpenAiDialogueCosts result={dashboard.dialogues} active={dashboard.active} filters={dashboard.activeFilters} />
       {dashboard.legacy && dashboard.legacy.providerCreditFailureCount > 0 ? (
         <StatusPanel tone="danger" title="Crédito ou limite OpenAI requer atenção" role="alert">
           O período contém {dashboard.legacy.providerCreditFailureCount} ocorrência de provider associada a crédito ou limite insuficiente. Consulte a administração da OpenAI; nenhum detalhe financeiro interno é exibido ao cliente.
@@ -168,10 +255,20 @@ function DashboardResult({ dashboard }: Readonly<{ dashboard: OpenAiCostsFinanci
       {dashboard.officialErrorCode ? <StatusPanel tone="warning" title="Costs API indisponível">Os valores internos disponíveis continuam consultáveis. Motivo ({dashboard.officialErrorCode}).</StatusPanel> : null}
       {!dashboard.active ? <StatusPanel tone="danger" title="Controle ativo indisponível" role="alert">Não foi possível ler as execuções do período. Motivo ({dashboard.activeErrorCode ?? "READ_FAILED"}).</StatusPanel> : null}
       {!dashboard.legacy ? <StatusPanel tone="warning" title="Histórico congelado indisponível">Não foi possível ler o histórico do período. Motivo ({dashboard.legacyErrorCode ?? "READ_FAILED"}).</StatusPanel> : null}
-      {dashboard.economicHierarchy ? <OpenAiEconomicHierarchyView hierarchy={dashboard.economicHierarchy} /> : null}
-      {dashboard.filteredActive ? <OpenAiCostModelTotals groups={dashboard.filteredActive.modelGroups} /> : null}
+      <DiagnosticDisclosure title="Cobertura e atualização"><CoverageSection dashboard={dashboard} /></DiagnosticDisclosure>
+      <DiagnosticDisclosure title="Diálogos do Agente Nicho">
+        <OpenAiDialogueCosts result={dashboard.dialogues} active={dashboard.active} filters={dashboard.activeFilters} />
+      </DiagnosticDisclosure>
+      {dashboard.economicHierarchy ? <DiagnosticDisclosure title="Visão econômica por evento">
+        <OpenAiEconomicHierarchyView hierarchy={dashboard.economicHierarchy} />
+      </DiagnosticDisclosure> : null}
+      {dashboard.filteredActive ? <DiagnosticDisclosure title="Custos por modelo">
+        <OpenAiCostModelTotals groups={dashboard.filteredActive.modelGroups} />
+      </DiagnosticDisclosure> : null}
       {dashboard.filteredActive && (dashboard.activeFilters.universe || dashboard.activeFilters.accountId || dashboard.activeFilters.workload || dashboard.activeFilters.product)
-        ? <ActiveCostSection active={dashboard.filteredActive} filters={dashboard.activeFilters} />
+        ? <DiagnosticDisclosure title="Controle ativo">
+          <ActiveCostSection active={dashboard.filteredActive} filters={dashboard.activeFilters} />
+        </DiagnosticDisclosure>
         : null}
     </div>
   );
@@ -260,8 +357,8 @@ function ActiveCostSection({ active, filters }: Readonly<{ active: OpenAiActiveC
   );
 }
 
-function FormLabel({ label, children }: Readonly<{ label: string; children: ReactNode }>) { return <label className="grid gap-1.5 text-sm font-medium text-foreground">{label}{children}</label>; }
-function ExternalLink({ href, children }: Readonly<{ href: string; children: ReactNode }>) { return <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30">{children}<span className="sr-only"> (abre em nova aba)</span></a>; }
+function FormLabel({ label, children }: Readonly<{ label: string; children: ReactNode }>) { return <label className="grid min-w-0 gap-1 text-sm font-medium text-foreground">{label}{children}</label>; }
+function ExternalLink({ href, children }: Readonly<{ href: string; children: ReactNode }>) { return <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center justify-center rounded-md border border-input bg-background px-2 py-2 text-xs font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30 sm:px-3 sm:text-sm">{children}<span className="sr-only"> (abre em nova aba)</span></a>; }
 function MetricCard({ label, value, detail }: Readonly<{ label: string; value: string; detail: string }>) { return <article className="rounded-lg border border-border bg-card p-4 shadow-card sm:p-5"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-2 break-words text-2xl font-semibold text-foreground">{value}</p><p className="mt-2 text-xs leading-5 text-muted-foreground">{detail}</p></article>; }
 function CountCard({ label, value, warning = false }: Readonly<{ label: string; value: number; warning?: boolean }>) { return <div className={`rounded-md border p-3 ${warning && value > 0 ? "border-amber-200 bg-amber-50 text-amber-950" : "border-border bg-card text-foreground"}`}><dt className="text-xs font-medium">{label}</dt><dd className="mt-1 text-xl font-semibold">{value}</dd></div>; }
 function StatusPanel({ tone, title, children, role }: Readonly<{ tone: "neutral" | "success" | "warning" | "danger"; title: string; children: ReactNode; role?: "alert" }>) { const classes = tone === "danger" ? "border-red-200 bg-red-50 text-red-950" : tone === "warning" ? "border-amber-200 bg-amber-50 text-amber-950" : tone === "success" ? "border-green-200 bg-green-50 text-green-950" : "border-border bg-card text-foreground"; return <section className={`rounded-lg border p-4 shadow-card sm:p-5 ${classes}`} role={role}><h2 className="text-sm font-semibold">{title}</h2><p className="mt-2 text-sm leading-6">{children}</p></section>; }
@@ -273,7 +370,6 @@ function TableCell({ children }: Readonly<{ children: ReactNode }>) { return <td
 function countRetries(model: OpenAiActiveCostReadModel) { return model.executions.reduce((total, execution) => total + execution.operations.filter((operation) => operation.retryOfOperationId !== null).length, 0); }
 function universeLabel(universe: "client" | "lp_factory") { return universe === "client" ? "Cliente" : "LP Factory"; }
 function environmentLabel(environment: "production" | "preview" | "development") { return environment === "production" ? "Produção" : environment === "preview" ? "Preview" : "Desenvolvimento"; }
-function workloadLabel(workload: OpenAiCostReadWorkloadId) { const labels: Record<OpenAiCostReadWorkloadId, string> = { niche_resolution: "Resolução de nicho", pending_setup_conversation: "Agente Nicho", commercial_activation_draft_generation: "Draft de ativação comercial", taxon_input_catalog_sufficiency_evaluation: "Suficiência factual do catálogo", communication_base_stage1_assistance: "Assistência da Base — Etapa 1", communication_base_stage2_intelligence: "Inteligência da Base — Etapa 2", communication_base_agent: "Agente Base", landing_page_dynamic_market_research: "Pesquisa dinâmica de mercado", supabase_inspect: "Supabase Inspect" }; return labels[workload]; }
 function formatTimestamp(value: string) { return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "medium", timeZone: "America/Sao_Paulo" }).format(new Date(value)); }
 function formatUsd(value: string) { const negative = value.startsWith("-"); const unsigned = negative ? value.slice(1) : value; const [integer, fraction = ""] = unsigned.split("."); const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/g, "."); return `US$ ${negative ? "−" : ""}${grouped}${fraction ? `,${fraction}` : ",00"}`; }
 function formatDate(value: string) { const [year, month, day] = value.split("-"); return `${day}/${month}/${year}`; }

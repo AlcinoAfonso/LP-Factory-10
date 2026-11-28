@@ -6,9 +6,11 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { createClient } from "@supabase/supabase-js";
 import { OpenAiCostExecutionDetails } from "./_components/OpenAiEconomicHierarchy";
 
-import { refreshOpenAiCostsActionCore } from "./action-core";
+import { refreshOpenAiCostsActionCore, searchOpenAiCostAccountsActionCore } from "./action-core";
+import { costAccountLabel, readableCostAccountName } from "./account-labels";
 import {
   readOpenAiLpCostPages,
   translateOpenAiLpCostRows,
@@ -21,6 +23,23 @@ import {
 } from "../../../../lib/openai-costs/dashboard";
 
 async function runValidationCases() {
+assert.equal(readableCostAccountName("Conta acc-80af4e8d"), null);
+assert.equal(readableCostAccountName("Conta 6607a581-1f53-4282-bb17-8423e4963191"), null);
+assert.equal(costAccountLabel("Clínica Aurora"), "Clínica Aurora");
+assert.equal(costAccountLabel("Conta acc-80af4e8d"), "Conta sem nome público cadastrado");
+
+let accountSearchCalls = 0;
+const accountSearch = async (name: string) => {
+  accountSearchCalls++;
+  assert.equal(name, "Clínica Aurora");
+  return [{ id: "f1990000-0000-4000-8000-000000000010", name, subdomain: null }];
+};
+assert.equal(await searchOpenAiCostAccountsActionCore("Clínica Aurora", { authorize: async () => ({ allowed: false }), search: accountSearch }), null);
+assert.deepEqual(await searchOpenAiCostAccountsActionCore("A", { authorize: async () => ({ allowed: true }), search: accountSearch }), []);
+assert.equal(accountSearchCalls, 0);
+assert.equal((await searchOpenAiCostAccountsActionCore(" Clínica  Aurora ", { authorize: async () => ({ allowed: true }), search: accountSearch }))?.[0]?.name, "Clínica Aurora");
+assert.equal(accountSearchCalls, 1);
+
 const now = new Date("2026-08-28T15:00:00.000Z");
 const current = parseOpenAiCostsPeriodSelection({
   mode: "current_month",
@@ -284,17 +303,68 @@ for (const text of ["Serviço solicitado", "Fast", "Serviço aplicado", "Standar
 // Render only sanitized financial facts; this is markup validation, not visual browser QA.
 const loader = nodeModule as unknown as { _load: (name: string, parent: unknown, isMain: boolean) => unknown };
 const originalLoader = loader._load;
+const baseNames = [
+  ...Array.from({ length: 130 }, (_, index) => ({
+    account_id: String(index), name: "Conta acc-" + index.toString(16).padStart(8, "0"),
+  })),
+  { account_id: "fixture-base", name: "Conta Zebra" },
+];
+const setupNames = [
+  { account_id: "fixture-base", name: "Nome anterior" },
+  { account_id: "fixture-setup", name: "Consultório Azul" },
+];
+const nameSearchService = createClient("https://names.example.test", "test-key", {
+  auth: { persistSession: false },
+  global: { fetch: async input => {
+    const url = new URL(String(input));
+    const table = url.pathname.split("/").at(-1);
+    const accountIds = (url.searchParams.get(table === "accounts" ? "id" : "account_id") ?? "").slice(4, -1).split(",");
+    if (table === "accounts") {
+      assert.equal(url.searchParams.get("select"), "id,subdomain");
+      return Response.json(accountIds.map(id => ({ id, subdomain: null })));
+    }
+    const fromBase = table === "account_communication_bases";
+    assert.ok(fromBase || table === "account_pending_setup_conversations");
+    const namePath = fromBase ? "sections_json->business_name->>value" : "business_display_name";
+    const filters = url.searchParams.getAll(namePath);
+    const term = filters.find(filter => filter.startsWith("ilike."))?.slice(7, -1).toLowerCase();
+    const exclusion = filters.find(filter => filter.startsWith("not.imatch."));
+    const generated = exclusion ? new RegExp(exclusion.slice("not.imatch.".length), "i") : null;
+    const rows = fromBase ? baseNames : setupNames;
+    const matches = term
+      ? rows.filter(row => row.name.toLowerCase().includes(term) && !generated?.test(row.name))
+      : rows.filter(row => accountIds.includes(row.account_id));
+    const limit = Number(url.searchParams.get("limit") ?? matches.length);
+    return Response.json(matches.slice(0, limit).map(({ account_id, name }) => ({
+      account_id, [fromBase ? "public_name" : "business_display_name"]: name,
+    })));
+  } },
+});
 loader._load = function(name, parent, isMain) {
+  if (name === "server-only") return {};
+  if (name === "@/lib/supabase/service") return { createServiceClient: () => nameSearchService };
   if (name === "../actions") return {
     readDialogueCostAction: async () => ({ ok: false, code: "NOT_CALLED_IN_RENDER" }),
     readOccurrenceCostAction: async () => ({ ok: false, code: "NOT_CALLED_IN_RENDER" }),
   };
   return originalLoader.call(this, name, parent, isMain);
 };
-const [{ DialogueCostDetailView, OpenAiDialogueCosts }, { OccurrenceCostDetailView, OpenAiOccurrenceCosts }, { OpenAiCostModelTotals }, { OpenAiOccurrencePeriod }] = await Promise.all([
+const [{ DialogueCostDetailView, OpenAiDialogueCosts }, { OccurrenceCostDetailView, OpenAiOccurrenceCosts }, { OpenAiCostModelTotals, OpenAiCostsDashboard }, { OpenAiOccurrencePeriod }, { OpenAiCostAccountPeriod }, { searchCostAccountNames }] = await Promise.all([
   import("./_components/OpenAiDialogueCosts"), import("./_components/OpenAiOccurrenceCosts"),
   import("./_components/OpenAiCostsDashboard"), import("./_components/OpenAiOccurrencePeriod"),
+  import("./_components/OpenAiCostAccountPeriod"), import("./account-label-reader"),
 ]).finally(() => { loader._load = originalLoader; });
+assert.deepEqual(await searchCostAccountNames("Conta"), [{ id: "fixture-base", name: "Conta Zebra", subdomain: null }]);
+assert.deepEqual(await searchCostAccountNames("Consultório"), [{ id: "fixture-setup", name: "Consultório Azul", subdomain: null }]);
+assert.deepEqual(await searchCostAccountNames("Nome anterior"), []);
+const initialMarkup = renderToStaticMarkup(<OpenAiCostsDashboard startDate="2026-08-01" endDate="2026-08-28" />);
+assert.match(initialMarkup, /role="combobox"[^>]*placeholder="Todas as contas"/);
+assert.doesNotMatch(initialMarkup, /Conta \(UUID\)/);
+assert.match(initialMarkup, /<option value="communication_base_agent">Agente Base<\/option>/);
+assert.match(initialMarkup, /Consultar saldo OpenAI/);
+assert.match(initialMarkup, /id="custos-tab-consulta"[^>]* role="tab" aria-selected="true"/);
+assert.match(initialMarkup, /id="custos-panel-global" role="tabpanel"[^>]* hidden=""/);
+assert.doesNotMatch(initialMarkup, /Consulta técnica por identificador|Resumo global em USD/);
 const modelMarkup = renderToStaticMarkup(<OpenAiCostModelTotals groups={composition.filteredActive!.modelGroups} />);
 assert.match(modelMarkup, /<th scope="row"[^>]*>gpt-6\.1-terra<\/th>/);
 assert.match(modelMarkup, /US\$ 0,05/);
@@ -460,13 +530,96 @@ assert.equal(productSelection.dashboard?.filteredActive?.totalCalculatedUsd, "0.
 assert.deepEqual(productSelection.dashboard?.productLifetime, productLifetime);
 assert.equal(productSelection.dashboard?.globalReconciliationUsd, "0.7");
 assert.ok(productSelection.dashboard);
-const productMarkup = renderToStaticMarkup(<OpenAiOccurrencePeriod dashboard={productSelection.dashboard} filters={{
-  account: <label>Conta<input /></label>, product: <label>Produto/serviço<select /></label>, submit: <button>Atualizar custos</button>,
-}} />);
-assert.match(productMarkup, /<th scope="col"[^>]*><label>Conta<input\/><\/label><\/th>/);
-assert.match(productMarkup, /<th scope="col"[^>]*><label>Produto\/serviço<select><\/select><\/label><\/th>/);
-assert.match(productMarkup, /Subtotal calculável do período.*US\$ 0,05/);
+const productMarkup = renderToStaticMarkup(<OpenAiOccurrencePeriod dashboard={productSelection.dashboard} />);
+assert.match(productMarkup, /Subtotal parcial.*US\$ 0,05/);
 assert.match(productMarkup, /Acumulado da Base no histórico vinculado.*US\$ 0,08/);
+const accountMarkup = renderToStaticMarkup(<OpenAiCostAccountPeriod active={productSelection.dashboard.filteredActive!} period="01/08/2026 a 28/08/2026" />);
+assert.match(accountMarkup, /Custo parcial.*US\$ 0,05/);
+assert.match(accountMarkup, /Total das contas no período.*US\$ 0,05.*Há custos em apuração ou indisponíveis.*<table/);
+assert.match(accountMarkup, /<button[^>]*aria-haspopup="dialog"[^>]*><span[^>]*>Cliente E21\.5\.6<\/span>/);
+assert.doesNotMatch(accountMarkup, />Abrir<|aria-label="Abrir/);
+
+const withProvisionalName = {
+  ...productModel,
+  executions: productModel.executions.map(execution => ({ ...execution, accountName: "Nome interno da conta" })),
+};
+const readProvisionalNames = {
+  ...originalSources,
+  readActive: async () => ({ ok: true as const, value: withProvisionalName }),
+};
+const publicNameLookup = async (ids: readonly string[]) => {
+  assert.deepEqual(ids, [productAccount]);
+  return new Map([[productAccount, "Clínica Aurora"]]);
+};
+const deniedNames = await refreshOpenAiCostsActionCore(productForm, {
+  ...readProvisionalNames,
+  authorize: async () => ({ allowed: false }),
+  readPublicAccountNames: async () => { assert.fail("Leitura de nomes sem autorização"); },
+});
+assert.equal(deniedNames.code, "UNAUTHORIZED");
+for (const [readPublicAccountNames, label] of [
+  [publicNameLookup, "Clínica Aurora"],
+  [async () => new Map<string, string>(), "Conta sem nome público cadastrado"],
+  [async () => null, "Nome público indisponível"],
+] as const) {
+  const result = await refreshOpenAiCostsActionCore(productForm, { ...readProvisionalNames, readPublicAccountNames });
+  assert.equal(result.dashboard?.globalReconciliationUsd, "0.7");
+  assert.equal(result.dashboard?.filteredActive?.totalCalculatedUsd, "0.05");
+  const markup = renderToStaticMarkup(<OpenAiCostAccountPeriod active={result.dashboard!.filteredActive!} period="01/08/2026 a 28/08/2026" />);
+  assert.ok(markup.includes(label));
+  assert.doesNotMatch(markup, /Nome interno da conta/);
+}
+
+const firstAccountExecution = productModel.executions[0];
+const manyAccountExecutions = Array.from({ length: 100 }, (_, sequence) => ({
+  ...firstAccountExecution,
+  executionId: `exec-account-${sequence}`,
+  accountId: `account-${sequence}`,
+  accountName: `Conta de teste ${sequence}`,
+  calculatedCostUsd: "0.010000000003",
+  unavailableOperationCount: 0,
+  operations: [{ ...priced, operationId: `op-account-${sequence}`, costUsd: "0.010000000003" }],
+}));
+const outsideAccountList = {
+  ...firstAccountExecution,
+  executionId: "internal-only",
+  universe: "lp_factory" as const,
+  accountId: null,
+  accountName: null,
+  calculatedCostUsd: "999",
+  unavailableOperationCount: 0,
+  operations: [{ ...priced, operationId: "op-internal", costUsd: "999" }],
+};
+const manyAccountMarkup = renderToStaticMarkup(<OpenAiCostAccountPeriod active={{
+  ...productModel, executions: [firstAccountExecution, ...manyAccountExecutions, outsideAccountList],
+}} period="01/08/2026 a 28/08/2026" />);
+assert.match(manyAccountMarkup, /101 contas/);
+assert.match(manyAccountMarkup, /Total das contas no período.*US\$ 1,0500000003.*<table/);
+assert.doesNotMatch(manyAccountMarkup, /US\$ 999/);
+
+const unknownAccountMarkup = renderToStaticMarkup(<OpenAiCostAccountPeriod active={{
+  ...productModel, executions: [{ ...firstAccountExecution, calculatedCostUsd: "0", operations: [unknown] }],
+}} period="01/08/2026 a 28/08/2026" />);
+assert.match(unknownAccountMarkup, /Total das contas no período.*Sem valor calculado.*<table/);
+assert.doesNotMatch(unknownAccountMarkup, /US\$ 0,00/);
+const workloadResult = buildOpenAiCostsFinancialComposition({
+  selection: current, official: await originalSources.readOfficial(), legacy: internal,
+  active: { ok: true, value: { ...productModel, executions: productModel.executions.map(execution => ({
+    ...execution, workload: "communication_base_agent",
+  })) } },
+  activeFilters: { accountId: productAccount, workload: "communication_base_agent" },
+});
+const workloadMarkup = renderToStaticMarkup(<OpenAiOccurrencePeriod dashboard={workloadResult} />);
+assert.match(workloadMarkup, /Eventos · Agente Base/);
+assert.match(workloadMarkup, /US\$ 0,05/);
+assert.match(workloadMarkup, /Subtotais por tipo de ação/);
+const queryMarkup = renderToStaticMarkup(<OpenAiOccurrencePeriod dashboard={workloadResult} showActionSubtotals={false} />);
+assert.match(queryMarkup, /Eventos · Agente Base/);
+assert.match(queryMarkup, /US\$ 0,05/);
+assert.doesNotMatch(queryMarkup, /Subtotais por tipo de ação/);
+const compactDetail = renderToStaticMarkup(<OccurrenceCostDetailView detail={buildOccurrenceCostDetail(occurrenceId, closedAt, [{ ...occurrenceExecution, operations: [priced] }])} compact />);
+assert.match(compactDetail, /Custo integral da ocorrência.*Todos os workloads e períodos/);
+assert.match(compactDetail, /<details><summary[^>]*>Detalhes técnicos/);
 let lifetimeCallsBeforeMigration = 0;
 const productBeforeMigration = await refreshOpenAiCostsActionCore(productForm, {
   ...originalSources,
@@ -543,7 +696,7 @@ assert.ok(actionCoreSource.indexOf("await dependencies.authorize()") < actionCor
 for (const expected of [
   "Mês atual",
   "Personalizado",
-  "Atualizar custos",
+  "Consultar",
   "Gasto oficial OpenAI",
   "Clientes",
   "LP Factory",
@@ -568,10 +721,9 @@ for (const expected of [
   "Retry",
   "Web Search",
   "Os filtros internos não alteram o gasto oficial nem a reconciliação global",
-  "Visão global na OpenAI",
-  "Os acessos abaixo saem da LP Factory e abrem em nova aba",
+  "Visão global",
   "Abrir Usage na OpenAI",
-  "Abrir faturamento e créditos na OpenAI",
+  "Consultar saldo OpenAI",
 ]) {
   assert.equal(
     [componentSource, hierarchySource, hierarchyModelSource].some((source) => source.includes(expected)),

@@ -3,6 +3,7 @@ import { dialogueIdentitySchema } from "@/openai-costs/dialogue-costs";
 import { occurrenceCostQuerySchema, type OccurrenceCostQuery, type OccurrenceCostResult } from "@/openai-costs/occurrence-costs";
 import type { OpenAiActiveCostReadResult } from "@/openai-costs/active-contracts";
 import type { ProductLifetimeCost } from "@/openai-costs/occurrence-period";
+import { costAccountLabel } from "./account-labels";
 import type {
   OpenAiCostsPeriod,
   OpenAiLpCostReadResult,
@@ -22,6 +23,21 @@ export type OpenAiCostsActionState = Readonly<{
   dashboard: OpenAiCostsFinancialComposition | null;
 }>;
 
+export type OpenAiCostAccountOption = Readonly<{ id: string; name: string; subdomain: string | null }>;
+
+export async function searchOpenAiCostAccountsActionCore(
+  input: unknown,
+  dependencies: Readonly<{
+    authorize: () => Promise<Readonly<{ allowed: boolean }>>;
+    search: (name: string) => Promise<readonly OpenAiCostAccountOption[] | null>;
+  }>,
+) {
+  if (!(await dependencies.authorize()).allowed) return null;
+  const name = typeof input === "string" ? input.trim().replace(/\s+/g, " ") : "";
+  if (name.length < 2 || name.length > 100) return [];
+  return await dependencies.search(name);
+}
+
 export type OpenAiCostsActionDependencies = Readonly<{
   authorize: () => Promise<Readonly<{ allowed: boolean }>>;
   readOfficial: (period: OpenAiCostsPeriod) => Promise<OpenAiOfficialCostsReadResult>;
@@ -29,6 +45,7 @@ export type OpenAiCostsActionDependencies = Readonly<{
   readLegacy: (period: OpenAiCostsPeriod) => Promise<OpenAiLpCostReadResult>;
   readDialogues?: (period: OpenAiCostsPeriod, active: OpenAiActiveCostReadResult) => Promise<DialogueListResult>;
   readProductLifetime?: (accountId: string) => Promise<ProductLifetimeCost | null>;
+  readPublicAccountNames?: (accountIds: readonly string[]) => Promise<ReadonlyMap<string, string> | null>;
 }>;
 
 export async function refreshOpenAiCostsActionCore(
@@ -72,18 +89,33 @@ export async function refreshOpenAiCostsActionCore(
   const legacy: OpenAiLpCostReadResult = legacyRead.status === "fulfilled" ? legacyRead.value
     : { ok: false, error: { code: "READ_FAILED", message: "Frozen costs read failed" } };
 
-  const [dialogues, productLifetime] = await Promise.all([
+  const nameCandidates = dependencies.readPublicAccountNames && active.ok && active.value.economicDimensionStatus !== "v1_fallback"
+    ? [...new Set(active.value.executions.flatMap(execution =>
+      execution.accountId ? [execution.accountId] : []))]
+    : [];
+  const [dialogues, productLifetime, publicNames] = await Promise.all([
     dependencies.readDialogues?.(selection.period, active)
       .catch((): DialogueListResult => ({ ok: false, code: "DIALOGUE_LIST_UNAVAILABLE" })),
     active.ok && active.value.economicDimensionStatus === "v3_operation_period" &&
       activeFilters.product === "communication_base" && activeFilters.accountId
       ? dependencies.readProductLifetime?.(activeFilters.accountId).catch(() => null)
       : null,
+    nameCandidates.length > 0 ? dependencies.readPublicAccountNames?.(nameCandidates).catch(() => null) : null,
   ]);
+  const displayActive = active.ok && nameCandidates.length > 0
+    ? { ok: true as const, value: {
+      ...active.value,
+      executions: active.value.executions.map(execution =>
+        execution.accountId
+          ? { ...execution, accountName: publicNames === null ? "Nome público indisponível" :
+            costAccountLabel(publicNames?.get(execution.accountId)) }
+          : execution),
+    } }
+    : active;
   const dashboard = buildOpenAiCostsFinancialComposition({
     selection,
     official,
-    active,
+    active: displayActive,
     legacy,
     activeFilters,
     dialogues,

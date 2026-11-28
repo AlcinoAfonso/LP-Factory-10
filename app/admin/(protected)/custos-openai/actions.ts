@@ -4,11 +4,13 @@ import { listOpenAiCostDialogues, readOpenAiDialogueCost } from "@/openai-costs/
 import { readOpenAiCostOccurrence } from "@/openai-costs/adapters/costLedgerReadAdapter";
 import { readDialogueCostActionCore, readOccurrenceCostActionCore } from "./action-core";
 import { requirePlatformAdmin } from "@/lib/access/guards";
+import { readPublicCostAccountNames, searchCostAccountNames } from "./account-label-reader";
 import { readOpenAiActiveCosts, readOpenAiProductLifetimeCost } from "@/openai-costs/adapters/activeCostReadModelAdapter";
 import { readOpenAiLpCosts } from "@/openai-costs/adapters/lpCostReadModelAdapter";
 import { readOfficialOpenAiCosts } from "@/openai-costs/providers/openAiCostsProvider";
 import {
   refreshOpenAiCostsActionCore,
+  searchOpenAiCostAccountsActionCore,
   type OpenAiCostsActionState,
 } from "./action-core";
 
@@ -24,6 +26,7 @@ export async function refreshOpenAiCostsAction(
     readActive: readOpenAiActiveCosts,
     readLegacy: readOpenAiLpCosts,
     readProductLifetime: readOpenAiProductLifetimeCost,
+    readPublicAccountNames: readPublicCostAccountNames,
     readDialogues: (period, active) => listOpenAiCostDialogues(period, active.ok ? active.value : null),
   });
 }
@@ -34,4 +37,11 @@ export async function readDialogueCostAction(raw: unknown) {
 
 export async function readOccurrenceCostAction(raw: unknown) {
   return await readOccurrenceCostActionCore(raw, { authorize: requirePlatformAdmin, read: readOpenAiCostOccurrence });
+}
+
+export async function searchOpenAiCostAccountsAction(name: unknown) {
+  return await searchOpenAiCostAccountsActionCore(name, {
+    authorize: requirePlatformAdmin,
+    search: searchCostAccountNames,
+  });
 }
