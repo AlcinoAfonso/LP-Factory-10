@@ -3,7 +3,7 @@ import { dialogueIdentitySchema } from "@/openai-costs/dialogue-costs";
 import { occurrenceCostQuerySchema, type OccurrenceCostQuery, type OccurrenceCostResult } from "@/openai-costs/occurrence-costs";
 import type { OpenAiActiveCostReadResult } from "@/openai-costs/active-contracts";
 import type { ProductLifetimeCost } from "@/openai-costs/occurrence-period";
-import { costAccountLabel, readableCostAccountName } from "./account-labels";
+import { costAccountLabel } from "./account-labels";
 import type {
   OpenAiCostsPeriod,
   OpenAiLpCostReadResult,
@@ -45,7 +45,7 @@ export type OpenAiCostsActionDependencies = Readonly<{
   readLegacy: (period: OpenAiCostsPeriod) => Promise<OpenAiLpCostReadResult>;
   readDialogues?: (period: OpenAiCostsPeriod, active: OpenAiActiveCostReadResult) => Promise<DialogueListResult>;
   readProductLifetime?: (accountId: string) => Promise<ProductLifetimeCost | null>;
-  readConfirmedAccountNames?: (accountIds: readonly string[]) => Promise<ReadonlyMap<string, string> | null>;
+  readPublicAccountNames?: (accountIds: readonly string[]) => Promise<ReadonlyMap<string, string> | null>;
 }>;
 
 export async function refreshOpenAiCostsActionCore(
@@ -89,26 +89,26 @@ export async function refreshOpenAiCostsActionCore(
   const legacy: OpenAiLpCostReadResult = legacyRead.status === "fulfilled" ? legacyRead.value
     : { ok: false, error: { code: "READ_FAILED", message: "Frozen costs read failed" } };
 
-  const nameCandidates = active.ok && active.value.economicDimensionStatus !== "v1_fallback"
+  const nameCandidates = dependencies.readPublicAccountNames && active.ok && active.value.economicDimensionStatus !== "v1_fallback"
     ? [...new Set(active.value.executions.flatMap(execution =>
-      execution.accountId && !readableCostAccountName(execution.accountName) ? [execution.accountId] : []))]
+      execution.accountId ? [execution.accountId] : []))]
     : [];
-  const [dialogues, productLifetime, confirmedNames] = await Promise.all([
+  const [dialogues, productLifetime, publicNames] = await Promise.all([
     dependencies.readDialogues?.(selection.period, active)
       .catch((): DialogueListResult => ({ ok: false, code: "DIALOGUE_LIST_UNAVAILABLE" })),
     active.ok && active.value.economicDimensionStatus === "v3_operation_period" &&
       activeFilters.product === "communication_base" && activeFilters.accountId
       ? dependencies.readProductLifetime?.(activeFilters.accountId).catch(() => null)
       : null,
-    nameCandidates.length > 0 ? dependencies.readConfirmedAccountNames?.(nameCandidates).catch(() => null) : null,
+    nameCandidates.length > 0 ? dependencies.readPublicAccountNames?.(nameCandidates).catch(() => null) : null,
   ]);
   const displayActive = active.ok && nameCandidates.length > 0
     ? { ok: true as const, value: {
       ...active.value,
       executions: active.value.executions.map(execution =>
-        execution.accountId && !readableCostAccountName(execution.accountName)
-          ? { ...execution, accountName: confirmedNames === null ? "Nome da conta indisponível" :
-            costAccountLabel(execution.accountName, confirmedNames?.get(execution.accountId)) }
+        execution.accountId
+          ? { ...execution, accountName: publicNames === null ? "Nome público indisponível" :
+            costAccountLabel(publicNames?.get(execution.accountId)) }
           : execution),
     } }
     : active;

@@ -25,10 +25,8 @@ import {
 async function runValidationCases() {
 assert.equal(readableCostAccountName("Conta acc-80af4e8d"), null);
 assert.equal(readableCostAccountName("Conta 6607a581-1f53-4282-bb17-8423e4963191"), null);
-assert.equal(costAccountLabel("Conta acc-80af4e8d", "Clínica Aurora"), "Clínica Aurora");
-assert.equal(costAccountLabel("Conta acc-80af4e8d", "Conta acc-80af4e8d"), "Conta sem nome cadastrado");
-assert.equal(costAccountLabel("Corretor Alfa", "Clínica Aurora"), "Corretor Alfa");
-assert.equal(costAccountLabel("QA E10.12 capacidade 6000 11/10"), "QA E10.12 capacidade 6000 11/10");
+assert.equal(costAccountLabel("Clínica Aurora"), "Clínica Aurora");
+assert.equal(costAccountLabel("Conta acc-80af4e8d"), "Conta sem nome público cadastrado");
 
 let accountSearchCalls = 0;
 const accountSearch = async (name: string) => {
@@ -305,25 +303,41 @@ for (const text of ["Serviço solicitado", "Fast", "Serviço aplicado", "Standar
 // Render only sanitized financial facts; this is markup validation, not visual browser QA.
 const loader = nodeModule as unknown as { _load: (name: string, parent: unknown, isMain: boolean) => unknown };
 const originalLoader = loader._load;
-const readableAccount = { id: "fixture-named", name: "Conta Zebra", subdomain: null };
-const searchableAccounts = [
+const baseNames = [
   ...Array.from({ length: 130 }, (_, index) => ({
-    id: String(index), name: "Conta acc-" + index.toString(16).padStart(8, "0"), subdomain: null,
+    account_id: String(index), name: "Conta acc-" + index.toString(16).padStart(8, "0"),
   })),
-  readableAccount,
+  { account_id: "fixture-base", name: "Conta Zebra" },
+];
+const setupNames = [
+  { account_id: "fixture-base", name: "Nome anterior" },
+  { account_id: "fixture-setup", name: "Consultório Azul" },
 ];
 const nameSearchService = createClient("https://names.example.test", "test-key", {
   auth: { persistSession: false },
   global: { fetch: async input => {
     const url = new URL(String(input));
-    if (url.pathname.endsWith("/account_pending_setup_conversations")) return Response.json([]);
-    assert.ok(url.pathname.endsWith("/accounts"));
-    const filters = url.searchParams.getAll("name");
-    assert.ok(filters.includes("ilike.%Conta%"));
+    const table = url.pathname.split("/").at(-1);
+    const accountIds = (url.searchParams.get(table === "accounts" ? "id" : "account_id") ?? "").slice(4, -1).split(",");
+    if (table === "accounts") {
+      assert.equal(url.searchParams.get("select"), "id,subdomain");
+      return Response.json(accountIds.map(id => ({ id, subdomain: null })));
+    }
+    const fromBase = table === "account_communication_bases";
+    assert.ok(fromBase || table === "account_pending_setup_conversations");
+    const namePath = fromBase ? "sections_json->business_name->>value" : "business_display_name";
+    const filters = url.searchParams.getAll(namePath);
+    const term = filters.find(filter => filter.startsWith("ilike."))?.slice(7, -1).toLowerCase();
     const exclusion = filters.find(filter => filter.startsWith("not.imatch."));
     const generated = exclusion ? new RegExp(exclusion.slice("not.imatch.".length), "i") : null;
-    const matches = searchableAccounts.filter(row => !generated?.test(row.name));
-    return Response.json(matches.slice(0, Number(url.searchParams.get("limit"))));
+    const rows = fromBase ? baseNames : setupNames;
+    const matches = term
+      ? rows.filter(row => row.name.toLowerCase().includes(term) && !generated?.test(row.name))
+      : rows.filter(row => accountIds.includes(row.account_id));
+    const limit = Number(url.searchParams.get("limit") ?? matches.length);
+    return Response.json(matches.slice(0, limit).map(({ account_id, name }) => ({
+      account_id, [fromBase ? "public_name" : "business_display_name"]: name,
+    })));
   } },
 });
 loader._load = function(name, parent, isMain) {
@@ -340,7 +354,9 @@ const [{ DialogueCostDetailView, OpenAiDialogueCosts }, { OccurrenceCostDetailVi
   import("./_components/OpenAiCostsDashboard"), import("./_components/OpenAiOccurrencePeriod"),
   import("./_components/OpenAiCostAccountPeriod"), import("./account-label-reader"),
 ]).finally(() => { loader._load = originalLoader; });
-assert.deepEqual(await searchCostAccountNames("Conta"), [readableAccount]);
+assert.deepEqual(await searchCostAccountNames("Conta"), [{ id: "fixture-base", name: "Conta Zebra", subdomain: null }]);
+assert.deepEqual(await searchCostAccountNames("Consultório"), [{ id: "fixture-setup", name: "Consultório Azul", subdomain: null }]);
+assert.deepEqual(await searchCostAccountNames("Nome anterior"), []);
 const initialMarkup = renderToStaticMarkup(<OpenAiCostsDashboard startDate="2026-08-01" endDate="2026-08-28" />);
 assert.match(initialMarkup, /role="combobox"[^>]*placeholder="Todas as contas"/);
 assert.doesNotMatch(initialMarkup, /Conta \(UUID\)/);
@@ -525,7 +541,7 @@ assert.doesNotMatch(accountMarkup, />Abrir<|aria-label="Abrir/);
 
 const withProvisionalName = {
   ...productModel,
-  executions: productModel.executions.map(execution => ({ ...execution, accountName: "Conta acc-80af4e8d" })),
+  executions: productModel.executions.map(execution => ({ ...execution, accountName: "Nome interno da conta" })),
 };
 const readProvisionalNames = {
   ...originalSources,
@@ -538,20 +554,20 @@ const publicNameLookup = async (ids: readonly string[]) => {
 const deniedNames = await refreshOpenAiCostsActionCore(productForm, {
   ...readProvisionalNames,
   authorize: async () => ({ allowed: false }),
-  readConfirmedAccountNames: async () => { assert.fail("Leitura de nomes sem autorização"); },
+  readPublicAccountNames: async () => { assert.fail("Leitura de nomes sem autorização"); },
 });
 assert.equal(deniedNames.code, "UNAUTHORIZED");
-for (const [readConfirmedAccountNames, label] of [
+for (const [readPublicAccountNames, label] of [
   [publicNameLookup, "Clínica Aurora"],
-  [async () => new Map<string, string>(), "Conta sem nome cadastrado"],
-  [async () => null, "Nome da conta indisponível"],
+  [async () => new Map<string, string>(), "Conta sem nome público cadastrado"],
+  [async () => null, "Nome público indisponível"],
 ] as const) {
-  const result = await refreshOpenAiCostsActionCore(productForm, { ...readProvisionalNames, readConfirmedAccountNames });
+  const result = await refreshOpenAiCostsActionCore(productForm, { ...readProvisionalNames, readPublicAccountNames });
   assert.equal(result.dashboard?.globalReconciliationUsd, "0.7");
   assert.equal(result.dashboard?.filteredActive?.totalCalculatedUsd, "0.05");
   const markup = renderToStaticMarkup(<OpenAiCostAccountPeriod active={result.dashboard!.filteredActive!} period="01/08/2026 a 28/08/2026" />);
   assert.ok(markup.includes(label));
-  assert.doesNotMatch(markup, /acc-80af4e8d/);
+  assert.doesNotMatch(markup, /Nome interno da conta/);
 }
 
 const firstAccountExecution = productModel.executions[0];

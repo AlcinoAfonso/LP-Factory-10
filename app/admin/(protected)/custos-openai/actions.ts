@@ -4,7 +4,7 @@ import { listOpenAiCostDialogues, readOpenAiDialogueCost } from "@/openai-costs/
 import { readOpenAiCostOccurrence } from "@/openai-costs/adapters/costLedgerReadAdapter";
 import { readDialogueCostActionCore, readOccurrenceCostActionCore } from "./action-core";
 import { requirePlatformAdmin } from "@/lib/access/guards";
-import { readConfirmedCostAccountNames, searchCostAccountNames } from "./account-label-reader";
+import { readPublicCostAccountNames, searchCostAccountNames } from "./account-label-reader";
 import { readOpenAiActiveCosts, readOpenAiProductLifetimeCost } from "@/openai-costs/adapters/activeCostReadModelAdapter";
 import { readOpenAiLpCosts } from "@/openai-costs/adapters/lpCostReadModelAdapter";
 import { readOfficialOpenAiCosts } from "@/openai-costs/providers/openAiCostsProvider";
@@ -26,7 +26,7 @@ export async function refreshOpenAiCostsAction(
     readActive: readOpenAiActiveCosts,
     readLegacy: readOpenAiLpCosts,
     readProductLifetime: readOpenAiProductLifetimeCost,
-    readConfirmedAccountNames: readConfirmedCostAccountNames,
+    readPublicAccountNames: readPublicCostAccountNames,
     readDialogues: (period, active) => listOpenAiCostDialogues(period, active.ok ? active.value : null),
   });
 }

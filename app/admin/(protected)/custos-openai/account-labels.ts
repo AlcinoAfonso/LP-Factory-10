@@ -5,6 +5,6 @@ export function readableCostAccountName(value: string | null | undefined): strin
   return name && !generatedCostAccountLabel.test(name) ? name : null;
 }
 
-export function costAccountLabel(name: string | null | undefined, confirmedName?: string): string {
-  return readableCostAccountName(name) ?? readableCostAccountName(confirmedName) ?? "Conta sem nome cadastrado";
+export function costAccountLabel(publicName: string | null | undefined): string {
+  return readableCostAccountName(publicName) ?? "Conta sem nome público cadastrado";
 }
