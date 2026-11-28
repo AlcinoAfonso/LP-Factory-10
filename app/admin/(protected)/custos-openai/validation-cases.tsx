@@ -6,6 +6,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { createClient } from "@supabase/supabase-js";
 import { OpenAiCostExecutionDetails } from "./_components/OpenAiEconomicHierarchy";
 
 import { refreshOpenAiCostsActionCore, searchOpenAiCostAccountsActionCore } from "./action-core";
@@ -304,18 +305,42 @@ for (const text of ["Serviço solicitado", "Fast", "Serviço aplicado", "Standar
 // Render only sanitized financial facts; this is markup validation, not visual browser QA.
 const loader = nodeModule as unknown as { _load: (name: string, parent: unknown, isMain: boolean) => unknown };
 const originalLoader = loader._load;
+const readableAccount = { id: "fixture-named", name: "Conta Zebra", subdomain: null };
+const searchableAccounts = [
+  ...Array.from({ length: 130 }, (_, index) => ({
+    id: String(index), name: "Conta acc-" + index.toString(16).padStart(8, "0"), subdomain: null,
+  })),
+  readableAccount,
+];
+const nameSearchService = createClient("https://names.example.test", "test-key", {
+  auth: { persistSession: false },
+  global: { fetch: async input => {
+    const url = new URL(String(input));
+    if (url.pathname.endsWith("/account_pending_setup_conversations")) return Response.json([]);
+    assert.ok(url.pathname.endsWith("/accounts"));
+    const filters = url.searchParams.getAll("name");
+    assert.ok(filters.includes("ilike.%Conta%"));
+    const exclusion = filters.find(filter => filter.startsWith("not.imatch."));
+    const generated = exclusion ? new RegExp(exclusion.slice("not.imatch.".length), "i") : null;
+    const matches = searchableAccounts.filter(row => !generated?.test(row.name));
+    return Response.json(matches.slice(0, Number(url.searchParams.get("limit"))));
+  } },
+});
 loader._load = function(name, parent, isMain) {
+  if (name === "server-only") return {};
+  if (name === "@/lib/supabase/service") return { createServiceClient: () => nameSearchService };
   if (name === "../actions") return {
     readDialogueCostAction: async () => ({ ok: false, code: "NOT_CALLED_IN_RENDER" }),
     readOccurrenceCostAction: async () => ({ ok: false, code: "NOT_CALLED_IN_RENDER" }),
   };
   return originalLoader.call(this, name, parent, isMain);
 };
-const [{ DialogueCostDetailView, OpenAiDialogueCosts }, { OccurrenceCostDetailView, OpenAiOccurrenceCosts }, { OpenAiCostModelTotals, OpenAiCostsDashboard }, { OpenAiOccurrencePeriod }, { OpenAiCostAccountPeriod }] = await Promise.all([
+const [{ DialogueCostDetailView, OpenAiDialogueCosts }, { OccurrenceCostDetailView, OpenAiOccurrenceCosts }, { OpenAiCostModelTotals, OpenAiCostsDashboard }, { OpenAiOccurrencePeriod }, { OpenAiCostAccountPeriod }, { searchCostAccountNames }] = await Promise.all([
   import("./_components/OpenAiDialogueCosts"), import("./_components/OpenAiOccurrenceCosts"),
   import("./_components/OpenAiCostsDashboard"), import("./_components/OpenAiOccurrencePeriod"),
-  import("./_components/OpenAiCostAccountPeriod"),
+  import("./_components/OpenAiCostAccountPeriod"), import("./account-label-reader"),
 ]).finally(() => { loader._load = originalLoader; });
+assert.deepEqual(await searchCostAccountNames("Conta"), [readableAccount]);
 const initialMarkup = renderToStaticMarkup(<OpenAiCostsDashboard startDate="2026-08-01" endDate="2026-08-28" />);
 assert.match(initialMarkup, /role="combobox"[^>]*placeholder="Todas as contas"/);
 assert.doesNotMatch(initialMarkup, /Conta \(UUID\)/);

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
-import { readableCostAccountName } from "./account-labels";
+import { generatedCostAccountLabel, readableCostAccountName } from "./account-labels";
 import type { OpenAiCostAccountOption } from "./action-core";
 
 type AccountRow = Readonly<{ id: string; name: string | null; subdomain: string | null }>;
@@ -41,9 +41,11 @@ export async function searchCostAccountNames(query: string): Promise<readonly Op
   const service = createServiceClient();
   const [accounts, confirmed] = await Promise.all([
     service.from("accounts").select("id,name,subdomain")
-      .ilike("name", `%${pattern}%`).order("name").order("id").limit(SUGGESTION_LIMIT * 2),
+      .ilike("name", `%${pattern}%`).not("name", "imatch", generatedCostAccountLabel.source)
+      .order("name").order("id").limit(SUGGESTION_LIMIT * 2),
     service.from("account_pending_setup_conversations").select("account_id")
       .eq("stage", "completed").ilike("business_display_name", `%${pattern}%`)
+      .not("business_display_name", "imatch", generatedCostAccountLabel.source)
       .order("completed_at", { ascending: false }).order("id", { ascending: false }).limit(SUGGESTION_LIMIT * 3),
   ]);
   if (accounts.error && confirmed.error) return null;

@@ -1,8 +1,8 @@
-const generatedAccountLabel = /^(?:Conta\s+)?(?:acc-[a-f\d]{8}|[a-f\d]{8}(?:-[a-f\d]{4}){3}-[a-f\d]{12})$/i;
+export const generatedCostAccountLabel = /^\s*(?:Conta\s+)?(?:acc-[a-f0-9]{8}|[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})\s*$/i;
 
 export function readableCostAccountName(value: string | null | undefined): string | null {
   const name = value?.trim();
-  return name && !generatedAccountLabel.test(name) ? name : null;
+  return name && !generatedCostAccountLabel.test(name) ? name : null;
 }
 
 export function costAccountLabel(name: string | null | undefined, confirmedName?: string): string {
