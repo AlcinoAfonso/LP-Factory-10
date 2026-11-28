@@ -4,7 +4,7 @@ import { listOpenAiCostDialogues, readOpenAiDialogueCost } from "@/openai-costs/
 import { readOpenAiCostOccurrence } from "@/openai-costs/adapters/costLedgerReadAdapter";
 import { readDialogueCostActionCore, readOccurrenceCostActionCore } from "./action-core";
 import { requirePlatformAdmin } from "@/lib/access/guards";
-import { createServiceClient } from "@/lib/supabase/service";
+import { readConfirmedCostAccountNames, searchCostAccountNames } from "./account-label-reader";
 import { readOpenAiActiveCosts, readOpenAiProductLifetimeCost } from "@/openai-costs/adapters/activeCostReadModelAdapter";
 import { readOpenAiLpCosts } from "@/openai-costs/adapters/lpCostReadModelAdapter";
 import { readOfficialOpenAiCosts } from "@/openai-costs/providers/openAiCostsProvider";
@@ -26,6 +26,7 @@ export async function refreshOpenAiCostsAction(
     readActive: readOpenAiActiveCosts,
     readLegacy: readOpenAiLpCosts,
     readProductLifetime: readOpenAiProductLifetimeCost,
+    readConfirmedAccountNames: readConfirmedCostAccountNames,
     readDialogues: (period, active) => listOpenAiCostDialogues(period, active.ok ? active.value : null),
   });
 }
@@ -41,13 +42,6 @@ export async function readOccurrenceCostAction(raw: unknown) {
 export async function searchOpenAiCostAccountsAction(name: unknown) {
   return await searchOpenAiCostAccountsActionCore(name, {
     authorize: requirePlatformAdmin,
-    search: async (query) => {
-      const pattern = query.replace(/[\\%_]/g, "\\$&");
-      const { data, error } = await createServiceClient()
-        .from("accounts").select("id,name,subdomain")
-        .ilike("name", `%${pattern}%`)
-        .order("name").order("id").limit(12);
-      return error ? null : data ?? [];
-    },
+    search: searchCostAccountNames,
   });
 }

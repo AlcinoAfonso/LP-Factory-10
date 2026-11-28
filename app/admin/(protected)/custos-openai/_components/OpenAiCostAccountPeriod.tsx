@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import type { OpenAiActiveCostReadModel, OpenAiCostReadWorkloadId } from "@/openai-costs/active-contracts";
 import { addDecimal, decimalFromNonNegativeString, formatDecimal, subtractDecimal, type DecimalValue } from "@/openai-costs/decimal";
 import { buildOpenAiEconomicHierarchy, type OpenAiEconomicAccount } from "@/openai-costs/economic-hierarchy";
+import { costAccountLabel } from "../account-labels";
 import { formatUsd, workloadLabel } from "./OpenAiEconomicHierarchy";
 
 export function OpenAiCostAccountPeriod({ active, period }: Readonly<{ active: OpenAiActiveCostReadModel; period: string }>) {
@@ -61,7 +62,7 @@ export function OpenAiCostAccountPeriod({ active, period }: Readonly<{ active: O
                   <button type="button" aria-haspopup="dialog"
                     className="block min-h-11 w-full rounded-sm py-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     onClick={() => { setSelected(account); dialog.current?.showModal(); }}>
-                    <span className="font-semibold text-brand-700 underline underline-offset-2">{account.accountName}</span>
+                    <span className="font-semibold text-brand-700 underline underline-offset-2">{costAccountLabel(account.accountName)}</span>
                     {account.pendingCount > 0 || account.unavailableCount > 0
                       ? <span className="block text-xs font-normal text-muted-foreground">{accounts.priced.has(account.accountId) ? "Custo parcial" : "Em apuração ou indisponível"}</span> : null}
                   </button>
@@ -77,7 +78,7 @@ export function OpenAiCostAccountPeriod({ active, period }: Readonly<{ active: O
       <dialog ref={dialog} aria-labelledby="cost-account-detail-title"
         className="fixed inset-0 m-auto h-fit max-h-[90dvh] w-[94vw] max-w-lg overflow-auto rounded-lg border border-border bg-card p-4 text-foreground backdrop:bg-black/50">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <h2 id="cost-account-detail-title" className="min-w-0 text-lg font-semibold [overflow-wrap:anywhere]">{selected?.accountName ?? "Detalhe da conta"}</h2>
+          <h2 id="cost-account-detail-title" className="min-w-0 text-lg font-semibold [overflow-wrap:anywhere]">{selected ? costAccountLabel(selected.accountName) : "Detalhe da conta"}</h2>
           <form method="dialog"><Button type="submit" variant="secondary" className="min-h-11">Fechar</Button></form>
         </div>
         {selected ? <>

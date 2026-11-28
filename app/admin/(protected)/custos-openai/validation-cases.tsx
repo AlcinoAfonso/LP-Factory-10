@@ -9,6 +9,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { OpenAiCostExecutionDetails } from "./_components/OpenAiEconomicHierarchy";
 
 import { refreshOpenAiCostsActionCore, searchOpenAiCostAccountsActionCore } from "./action-core";
+import { costAccountLabel, readableCostAccountName } from "./account-labels";
 import {
   readOpenAiLpCostPages,
   translateOpenAiLpCostRows,
@@ -21,6 +22,13 @@ import {
 } from "../../../../lib/openai-costs/dashboard";
 
 async function runValidationCases() {
+assert.equal(readableCostAccountName("Conta acc-80af4e8d"), null);
+assert.equal(readableCostAccountName("Conta 6607a581-1f53-4282-bb17-8423e4963191"), null);
+assert.equal(costAccountLabel("Conta acc-80af4e8d", "Clínica Aurora"), "Clínica Aurora");
+assert.equal(costAccountLabel("Conta acc-80af4e8d", "Conta acc-80af4e8d"), "Conta sem nome cadastrado");
+assert.equal(costAccountLabel("Corretor Alfa", "Clínica Aurora"), "Corretor Alfa");
+assert.equal(costAccountLabel("QA E10.12 capacidade 6000 11/10"), "QA E10.12 capacidade 6000 11/10");
+
 let accountSearchCalls = 0;
 const accountSearch = async (name: string) => {
   accountSearchCalls++;
@@ -489,6 +497,37 @@ assert.match(accountMarkup, /Custo parcial.*US\$ 0,05/);
 assert.match(accountMarkup, /Total das contas no período.*US\$ 0,05.*Há custos em apuração ou indisponíveis.*<table/);
 assert.match(accountMarkup, /<button[^>]*aria-haspopup="dialog"[^>]*><span[^>]*>Cliente E21\.5\.6<\/span>/);
 assert.doesNotMatch(accountMarkup, />Abrir<|aria-label="Abrir/);
+
+const withProvisionalName = {
+  ...productModel,
+  executions: productModel.executions.map(execution => ({ ...execution, accountName: "Conta acc-80af4e8d" })),
+};
+const readProvisionalNames = {
+  ...originalSources,
+  readActive: async () => ({ ok: true as const, value: withProvisionalName }),
+};
+const publicNameLookup = async (ids: readonly string[]) => {
+  assert.deepEqual(ids, [productAccount]);
+  return new Map([[productAccount, "Clínica Aurora"]]);
+};
+const deniedNames = await refreshOpenAiCostsActionCore(productForm, {
+  ...readProvisionalNames,
+  authorize: async () => ({ allowed: false }),
+  readConfirmedAccountNames: async () => { assert.fail("Leitura de nomes sem autorização"); },
+});
+assert.equal(deniedNames.code, "UNAUTHORIZED");
+for (const [readConfirmedAccountNames, label] of [
+  [publicNameLookup, "Clínica Aurora"],
+  [async () => new Map<string, string>(), "Conta sem nome cadastrado"],
+  [async () => null, "Nome da conta indisponível"],
+] as const) {
+  const result = await refreshOpenAiCostsActionCore(productForm, { ...readProvisionalNames, readConfirmedAccountNames });
+  assert.equal(result.dashboard?.globalReconciliationUsd, "0.7");
+  assert.equal(result.dashboard?.filteredActive?.totalCalculatedUsd, "0.05");
+  const markup = renderToStaticMarkup(<OpenAiCostAccountPeriod active={result.dashboard!.filteredActive!} period="01/08/2026 a 28/08/2026" />);
+  assert.ok(markup.includes(label));
+  assert.doesNotMatch(markup, /acc-80af4e8d/);
+}
 
 const firstAccountExecution = productModel.executions[0];
 const manyAccountExecutions = Array.from({ length: 100 }, (_, sequence) => ({
